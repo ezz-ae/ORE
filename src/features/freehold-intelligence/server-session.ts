@@ -106,6 +106,11 @@ export type CRMLeadIntelligence = {
   snoozeUntil?: string | null
   /** Sequential lead code / serial number, e.g. FH-0001. */
   leadCode?: string | null
+  /** Layer 8/9 — read from the lead's landing session; null when there wasn't one. */
+  behaviourScore?: number | null
+  buyerIntent?: string | null
+  purchaseProbability?: number | null
+  budgetConfidence?: string | null
 }
 
 export type NotebookOutput = {

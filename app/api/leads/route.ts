@@ -4,6 +4,7 @@ import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
 import { handleNewLead } from "@/lib/automation/engine"
 import { sendLeadConversion } from "@/lib/meta/capi"
+import { scoreLeadSession } from "@/lib/freehold/behaviour-score"
 import {
   getLeadershipLeadRecipients,
   sendInternalLeadAlertEmail,
@@ -79,6 +80,11 @@ export async function POST(req: NextRequest) {
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_country text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_region text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_city text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS lp_session_id text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS behaviour_score int`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS buyer_intent text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS purchase_probability int`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS budget_confidence text`)
 
     // Repeat inquiry from a known open lead: log it on their timeline
     // instead of creating a duplicate pipeline entry.
@@ -113,16 +119,27 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Layer 8 → Layer 9: score the landing session this lead came from.
+    // Fail-soft by design (see scoreLeadSession) — never blocks intake, and
+    // only needed on a genuinely new lead, not a repeat inquiry.
+    const intel = isRepeatInquiry
+      ? { behaviourScore: null, buyerIntent: null, purchaseProbability: null, budgetConfidence: null }
+      : await scoreLeadSession(toText(body.sessionId))
+
     if (!isRepeatInquiry) await query(
       `INSERT INTO freehold_site_leads (
         id, name, phone, email, source, project_slug, landing_slug, interest, message, budget, status,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
-        referrer, device, geo_country, geo_region, geo_city, campaign_id, created_at, updated_at
+        referrer, device, geo_country, geo_region, geo_city, campaign_id,
+        lp_session_id, behaviour_score, buyer_intent, purchase_probability, budget_confidence,
+        created_at, updated_at
       )
       VALUES (
         $1, $2, $3, NULLIF($4, ''), $5, NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), NULLIF($9, ''), NULLIF($10, ''), 'new',
         NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, ''), NULLIF($16, ''),
-        NULLIF($17, ''), $18::jsonb, NULLIF($19, ''), NULLIF($20, ''), NULLIF($21, ''), NULLIF($13, ''), now(), now()
+        NULLIF($17, ''), $18::jsonb, NULLIF($19, ''), NULLIF($20, ''), NULLIF($21, ''), NULLIF($13, ''),
+        NULLIF($22, ''), $23, NULLIF($24, ''), $25, NULLIF($26, ''),
+        now(), now()
       )`,
       [
         leadId,
@@ -146,6 +163,11 @@ export async function POST(req: NextRequest) {
         toText(req.headers.get("x-vercel-ip-country")),
         toText(req.headers.get("x-vercel-ip-country-region")),
         toText(req.headers.get("x-vercel-ip-city")),
+        toText(body.sessionId),
+        intel.behaviourScore,
+        toText(intel.buyerIntent),
+        intel.purchaseProbability,
+        toText(intel.budgetConfidence),
       ],
     )
 

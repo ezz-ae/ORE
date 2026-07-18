@@ -4,7 +4,7 @@ import {
   ArrowLeft, Phone, Mail, Brain,
   AlertTriangle, Clock, User, Target, Zap,
   PhoneCall, FileText, ArrowLeftRight, Bell, MessageSquare,
-  BarChart3, Globe, ArrowUpRight,
+  BarChart3, Globe, ArrowUpRight, Activity,
 } from 'lucide-react'
 import { cookies } from 'next/headers'
 import type { CRMLeadIntelligence, CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
@@ -32,10 +32,13 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       landing_slug: string | null; lead_code: string | null;
       utm_source: string | null; utm_campaign: string | null; utm_id: string | null;
       last_contact_at: string | null; snooze_until: string | null;
+      behaviour_score: number | null; buyer_intent: string | null;
+      purchase_probability: number | null; budget_confidence: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
-              utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text
+              utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text,
+              behaviour_score, buyer_intent, purchase_probability, budget_confidence
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -58,6 +61,8 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
       viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
       leadCode: r.lead_code ?? null, snoozeUntil: r.snooze_until ?? null,
+      behaviourScore: r.behaviour_score, buyerIntent: r.buyer_intent,
+      purchaseProbability: r.purchase_probability, budgetConfidence: r.budget_confidence,
     } as unknown as CRMLeadIntelligence
   } catch { return null }
 }
@@ -234,6 +239,44 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 {lead.duplicateRisk && <li className="text-sm text-red-200/80">{t('crm.duplicateRiskMsg')}</li>}
                 {lead.wrongNumberRisk && <li className="text-sm text-red-200/80">{t('crm.wrongNumberRiskMsg')}</li>}
               </ul>
+            </div>
+          )}
+
+          {/* Layer 8/9 — behavioural intelligence, read from the landing session.
+              Zero-protection: no session, no block — never a defaulted number. */}
+          {lead.behaviourScore !== null && lead.behaviourScore !== undefined && (
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-400">
+                <Activity className="h-3.5 w-3.5 text-gold" /> {t('crm.intelligence')}
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.behaviourScore')}</p>
+                  <p className="mt-0.5 text-lg font-semibold text-white">{lead.behaviourScore}<span className="text-xs text-slate-500"> / 100</span></p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <div className="h-full rounded-full bg-gold/70" style={{ width: `${lead.behaviourScore}%` }} />
+                  </div>
+                </div>
+                {lead.buyerIntent && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.buyerIntent')}</p>
+                    <p className="mt-0.5 text-sm font-medium text-white">{t(`crm.intent.${lead.buyerIntent}`)}</p>
+                  </div>
+                )}
+                {lead.purchaseProbability !== null && lead.purchaseProbability !== undefined && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.purchaseProbability')}</p>
+                    <p className="mt-0.5 text-lg font-semibold text-white">{lead.purchaseProbability}%</p>
+                  </div>
+                )}
+                {lead.budgetConfidence && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.budgetConfidence')}</p>
+                    <p className="mt-0.5 text-sm font-medium text-white">{t(`crm.budget.${lead.budgetConfidence}`)}</p>
+                  </div>
+                )}
+              </div>
+              <p className="mt-4 text-xs text-slate-500">{t('crm.intelligenceNote')}</p>
             </div>
           )}
 
