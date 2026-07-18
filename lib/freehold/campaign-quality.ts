@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 
 /**
  * Live lead-QUALITY score for a Meta campaign — computed from OUR CRM funnel
@@ -30,10 +31,10 @@ const WON = new Set(['converted', 'closed'])
 const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
 
 export async function getCampaignQuality(campaignId: string, campaignName: string): Promise<CampaignQuality> {
-  let rows: { status: string | null; blocked: boolean | null; phone: string | null }[] = []
+  let rows: { id: string; status: string | null; blocked: boolean | null; phone: string | null }[] = []
   try {
-    rows = await query<{ status: string | null; blocked: boolean | null; phone: string | null }>(
-      `SELECT status, blocked, phone
+    rows = await query<{ id: string; status: string | null; blocked: boolean | null; phone: string | null }>(
+      `SELECT id, status, blocked, phone
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
           AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
@@ -43,6 +44,13 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     // Never let a schema/DB hiccup break the campaign surface.
     rows = []
   }
+
+  // Layer 10 — a lead caught in a queue-purge burst (see training-integrity.ts)
+  // has an untrustworthy terminal status; drop it from the signal this
+  // campaign's quality score feeds into, rather than let it count as a real
+  // per-lead judgment.
+  const untrusted = await getUntrustedLeadIds().catch(() => new Set<string>())
+  if (untrusted.size > 0) rows = rows.filter((r) => !untrusted.has(r.id))
 
   const attributed = rows.length
   let reached = 0, qualified = 0, won = 0, junk = 0

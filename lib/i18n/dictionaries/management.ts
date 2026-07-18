@@ -14,6 +14,7 @@ export const management: Record<Locale, Dict> = {
     'mgmt.nav.deals': 'Deals',
     'mgmt.nav.roi': 'ROI',
     'mgmt.nav.reports': 'Reports',
+    'mgmt.nav.trainingIntegrity': 'Training Integrity',
 
     // ── Dashboard ──────────────────────────────────────────────
     'mgmt.greeting.morning': 'Good morning',
@@ -327,6 +328,21 @@ export const management: Record<Locale, Dict> = {
     'mgmt.events.noMatch': 'No events match your search.',
     'mgmt.events.noActivity': 'No activity yet.',
 
+    // ── Training integrity (Layer 10) ─────────────────────────
+    'mgmt.trainingIntegrity.title': 'Training Integrity',
+    'mgmt.trainingIntegrity.subtitle': 'Where the AI\'s targeting signal could be skewed by a fast batch of status changes',
+    'mgmt.trainingIntegrity.explainer': 'Campaign quality scoring and lookalike audiences learn from how leads close out — reached, qualified, won, or lost. When one person marks many leads lost or blocked in a short burst, those outcomes are excluded from that learning so a quick queue clear-out can\'t teach the system the wrong lesson. This is not a performance flag on anyone — it only protects the data.',
+    'mgmt.trainingIntegrity.loading': 'Checking the last 90 days…',
+    'mgmt.trainingIntegrity.noBursts': 'No bursts detected in the last 90 days — every closed-out lead is counting normally toward campaign quality and audiences.',
+    'mgmt.trainingIntegrity.statBursts': 'Bursts detected',
+    'mgmt.trainingIntegrity.statExcluded': 'Leads excluded',
+    'mgmt.trainingIntegrity.statActors': 'People involved',
+    'mgmt.trainingIntegrity.lookback': 'Last 90 days',
+    'mgmt.trainingIntegrity.burstsTitle': 'Detected bursts',
+    'mgmt.trainingIntegrity.burstLine': '{count} leads marked lost or blocked within {minutes} minutes',
+    'mgmt.trainingIntegrity.viewLead': 'View lead',
+    'mgmt.trainingIntegrity.notPunitive': 'Surfaced as information only — no action is taken against the people listed here.',
+
     // ── Reports ────────────────────────────────────────────────
     'mgmt.reports.title': 'Smart Reports',
     'mgmt.reports.subtitle': 'Executive intelligence · AI-powered insights · June 2026',
@@ -426,6 +442,7 @@ export const management: Record<Locale, Dict> = {
     'mgmt.nav.deals': 'الصفقات',
     'mgmt.nav.roi': 'العائد على الاستثمار',
     'mgmt.nav.reports': 'التقارير',
+    'mgmt.nav.trainingIntegrity': 'سلامة بيانات التدريب',
 
     // ── Dashboard ──────────────────────────────────────────────
     'mgmt.greeting.morning': 'صباح الخير',
@@ -728,6 +745,21 @@ export const management: Record<Locale, Dict> = {
     'mgmt.events.noMatch': 'لا توجد أحداث تطابق بحثك.',
     'mgmt.events.noActivity': 'لا يوجد نشاط بعد.',
 
+    // ── سلامة بيانات التدريب (الطبقة 10) ──────────────────────
+    'mgmt.trainingIntegrity.title': 'سلامة بيانات التدريب',
+    'mgmt.trainingIntegrity.subtitle': 'أين يمكن أن تتأثر إشارة الاستهداف لدى الذكاء الاصطناعي بدفعة سريعة من تغييرات الحالة',
+    'mgmt.trainingIntegrity.explainer': 'يتعلم تقييم جودة الحملات والجماهير المشابهة من طريقة إغلاق العملاء المحتملين — تم الوصول إليهم، تأهلوا، فازوا، أو خسروا. عندما يقوم شخص واحد بوضع علامة "خسارة" أو "محظور" على عدد كبير من العملاء المحتملين في فترة قصيرة، يتم استبعاد هذه النتائج من عملية التعلم حتى لا تُعلّم عملية تنظيف سريعة للطابور النظام درساً خاطئاً. هذا ليس علامة أداء على أي شخص — إنه يحمي البيانات فقط.',
+    'mgmt.trainingIntegrity.loading': 'جارٍ فحص آخر 90 يومًا…',
+    'mgmt.trainingIntegrity.noBursts': 'لم يتم رصد أي دفعات في آخر 90 يومًا — كل عميل محتمل مغلق يُحتسب بشكل طبيعي ضمن جودة الحملات والجماهير.',
+    'mgmt.trainingIntegrity.statBursts': 'الدفعات المرصودة',
+    'mgmt.trainingIntegrity.statExcluded': 'العملاء المستبعدون',
+    'mgmt.trainingIntegrity.statActors': 'الأشخاص المعنيون',
+    'mgmt.trainingIntegrity.lookback': 'آخر 90 يومًا',
+    'mgmt.trainingIntegrity.burstsTitle': 'الدفعات المرصودة',
+    'mgmt.trainingIntegrity.burstLine': 'تم وضع علامة خسارة أو حظر على {count} عميل محتمل خلال {minutes} دقيقة',
+    'mgmt.trainingIntegrity.viewLead': 'عرض العميل المحتمل',
+    'mgmt.trainingIntegrity.notPunitive': 'تُعرض كمعلومة فقط — لا يُتخذ أي إجراء بحق الأشخاص المذكورين هنا.',
+
     // ── Reports ────────────────────────────────────────────────
     'mgmt.reports.title': 'التقارير الذكية',
     'mgmt.reports.subtitle': 'ذكاء تنفيذي · رؤى مدعومة بالذكاء الاصطناعي · يونيو 2026',
@@ -821,6 +853,7 @@ export const management: Record<Locale, Dict> = {
     'mgmt.nav.deals': 'Сделки',
     'mgmt.nav.roi': 'ROI',
     'mgmt.nav.reports': 'Отчёты',
+    'mgmt.nav.trainingIntegrity': 'Целостность обучающих данных',
 
     // ── Dashboard ──────────────────────────────────────────────
     'mgmt.greeting.morning': 'Доброе утро',
@@ -1122,6 +1155,21 @@ export const management: Record<Locale, Dict> = {
     'mgmt.events.loading': 'Загрузка активности…',
     'mgmt.events.noMatch': 'Нет событий по вашему запросу.',
     'mgmt.events.noActivity': 'Пока нет активности.',
+
+    // ── Целостность обучающих данных (уровень 10) ─────────────
+    'mgmt.trainingIntegrity.title': 'Целостность обучающих данных',
+    'mgmt.trainingIntegrity.subtitle': 'Где сигнал таргетинга ИИ может исказиться из-за быстрой серии смен статусов',
+    'mgmt.trainingIntegrity.explainer': 'Оценка качества кампаний и похожие аудитории обучаются на том, как закрываются лиды — охвачен, квалифицирован, выигран или потерян. Если один человек за короткое время помечает много лидов как потерянные или заблокированные, эти исходы исключаются из обучения, чтобы быстрая чистка очереди не научила систему неверному выводу. Это не оценка чьей-либо работы — это лишь защита данных.',
+    'mgmt.trainingIntegrity.loading': 'Проверка последних 90 дней…',
+    'mgmt.trainingIntegrity.noBursts': 'За последние 90 дней всплесков не обнаружено — каждый закрытый лид учитывается как обычно в качестве кампаний и аудиториях.',
+    'mgmt.trainingIntegrity.statBursts': 'Обнаружено всплесков',
+    'mgmt.trainingIntegrity.statExcluded': 'Исключено лидов',
+    'mgmt.trainingIntegrity.statActors': 'Участников',
+    'mgmt.trainingIntegrity.lookback': 'Последние 90 дней',
+    'mgmt.trainingIntegrity.burstsTitle': 'Обнаруженные всплески',
+    'mgmt.trainingIntegrity.burstLine': '{count} лидов помечены как потерянные или заблокированные за {minutes} минут',
+    'mgmt.trainingIntegrity.viewLead': 'Открыть лида',
+    'mgmt.trainingIntegrity.notPunitive': 'Показано только для сведения — никаких действий в отношении указанных здесь людей не предпринимается.',
 
     // ── Reports ────────────────────────────────────────────────
     'mgmt.reports.title': 'Умные отчёты',
