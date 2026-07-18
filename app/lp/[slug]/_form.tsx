@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
-import { trackConversion, collectUtm } from './_tracker'
+import { trackConversion, collectUtm, getSessionId } from './_tracker'
 import type { LpPalette } from '@/lib/landing-theme'
 
 interface LeadFormProps {
@@ -53,6 +53,9 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
           // so the CRM lead links back to the ad that produced it.
           utm: collectUtm(),
           referrer: typeof document !== 'undefined' ? document.referrer : '',
+          // Links this lead to its landing-page session so the behaviour
+          // score computed from that session travels with it.
+          sessionId: getSessionId(),
         }),
       })
       const payload = await res.json()

@@ -37,25 +37,88 @@ export function collectUtm(): Record<string, string> {
 
 export function Tracker({ slug, projectSlug, metaPixelId, googleTagId, googleConversionId, tiktokPixelId }: TrackerProps) {
   useEffect(() => {
-    // Internal page_view
     const utm = collectUtm()
-    fetch('/api/lp-analytics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        landingSlug: slug,
-        projectSlug,
-        eventName: 'page_view',
-        path: window.location.pathname,
-        referrer: document.referrer,
-        sessionId: getSessionId(),
-        utm,
-        device: {
-          ua: navigator.userAgent.slice(0, 200),
-          mobile: /Mobi|Android/i.test(navigator.userAgent),
-        },
-      }),
-    }).catch(() => null)
+    // One sender for every internal event — same endpoint, same shape.
+    // keepalive so late events (deep scroll, long dwell) survive navigation.
+    const send = (eventName: string, eventValue?: string) =>
+      fetch('/api/lp-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          landingSlug: slug,
+          projectSlug,
+          eventName,
+          eventValue: eventValue ?? null,
+          path: window.location.pathname,
+          referrer: document.referrer,
+          sessionId: getSessionId(),
+          utm,
+          device: {
+            ua: navigator.userAgent.slice(0, 200),
+            mobile: /Mobi|Android/i.test(navigator.userAgent),
+          },
+        }),
+      }).catch(() => null)
+
+    send('page_view')
+
+    // ── Behavioural observation ──────────────────────────────────────────
+    // Qualification begins before the form is submitted — these are the
+    // events the lead's behaviour score is computed from at capture. Each
+    // signal fires once per session per milestone.
+    const fired = new Set<string>()
+    const once = (key: string, name: string, value?: string) => {
+      if (fired.has(key)) return
+      fired.add(key)
+      send(name, value)
+    }
+
+    // Scroll depth — 25 / 50 / 75 / 100
+    const onScroll = () => {
+      const doc = document.documentElement
+      const max = doc.scrollHeight - window.innerHeight
+      if (max <= 0) return
+      const pct = Math.round((window.scrollY / max) * 100)
+      for (const m of [25, 50, 75, 100]) {
+        if (pct >= m) once(`scroll_${m}`, 'scroll_depth', String(m))
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    // Dwell — 15s / 45s / 120s of page age
+    const timers = [15, 45, 120].map((sec) =>
+      window.setTimeout(() => once(`dwell_${sec}`, 'dwell', String(sec)), sec * 1000),
+    )
+
+    // Interaction — delegated: WhatsApp / call / brochure / gallery / section
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.('a, button, img') as HTMLElement | null
+      if (!el) return
+      const href = (el.getAttribute('href') || '').toLowerCase()
+      if (href.includes('wa.me') || href.startsWith('https://api.whatsapp')) once('cta_wa', 'cta_click', 'whatsapp')
+      else if (href.startsWith('tel:')) once('cta_tel', 'cta_click', 'call')
+      else if (href.includes('.pdf') || (el.textContent || '').toLowerCase().includes('brochure')) once('cta_brochure', 'cta_click', 'brochure')
+      else if (el.tagName === 'IMG') once('gallery', 'gallery_view')
+      const section = el.closest('[data-section]')?.getAttribute('data-section')
+      if (section) once(`sec_${section}`, 'section_view', section)
+    }
+    document.addEventListener('click', onClick, { capture: true })
+
+    // Form start — first focus on any form field
+    const onFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) once('form_start', 'form_start')
+    }
+    document.addEventListener('focusin', onFocus)
+
+    const cleanup = () => {
+      window.removeEventListener('scroll', onScroll)
+      document.removeEventListener('click', onClick, { capture: true } as EventListenerOptions)
+      document.removeEventListener('focusin', onFocus)
+      timers.forEach((tid) => window.clearTimeout(tid))
+    }
+    window.addEventListener('pagehide', cleanup, { once: true })
 
     // Meta Pixel
     if (metaPixelId) {
@@ -98,7 +161,7 @@ function injectScript(code: string) {
   document.head.appendChild(el)
 }
 
-function getSessionId(): string {
+export function getSessionId(): string {
   try {
     let id = sessionStorage.getItem('_fp_sid')
     if (!id) {
