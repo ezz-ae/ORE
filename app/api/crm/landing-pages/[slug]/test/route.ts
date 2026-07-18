@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
+import { getLandingPageBySlug } from "@/lib/landing-pages"
+import { translateLandingContent } from "@/lib/landing-i18n"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -8,8 +10,10 @@ type CheckStatus = "pass" | "warn" | "fail"
 type Check = { id: string; label: string; status: CheckStatus; detail: string }
 
 // A landing-page pre-flight: fetch the live /lp/<slug> and run real checks on
-// the returned HTML + response. No score is invented — every result comes from
-// the actual page bytes, so a "pass" means the marker is really there.
+// the returned HTML + response, plus a real call into the same AR/RU
+// translation path the live page uses. No score is invented — every result
+// comes from the actual page bytes or an actual translation attempt, so a
+// "pass" means the marker (or the translation) is really there.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
@@ -96,6 +100,42 @@ export async function POST(
 
   // 11 — hero imagery
   push("hero", "Hero imagery", has(/<img|background-image|url\(/i), "Imagery present", "No images detected — the page may look empty")
+
+  // 12/13 — AI translation health. This calls the EXACT same
+  // translateLandingContent() the live /lp/<slug> page calls for AR/RU
+  // visitors. That function has an honest fallback: on any failure (missing
+  // API key, a bad/short Gemini response, mismatched array length, etc.) it
+  // returns the ORIGINAL page content with an explicit `translated: false`
+  // flag. We read that flag directly rather than comparing object identity —
+  // translateLandingContent() caches its result per (slug, lang,
+  // content-hash), and a cache hit hands back the SAME cached object on every
+  // call, so an identity comparison against a freshly-fetched `page` would
+  // wrongly report "translated" as soon as the cache warms (e.g. a real
+  // visitor already loaded /lp/<slug>?lang=ar, or a second click of this same
+  // test). The `translated` flag survives caching because it's part of the
+  // cached value itself, not derived from comparing references across calls.
+  try {
+    const page = await getLandingPageBySlug(slug, { includeDraft: true })
+    if (!page) {
+      checks.push({ id: "ai-translate-ar", label: "AI translation (AR)", status: "warn", detail: "Could not load page content to verify translation" })
+      checks.push({ id: "ai-translate-ru", label: "AI translation (RU)", status: "warn", detail: "Could not load page content to verify translation" })
+    } else {
+      for (const [lang, name] of [["ar", "Arabic"], ["ru", "Russian"]] as const) {
+        const { translated } = await translateLandingContent(page, lang)
+        checks.push({
+          id: `ai-translate-${lang}`,
+          label: `AI translation (${lang.toUpperCase()})`,
+          status: translated ? "pass" : "fail",
+          detail: translated
+            ? `Gemini successfully translated this page's content into ${name}`
+            : `Gemini translation unavailable — this page is showing English content to ${name} visitors`,
+        })
+      }
+    }
+  } catch {
+    checks.push({ id: "ai-translate-ar", label: "AI translation (AR)", status: "warn", detail: "Translation check could not run" })
+    checks.push({ id: "ai-translate-ru", label: "AI translation (RU)", status: "warn", detail: "Translation check could not run" })
+  }
 
   const failed = checks.filter((c) => c.status === "fail").length
   const warned = checks.filter((c) => c.status === "warn").length

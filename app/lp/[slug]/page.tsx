@@ -1218,7 +1218,7 @@ export default async function LandingPage({
   // The template drives the page's atmosphere (Signature → lagoon palette).
   const palette = lpPalette(theme, page.template)
 
-  const localized = await translateLandingContent(page, lang)
+  const { page: localized } = await translateLandingContent(page, lang)
   const price = fmtAed(localized.project?.priceFromAed, L)
 
   return (

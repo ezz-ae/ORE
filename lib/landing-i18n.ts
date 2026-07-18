@@ -679,15 +679,22 @@ function rebuildPage(page: LandingPageData, translated: string[]): LandingPageDa
   return { ...page, title, subtitle, ctaText, sections, project }
 }
 
-const translationCache = new Map<string, Promise<LandingPageData>>()
+// The explicit signal callers get back alongside the (possibly-unchanged)
+// page. `translated` is derived from what actually happened inside
+// runTranslation — never from comparing object references — so it survives
+// the cache below intact: a cached "translation failed" result still reports
+// `translated: false` on every subsequent cache hit, not just the first.
+export type LandingTranslationResult = { page: LandingPageData; translated: boolean }
+
+const translationCache = new Map<string, Promise<LandingTranslationResult>>()
 
 async function runTranslation(
   page: LandingPageData,
   lang: Exclude<LpLang, "en">,
   originals: string[],
-): Promise<LandingPageData> {
+): Promise<LandingTranslationResult> {
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return page
+  if (!apiKey) return { page, translated: false }
   try {
     const prompt = `Translate each string in the following JSON array into ${LANG_NAMES[lang]}.
 Return ONLY a JSON array of translated strings with EXACTLY the same length and order as the input — element N of the output is the translation of element N of the input.
@@ -704,34 +711,39 @@ ${JSON.stringify(originals)}`
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
     const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim()
     const parsed = JSON.parse(cleaned) as unknown
-    if (!Array.isArray(parsed) || parsed.length !== originals.length) return page
-    if (!parsed.every((x) => typeof x === "string" && x.length > 0)) return page
-    return rebuildPage(page, parsed as string[])
+    if (!Array.isArray(parsed) || parsed.length !== originals.length) return { page, translated: false }
+    if (!parsed.every((x) => typeof x === "string" && x.length > 0)) return { page, translated: false }
+    return { page: rebuildPage(page, parsed as string[]), translated: true }
   } catch {
-    return page
+    return { page, translated: false }
   }
 }
 
 /**
  * Translate the dynamic content of a landing page to `lang`. English returns the
- * page unchanged. On any failure (missing key, Gemini error, bad output) the
- * ORIGINAL English page is returned — never blank or partial content. Result is
- * cached per (slug, lang, content-hash) with a single Gemini call max.
+ * page unchanged (translated: true — there's nothing to localize, so nothing
+ * can fail). On any failure (missing key, Gemini error, bad output) the
+ * ORIGINAL English page is returned — never blank or partial content — with
+ * `translated: false`. Result is cached per (slug, lang, content-hash) with a
+ * single Gemini call max; the `translated` flag is cached alongside the page
+ * so it stays an honest signal of what actually happened even on cache hits,
+ * instead of relying on object-identity comparisons that break once a cached
+ * (fresh-object) result is handed back on a second call.
  */
 export async function translateLandingContent(
   page: LandingPageData,
   lang: LpLang,
-): Promise<LandingPageData> {
-  if (lang === "en") return page
+): Promise<LandingTranslationResult> {
+  if (lang === "en") return { page, translated: true }
 
   const originals = collectPage(page)
-  if (!originals.length) return page
+  if (!originals.length) return { page, translated: true }
 
   const key = `${page.slug}:${lang}:${stableHash(originals.join(""))}`
   const cached = translationCache.get(key)
   if (cached) return cached
 
-  const promise = runTranslation(page, lang, originals).catch(() => page)
+  const promise = runTranslation(page, lang, originals).catch(() => ({ page, translated: false }))
   translationCache.set(key, promise)
   return promise
 }
