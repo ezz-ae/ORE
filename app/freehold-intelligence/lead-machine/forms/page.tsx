@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
-import { listLeadForms, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
 import { DemoNotice } from '@/components/freehold/demo-badge'
+import { FormsSyncControls } from './_sync'
 
 interface FormsResponse {
   forms: MetaLeadForm[]
@@ -13,7 +15,10 @@ interface FormsResponse {
 
 async function getForms(): Promise<FormsResponse> {
   try {
-    const forms = await listLeadForms()
+    // Meta's paginated list merged with locally-registered (platform-created)
+    // forms — Meta's list edge omits DRAFT forms, so without the merge a form
+    // created here could silently vanish from this page.
+    const forms = await listLeadFormsMerged()
     return { forms }
   } catch (err) {
     // Not connected → nothing fake: an empty list plus the connect notice.
@@ -23,10 +28,17 @@ async function getForms(): Promise<FormsResponse> {
   }
 }
 
-function statusConfig(s: string): { dot: string; text: string; badge: string; labelKey: string } {
+// Honest status rendering: only DELETED is red. DRAFT/PAUSED get an amber
+// "goes live when attached to a running ad" badge, and any status we don't
+// recognize renders neutral with Meta's raw text (labelKey null) — never
+// defaulting to "deleted".
+function statusConfig(s: string): { dot: string; text: string; badge: string; labelKey: string | null } {
   if (s === 'ACTIVE')   return { dot: 'bg-gold', text: 'text-gold', badge: 'border-gold/20 bg-gold/10', labelKey: 'lm.forms.status.active'   }
+  if (s === 'DRAFT' || s === 'PAUSED')
+    return                     { dot: 'bg-amber-400',   text: 'text-amber-300',  badge: 'border-amber-400/20 bg-amber-400/10',   labelKey: 'lm.forms.status.draft'    }
   if (s === 'ARCHIVED') return { dot: 'bg-gold',   text: 'text-[#F8E7AE]',  badge: 'border-gold/20 bg-gold/10',   labelKey: 'lm.forms.status.archived' }
-  return                       { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       labelKey: 'lm.forms.status.deleted'  }
+  if (s === 'DELETED')  return { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       labelKey: 'lm.forms.status.deleted'  }
+  return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-500/20 bg-slate-500/10',   labelKey: null                       }
 }
 
 export default async function FormsPage() {
@@ -66,6 +78,10 @@ export default async function FormsPage() {
           <Plus className="h-4 w-4" /> {t('lm.forms.newForm')}
         </Link>
       </div>
+
+      {/* Manual sync + real-time webhook health — lead ingestion must never
+          again depend invisibly on a cron env var being configured. */}
+      {!isConfigError && <FormsSyncControls />}
 
       {/* Config error */}
       {isConfigError && (
@@ -134,7 +150,7 @@ export default async function FormsPage() {
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${st.dot}`} />
                       <h3 className="text-sm font-semibold text-white group-hover:text-white truncate">{form.name}</h3>
-                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.badge} ${st.text}`}>{t(st.labelKey)}</span>
+                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.badge} ${st.text}`}>{st.labelKey ? t(st.labelKey) : form.status}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
                       <span className="flex items-center gap-1">

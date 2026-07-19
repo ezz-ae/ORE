@@ -6,6 +6,7 @@ import {
   setStoredMetaCreds,
   clearStoredMetaCreds,
 } from '@/lib/freehold/integration-credentials'
+import { subscribePageToLeadgenWebhook } from '@/lib/meta/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -72,7 +73,17 @@ export async function POST(req: NextRequest) {
       { accessToken, adAccountId: acct, pageId, pixelId: body.pixelId?.trim() || null },
       auth.user.email,
     )
-    return NextResponse.json({ ok: true, adAccountId: acct, accountName: data?.name ?? null })
+    // Subscribe the Page's leadgen webhook right at connect time — until now
+    // this only ever happened inside the CRON_SECRET-gated nightly job, so a
+    // misconfigured cron meant real-time lead push was never established at
+    // all. Best-effort: a subscribe failure must not fail the connect.
+    const leadgenSubscribed = await subscribePageToLeadgenWebhook()
+      .then(() => true)
+      .catch((error) => {
+        console.warn('[meta-credentials] leadgen webhook subscribe failed (non-fatal)', error)
+        return false
+      })
+    return NextResponse.json({ ok: true, adAccountId: acct, accountName: data?.name ?? null, leadgenSubscribed })
   } catch {
     return NextResponse.json({ error: 'Could not reach the Meta API to validate the token' }, { status: 502 })
   }

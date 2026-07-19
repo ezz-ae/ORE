@@ -112,6 +112,33 @@ async function apiFetch<T>(
   return json as T
 }
 
+/**
+ * Cursor-following variant of apiFetch for Graph edges that return
+ * `{ data, paging }` — apiFetch itself is untouched, so every existing caller
+ * keeps its exact behavior. Follows paging.cursors.after until Meta reports no
+ * next page or `maxItems` is reached (silent truncation at one page was hiding
+ * forms/leads past the first `limit`).
+ */
+async function apiFetchAllPages<T>(
+  path: string,
+  params: Record<string, string>,
+  maxItems: number,
+): Promise<T[]> {
+  const items: T[] = []
+  let after: string | undefined
+  while (items.length < maxItems) {
+    const res = await apiFetch<{
+      data: T[]
+      paging?: { cursors?: { after?: string }; next?: string }
+    }>(path, undefined, { ...params, ...(after ? { after } : {}) })
+    const batch = res.data ?? []
+    items.push(...batch)
+    after = res.paging?.cursors?.after
+    if (!res.paging?.next || !after || batch.length === 0) break
+  }
+  return items.length > maxItems ? items.slice(0, maxItems) : items
+}
+
 async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const { token } = await creds()
   const url = new URL(`${API_BASE}${path}`)
@@ -1261,11 +1288,12 @@ export async function listLeadForms(): Promise<MetaLeadForm[]> {
   // Lead-gen forms are a PAGE asset — the act_ ad-account edge does not exist
   // (Graph error subcode 33). The connected token must have a role on the page.
   const { pageId } = await creds()
-  const res = await apiFetch<{ data: MetaLeadForm[] }>(`/${pageId}/leadgen_forms`, undefined, {
+  // Follows pagination (capped at 200 forms) — one un-followed page of 50 was
+  // silently hiding every form past the first page.
+  return apiFetchAllPages<MetaLeadForm>(`/${pageId}/leadgen_forms`, {
     fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url',
     limit:  '50',
-  })
-  return res.data ?? []
+  }, 200)
 }
 
 // Conversion pixels on the ad account. Powers the campaign wizard's pixel
@@ -1353,6 +1381,24 @@ export async function subscribePageToLeadgenWebhook(): Promise<{ success: boolea
   return apiPost(`/${pageId}/subscribed_apps`, { subscribed_fields: 'leadgen' })
 }
 
+/**
+ * Whether real-time lead push is actually live: reads the Page's
+ * subscribed_apps edge and checks the `leadgen` field is among the
+ * subscribed fields for this app. This is the honest signal — a form can
+ * exist and collect leads on Meta while nothing ever reaches us because
+ * this subscription silently lapsed.
+ */
+export async function getLeadgenSubscriptionStatus(): Promise<{ subscribed: boolean }> {
+  const { pageId } = await creds()
+  const res = await apiFetch<{ data?: { subscribed_fields?: string[] }[] }>(
+    `/${pageId}/subscribed_apps`, undefined, { fields: 'subscribed_fields' },
+  )
+  const apps = Array.isArray((res as { data?: unknown }).data)
+    ? (res as { data: { subscribed_fields?: string[] }[] }).data
+    : []
+  return { subscribed: apps.some((a) => (a.subscribed_fields ?? []).includes('leadgen')) }
+}
+
 export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
   return apiFetch<MetaLeadForm>(`/${formId}`, undefined, {
     fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url,questions',
@@ -1370,7 +1416,9 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
 
   return apiPost(`/${pageId}/leadgen_forms`, {
     name:               payload.name,
-    locale:             'en_US',
+    // Optional per-form language (en_US / ar_AR / ru_RU) — defaults to the
+    // previous hardcoded en_US so omitting it changes nothing.
+    locale:             payload.locale ?? 'en_US',
     follow_up_action_url: payload.landingUrl,
     questions,
     privacy_policy: {
@@ -1395,11 +1443,12 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
 }
 
 export async function getFormLeads(formId: string): Promise<MetaFormLead[]> {
-  const res = await apiFetch<{ data: MetaFormLead[] }>(`/${formId}/leads`, undefined, {
+  // Follows pagination (capped at 1000 leads) — the old single 200-lead page
+  // undercounted any form that had converted more than 200 leads.
+  return apiFetchAllPages<MetaFormLead>(`/${formId}/leads`, {
     fields: 'id,created_time,field_data,ad_id,adset_id,campaign_id',
     limit:  '200',
-  })
-  return res.data ?? []
+  }, 1000)
 }
 
 // ─── Ad Set Updates ───────────────────────────────────────────────────────────

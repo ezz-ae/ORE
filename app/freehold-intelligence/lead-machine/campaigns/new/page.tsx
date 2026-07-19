@@ -607,10 +607,18 @@ export default function NewCampaignPage() {
   // attached to THIS ad immediately — the wizard and its state never unload.
   const [formPopupOpen, setFormPopupOpen] = useState(false)
   const [newFormName, setNewFormName] = useState('')
+  // Meta form locale for in-ad creation. Option labels are each language's
+  // own name, so they are intentionally not translated.
+  const FORM_LOCALES: { value: string; label: string }[] = [
+    { value: 'en_US', label: 'English' },
+    { value: 'ar_AR', label: 'العربية' },
+    { value: 'ru_RU', label: 'Русский' },
+  ]
+  const [newFormLocale, setNewFormLocale] = useState('en_US')
   const [formBusy, setFormBusy] = useState(false)
   const [dupBusyId, setDupBusyId] = useState<string | null>(null)
 
-  async function createFormPayload(name: string, questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }>) {
+  async function createFormPayload(name: string, questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }>, locale?: string) {
     const listing = listings.find((l) => l.id === form.listingId)
     const res = await fetch('/api/meta/forms', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -620,7 +628,8 @@ export default function NewCampaignPage() {
         listingName: listing?.projectName ?? name,
         landingUrl: form.landingUrl,
         questions,
-        privacyPolicyUrl: 'https://freholdintelligence.com/privacy',
+        privacyPolicyUrl: 'https://freeholdproperty.ae/privacy',
+        ...(locale ? { locale } : {}),
         thankYouTitle: t('pforms.default.thankYouTitle'),
         thankYouBody: t('pforms.default.thankYouBody'),
       }),
@@ -641,7 +650,7 @@ export default function NewCampaignPage() {
     if (!newFormName.trim() || formBusy) return
     setFormBusy(true)
     try {
-      const id = await createFormPayload(newFormName.trim(), [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }])
+      const id = await createFormPayload(newFormName.trim(), [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }], newFormLocale)
       attachForm(id, newFormName.trim())
     } catch (e) { toast.error(e instanceof Error ? e.message : t('pforms.error.createFailed')) }
     finally { setFormBusy(false) }
@@ -2220,6 +2229,12 @@ export default function NewCampaignPage() {
 
               <label className="mt-4 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lm.newCampaign.leadForm.nameLabel')}</label>
               <input value={newFormName} onChange={(e) => setNewFormName(e.target.value)} className={`${inputCls(!newFormName.trim())} mt-1`} />
+              <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('pforms.basics.language')}</label>
+              <select value={newFormLocale} onChange={(e) => setNewFormLocale(e.target.value)} className={`${inputCls()} mt-1`}>
+                {FORM_LOCALES.map((l) => (
+                  <option key={l.value} value={l.value}>{l.label}</option>
+                ))}
+              </select>
               <button type="button" onClick={createInlineForm} disabled={formBusy || !newFormName.trim()}
                 className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
                 {formBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('lm.newCampaign.leadForm.createAttach')}

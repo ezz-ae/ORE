@@ -130,10 +130,23 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   if (!form) return null
 
-  const statusColor = form.status === 'ACTIVE' ? 'text-gold' : 'text-slate-500'
-  // Same vocabulary as the forms list — never show raw Meta enums.
+  // Same vocabulary as the forms list. Only DELETED reads as deleted —
+  // DRAFT/PAUSED are amber "goes live when attached", and an unknown status
+  // shows Meta's raw text in neutral gray rather than being mislabeled.
+  const statusColor = form.status === 'ACTIVE' ? 'text-gold'
+    : form.status === 'DRAFT' || form.status === 'PAUSED' ? 'text-amber-300'
+    : form.status === 'DELETED' ? 'text-red-300'
+    : 'text-slate-500'
   const statusLabel = form.status === 'ACTIVE' ? t('lm.forms.status.active')
-    : form.status === 'ARCHIVED' ? t('lm.forms.status.archived') : t('lm.forms.status.deleted')
+    : form.status === 'DRAFT' || form.status === 'PAUSED' ? t('lm.forms.status.draft')
+    : form.status === 'ARCHIVED' ? t('lm.forms.status.archived')
+    : form.status === 'DELETED' ? t('lm.forms.status.deleted')
+    : form.status
+  // The stat tile needs a single word — the full draft explanation stays in
+  // the header line above.
+  const statusShort = form.status === 'DRAFT' || form.status === 'PAUSED'
+    ? t('lm.forms.status.draftShort')
+    : statusLabel
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -162,7 +175,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         {[
           { label: t('pforms.stat.totalLeads'),  value: form.leads_count ?? 0,        color: 'text-gold' },
           { label: t('pforms.stat.questions'),   value: form.questions?.length ?? '—', color: 'text-white'     },
-          { label: t('pforms.stat.status'),      value: form.status,                   color: statusColor      },
+          { label: t('pforms.stat.status'),      value: statusShort,                   color: statusColor      },
           { label: t('pforms.stat.syncedLeads'), value: leads.length,                  color: 'text-white'     },
         ].map((s) => (
           <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4 text-center">

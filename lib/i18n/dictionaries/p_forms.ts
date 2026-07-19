@@ -30,6 +30,7 @@ const en: Dict = {
   'pforms.basics.landingUrl': 'Landing page URL',
   'pforms.basics.landingUrlPlaceholder': 'https://… (used for thank-you redirect)',
   'pforms.basics.privacyUrl': 'Privacy policy URL',
+  'pforms.basics.language': 'Form language',
 
   // step 2 — questions
   'pforms.questions.standardFields': 'Standard fields',
@@ -112,14 +113,15 @@ const en: Dict = {
   'pforms.detail.loadFailed': 'Failed to load form',
   'pforms.detail.loadLeadsFailed': 'Failed to load leads',
 
-  // stats
-  'pforms.stat.totalLeads': 'Total leads',
+  // stats — "(Meta)" marks the lifetime number reported by Meta, so it can't
+  // be read as the same metric as the locally-synced list below it.
+  'pforms.stat.totalLeads': 'Total leads (Meta)',
   'pforms.stat.questions': 'Questions',
   'pforms.stat.status': 'Status',
   'pforms.stat.syncedLeads': 'Synced leads',
 
   // leads table
-  'pforms.leads.title': 'Lead submissions',
+  'pforms.leads.title': 'Latest synced leads',
   'pforms.leads.synced': '{n} synced',
   'pforms.leads.refresh': 'Refresh',
   'pforms.leads.exportCsv': 'Export CSV',
@@ -156,6 +158,7 @@ const ar: Dict = {
   'pforms.basics.landingUrl': 'رابط صفحة الهبوط',
   'pforms.basics.landingUrlPlaceholder': 'https://… (يُستخدم لإعادة التوجيه بعد الشكر)',
   'pforms.basics.privacyUrl': 'رابط سياسة الخصوصية',
+  'pforms.basics.language': 'لغة النموذج',
 
   'pforms.questions.standardFields': 'الحقول القياسية',
   'pforms.questions.required': 'مطلوب',
@@ -226,12 +229,12 @@ const ar: Dict = {
   'pforms.detail.loadFailed': 'تعذّر تحميل النموذج',
   'pforms.detail.loadLeadsFailed': 'تعذّر تحميل العملاء المحتملين',
 
-  'pforms.stat.totalLeads': 'إجمالي العملاء المحتملين',
+  'pforms.stat.totalLeads': 'إجمالي العملاء المحتملين (Meta)',
   'pforms.stat.questions': 'الأسئلة',
   'pforms.stat.status': 'الحالة',
   'pforms.stat.syncedLeads': 'العملاء المتزامنون',
 
-  'pforms.leads.title': 'إرساليات العملاء المحتملين',
+  'pforms.leads.title': 'أحدث العملاء المحتملين المتزامنين',
   'pforms.leads.synced': '{n} متزامن',
   'pforms.leads.refresh': 'تحديث',
   'pforms.leads.exportCsv': 'تصدير CSV',
@@ -267,6 +270,7 @@ const ru: Dict = {
   'pforms.basics.landingUrl': 'URL лендинга',
   'pforms.basics.landingUrlPlaceholder': 'https://… (для перенаправления после благодарности)',
   'pforms.basics.privacyUrl': 'URL политики конфиденциальности',
+  'pforms.basics.language': 'Язык формы',
 
   'pforms.questions.standardFields': 'Стандартные поля',
   'pforms.questions.required': 'Обязательно',
@@ -337,12 +341,12 @@ const ru: Dict = {
   'pforms.detail.loadFailed': 'Не удалось загрузить форму',
   'pforms.detail.loadLeadsFailed': 'Не удалось загрузить лиды',
 
-  'pforms.stat.totalLeads': 'Всего лидов',
+  'pforms.stat.totalLeads': 'Всего лидов (Meta)',
   'pforms.stat.questions': 'Вопросы',
   'pforms.stat.status': 'Статус',
   'pforms.stat.syncedLeads': 'Синхронизировано лидов',
 
-  'pforms.leads.title': 'Отправленные лиды',
+  'pforms.leads.title': 'Последние синхронизированные лиды',
   'pforms.leads.synced': 'Синхронизировано: {n}',
   'pforms.leads.refresh': 'Обновить',
   'pforms.leads.exportCsv': 'Экспорт CSV',
