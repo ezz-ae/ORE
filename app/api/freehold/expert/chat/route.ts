@@ -149,7 +149,11 @@ function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
   if (!parsed || typeof parsed !== 'object') return null
   const obj = parsed as { blocks?: ExpertBlock[]; type?: string }
   if (Array.isArray(obj.blocks) && obj.blocks.length > 0) {
-    const arr = obj.blocks.filter((b) => b && typeof b === 'object' && 'type' in b)
+    // Drop blank text blocks — a {"blocks":[{"type":"text","content":""}]}
+    // reply otherwise renders as a naked tool-chip bubble with no answer.
+    const arr = obj.blocks.filter((b) =>
+      b && typeof b === 'object' && 'type' in b &&
+      !((b as { type?: string }).type === 'text' && !String((b as { content?: unknown }).content ?? '').trim()))
     if (arr.length > 0) return arr
   }
   // Tolerate a BARE block (`{"type":"landing",…}`) or a bare array — models
@@ -274,6 +278,13 @@ export async function POST(request: NextRequest) {
       ? `\n\nThe user has attached ${ref.kind.toUpperCase()} id="${ref.id}" ("${ref.label ?? ref.id}") as the subject of this turn. Call the matching lookup tool with this EXACT id — do not search by name.`
       : ''
 
+    // What the user can currently SEE — a text snapshot of their open page,
+    // captured client-side at send time. Without it the model only knows the
+    // URL and reads as "unaware of the page".
+    const pageGuidance = typeof (body.context as Record<string, unknown> | undefined)?.pageContent === 'string'
+      ? `\n\ncontext.pageContent is the TEXT CURRENTLY VISIBLE on the user's screen (their open page). When the user says "this campaign", "this offer", "the page", or similar, resolve it from context.pageContent first — they expect you to see what they see.`
+      : ''
+
     // Supervisor-Worker router: the composer's explicit mode chip wins;
     // otherwise the supervisor detects the lane from the message's intent
     // verbs (sync/nurture/debug/…) and swaps in that worker's prompt.
@@ -311,7 +322,7 @@ Tools marked ⚠destructive change live campaigns/money/content: set "confirm": 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
 
-    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
+    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
     // Behind EXPERT_USE_AI_SDK: the same guidance, but tools are called
     // natively by the AI SDK (no JSON tool_call protocol). The confirm rule and
@@ -321,10 +332,13 @@ Your tools:${renderToolDocs(tools)}`
 YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
 Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
-    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
+    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
 
     let raw: string | undefined
     const toolsUsed: string[] = []
+    // Human-readable one-liners of real tool results this turn — shared by the
+    // legacy loop's limit reply AND the grounded never-empty fallback below.
+    const resultNotes: string[] = []
     let sdkError: string | null = null
 
     if (process.env.EXPERT_USE_AI_SDK === '1' && sessionUser) {
@@ -365,7 +379,6 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
       // JSON was being persisted into the session and poisoning the next turn
       // (the "repeated tool call without TOOL_RESULT" failure on "continue").
       const MAX_TOOLS_PER_TURN = 5
-      const resultNotes: string[] = []
       const seenCalls = new Set<string>()
       const limitReply = () =>
         JSON.stringify({
@@ -417,7 +430,20 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
       if (tools.length > 0 && parseToolCall(raw, toolNames)) raw = limitReply()
     }
 
-    const blocks = parseBlocks(raw ?? '')
+    let blocks = parseBlocks(raw ?? '')
+    // Never end a turn with tool chips and no answer: if the model executed
+    // real tools but produced no meaningful text, answer with what actually
+    // happened (real results — never invented) and invite a follow-up.
+    const meaningless = blocks === REPHRASE_FALLBACK ||
+      blocks.every((b) => b.type === 'text' && !String((b as { content?: unknown }).content ?? '').trim())
+    if (meaningless && toolsUsed.length > 0) {
+      blocks = [{
+        type: 'text',
+        content: resultNotes.length
+          ? `Here is what I did:\n${resultNotes.join('\n')}\n\nI could not finish a full answer from that — tell me what to do next with these results.`
+          : `I ran ${toolsUsed.length} action(s) (${Array.from(new Set(toolsUsed)).join(', ')}) but could not finish a full answer. Ask me to continue, or rephrase what you need.`,
+      }]
+    }
     // Persist the turn to the account's session so nothing is lost on reload —
     // and return the (possibly newly created) session id to the client.
     const persistedId = sessionUser

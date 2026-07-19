@@ -41,6 +41,67 @@ function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
 
 type Message = { role: 'user'; content: string; ref?: ExpertContextRef } | { role: 'assistant'; blocks: ExpertBlock[]; toolsUsed?: string[] }
 
+// Friendly, localized labels for the "Actions taken" pills — the raw tool
+// identifiers (ads_list_ads, creative_generate_image, …) read like the chat
+// is typing commands at itself. Every coordinator tool name maps to a key;
+// anything unmapped falls back to a de-underscored form. t() falls back to
+// the raw key on a miss, so only mapped names go through it.
+const TOOL_LABEL_KEYS: Record<string, string> = {
+  ads_list_campaigns: 'expert.tool.adsListCampaigns',
+  ads_list_adsets: 'expert.tool.adsListAdsets',
+  ads_list_ads: 'expert.tool.adsListAds',
+  ads_list_rules: 'expert.tool.adsListRules',
+  ads_campaign_insights: 'expert.tool.adsCampaignInsights',
+  ads_campaign_quality: 'expert.tool.adsCampaignQuality',
+  ads_data_pool_status: 'expert.tool.adsDataPoolStatus',
+  ads_plan_campaign: 'expert.tool.adsPlanCampaign',
+  ads_launch_campaign: 'expert.tool.adsLaunchCampaign',
+  ads_edit_ad: 'expert.tool.adsEditAd',
+  ads_pause_campaign: 'expert.tool.adsPauseCampaign',
+  ads_resume_campaign: 'expert.tool.adsResumeCampaign',
+  ads_set_adset_budget: 'expert.tool.adsSetAdsetBudget',
+  ads_add_rule: 'expert.tool.adsAddRule',
+  audiences_list: 'expert.tool.audiencesList',
+  audiences_best_match: 'expert.tool.audiencesBestMatch',
+  creative_generate_image: 'expert.tool.creativeGenerateImage',
+  crm_search_leads: 'expert.tool.crmSearchLeads',
+  forms_create: 'expert.tool.formsCreate',
+  forms_list: 'expert.tool.formsList',
+  landing_get: 'expert.tool.landingGet',
+  landing_list: 'expert.tool.landingList',
+  library_list: 'expert.tool.libraryList',
+  research_save_note: 'expert.tool.researchSaveNote',
+}
+
+/** Dedupe repeated tool names into one pill with a ×N count. */
+function dedupeTools(names: string[]): { name: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const n of names) counts.set(n, (counts.get(n) ?? 0) + 1)
+  return Array.from(counts, ([name, count]) => ({ name, count }))
+}
+
+/**
+ * Snapshot of what the user is currently looking at, so the Expert genuinely
+ * knows the page's content instead of only its URL. Reads the workspace's own
+ * rendered text (never the chat panel itself — it's excluded by the
+ * data-expert-panel marker), trimmed and capped so it stays a grounding aid,
+ * not a token flood.
+ */
+function capturePageContent(): string {
+  if (typeof document === 'undefined') return ''
+  try {
+    const root =
+      document.querySelector<HTMLElement>('[data-page-content]') ??
+      document.querySelector<HTMLElement>('main') ??
+      document.body
+    const clone = root.cloneNode(true) as HTMLElement
+    clone.querySelectorAll('[data-expert-panel], script, style, noscript').forEach((el) => el.remove())
+    return (clone.innerText || '').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim().slice(0, 4000)
+  } catch {
+    return ''
+  }
+}
+
 type SessionSummary = { id: string; title: string; messageCount: number; updatedAt: string }
 
 type StoredTurn = { role: 'user' | 'assistant'; content?: string; blocks?: ExpertBlock[] }
@@ -501,6 +562,9 @@ export function ExpertChat() {
             ...(mode !== 'auto' ? { chatMode: mode } : {}),
             ...(att ? { attachment: att } : {}),
             ...(ref ? { ref } : {}),
+            // What the user is actually looking at — makes the Expert
+            // page-aware instead of page-URL-aware.
+            ...(() => { const pc = capturePageContent(); return pc ? { pageContent: pc } : {} })(),
           },
         }),
       })
@@ -607,6 +671,7 @@ export function ExpertChat() {
       <aside
         style={{ width }}
         data-coach="expert-chat"
+        data-expert-panel
         className="fixed inset-y-0 end-0 z-[200] flex h-full w-full flex-col border-s border-line bg-app md:static md:z-auto md:w-auto"
       >
         {/* Drag handle (desktop) */}
@@ -709,9 +774,10 @@ export function ExpertChat() {
                     {m.toolsUsed && m.toolsUsed.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('expert.toolsRan')}</span>
-                        {m.toolsUsed.map((name, k) => (
-                          <span key={`${name}-${k}`} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[10px] font-medium text-gold">
-                            {name.replace(/_/g, ' ')}
+                        {dedupeTools(m.toolsUsed).map(({ name, count }) => (
+                          <span key={name} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[10px] font-medium text-gold">
+                            {TOOL_LABEL_KEYS[name] ? t(TOOL_LABEL_KEYS[name]) : name.replace(/_/g, ' ')}
+                            {count > 1 ? ` ×${count}` : ''}
                           </span>
                         ))}
                       </div>
