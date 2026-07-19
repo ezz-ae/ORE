@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy, Lightbulb, RefreshCw } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { computeOverlaps } from '@/lib/meta/audience-overlap'
@@ -16,6 +16,31 @@ type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
 type Analysis = { working: string[]; blocking: string[]; actions: string[] }
 type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number }
+
+// AI Advisor (see /api/freehold/ads/advisor) — every value here is a real
+// fetched/computed number or a real Gemini suggestion grounded in them.
+type AdvisorArea = 'reach' | 'targeting' | 'placements' | 'budget' | 'creative' | 'quality'
+type AdvisorAction =
+  | { type: 'set_budget'; adSetId: string; dailyBudgetAED: number }
+  | { type: 'pause_campaign' }
+  | { type: 'resume_campaign' }
+type AdvisorSuggestion = { area: AdvisorArea; title: string; detail: string; evidence: string; action?: AdvisorAction | null }
+type AdvisorMetrics = {
+  impressions: number; clicks: number; spend: number; leads: number; linkClicks: number | null
+  ctrPct: number | null; cplAED: number | null; cpcAED: number | null; cpmAED: number | null
+  dailyBudgetAED: number | null; avgDailySpendAED: number | null; spendPacePct: number | null
+  daysElapsed: number | null; dateStart: string | null; dateStop: string | null
+}
+type AdvisorResult = { available: boolean; reason?: string; suggestions?: AdvisorSuggestion[]; metrics?: AdvisorMetrics; generatedAt?: string }
+
+const ADVISOR_AREA_TONES: Record<AdvisorArea, string> = {
+  reach: 'border-sky-400/30 bg-sky-400/10 text-sky-300',
+  targeting: 'border-violet-400/30 bg-violet-400/10 text-violet-300',
+  placements: 'border-amber-400/30 bg-amber-400/10 text-amber-300',
+  budget: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+  creative: 'border-rose-400/30 bg-rose-400/10 text-rose-300',
+  quality: 'border-gold/30 bg-gold/10 text-gold',
+}
 
 const fmtAED = (n: number) => `AED ${n.toLocaleString()}`
 const scoreColor = (s: number) => (s >= 80 ? '#34D399' : s >= 60 ? '#D4AF37' : s >= 40 ? '#FBBF24' : '#F87171')
@@ -70,9 +95,17 @@ export default function CampaignCommandPage() {
   const [form, setForm] = useState<{ metric: RuleMetric; operator: RuleOperator; threshold: string; action: RuleAction; actionValue: string }>({
     metric: 'quality', operator: 'lt', threshold: '60', action: 'pause', actionValue: '200',
   })
+  const [advisor, setAdvisor] = useState<AdvisorResult | null>(null)
+  const [advisorBusy, setAdvisorBusy] = useState(false)
+  const [advisorError, setAdvisorError] = useState(false)
+  const [advisorAutoRan, setAdvisorAutoRan] = useState(false)
+  const [advisorApplying, setAdvisorApplying] = useState<number | null>(null)
+  const [syncBusy, setSyncBusy] = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    // silent = refresh in place (Sync / after an accepted advisor action)
+    // without flashing the whole page back to its loading spinner.
+    if (!opts?.silent) setLoading(true)
     try {
       const res = await fetch(`/api/meta/campaigns/${encodeURIComponent(id)}`, { cache: 'no-store' })
       if (res.status === 404) { setNotFound(true); return }
@@ -106,6 +139,98 @@ export default function CampaignCommandPage() {
 
   const overlaps = useMemo(() => (data ? computeOverlaps(data.adSets) : []), [data])
   const active = data?.campaign.status === 'ACTIVE'
+
+  // ── AI Advisor ──────────────────────────────────────────────────────────────
+  const campaignName = data?.campaign.name ?? ''
+  const runAdvisor = useCallback(async () => {
+    if (!id) return
+    setAdvisorBusy(true); setAdvisorError(false)
+    try {
+      const res = await fetch('/api/freehold/ads/advisor', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId: id, campaignName }),
+      })
+      const d = (await res.json().catch(() => null)) as AdvisorResult | null
+      if (!res.ok || !d || typeof d.available !== 'boolean') { setAdvisor(null); setAdvisorError(true); return }
+      setAdvisor(d)
+    } catch { setAdvisor(null); setAdvisorError(true) } finally { setAdvisorBusy(false) }
+  }, [id, campaignName])
+
+  // Auto-run once on load — only for ACTIVE (delivering) campaigns; a demo
+  // campaign has no live Meta data so the button stays manual there.
+  useEffect(() => {
+    if (!data || data.demo || data.campaign.status !== 'ACTIVE' || advisorAutoRan) return
+    setAdvisorAutoRan(true)
+    runAdvisor()
+  }, [data, advisorAutoRan, runAdvisor])
+
+  // Accept a suggestion's validated action through the page's EXISTING
+  // mutation handlers (setStatus / setAdSetBudget) — no new write path.
+  async function acceptSuggestion(s: AdvisorSuggestion, idx: number) {
+    const act = s.action
+    if (!act || advisorApplying !== null) return
+    setAdvisorApplying(idx)
+    try {
+      let ok = false
+      if (act.type === 'pause_campaign') ok = await setStatus('PAUSED')
+      else if (act.type === 'resume_campaign') ok = await setStatus('ACTIVE')
+      else if (act.type === 'set_budget') {
+        const adSet = data?.adSets.find((a) => a.id === act.adSetId)
+        if (adSet) ok = await setAdSetBudget(adSet, act.dailyBudgetAED)
+      }
+      if (ok) {
+        // Applied — drop the suggestion and refresh the campaign data in place.
+        setAdvisor((a) => (a?.suggestions ? { ...a, suggestions: a.suggestions.filter((_, i) => i !== idx) } : a))
+        await load({ silent: true })
+      }
+    } finally { setAdvisorApplying(null) }
+  }
+
+  // Sync: re-pull everything fresh from Meta + CRM (the page's own loader),
+  // then re-run the advisor analysis on the fresh numbers.
+  async function syncAdvisor() {
+    if (syncBusy || advisorBusy) return
+    setSyncBusy(true)
+    try {
+      await load({ silent: true })
+      await runAdvisor()
+    } finally { setSyncBusy(false) }
+  }
+
+  // The unified panel's single analyse control runs BOTH the refiner summary
+  // and the advisor suggestions; each guards its own busy flag.
+  function analyseAll() {
+    runRefine()
+    runAdvisor()
+  }
+
+  function discussSuggestion(s: AdvisorSuggestion) {
+    if (!data) return
+    sendToExpert(
+      t('lm.cmd.advisorDiscussPrompt', {
+        name: data.campaign.name,
+        area: t(`lm.cmd.advisorArea.${s.area}`),
+        title: s.title,
+        detail: s.detail,
+        evidence: s.evidence || '—',
+      }),
+      { kind: 'campaign', id, label: data.campaign.name, href: `/freehold-intelligence/ads-live/meta/${id}` },
+    )
+  }
+
+  // Only metrics the response genuinely carries become chips — no invented rows.
+  function advisorChips(m: AdvisorMetrics): { label: string; value: string }[] {
+    const chips: { label: string; value: string }[] = []
+    if (m.spend > 0) chips.push({ label: t('lm.meta.kpi.spend'), value: fmtAED(Math.round(m.spend)) })
+    if (m.impressions > 0) chips.push({ label: t('lm.meta.kpi.impressions'), value: m.impressions.toLocaleString() })
+    if (m.ctrPct !== null) chips.push({ label: t('lm.meta.kpi.ctr'), value: `${m.ctrPct}%` })
+    if (m.leads > 0) chips.push({ label: t('lm.meta.kpi.leads'), value: String(m.leads) })
+    if (m.cplAED !== null) chips.push({ label: t('lm.meta.kpi.cpl'), value: fmtAED(m.cplAED) })
+    if (m.cpcAED !== null) chips.push({ label: t('lm.cmd.advisorKpi.cpc'), value: fmtAED(m.cpcAED) })
+    if (m.dailyBudgetAED) chips.push({ label: t('lm.cmd.dailyBudget'), value: fmtAED(m.dailyBudgetAED) })
+    if (m.spendPacePct !== null) chips.push({ label: t('lm.cmd.advisorPace'), value: t('lm.cmd.advisorPaceOfBudget', { pct: m.spendPacePct }) })
+    return chips
+  }
 
   async function setStatus(next: 'ACTIVE' | 'PAUSED'): Promise<boolean> {
     if (!data || statusBusy) return false
@@ -212,11 +337,13 @@ export default function CampaignCommandPage() {
     return `${cond} → ${act}`
   }
 
-  async function nudgeBudget(adSet: AdSetRow, dir: 'up' | 'down') {
-    if (budgetBusy) return
+  // The ONE ad-set budget mutation path — used by the manual +/- steppers AND
+  // by accepted advisor actions, so every budget change flows through the same
+  // optimistic update + PATCH + revert-on-failure.
+  async function setAdSetBudget(adSet: AdSetRow, target: number): Promise<boolean> {
+    if (budgetBusy) return false
     const current = Math.round(Number(adSet.daily_budget) / 100) || 0
-    const target = nextBudget(current, dir)
-    if (target === current) { toast.info(t('lm.cmd.budgetMin')); return }
+    if (target === current) return true
     setBudgetBusy(adSet.id)
     setData((d) => d ? { ...d, adSets: d.adSets.map((a) => a.id === adSet.id ? { ...a, daily_budget: String(target * 100) } : a) } : d)
     try {
@@ -226,10 +353,20 @@ export default function CampaignCommandPage() {
       const d = await res.json().catch(() => ({}))
       if (!res.ok || d.error) throw new Error(d.error || 'failed')
       toast.success(t('lm.cmd.budgetUpdated', { n: target }))
+      return true
     } catch {
       setData((dd) => dd ? { ...dd, adSets: dd.adSets.map((a) => a.id === adSet.id ? { ...a, daily_budget: String(current * 100) } : a) } : dd)
       toast.error(t('lm.cmd.budgetFailed'))
+      return false
     } finally { setBudgetBusy(null) }
+  }
+
+  async function nudgeBudget(adSet: AdSetRow, dir: 'up' | 'down') {
+    if (budgetBusy) return
+    const current = Math.round(Number(adSet.daily_budget) / 100) || 0
+    const target = nextBudget(current, dir)
+    if (target === current) { toast.info(t('lm.cmd.budgetMin')); return }
+    await setAdSetBudget(adSet, target)
   }
 
   function openInExpert() {
@@ -520,7 +657,9 @@ export default function CampaignCommandPage() {
         )}
       </section>
 
-      {/* Refiner — real AI analysis grounded in Meta metrics + our funnel + the landing */}
+      {/* Unified AI panel — the Refiner's working/blocking summary PLUS the
+          Advisor's area-tagged, evidence-cited suggestions (with safe one-click
+          actions where the numbers justify one). One AI card, not two. */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -535,21 +674,99 @@ export default function CampaignCommandPage() {
               <Copy className="h-3.5 w-3.5" /> {t('lm.cmd.copyInfo')}
             </button>
             <button type="button" onClick={openInExpert} className="text-xs text-slate-400 transition hover:text-white">{t('lm.cmd.openInExpert')}</button>
-            <button type="button" onClick={runRefine} disabled={refineBusy}
+            <button type="button" onClick={syncAdvisor} disabled={syncBusy || advisorBusy}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+              <RefreshCw className={`h-3.5 w-3.5 text-gold ${syncBusy ? 'animate-spin' : ''}`} /> {syncBusy ? t('lm.cmd.advisorSyncing') : t('lm.cmd.advisorSync')}
+            </button>
+            <button type="button" onClick={analyseAll} disabled={refineBusy || advisorBusy}
               className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
-              {refineBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {refineBusy ? t('lm.cmd.refining') : t('lm.cmd.refineCta')}
+              {refineBusy || advisorBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {refineBusy || advisorBusy ? t('lm.cmd.refining') : t('lm.cmd.refineCta')}
             </button>
           </div>
         </div>
+
+        {/* The REAL computed metrics the advisor's suggestions are grounded in. */}
+        {advisor?.metrics && advisorChips(advisor.metrics).length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {advisorChips(advisor.metrics).map((k) => (
+              <div key={k.label} className="rounded-lg border border-line bg-surface px-2.5 py-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-slate-500">{k.label}</span>
+                <span className="ms-2 text-xs font-semibold text-white">{k.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {analysis && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className={`mt-4 grid gap-3 ${advisor?.available && (advisor.suggestions?.length ?? 0) > 0 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
             <RefineCol icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} title={t('lm.cmd.refineWorking')} items={analysis.working} />
             <RefineCol icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-400" />} title={t('lm.cmd.refineBlocking')} items={analysis.blocking} />
-            <RefineCol icon={<ArrowRight className="h-3.5 w-3.5 text-gold" />} title={t('lm.cmd.refineActions')} items={analysis.actions} />
+            {/* The plain-string actions column is replaced by the richer
+                advisor suggestions below whenever those are available. */}
+            {!(advisor?.available && (advisor.suggestions?.length ?? 0) > 0) && (
+              <RefineCol icon={<ArrowRight className="h-3.5 w-3.5 text-gold" />} title={t('lm.cmd.refineActions')} items={analysis.actions} />
+            )}
           </div>
         )}
         {!analysis && analysisText && (
           <p className="mt-4 whitespace-pre-wrap rounded-xl border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-slate-300">{analysisText}</p>
+        )}
+
+        {/* Advisor — honest states only; never fabricated advice. */}
+        {advisorError && !advisorBusy && (
+          <p className="mt-4 text-sm text-rose-300">{t('lm.cmd.advisorFailed')}</p>
+        )}
+        {advisor && !advisor.available && !advisorBusy && (
+          <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-slate-400">
+            {advisor.reason === 'not_connected' ? t('lm.cmd.advisorNotConnected')
+              : advisor.reason === 'no_delivery' ? t('lm.cmd.advisorNoData')
+              : advisor.reason === 'no_ai_key' ? t('lm.cmd.advisorNoKey')
+              : t('lm.cmd.advisorAiError')}
+          </p>
+        )}
+        {advisor?.available && (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+              <Lightbulb className="h-3.5 w-3.5 text-gold" /> {t('lm.cmd.advisorSuggestions')}
+            </div>
+            {(advisor.suggestions?.length ?? 0) === 0 ? (
+              <p className="text-sm text-slate-400">{t('lm.cmd.advisorEmpty')}</p>
+            ) : (
+              <div className="space-y-2.5">
+                {(advisor.suggestions ?? []).map((s, i) => (
+                  <div key={`${s.area}-${i}`} className="rounded-xl border border-line bg-surface p-3.5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${ADVISOR_AREA_TONES[s.area]}`}>
+                            {t(`lm.cmd.advisorArea.${s.area}`)}
+                          </span>
+                          <span dir="auto" className="text-sm font-semibold text-slate-100">{s.title}</span>
+                        </div>
+                        <p dir="auto" className="mt-1.5 text-xs leading-relaxed text-slate-300">{s.detail}</p>
+                        {s.evidence && <p dir="auto" className="mt-1 text-[11px] leading-snug text-slate-500">{s.evidence}</p>}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {s.action && (
+                          <button type="button" onClick={() => acceptSuggestion(s, i)} disabled={advisorApplying !== null || statusBusy || !!budgetBusy}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+                            {advisorApplying === i ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('lm.cmd.advisorAccept')}
+                          </button>
+                        )}
+                        <button type="button" onClick={() => discussSuggestion(s)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-gold/30 hover:text-white">
+                          <MessageCircle className="h-3 w-3" /> {t('lm.cmd.advisorDiscuss')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {advisor.generatedAt && (
+              <p className="mt-2 text-[10px] text-slate-600">{t('lm.cmd.advisorGenerated', { time: new Date(advisor.generatedAt).toLocaleTimeString() })}</p>
+            )}
+          </div>
         )}
       </section>
 
