@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { SpacesNav } from '@/components/freehold/spaces-nav'
 import { MobileTabBar } from '@/components/freehold/mobile-tab-bar'
 import { ExpertChat } from '@/components/freehold/expert-chat'
+import { MachineVerdictNotifier } from '@/components/freehold/machine-verdict-notifier'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { BRAND } from '@/lib/freehold/brand'
 import { I18nProvider, useI18n } from '@/lib/i18n/provider'
@@ -51,6 +52,9 @@ function FreeholdShell({ children }: { children: React.ReactNode }) {
         </div>
         {/* Phone-only bottom tabs — the top spine hides on small screens */}
         <MobileTabBar />
+        {/* Ads Machine feedback questions — floats on the START side, opposite
+            the Toaster / What's-New popover (both on the end side). */}
+        <MachineVerdictNotifier />
       </CoachProvider>
       <Toaster
         theme="dark"

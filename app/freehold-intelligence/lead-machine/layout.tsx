@@ -7,7 +7,7 @@ import {
   Activity,
   BarChart3, Zap,
   Monitor, ClipboardList, Crosshair, Palette, Users,
-  Search, Radio,
+  Search, Radio, Bot,
   FileText, FileCheck, Shield,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
@@ -50,6 +50,7 @@ const MANAGER_NAV_SECTIONS = [
   {
     label: 'Across platforms',
     items: [
+      { label: 'Ads Machine',   href: '/freehold-intelligence/lead-machine/ads-machine',                 Icon: Bot         },
       { label: 'Live',          href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
       { label: 'Attribution',   href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
       { label: 'Optimizer',     href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
