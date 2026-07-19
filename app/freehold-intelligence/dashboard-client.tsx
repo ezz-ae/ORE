@@ -13,6 +13,7 @@ import { useSession } from '@/lib/freehold/use-session'
 import { Panel, PanelHeader } from '@/components/freehold/ui'
 import { useI18n } from '@/lib/i18n/provider'
 import { openWhatsNew } from '@/components/freehold/whats-new'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // ─── The hub is a briefing, not a menu ───────────────────────────────────────
 // The nav spine already switches apps, and the Expert already answers
@@ -160,7 +161,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
           name: c.name,
           active: c.status === 'ACTIVE',
           spend: Number(c.insights?.spend) || 0,
-          leads: (c.insights?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0),
+          leads: metaLeadCount(c.insights?.actions),
         }))
         setAds({
           connected: true,

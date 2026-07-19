@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Zap, TrendingDown, TrendingUp, PlugZap, ArrowUpRight, Loader2 } from 'lucide-react'
 import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // Campaign optimizer — ranks the REAL campaigns by cost-per-lead and points
 // budget from the least efficient to the most efficient. No seed budgets,
@@ -21,7 +22,7 @@ interface LiveCampaign {
 }
 
 const metaLeads = (insights?: { actions?: Array<{ action_type: string; value: string }> } | null) =>
-  (insights?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+  metaLeadCount(insights?.actions)
 
 export default function CampaignOptimizePage() {
   const t = useT()

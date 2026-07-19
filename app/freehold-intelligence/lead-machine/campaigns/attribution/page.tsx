@@ -9,6 +9,7 @@ import {
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // Attribution — REAL campaigns from the connected ad accounts, matched to the
 // REAL CRM leads they produced. No seed campaigns, no invented CPLs.
@@ -39,7 +40,7 @@ function platformStyle(p: string) {
 }
 
 const metaLeads = (insights?: { actions?: Array<{ action_type: string; value: string }> } | null) =>
-  (insights?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+  metaLeadCount(insights?.actions)
 
 export default function CampaignAttributionPage() {
   const t = useT()

@@ -325,6 +325,9 @@ export async function POST(request: NextRequest) {
 YOU ARE THE MARKETING COORDINATOR AGENT. You can execute REAL tools via your specialist agents. To call one, respond with ONLY this JSON (no blocks, no prose):
 {"tool_call": {"name": "<tool_name>", "args": { ... }}}
 After each call the conversation gains a TOOL_RESULT message; then either call another tool (max 5 per turn) or give your final answer in the normal {"blocks":[...]} format, grounded in the real results. NEVER invent or guess a tool result. NEVER repeat a call you already made this turn — its result is already in the conversation.
+DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. Need an ad set id? List the ad sets. Need the current budget? Read it from the listing or the page. Asking the user "please provide the ad set ID" when you have a list tool is a failure.
+If the target is unambiguous — the campaign has exactly one ad set, or the page shows exactly one campaign — act on it directly; do not ask "which one".
+When the user asks for a directional change without a number ("spend more", "lower the budget"), read the CURRENT value yourself and propose ONE concrete change (~20–30% in that direction, floor AED 50) as a one-click confirmation showing current → new. Never ask the user to supply the number.
 Tools marked ⚠destructive change live campaigns/money/content: set "confirm": true ONLY when the user's own latest message explicitly requests or confirms that exact action. Otherwise first answer with blocks that ask for confirmation (an "actions" block whose prompt states the exact action, e.g. "Yes — pause campaign X").
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
@@ -337,6 +340,7 @@ Your tools:${renderToolDocs(tools)}`
     const sdkToolGuidance = tools.length === 0 ? '' : `
 
 YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
+DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. If the target is unambiguous (one ad set, one campaign on the page), act on it directly. For a directional ask without a number ("spend more"), read the current value and propose ONE concrete change (~20–30%, floor AED 50) as a one-click confirmation showing current → new — never ask the user to supply the number.
 Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
     const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`

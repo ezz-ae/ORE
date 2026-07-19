@@ -11,6 +11,7 @@ import { computeOverlaps } from '@/lib/meta/audience-overlap'
 import type { MetaCampaign, MetaAdSet, MetaInsights, PlacementKey, PlacementCreativeOverride } from '@/lib/meta/types'
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/freehold/campaign-rules'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }[] }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
@@ -62,8 +63,7 @@ type LibImage = { id: string; title: string; url: string | null }
 const PLACEMENT_KEYS: PlacementKey[] = ['fbFeed', 'igFeed', 'igStory', 'fbStory', 'reels']
 
 function leadsFrom(insights: MetaInsights | null): number {
-  if (!insights?.actions) return 0
-  return insights.actions.filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+  return metaLeadCount(insights?.actions)
 }
 
 // Budget nudge scales with the current budget (±20%, rounded to AED 10, floor 50)

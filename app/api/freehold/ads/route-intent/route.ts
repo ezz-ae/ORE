@@ -9,12 +9,12 @@ import { readCampaignIntent } from '@/lib/meta/intent-reader'
 import { getCampaignInsights } from '@/lib/meta/client'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const metaLeads = (ins: MetaInsights | null) =>
-  (ins?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+const metaLeads = (ins: MetaInsights | null) => metaLeadCount(ins?.actions)
 
 // Advisory (no Meta writes): given a broker's intent, return the healthy action
 // the system WOULD take, and — for a budget move — how much of it the AI could

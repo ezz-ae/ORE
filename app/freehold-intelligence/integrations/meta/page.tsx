@@ -9,6 +9,7 @@ import {
   Megaphone, MousePointer, Zap, ChevronDown, ChevronUp,
   AlertTriangle, ExternalLink, Copy, Check,
 } from 'lucide-react'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // ─── Meta Graph API ────────────────────────────────────────────────────────────
 
@@ -95,10 +96,7 @@ function fmtMoney(cents: string | undefined, currency = 'AED') {
 }
 
 function leads(insight: Insight | null) {
-  if (!insight?.actions) return 0
-  return insight.actions
-    .filter((a) => a.action_type === 'lead' || a.action_type === 'offsite_conversion.fb_pixel_lead')
-    .reduce((s, a) => s + parseInt(a.value, 10), 0)
+  return metaLeadCount(insight?.actions)
 }
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string

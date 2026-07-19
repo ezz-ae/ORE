@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 interface Campaign {
   id: string
@@ -36,7 +37,7 @@ function fmtSpend(spend: string | undefined) {
 }
 
 function getLeads(campaign: Campaign) {
-  return campaign.insights?.actions?.find((a) => a.action_type === 'lead')?.value ?? '0'
+  return String(metaLeadCount(campaign.insights?.actions))
 }
 
 const FILTER_PILLS: { key: StatusFilter; labelKey: string }[] = [
