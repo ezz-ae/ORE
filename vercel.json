@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/sync-meta-leads",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/ads-machine",
+      "schedule": "0 4 * * *"
     }
   ]
 }
