@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 import Link from 'next/link'
 import { ArrowUpRight, Radio, TrendingDown, TrendingUp, PlugZap } from 'lucide-react'
 import { PageHeader, StatCard, Section, EmptyState } from '@/components/freehold/ui'
@@ -26,10 +27,7 @@ function fmtAed(n: number): string {
 // Sum Meta lead actions from an insights object.
 function metaLeads(insights: unknown): number {
   const actions = (insights as { actions?: { action_type: string; value: string }[] } | null)?.actions
-  if (!Array.isArray(actions)) return 0
-  return actions
-    .filter((a) => /lead/i.test(a.action_type))
-    .reduce((s, a) => s + (Number(a.value) || 0), 0)
+  return metaLeadCount(Array.isArray(actions) ? actions : null)
 }
 
 function UtilBar({ pct }: { pct: number }) {

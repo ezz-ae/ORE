@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { getCampaign, getCampaignInsights, listAdSets, MetaConfigError } from '@/lib/meta/client'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
@@ -80,7 +81,7 @@ function computeMetrics(campaign: MetaCampaign | null, insights: MetaInsights, a
   const impressions = Number(insights.impressions) || 0
   const clicks = Number(insights.clicks) || 0
   const spend = Number(insights.spend) || 0
-  const leads = actionSum(insights, (t) => t.includes('lead'))
+  const leads = metaLeadCount(insights.actions)
   const linkClicksRaw = actionSum(insights, (t) => t === 'link_click')
   const linkClicks = linkClicksRaw > 0 ? linkClicksRaw : null
 
