@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
-import { getFormLeads, listLeadForms } from '@/lib/meta/client'
+import { getFormLeads } from '@/lib/meta/client'
+import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
 import { handleNewLead } from '@/lib/automation/engine'
 
@@ -14,10 +15,28 @@ const FIELD_ALIASES: Record<string, 'name' | 'phone' | 'email'> = {
   email: 'email',
 }
 
+/**
+ * Map a Meta field key to a CRM contact slot. Exact aliases first (unchanged
+ * behavior), then tolerant matching on the normalized key — custom/localized
+ * question keys like "Phone number (WhatsApp)", "work-email" or
+ * "your_full_name" used to miss the exact table, making the lead look
+ * contact-less and silently dropping it from the CRM.
+ */
+function classifyFieldKey(rawKey: string): 'name' | 'phone' | 'email' | null {
+  const lower = rawKey.toLowerCase()
+  const exact = FIELD_ALIASES[lower]
+  if (exact) return exact
+  const norm = lower.replace(/[^a-z]/g, '')
+  if (/(phone|mobile|whatsapp|tel)/.test(norm)) return 'phone'
+  if (norm.includes('mail')) return 'email'
+  if (norm.includes('name')) return 'name'
+  return null
+}
+
 function extractContact(lead: MetaFormLead) {
   const contact: { name?: string; phone?: string; email?: string } = {}
   for (const field of lead.field_data ?? []) {
-    const key = FIELD_ALIASES[field.name?.toLowerCase?.() ?? '']
+    const key = classifyFieldKey(field.name ?? '')
     const value = field.values?.[0]?.trim()
     if (key && value && !contact[key]) contact[key] = value
   }
@@ -40,7 +59,15 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
   let synced = 0
   for (const lead of leads) {
     const contact = extractContact(lead)
-    if (!contact.phone && !contact.email) continue
+    if (!contact.phone && !contact.email) {
+      // A contact-less lead is unusable in the CRM — but the skip must be
+      // observable, not a silent undercount.
+      console.warn(
+        `[meta-leads] skipping lead ${lead.id} on form ${formId} — no phone/email found in field keys: ` +
+        (lead.field_data ?? []).map((f) => f.name).join(', '),
+      )
+      continue
+    }
     const inserted = await query<{ id: string }>(
       `INSERT INTO freehold_site_leads (
          id, name, phone, email, source, status, meta_lead_id, meta_form_id, created_at, updated_at
@@ -88,7 +115,10 @@ export async function syncAllMetaLeads(): Promise<{
   totalSynced: number
   perForm: Array<{ formId: string; formName: string; synced: number; error?: string }>
 }> {
-  const forms = await listLeadForms()
+  // Merged source (paginated Meta list + locally-registered draft forms) so
+  // the sweep covers every form we know about, not just Meta's first page.
+  // Registry entries confirmed deleted on Meta have no leads edge to poll.
+  const forms = (await listLeadFormsMerged()).filter((f) => f.status !== 'DELETED')
   const perForm: Array<{ formId: string; formName: string; synced: number; error?: string }> = []
   let totalSynced = 0
   for (const form of forms) {

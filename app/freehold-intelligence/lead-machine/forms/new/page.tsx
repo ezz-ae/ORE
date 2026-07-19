@@ -55,12 +55,21 @@ const CUSTOM_PRESETS: { key: string; labelKey: string; options: { value: string;
   },
 ]
 
+// Meta form locales the platform supports — the option labels are each
+// language's own name, so they are intentionally not translated.
+const FORM_LOCALES: { value: string; label: string }[] = [
+  { value: 'en_US', label: 'English' },
+  { value: 'ar_AR', label: 'العربية' },
+  { value: 'ru_RU', label: 'Русский' },
+]
+
 interface FormState {
   // Step 1
   listingId: string
   formName: string
   landingUrl: string
   privacyPolicyUrl: string
+  locale: string
   // Step 2
   selectedStandard: MetaFormQuestionType[]
   selectedCustom: string[]
@@ -74,7 +83,8 @@ function makeDefault(t: (key: string) => string): FormState {
     listingId: '',
     formName: '',
     landingUrl: '',
-    privacyPolicyUrl: 'https://freholdintelligence.com/privacy',
+    privacyPolicyUrl: 'https://freeholdproperty.ae/privacy',
+    locale: 'en_US',
     selectedStandard: ['FULL_NAME', 'PHONE'],
     selectedCustom: ['budget_range', 'buying_intent'],
     thankYouTitle: t('pforms.default.thankYouTitle'),
@@ -163,6 +173,7 @@ export default function NewFormPage() {
         landingUrl:        form.landingUrl,
         questions:         buildQuestions(),
         privacyPolicyUrl:  form.privacyPolicyUrl,
+        locale:            form.locale,
         thankYouTitle:     form.thankYouTitle || undefined,
         thankYouBody:      form.thankYouBody  || undefined,
       }
@@ -297,6 +308,19 @@ export default function NewFormPage() {
               onChange={(e) => setForm((p) => ({ ...p, privacyPolicyUrl: e.target.value }))}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.basics.language')}</label>
+            <select
+              value={form.locale}
+              onChange={(e) => setForm((p) => ({ ...p, locale: e.target.value }))}
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white outline-none focus:border-gold/40 transition"
+            >
+              {FORM_LOCALES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
           </div>
         </div>
       )}

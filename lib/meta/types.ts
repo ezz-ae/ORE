@@ -310,7 +310,11 @@ export interface MetaFormQuestion {
 export interface MetaLeadForm {
   id: string
   name: string
-  status: 'ACTIVE' | 'ARCHIVED' | 'DELETED'
+  // Meta also returns DRAFT (created but not yet attached to a live ad) and
+  // PAUSED — plus whatever it adds next. The fallback keeps unknown statuses
+  // representable so the UI can render them honestly instead of mislabeling
+  // them "deleted".
+  status: 'ACTIVE' | 'ARCHIVED' | 'DELETED' | 'DRAFT' | 'PAUSED' | (string & {})
   leads_count: number
   created_time: string
   locale?: string
@@ -336,6 +340,8 @@ export interface CreateLeadFormPayload {
   privacyPolicyUrl: string
   thankYouTitle?: string
   thankYouBody?: string
+  /** Meta form locale (en_US / ar_AR / ru_RU). Defaults to en_US when omitted. */
+  locale?: string
 }
 
 // ─── Creatives ────────────────────────────────────────────────────────────────
