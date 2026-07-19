@@ -26,9 +26,13 @@ export interface CampaignQuality {
   funnel: { key: 'reached' | 'qualified' | 'won' | 'junk'; count: number; pct: number }[]
 }
 
-const QUALIFIED = new Set(['qualified', 'viewing', 'negotiation', 'converted', 'closed'])
+/** CRM statuses that count as "qualified or deeper" — shared with the Ads
+ * Machine's verdict logic so both judge lead depth identically. */
+export const QUALIFIED_STATUSES = new Set(['qualified', 'viewing', 'negotiation', 'converted', 'closed'])
 const WON = new Set(['converted', 'closed'])
-const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
+/** An unusable phone (missing or too short to dial) — the "junk" half of the
+ * lost+badPhone signal. Exported for the Ads Machine's suggested verdicts. */
+export const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
 
 export async function getCampaignQuality(campaignId: string, campaignName: string): Promise<CampaignQuality> {
   let rows: { id: string; status: string | null; blocked: boolean | null; phone: string | null }[] = []
@@ -57,7 +61,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   for (const r of rows) {
     const s = r.status
     if (s && s !== 'new') reached++
-    if (s && QUALIFIED.has(s)) qualified++
+    if (s && QUALIFIED_STATUSES.has(s)) qualified++
     if (s && WON.has(s)) won++
     if (r.blocked || (s === 'lost' && badPhone(r.phone))) junk++
   }

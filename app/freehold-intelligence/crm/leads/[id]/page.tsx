@@ -15,6 +15,7 @@ import { getDealByLeadId } from '@/lib/deals'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getServerT } from '@/lib/i18n/server'
 import { LeadExpertStrip } from '@/components/freehold/lead-expert-strip'
+import { MachineVerdictLeadChip } from '@/components/freehold/machine-verdict-notifier'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page.
 // Brokers may only read their own leads — pass their brokerId to scope the query.
@@ -194,6 +195,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Ask the Expert about this lead */}
           <LeadExpertStrip id={lead.id} name={lead.name} />
+
+          {/* The Ads Machine's open feedback question about THIS lead, if the
+              viewer owns it (or is management) — answered inline. */}
+          <MachineVerdictLeadChip leadId={lead.id} />
 
           {/* Contact + intent score */}
           <div className="grid gap-3 sm:grid-cols-3">
