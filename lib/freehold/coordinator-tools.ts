@@ -18,7 +18,8 @@ import {
 import { getLandingPagesForDashboard, getLandingPageForEditor } from '@/lib/landing-pages'
 import { searchCrmLeads } from '@/lib/data'
 import { listLibrary, saveLibraryItem } from '@/lib/freehold/library'
-import { listAudiences, type SavedAudience } from '@/lib/freehold/audiences'
+import { listAudiences, getAudience, type SavedAudience } from '@/lib/freehold/audiences'
+import type { AdDestination, CampaignTargeting, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
 import { genImage } from '@/lib/creative-studio/providers'
 import { z } from 'zod'
 
@@ -88,6 +89,20 @@ const EVERYONE: CoordinatorRole[] = ['owner', 'admin', 'marketing', 'sales_manag
 
 const s = (v: unknown) => String(v ?? '').trim()
 const n = (v: unknown) => Number(v)
+
+// Launch vocabulary shared with the campaign wizard (campaigns/new). The
+// wizard's product objectives map onto exactly these three Meta objectives —
+// smart landing / WhatsApp / call → LINK_CLICKS, Meta lead form →
+// LEAD_GENERATION, branding → REACH.
+const LAUNCH_OBJECTIVES = ['LEAD_GENERATION', 'LINK_CLICKS', 'REACH'] as const
+const LAUNCH_DESTINATIONS = ['landing', 'form', 'whatsapp', 'phone'] as const
+const LAUNCH_CTAS = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW'] as const
+const LAUNCH_PLACEMENTS = ['fbFeed', 'igFeed', 'igStory', 'fbStory', 'reels'] as const
+const LAUNCH_LEAD_LANGUAGES = ['en', 'ar', 'ru'] as const
+
+/** Trimmed, deduped, non-empty string array from unknown args (cap defensive). */
+const strArr = (v: unknown, cap = 30): string[] =>
+  Array.isArray(v) ? [...new Set(v.map(s).filter(Boolean))].slice(0, cap) : []
 
 export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   // ── ads_agent ──────────────────────────────────────────────────────────────
@@ -439,55 +454,158 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   },
   {
     name: 'ads_launch_campaign', agent: 'ads_agent', destructive: true,
-    description: 'LAUNCH a Meta campaign (always PAUSED — spend never starts until someone resumes it). Builds campaign + ad set + creative + ad on the connected account. Use after ads_plan_campaign and the user’s explicit go-ahead.',
-    params: '{ "campaignName": string, "listingName": string, "dailyBudgetAED": number, "ageMin": number, "ageMax": number, "interestIds"?: string[], "headline": string, "primaryText": string, "landingUrl": string, "cityKeys"?: string[], "confirm": true }',
+    description: 'LAUNCH a Meta campaign (always created PAUSED — spend never starts until a human resumes it, a separately confirmed action). Builds campaign + ad set + creative + ad on the connected account at full wizard parity: objective (LEAD_GENERATION default | LINK_CLICKS | REACH), destination (landing | form — Meta instant form, needs leadFormId from forms_list | whatsapp | phone — needs destinationPhone), a saved audience via audienceId (from audiences_list — its full definition replaces the manual targeting fields, like attaching it in the wizard), countries (defaults to AE only — widen only when the user explicitly asked), lead-language narrowing (en/ar/ru), manual placements, multi-text headlines/descriptions (Meta auto-tests up to 5 of each), pixel override, lifetime spend cap and CPL cap. Every optional field omitted = today’s simple lead-gen launch. Use after ads_plan_campaign and the user’s explicit go-ahead.',
+    params: '{ "campaignName": string, "listingName": string, "dailyBudgetAED": number, "objective"?: "LEAD_GENERATION"|"LINK_CLICKS"|"REACH", "destination"?: "landing"|"form"|"whatsapp"|"phone", "leadFormId"?: string, "destinationPhone"?: string, "audienceId"?: string, "ageMin"?: number, "ageMax"?: number, "interestIds"?: string[], "countries"?: string[], "cityKeys"?: string[], "leadLanguages"?: ("en"|"ar"|"ru")[], "headline"?: string, "headlines"?: string[], "primaryText": string, "description"?: string, "descriptions"?: string[], "landingUrl": string, "cta"?: "LEARN_MORE"|"GET_QUOTE"|"SIGN_UP"|"CONTACT_US"|"BOOK_NOW"|"APPLY_NOW", "pixelId"?: string, "placementMode"?: "automatic"|"manual", "manualPlacements"?: ("fbFeed"|"igFeed"|"igStory"|"fbStory"|"reels")[], "lifetimeCapAED"?: number, "cplCapAED"?: number, "confirm": true }',
     roles: OPERATORS,
     schema: z.object({
       campaignName: z.string(),
       listingName: z.string(),
       dailyBudgetAED: z.number().describe('daily budget in AED, min 50'),
+      objective: z.enum(LAUNCH_OBJECTIVES).optional()
+        .describe('Meta objective — defaults to LEAD_GENERATION; LINK_CLICKS for landing/WhatsApp/call traffic, REACH for branding'),
+      destination: z.enum(LAUNCH_DESTINATIONS).optional()
+        .describe("where a click/submit goes; omit for the landing URL. 'form' requires leadFormId, 'phone' requires destinationPhone"),
+      leadFormId: z.string().optional().describe("Meta instant-form id (forms_list) — required when destination is 'form'"),
+      destinationPhone: z.string().optional().describe("E.164 number, e.g. +9715… — required when destination is 'phone'"),
+      audienceId: z.string().optional()
+        .describe('saved audience id (audiences_list) — its full definition REPLACES ageMin/ageMax/interestIds/countries/cityKeys'),
       ageMin: z.number().optional().describe('min audience age (defaults to 28)'),
       ageMax: z.number().optional().describe('max audience age (defaults to 60)'),
       interestIds: z.array(z.string()).optional().describe('UAE interest ids to target'),
-      headline: z.string(),
-      primaryText: z.string(),
-      landingUrl: z.string().describe('full https landing URL'),
+      countries: z.array(z.string()).optional()
+        .describe("ISO country codes to deliver in; defaults to ['AE'] — only widen when the user explicitly asked for other markets"),
       cityKeys: z.array(z.string()).optional().describe('Meta city keys; defaults to Dubai'),
+      leadLanguages: z.array(z.enum(LAUNCH_LEAD_LANGUAGES)).optional()
+        .describe('narrow delivery to these lead languages; omit (or list all three) for no narrowing'),
+      headline: z.string().optional().describe('ad headline — required unless headlines[] is given (then defaults to its first entry)'),
+      headlines: z.array(z.string()).optional().describe("up to 5 headline variants — Meta auto-tests combinations (multi-text)"),
+      primaryText: z.string(),
+      description: z.string().optional().describe('ad description line (defaults to "Request the investor summary now.")'),
+      descriptions: z.array(z.string()).optional().describe('up to 5 description variants — Meta auto-tests combinations'),
+      landingUrl: z.string().describe('full https landing URL'),
+      cta: z.enum(LAUNCH_CTAS).optional().describe('call-to-action button (defaults to LEARN_MORE)'),
+      pixelId: z.string().optional().describe('conversion pixel id override; omit for the account default'),
+      placementMode: z.enum(['automatic', 'manual']).optional()
+        .describe("omit/'automatic' = Meta places across facebook+instagram; 'manual' = only the surfaces in manualPlacements"),
+      manualPlacements: z.array(z.enum(LAUNCH_PLACEMENTS)).optional()
+        .describe("surfaces to run on when placementMode is 'manual'"),
+      lifetimeCapAED: z.number().optional().describe('lifetime spend ceiling in AED (real Meta spend_cap)'),
+      cplCapAED: z.number().optional().describe('cost-per-lead ceiling in AED (real Meta COST_CAP bid)'),
       confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
     }),
     run: async (args, ctx) => {
       const campaignName = s(args.campaignName)
       const listingName = s(args.listingName)
       const budget = n(args.dailyBudgetAED)
-      const headline = s(args.headline)
+      const headlines = strArr(args.headlines, 5)
+      const descriptions = strArr(args.descriptions, 5)
+      const headline = s(args.headline) || headlines[0] || ''
       const primaryText = s(args.primaryText)
+      const description = s(args.description) || descriptions[0] || 'Request the investor summary now.'
       const landingUrl = s(args.landingUrl)
       if (!campaignName || !listingName) return { error: 'campaignName and listingName are required' }
       if (!Number.isFinite(budget) || budget < 50) return { error: 'dailyBudgetAED must be ≥ 50' }
-      if (!headline || !primaryText) return { error: 'headline and primaryText are required — generate them first if needed' }
+      if (!headline || !primaryText) return { error: 'headline (or headlines[]) and primaryText are required — generate them first if needed' }
       if (!/^https?:\/\//.test(landingUrl)) return { error: 'landingUrl must be a full https URL (use landing_list to find the page)' }
-      const ids = Array.isArray(args.interestIds) ? args.interestIds.map(String) : []
-      const interests = UAE_INTERESTS.filter((i) => ids.includes(i.id)).map((i) => ({ id: i.id, name: i.name }))
-      const cityKeys = Array.isArray(args.cityKeys) && args.cityKeys.length ? args.cityKeys.map(String) : ['297928']
-      const result = await launchFullCampaign({
-        campaignName,
-        objective: 'LEAD_GENERATION',
-        listingName,
-        dailyBudgetAED: budget,
-        targeting: {
-          countries: ['AE'],
-          cityKeys,
+
+      // Destination + objective — validated the same way the wizard gates its
+      // launch button, and derived from the same product-objective mapping
+      // (form → LEAD_GENERATION; landing/whatsapp/phone → LINK_CLICKS) when
+      // the objective is omitted. Both omitted = today's LEAD_GENERATION.
+      const destination = (s(args.destination) || undefined) as AdDestination | undefined
+      if (destination && !LAUNCH_DESTINATIONS.includes(destination as (typeof LAUNCH_DESTINATIONS)[number])) {
+        return { error: `destination must be one of ${LAUNCH_DESTINATIONS.join('|')}` }
+      }
+      const leadFormId = s(args.leadFormId)
+      const destinationPhone = s(args.destinationPhone)
+      if (destination === 'form' && !leadFormId) return { error: 'leadFormId is required when destination is "form" — use forms_list to pick one (or forms_create)' }
+      if (destination === 'phone' && !destinationPhone) return { error: 'destinationPhone (E.164, e.g. +9715…) is required when destination is "phone"' }
+      const objective = (s(args.objective)
+        || (destination && destination !== 'form' ? 'LINK_CLICKS' : 'LEAD_GENERATION')) as MetaCampaignObjective
+      if (!LAUNCH_OBJECTIVES.includes(objective as (typeof LAUNCH_OBJECTIVES)[number])) {
+        return { error: `objective must be one of ${LAUNCH_OBJECTIVES.join('|')}` }
+      }
+      const cta = (s(args.cta) || 'LEARN_MORE') as MetaCta
+      if (!LAUNCH_CTAS.includes(cta as (typeof LAUNCH_CTAS)[number])) {
+        return { error: `cta must be one of ${LAUNCH_CTAS.join('|')}` }
+      }
+
+      // Targeting — a saved audience IS the audience: its full definition
+      // (behaviors, narrowing, exclusions, attached Meta audiences) replaces
+      // the manual fields, exactly like attaching it in the wizard. A bad id
+      // is a hard error — never silently fall back to manual targeting.
+      let targeting: CampaignTargeting
+      let attachedAudience: SavedAudience | null = null
+      const audienceId = s(args.audienceId)
+      if (audienceId) {
+        attachedAudience = await getAudience(audienceId)
+        if (!attachedAudience) return { error: `No saved audience with id "${audienceId}" — call audiences_list for the real ids, or omit audienceId for manual targeting.` }
+        targeting = { ...attachedAudience.spec, publisherPlatforms: ['facebook', 'instagram'] }
+      } else {
+        const ids = strArr(args.interestIds)
+        const interests = UAE_INTERESTS.filter((i) => ids.includes(i.id)).map((i) => ({ id: i.id, name: i.name }))
+        const cityKeys = strArr(args.cityKeys)
+        const countries = strArr(args.countries).map((c) => c.toUpperCase())
+        targeting = {
+          // Deliberately defaults to AE only (unlike the wizard's default-all
+          // country list) — an agent widening geo silently is a spend risk.
+          countries: countries.length ? countries : ['AE'],
+          cityKeys: cityKeys.length ? cityKeys : ['297928'],
           ageMin: Math.min(60, Math.max(18, n(args.ageMin) || 28)),
           ageMax: Math.min(65, Math.max(25, n(args.ageMax) || 60)),
           publisherPlatforms: ['facebook', 'instagram'],
           interests,
-        },
+        }
+      }
+
+      // Lead-language narrowing — same rules as the wizard: an attached
+      // audience carries its own complete definition, and all three languages
+      // means no narrowing worth sending.
+      const langs = strArr(args.leadLanguages).filter((l) => LAUNCH_LEAD_LANGUAGES.includes(l as (typeof LAUNCH_LEAD_LANGUAGES)[number]))
+      const leadLanguages = !attachedAudience && langs.length > 0 && langs.length < LAUNCH_LEAD_LANGUAGES.length ? langs : undefined
+
+      // Placements — only sent when the agent explicitly chose; 'manual' with
+      // no valid surface is an error rather than a silently-automatic launch.
+      const placementMode = (s(args.placementMode) || undefined) as 'automatic' | 'manual' | undefined
+      if (placementMode && placementMode !== 'automatic' && placementMode !== 'manual') {
+        return { error: 'placementMode must be "automatic" or "manual"' }
+      }
+      const manualPlacements = placementMode === 'manual'
+        ? strArr(args.manualPlacements).filter((k) => LAUNCH_PLACEMENTS.includes(k as (typeof LAUNCH_PLACEMENTS)[number]))
+        : undefined
+      if (placementMode === 'manual' && !manualPlacements?.length) {
+        return { error: `manualPlacements must list at least one of ${LAUNCH_PLACEMENTS.join('|')} when placementMode is "manual"` }
+      }
+
+      // Money guardrails — real Meta controls (campaign spend_cap / COST_CAP).
+      const lifetimeCapAED = n(args.lifetimeCapAED)
+      const cplCapAED = n(args.cplCapAED)
+
+      const result = await launchFullCampaign({
+        campaignName,
+        objective,
+        listingName,
+        dailyBudgetAED: budget,
+        targeting,
         creative: {
           primaryText, headline,
-          description: 'Request the investor summary now.',
+          description,
           landingUrl,
-          cta: 'LEARN_MORE',
+          cta,
+          // Meta's real multi-text feature — only sent when the agent actually
+          // provided variants (a single entry is exactly the singular path).
+          ...(headlines.length > 1 ? { headlines } : {}),
+          ...(descriptions.length > 1 ? { descriptions } : {}),
         },
+        ...(destination ? { destination } : {}),
+        ...(destination === 'form' && leadFormId ? { leadFormId } : {}),
+        ...(destination === 'phone' && destinationPhone ? { destinationPhone } : {}),
+        ...(s(args.pixelId) ? { pixelId: s(args.pixelId) } : {}),
+        ...(Number.isFinite(lifetimeCapAED) && lifetimeCapAED > 0 ? { lifetimeCapAED } : {}),
+        ...(Number.isFinite(cplCapAED) && cplCapAED > 0 ? { cplCapAED } : {}),
+        ...(placementMode ? { placementMode } : {}),
+        ...(manualPlacements?.length ? { manualPlacements } : {}),
+        ...(leadLanguages ? { leadLanguages } : {}),
         // HARD safety: the agent can never start spend. A human resumes it
         // (which is itself a separately confirmed destructive tool).
         launchStatus: 'PAUSED',
@@ -497,6 +615,9 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         ok: true,
         campaignId: result.campaignId,
         status: 'PAUSED',
+        objective,
+        destination: destination ?? 'landing',
+        ...(attachedAudience ? { audience: { id: attachedAudience.id, name: attachedAudience.name, kind: attachedAudience.kind } } : {}),
         reviewUrl: `/freehold-intelligence/ads-live/meta/${result.campaignId}`,
         note: 'Created PAUSED. Tell the user to review it and that resuming (starting spend) needs their separate confirmation.',
       }
