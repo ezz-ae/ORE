@@ -120,11 +120,30 @@ export async function POST(req: NextRequest) {
     }
 
     // Layer 8 → Layer 9: score the landing session this lead came from.
-    // Fail-soft by design (see scoreLeadSession) — never blocks intake, and
-    // only needed on a genuinely new lead, not a repeat inquiry.
+    // Fail-soft by design (see scoreLeadSession) — never blocks intake.
     const intel = isRepeatInquiry
       ? { behaviourScore: null, buyerIntent: null, purchaseProbability: null, budgetConfidence: null }
       : await scoreLeadSession(toText(body.sessionId))
+
+    // A repeat inquiry from a lead that never got a behaviour score (first
+    // visit had no session join) is a second chance at the SAME real signal —
+    // score the new session and fill the still-empty fields. Never overwrite
+    // an existing score: the first-session read stays the record.
+    if (isRepeatInquiry && toText(body.sessionId)) {
+      const late = await scoreLeadSession(toText(body.sessionId))
+      if (late.behaviourScore !== null) {
+        await query(
+          `UPDATE freehold_site_leads SET
+             lp_session_id = COALESCE(lp_session_id, NULLIF($2, '')),
+             behaviour_score = COALESCE(behaviour_score, $3),
+             buyer_intent = COALESCE(buyer_intent, NULLIF($4, '')),
+             purchase_probability = COALESCE(purchase_probability, $5),
+             budget_confidence = COALESCE(budget_confidence, NULLIF($6, ''))
+           WHERE id = $1 AND behaviour_score IS NULL`,
+          [leadId, toText(body.sessionId), late.behaviourScore, toText(late.buyerIntent), late.purchaseProbability, toText(late.budgetConfidence)],
+        ).catch((error) => console.error("[lp-leads] late behaviour score failed", error))
+      }
+    }
 
     if (!isRepeatInquiry) await query(
       `INSERT INTO freehold_site_leads (

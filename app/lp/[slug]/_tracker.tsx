@@ -161,13 +161,28 @@ function injectScript(code: string) {
   document.head.appendChild(el)
 }
 
+// The id joins this visitor's analytics events to the lead they may submit
+// (freehold_site_leads.lp_session_id). sessionStorage alone was per-tab: a
+// buyer who read in one tab and submitted from another lost the join, and the
+// behaviour score came back null. A localStorage copy (30-day expiry) makes
+// the id survive tabs and return visits; an in-flight sessionStorage id still
+// wins so events already recorded this session keep their session unbroken.
+const SID_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
 export function getSessionId(): string {
   try {
-    let id = sessionStorage.getItem('_fp_sid')
+    const inFlight = sessionStorage.getItem('_fp_sid')
+    if (inFlight) return inFlight
+    let id = ''
+    try {
+      const stored = JSON.parse(localStorage.getItem('_fp_sid_v2') ?? 'null') as { id?: string; ts?: number } | null
+      if (stored?.id && typeof stored.ts === 'number' && Date.now() - stored.ts < SID_TTL_MS) id = stored.id
+    } catch { /* corrupt entry → regenerate */ }
     if (!id) {
       id = Math.random().toString(36).slice(2) + Date.now().toString(36)
-      sessionStorage.setItem('_fp_sid', id)
+      try { localStorage.setItem('_fp_sid_v2', JSON.stringify({ id, ts: Date.now() })) } catch { /* private mode */ }
     }
+    sessionStorage.setItem('_fp_sid', id)
     return id
   } catch {
     return ''
