@@ -247,6 +247,15 @@ export interface LaunchCampaignPayload {
   manualPlacements?: string[]
   /** Autopilot policy for THIS campaign: act / record-for-approval / skip. */
   autoEnhance?: 'on' | 'approval' | 'off'
+  /**
+   * Lead-language codes ('en' | 'ar' | 'ru') to narrow delivery to people
+   * whose Facebook locale matches — the same three languages the /lp landing
+   * pages actually serve. Resolved server-side to Meta's numeric locale IDs
+   * via the live adlocale search (Meta publishes no stable static ID table),
+   * then merged into targeting_spec.locales. Omitted (or all three) = no
+   * language narrowing, today's unchanged behavior.
+   */
+  leadLanguages?: string[]
 }
 
 /** A Meta conversion pixel on the connected ad account. */

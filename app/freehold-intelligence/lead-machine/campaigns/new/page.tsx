@@ -51,6 +51,11 @@ interface WizardState {
   productObjective: ProductObjectiveKey
   objective:     MetaCampaignObjective
   campaignName:  string
+  // Data Quality checks the operator has manually confirmed for THIS launch
+  // only. Purely local wizard state — never writes to the inventory record,
+  // and a check acknowledged here still shows as failing in Inventory. Reset
+  // whenever the listing changes.
+  dqVerifiedChecks: string[]
   // Step 2
   strategy:      TargetingStrategy | 'custom'
   dailyBudgetAED: number
@@ -61,6 +66,10 @@ interface WizardState {
   ageMax:        number
   genders:       number[]
   interestIds:   string[]
+  // Landing-page languages this campaign's audience should match — the same
+  // three the /lp pages actually serve (lib/landing-i18n.ts). Default all
+  // three; resolved server-side into Meta targeting_spec.locales.
+  leadLanguages: string[]
   publisherPlatforms: string[]
   // 'automatic' (default) = today's publisherPlatforms-derived delivery,
   // unchanged. 'manual' narrows delivery to EXACTLY the surfaces picked in
@@ -128,6 +137,16 @@ const PRODUCT_OBJECTIVES: {
 // Countries the ad can be delivered in. AE is the home market; the rest cover
 // the GCC + the key expat/investor source markets for Dubai real estate.
 const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE'] as const
+
+// The three lead languages the product actually serves end-to-end — matches
+// LpLang in lib/landing-i18n.ts exactly. Option labels are the language's own
+// native name (invariant across the operator's UI locale, same convention as
+// the landing pages' own language switcher).
+const LEAD_LANGUAGE_OPTIONS: { code: string; labelKey: string }[] = [
+  { code: 'en', labelKey: 'lm.newCampaign.s2.leadLanguage.en' },
+  { code: 'ar', labelKey: 'lm.newCampaign.s2.leadLanguage.ar' },
+  { code: 'ru', labelKey: 'lm.newCampaign.s2.leadLanguage.ru' },
+]
 
 // Labels resolve through i18n (lm.creatives.generate.cta.<value>) at render.
 const CTA_OPTIONS: MetaCta[] = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW']
@@ -217,15 +236,19 @@ export default function NewCampaignPage() {
     productObjective: 'smart_landing',
     objective:    'LINK_CLICKS',
     campaignName: '',
+    dqVerifiedChecks: [],
     strategy:     'advantage_broad',
     dailyBudgetAED: 200,
     lifetimeCapAED: 0,
-    countries:    ['AE'],
+    // Default-all, deselectable — bounded to the curated list above, never
+    // "every country Meta supports".
+    countries:    [...COUNTRY_CODES],
     cityKeys:     ['297928'], // Dubai
     ageMin:       28,
     ageMax:       65,
     genders:      [],
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
+    leadLanguages: ['en', 'ar', 'ru'],
     publisherPlatforms: ['facebook', 'instagram'],
     placementMode: 'automatic',
     manualPlacements: [],
@@ -382,6 +405,26 @@ export default function NewCampaignPage() {
     } catch { /* popup shows the empty/again state */ }
     finally { setDqLoading(false) }
   }
+
+  // Per-launch acknowledgment of failing DQ checks. Local wizard state only:
+  // it never mutates the inventory record, and an acknowledged check is
+  // "proceeding with awareness", never a fabricated pass.
+  function toggleDqVerified(key: string) {
+    setForm((prev) => ({
+      ...prev,
+      dqVerifiedChecks: prev.dqVerifiedChecks.includes(key)
+        ? prev.dqVerifiedChecks.filter((k) => k !== key)
+        : [...prev.dqVerifiedChecks, key],
+    }))
+  }
+  // Guard against stale results from a previously selected listing.
+  const dqForCurrentListing = dqData && dqData.listing.slug === form.listingId ? dqData : null
+  // Deliberately mixed-severity (required AND recommended): the Step 4 banner
+  // surfaces ANY incompleteness, so its copy stays severity-neutral
+  // ("field(s)", not "required field(s)").
+  const dqFailingChecks = dqForCurrentListing ? dqForCurrentListing.checks.filter((c) => !c.present) : []
+  const dqUnacknowledged = dqFailingChecks.filter((c) => !form.dqVerifiedChecks.includes(c.key))
+  const dqAcknowledgedCount = dqFailingChecks.length - dqUnacknowledged.length
 
   const GENDER_OPTIONS: { key: string; val: number[] }[] = [
     { key: 'all', val: [] }, { key: 'men', val: [1] }, { key: 'women', val: [2] },
@@ -783,7 +826,11 @@ export default function NewCampaignPage() {
       landingUrl:   listing.landingUrl,
       imageUrl:     listing.imageUrl,
       imageHash:    '',   // fall back to the listing photo unless a new file is uploaded
+      // Acknowledgments belong to one listing's checks — never carry them
+      // over to a different listing.
+      dqVerifiedChecks: [],
     }))
+    setDqData(null)
   }
 
   // Upload a chosen file to the connected Meta ad account → image_hash.
@@ -1031,6 +1078,13 @@ export default function NewCampaignPage() {
       // default) sends undefined so createAdSet falls back to the
       // account's default pixel exactly as before.
       pixelId:          form.pixelId || undefined,
+      // Lead-language locale targeting. An attached saved audience carries
+      // its own complete definition (see the targeting comment above), so
+      // this field never overrides it. All three selected = no narrowing
+      // worth sending — omit rather than restrict to the full set.
+      leadLanguages:    attachedAudience || form.leadLanguages.length >= LEAD_LANGUAGE_OPTIONS.length
+        ? undefined
+        : form.leadLanguages,
       // Real per-surface placement control — 'automatic' (default) keeps the
       // publisherPlatforms-derived behavior above; only sent as 'manual' with
       // its picks when the operator actually chose specific surfaces.
@@ -1633,6 +1687,23 @@ export default function NewCampaignPage() {
               </div>
             </div>
 
+            <div>
+              <Label>{t('lm.newCampaign.s2.label.leadLanguage')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {LEAD_LANGUAGE_OPTIONS.map((lang) => {
+                  const selected = form.leadLanguages.includes(lang.code)
+                  return (
+                    <button key={lang.code} type="button"
+                      onClick={() => update('leadLanguages', selected ? form.leadLanguages.filter((c) => c !== lang.code) : [...form.leadLanguages, lang.code])}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
+                      {t(lang.labelKey)}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.leadLanguageHint')}</p>
+            </div>
+
             {/* Live Meta reach estimate — same badge/pill pattern as the Buyer
                 Match panel's live reach (Gauge icon, range, honest empty
                 state), debounced to the popup's current selections above. */}
@@ -1737,18 +1808,38 @@ export default function NewCampaignPage() {
                 <div className="text-xs leading-relaxed text-slate-300">{dqData.readyToBuild ? t('dq.ready') : t('dq.notReady')}</div>
               </div>
               <div className="space-y-1.5">
-                {dqData.checks.map((c) => (
-                  <div key={c.key} className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
-                    {c.present
-                      ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                      : <AlertCircle className={`h-4 w-4 shrink-0 ${c.severity === 'required' ? 'text-red-400' : 'text-amber-400'}`} />}
-                    <span className="flex-1 text-sm text-slate-200">{t(`dq.check.${c.key}`)}</span>
-                    {c.present
-                      ? <span className="truncate text-xs text-slate-500">{c.value}</span>
-                      : <span className={`text-[11px] font-medium ${c.severity === 'required' ? 'text-red-400' : 'text-amber-400'}`}>{c.severity === 'required' ? t('dq.missing') : t('dq.optional')}</span>}
-                  </div>
-                ))}
+                {dqData.checks.map((c) => {
+                  const acknowledged = form.dqVerifiedChecks.includes(c.key)
+                  return (
+                    <div key={c.key} className="rounded-lg border border-line bg-surface-2 px-3 py-2">
+                      <div className="flex items-center gap-2.5">
+                        {c.present
+                          ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                          : <AlertCircle className={`h-4 w-4 shrink-0 ${acknowledged ? 'opacity-50' : ''} ${c.severity === 'required' ? 'text-red-400' : 'text-amber-400'}`} />}
+                        <span className="flex-1 text-sm text-slate-200">{t(`dq.check.${c.key}`)}</span>
+                        {c.present
+                          ? <span className="truncate text-xs text-slate-500">{c.value}</span>
+                          : acknowledged
+                            ? <span className="text-[11px] font-medium text-slate-500">{t('dq.acknowledged')}</span>
+                            : <span className={`text-[11px] font-medium ${c.severity === 'required' ? 'text-red-400' : 'text-amber-400'}`}>{c.severity === 'required' ? t('dq.missing') : t('dq.optional')}</span>}
+                      </div>
+                      {/* The field still reads as failing above — checking this
+                          only records "proceeding with awareness" for THIS
+                          launch. It never edits the inventory record. */}
+                      {!c.present && (
+                        <label className="mt-1.5 flex cursor-pointer items-center gap-2 ps-[26px] text-xs text-slate-400">
+                          <input type="checkbox" checked={acknowledged} onChange={() => toggleDqVerified(c.key)}
+                            className="h-3.5 w-3.5 rounded border-line bg-surface accent-[#D4AF37]" />
+                          {t('dq.manualVerify')}
+                        </label>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
+              {dqFailingChecks.length > 0 && (
+                <p className="text-[11px] leading-relaxed text-slate-500">{t('dq.manualVerifyHint')}</p>
+              )}
               <p className="text-[11px] leading-relaxed text-slate-600">{t('dq.editHint')}</p>
             </div>
           ) : (
@@ -2233,6 +2324,29 @@ export default function NewCampaignPage() {
         {step === 4 && (
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s4.heading')}</h2>
+
+            {/* Data Quality state, never hidden at launch time: amber while
+                any failing check is unacknowledged, neutral once the operator
+                has acknowledged every one (the listing itself is still
+                incomplete in Inventory — this launch just proceeds with
+                awareness). Informational, not a launch blocker, matching the
+                wizard's never-hard-block philosophy. */}
+            {dqFailingChecks.length > 0 && (
+              <div className={`flex flex-wrap items-center gap-3 rounded-[14px] border px-4 py-3 ${
+                dqUnacknowledged.length > 0 ? 'border-amber-400/25 bg-amber-400/[0.06]' : 'border-line bg-surface-2'
+              }`}>
+                <AlertCircle className={`h-4 w-4 shrink-0 ${dqUnacknowledged.length > 0 ? 'text-amber-400' : 'text-slate-500'}`} />
+                <span className="flex-1 text-sm text-slate-300">
+                  {dqUnacknowledged.length > 0
+                    ? t('lm.newCampaign.s4.dqWarning', { n: String(dqUnacknowledged.length) })
+                    : t('lm.newCampaign.s4.dqAcknowledged', { n: String(dqAcknowledgedCount) })}
+                </span>
+                <button type="button" onClick={() => { setStep(1); setDqOpen(true) }}
+                  className="rounded-full border border-line px-3 py-1 text-xs text-slate-300 transition hover:text-white">
+                  {t('lm.newCampaign.s4.dqReview')}
+                </button>
+              </div>
+            )}
 
             {/* Summary tiles */}
             <div className="grid gap-4 sm:grid-cols-2">
