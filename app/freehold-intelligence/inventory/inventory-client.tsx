@@ -119,13 +119,26 @@ function CandidateCard({ c, t }: { c: AdCandidate; t: TFn }) {
   )
 }
 
-export default function InventoryClient({ initialProperties }: { initialProperties: InventoryProperty[] }) {
+// The list's two real ranking signals: the existing ad-readiness composite and
+// the stored Opportunity Engine score (Layer 3). Opportunity sorts unscored
+// projects last — a missing score is absent data, never treated as zero.
+type SortBy = 'adReadiness' | 'opportunity'
+
+export default function InventoryClient({
+  initialProperties,
+  opportunityBySlug = {},
+}: {
+  initialProperties: InventoryProperty[]
+  /** Stored opportunity score per project slug — null/absent = not computed. */
+  opportunityBySlug?: Record<string, number | null>
+}) {
   const t = useT()
   const stats = getInventoryStats(initialProperties)
   const analysis = getInventoryAnalysis(initialProperties)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [query, setQuery] = useState('')
   const [tagSel, setTagSel] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<SortBy>('adReadiness')
 
   // Tag-group facets built ONLY from real property tags (handover · payment ·
   // price · highlights · area). Status tags are excluded — the status pills
@@ -176,7 +189,18 @@ export default function InventoryClient({ initialProperties }: { initialProperti
         p.tags.some((tag) => tag.toLowerCase().includes(q))
       )
     })
-    .sort((a, b) => b.adReadiness - a.adReadiness)
+    .sort((a, b) => {
+      if (sortBy === 'opportunity') {
+        // Scored projects first (descending); unscored sink to the bottom
+        // rather than being zero-filled into the ranking.
+        const sa = opportunityBySlug[a.slug]
+        const sb = opportunityBySlug[b.slug]
+        if (typeof sa === 'number' && typeof sb === 'number') return sb - sa
+        if (typeof sa === 'number') return -1
+        if (typeof sb === 'number') return 1
+      }
+      return b.adReadiness - a.adReadiness
+    })
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -285,6 +309,28 @@ export default function InventoryClient({ initialProperties }: { initialProperti
           ))}
         </div>
 
+        {/* Sort — the existing ad-readiness ranking vs the Opportunity Engine. */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">{t('inv.sort.label')}</span>
+          {([
+            { value: 'adReadiness' as const, labelKey: 'inv.sort.adReadiness' },
+            { value: 'opportunity' as const, labelKey: 'inv.sort.opportunity' },
+          ]).map((s) => (
+            <button
+              key={s.value}
+              onClick={() => setSortBy(s.value)}
+              className={[
+                'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
+                sortBy === s.value
+                  ? 'border-gold/40 bg-gold/[0.1] text-[#F8E7AE]'
+                  : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
+              ].join(' ')}
+            >
+              {t(s.labelKey)}
+            </button>
+          ))}
+        </div>
+
         {/* Search */}
         <div className="relative ml-auto w-full sm:w-64">
           <Search className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
@@ -317,7 +363,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
 
       {/* Table */}
       <div className="mt-5 overflow-x-auto rounded-[20px] border border-line bg-surface-2">
-        <table className="w-full min-w-[760px] border-collapse text-sm">
+        <table className="w-full min-w-[840px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line">
               {[
@@ -326,6 +372,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
                 'inv.col.status',
                 'inv.col.startingPrice',
                 'inv.col.roi',
+                'inv.col.opportunity',
                 'inv.col.landing',
                 'inv.col.leads30d',
                 'inv.col.actions',
@@ -342,7 +389,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
           <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <EmptyState
                     Icon={LayoutGrid}
                     title={t('inv.empty.title')}
@@ -353,7 +400,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
               </tr>
             ) : (
               filtered.map((prop) => (
-                <PropertyRow key={prop.id} prop={prop} t={t} />
+                <PropertyRow key={prop.id} prop={prop} opportunity={opportunityBySlug[prop.slug] ?? null} t={t} />
               ))
             )}
           </tbody>
@@ -367,7 +414,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
   )
 }
 
-function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
+function PropertyRow({ prop, opportunity, t }: { prop: InventoryProperty; opportunity: number | null; t: TFn }) {
   return (
     <tr className="group transition hover:bg-surface-2">
       {/* Name — the row's one navigation target (the separate View pill was
@@ -401,6 +448,18 @@ function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
       <td className="px-4 py-3.5 tabular-nums">
         {prop.roi !== null ? (
           <span className="text-gold">{prop.roi.toFixed(1)}%</span>
+        ) : (
+          <span className="text-slate-500">—</span>
+        )}
+      </td>
+
+      {/* Opportunity Engine score — a dash when never computed or honestly
+          null ("insufficient data"); NEVER zero-filled. */}
+      <td className="px-4 py-3.5 tabular-nums">
+        {typeof opportunity === 'number' ? (
+          <span className="inline-flex items-center rounded-full border border-gold/20 bg-gold/[0.06] px-2.5 py-0.5 text-sm font-medium text-gold/90">
+            {opportunity}
+          </span>
         ) : (
           <span className="text-slate-500">—</span>
         )}

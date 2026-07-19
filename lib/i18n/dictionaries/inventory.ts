@@ -312,6 +312,26 @@ const en: Dict = {
   // generate route property-not-found
   'inv.gen.notFound': 'Property not found.',
   'inv.gen.backToInventory': 'Back to Inventory',
+
+  // Opportunity Engine (Layer 3)
+  'inv.col.opportunity': 'Opportunity',
+  'inv.sort.label': 'Sort',
+  'inv.sort.adReadiness': 'Ad readiness',
+  'inv.sort.opportunity': 'Opportunity',
+  'inv.opp.title': 'Opportunity',
+  'inv.opp.notComputed': 'Not computed yet — run a recompute to score this project from real data.',
+  'inv.opp.insufficient': 'Insufficient data — fewer than 2 components computable',
+  'inv.opp.coverage': '{present}/{total} components',
+  'inv.opp.noData': 'no data — not counted',
+  'inv.opp.computedAt': 'Computed {date}',
+  'inv.opp.refresh': 'Recompute',
+  'inv.opp.refreshing': 'Recomputing…',
+  'inv.opp.c.priceCompetitiveness': 'Price competitiveness',
+  'inv.opp.c.paymentPlanStrength': 'Payment plan strength',
+  'inv.opp.c.adReadiness': 'Ad readiness',
+  'inv.opp.c.areaMomentum': 'Area momentum',
+  'inv.opp.c.provenPerformance': 'Proven performance',
+  'inv.opp.c.developerDepth': 'Developer depth',
 }
 
 const ar: Dict = {
@@ -606,6 +626,26 @@ const ar: Dict = {
   'inv.gen.preview.email': 'البريد الإلكتروني',
   'inv.gen.notFound': 'العقار غير موجود.',
   'inv.gen.backToInventory': 'العودة إلى المخزون',
+
+  // Opportunity Engine (Layer 3)
+  'inv.col.opportunity': 'الفرصة',
+  'inv.sort.label': 'الترتيب',
+  'inv.sort.adReadiness': 'جاهزية الإعلان',
+  'inv.sort.opportunity': 'الفرصة',
+  'inv.opp.title': 'الفرصة',
+  'inv.opp.notComputed': 'لم تُحتسب بعد — شغّل إعادة الاحتساب لتقييم هذا المشروع من بيانات حقيقية.',
+  'inv.opp.insufficient': 'بيانات غير كافية — أقل من مكوّنين قابلين للاحتساب',
+  'inv.opp.coverage': '{present}/{total} من المكوّنات',
+  'inv.opp.noData': 'لا بيانات — غير محتسب',
+  'inv.opp.computedAt': 'احتُسب في {date}',
+  'inv.opp.refresh': 'إعادة الاحتساب',
+  'inv.opp.refreshing': 'جارٍ إعادة الاحتساب…',
+  'inv.opp.c.priceCompetitiveness': 'تنافسية السعر',
+  'inv.opp.c.paymentPlanStrength': 'قوة خطة الدفع',
+  'inv.opp.c.adReadiness': 'جاهزية الإعلان',
+  'inv.opp.c.areaMomentum': 'زخم المنطقة',
+  'inv.opp.c.provenPerformance': 'أداء مُثبت',
+  'inv.opp.c.developerDepth': 'خبرة المطوّر',
 }
 
 const ru: Dict = {
@@ -900,6 +940,26 @@ const ru: Dict = {
   'inv.gen.preview.email': 'Эл. почта',
   'inv.gen.notFound': 'Объект не найден.',
   'inv.gen.backToInventory': 'Назад в Каталог',
+
+  // Opportunity Engine (Layer 3)
+  'inv.col.opportunity': 'Возможность',
+  'inv.sort.label': 'Сортировка',
+  'inv.sort.adReadiness': 'Готовность к рекламе',
+  'inv.sort.opportunity': 'Возможность',
+  'inv.opp.title': 'Возможность',
+  'inv.opp.notComputed': 'Ещё не рассчитано — запустите пересчёт, чтобы оценить проект по реальным данным.',
+  'inv.opp.insufficient': 'Недостаточно данных — менее 2 вычислимых компонентов',
+  'inv.opp.coverage': '{present}/{total} компонентов',
+  'inv.opp.noData': 'нет данных — не учитывается',
+  'inv.opp.computedAt': 'Рассчитано {date}',
+  'inv.opp.refresh': 'Пересчитать',
+  'inv.opp.refreshing': 'Пересчёт…',
+  'inv.opp.c.priceCompetitiveness': 'Ценовая конкурентоспособность',
+  'inv.opp.c.paymentPlanStrength': 'Сила плана оплаты',
+  'inv.opp.c.adReadiness': 'Готовность к рекламе',
+  'inv.opp.c.areaMomentum': 'Динамика района',
+  'inv.opp.c.provenPerformance': 'Подтверждённые результаты',
+  'inv.opp.c.developerDepth': 'Опыт застройщика',
 }
 
 export const inventory: Record<Locale, Dict> = { en, ar, ru }
