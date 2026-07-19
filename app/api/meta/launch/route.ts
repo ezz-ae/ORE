@@ -197,6 +197,7 @@ export async function POST(req: NextRequest) {
       pixelId:          typeof body.pixelId === 'string' && body.pixelId.trim() ? body.pixelId.trim() : undefined,
       placementMode:    body.placementMode === 'manual' ? 'manual' : undefined,
       manualPlacements: Array.isArray(body.manualPlacements) ? body.manualPlacements.map(String) : undefined,
+      leadLanguages:    Array.isArray(body.leadLanguages) ? body.leadLanguages.map(String) : undefined,
     })
 
     // Launch succeeded → the campaign will serve, so the reservation stands.

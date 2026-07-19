@@ -1299,6 +1299,47 @@ export async function searchAdLocales(q: string): Promise<MetaLocale[]> {
     .map((l) => ({ key: l.key, name: l.name }))
 }
 
+// Lead-language → Meta locale IDs. Meta documents no complete static locale-ID
+// table (its docs show only an illustrative example and direct integrators to
+// /search?type=adlocale), so these are resolved LIVE per language and cached.
+// MANUAL QA BEFORE FIRST LIVE LAUNCH: with a connected ad account, launch with
+// a language narrowed and confirm the ad set's targeting.locales in Ads
+// Manager covers the expected variants (all "English (…)" entries, etc.).
+const LEAD_LANGUAGE_SEARCH_TERMS: Record<string, string> = { en: 'English', ar: 'Arabic', ru: 'Russian' }
+// Only ever holds genuinely-resolved (non-empty) results — a language absent
+// from this cache is retried on the next call rather than treated as
+// "resolved to nothing".
+const leadLanguageLocaleCache: Partial<Record<string, number[]>> = {}
+async function resolveLeadLanguageLocaleIds(codes: string[]): Promise<number[]> {
+  const ids = new Set<number>()
+  for (const code of codes) {
+    const term = LEAD_LANGUAGE_SEARCH_TERMS[code]
+    if (!term) continue
+    let resolved = leadLanguageLocaleCache[code]
+    if (!resolved) {
+      const matches = await searchAdLocales(term).catch(() => [] as MetaLocale[])
+      // A name search can surface unrelated hits — keep only entries whose
+      // name actually contains the language asked for (e.g. every English
+      // variant: "English (US)", "English (UK)", …), so a bad search result
+      // never widens targeting to the wrong language.
+      resolved = matches
+        .filter((m) => m.name.toLowerCase().includes(term.toLowerCase()))
+        .map((m) => m.key)
+      if (resolved.length > 0) {
+        // Only cache a genuinely non-empty resolution. searchAdLocales's
+        // failure path is indistinguishable from a real empty result here —
+        // caching it would permanently pin this language to "no restriction"
+        // for the life of the process. Uncached = simply retried next launch.
+        leadLanguageLocaleCache[code] = resolved
+      } else {
+        console.warn(`[meta-lead-language] locale search for "${term}" (${code}) returned no matches — targeting.locales will not be narrowed for this language until a future call succeeds`)
+      }
+    }
+    resolved.forEach((id) => ids.add(id))
+  }
+  return Array.from(ids)
+}
+
 /**
  * Subscribe the connected Page to Meta's `leadgen` real-time webhook field —
  * the piece that makes a new lead push to us instantly instead of waiting on
@@ -1622,6 +1663,8 @@ export async function launchFullCampaign(params: {
   placementMode?: 'automatic' | 'manual'
   /** PlacementKey values to run on when placementMode is 'manual'. */
   manualPlacements?: string[]
+  /** Lead-language codes ('en'|'ar'|'ru') resolved live to Meta locale IDs. */
+  leadLanguages?: string[]
 }): Promise<LaunchCampaignResult> {
   const { adAccountId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -1658,7 +1701,19 @@ export async function launchFullCampaign(params: {
   // 2 — Interests are re-validated by NAME against Meta's live vocabulary;
   // stale ids drop instead of failing the launch.
   const validatedInterests = await validateInterests(params.targeting.interests)
-  const baseTargeting = { ...params.targeting, interests: validatedInterests }
+  // Lead-language narrowing: resolve the wizard's language codes to Meta's
+  // real numeric locale IDs (live search — Meta publishes no static table)
+  // and merge with any locales the targeting spec already carries. An empty
+  // resolution (Meta unreachable) narrows nothing rather than mis-targeting.
+  const leadLanguageLocales = params.leadLanguages?.length
+    ? await resolveLeadLanguageLocaleIds(params.leadLanguages)
+    : []
+  const mergedLocales = Array.from(new Set([...(params.targeting.locales ?? []), ...leadLanguageLocales]))
+  const baseTargeting = {
+    ...params.targeting,
+    interests: validatedInterests,
+    ...(mergedLocales.length > 0 ? { locales: mergedLocales } : {}),
+  }
 
   // 3 — Creative prep. Prefer a NATIVE image: ingest the external URL into
   // the ad account first (image_hash); external `picture` URLs are flaky.
