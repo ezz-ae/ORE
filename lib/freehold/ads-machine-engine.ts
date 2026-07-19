@@ -34,7 +34,16 @@ import {
   listAdSets,
   updateAdSet,
   updateCampaignStatus as metaUpdateCampaignStatus,
+  createLeadForm,
 } from '@/lib/meta/client'
+import {
+  FORM_TEMPLATES,
+  materializeTemplate,
+  customToMetaQuestion,
+  type ListingFacts,
+  type TFn,
+} from '@/lib/meta/form-templates'
+import { p_forms } from '@/lib/i18n/dictionaries/p_forms'
 import {
   launchSearchCampaign,
   listCampaigns as listGoogleCampaigns,
@@ -49,6 +58,7 @@ import {
   getMachine,
   setMachineStatus,
   setMachineCap,
+  setMachinePlan,
   logActivity,
   listMachineCampaigns,
   addMachineCampaign,
@@ -63,7 +73,7 @@ import {
   type VerdictRequestInput,
   type QuestionKind,
 } from '@/lib/freehold/ads-machine'
-import { META_MIN_TRIAL_BUDGET_AED, type MachinePlan, type MachineTrialPlan } from '@/lib/freehold/ads-machine-planner'
+import { META_MIN_TRIAL_BUDGET_AED, type MachinePlan, type MachineProjectPlan, type MachineTrialPlan } from '@/lib/freehold/ads-machine-planner'
 
 /**
  * How many days an attributed lead may sit unmoved in new/contacted before the
@@ -169,6 +179,8 @@ interface AttributedLead {
   blocked: boolean | null
   assigned_broker_id: string | null
   created_at: string
+  /** Most recent 'stage' activity — null when the lead was never moved. */
+  last_stage_at: string | null
 }
 
 /** Resolve a lead's assigned broker to an email via freehold_site_users —
@@ -208,11 +220,17 @@ async function buildVerdictRequests(
 ): Promise<VerdictRequestInput[]> {
   let leads: AttributedLead[] = []
   try {
+    // last_stage_at: the most recent REAL stage change from the CRM activity
+    // log — "unmoved for N days" is measured from the last time a human moved
+    // the lead, not from when it arrived. A lead someone advanced yesterday
+    // is not stale, however old it is.
     leads = await query<AttributedLead>(
-      `SELECT id, name, phone, status, blocked, assigned_broker_id, created_at
-       FROM freehold_site_leads
-       WHERE archived IS NOT TRUE
-         AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
+      `SELECT l.id, l.name, l.phone, l.status, l.blocked, l.assigned_broker_id, l.created_at,
+              (SELECT MAX(a.created_at) FROM freehold_site_lead_activity a
+                WHERE a.lead_id = l.id AND a.activity_type = 'stage') AS last_stage_at
+       FROM freehold_site_leads l
+       WHERE l.archived IS NOT TRUE
+         AND ( ($1 <> '' AND l.utm_id = $1) OR ($2 <> '' AND lower(l.utm_campaign) = lower($2)) )`,
       [campaignId || '', campaignName || ''],
     )
   } catch { return [] }
@@ -235,9 +253,12 @@ async function buildVerdictRequests(
       if (QUALIFIED_STATUSES.has(status)) suggested = 'yes'
       else if (lead.blocked === true || (status === 'lost' && badPhone(lead.phone))) suggested = 'no'
     } else {
-      // Still sitting in new/contacted: after SCORE_ASK_AFTER_DAYS we ask the
-      // softer 0–10 buying-likelihood score; younger unmoved leads wait.
-      const ageDays = (now - new Date(lead.created_at).getTime()) / 86_400_000
+      // Still sitting in new/contacted: after SCORE_ASK_AFTER_DAYS *since the
+      // last stage change* (falling back to arrival when it was never moved)
+      // we ask the softer 0–10 buying-likelihood score; recently-touched
+      // leads wait — the clock restarts every time a human moves the stage.
+      const sinceIso = lead.last_stage_at ?? lead.created_at
+      const ageDays = (now - new Date(sinceIso).getTime()) / 86_400_000
       if (!(ageDays >= SCORE_ASK_AFTER_DAYS)) continue
       questionKind = 'score'
     }
@@ -252,6 +273,81 @@ async function buildVerdictRequests(
     })
   }
   return out
+}
+
+// ─── Meta instant lead form (one per project per machine) ────────────────────
+
+// The machine's forms are created server-side, so template strings resolve
+// from the English dictionary directly (Meta form locale is en_US here; the
+// operator can build localized forms in the full builder).
+const tEn: TFn = (key, vars) => {
+  let s = (p_forms.en as Record<string, string>)[key] ?? key
+  if (vars) for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(String(v))
+  return s
+}
+
+/**
+ * Every Meta trial captures through a REAL Meta instant form — the same
+ * "Investor qualification" template the wizard offers (name/email/phone +
+ * budget bands around the listing's real price + timeline + purpose). The
+ * form is created ONCE per project on first launch, written back into the
+ * plan (setMachinePlan) so every later trial — including reallocation
+ * launches — reuses it. Failure degrades honestly to the landing page and
+ * is logged; the machine never launches nothing because a form failed.
+ */
+async function ensureProjectLeadForm(
+  machineId: string,
+  plan: MachinePlan & { viable: true },
+  project: MachineProjectPlan,
+): Promise<string | null> {
+  if (project.leadFormId) return project.leadFormId
+  const tpl = FORM_TEMPLATES.find((x) => x.key === 'investor')
+  if (!tpl) return null
+  const facts: ListingFacts = project.facts ?? {
+    name: project.listingName,
+    area: project.area,
+    landingUrl: project.landingUrl,
+  }
+  try {
+    const m = materializeTemplate(tpl, facts, tEn)
+    const { id } = await createLeadForm({
+      name: `Machine — ${project.listingName} — Qualification`,
+      listingId: project.slug,
+      listingName: project.listingName,
+      landingUrl: project.landingUrl,
+      questions: [
+        ...m.contact.map((type) => ({ type })),
+        ...m.customs.map((q, i) => customToMetaQuestion(q, i)),
+      ],
+      privacyPolicyUrl: 'https://freeholdproperty.ae/privacy',
+      isOptimizedForQuality: m.higherIntent,
+      ...(m.intro.enabled && m.intro.title && m.intro.bullets.length > 0
+        ? { contextCard: { title: m.intro.title, style: 'LIST_STYLE', content: m.intro.bullets } }
+        : {}),
+      thankYouTitle: tEn('pforms.default.thankYouTitle'),
+      thankYouBody: tEn('pforms.default.thankYouBody'),
+      // The machine collects no business phone — a call button can't be sent.
+      thankYouButtonType: m.thankYouButton === 'CALL_BUSINESS' ? 'VIEW_WEBSITE' : m.thankYouButton,
+      ...(m.thankYouWebsiteUrl ? { thankYouWebsiteUrl: m.thankYouWebsiteUrl } : {}),
+    })
+    project.leadFormId = id
+    await setMachinePlan(machineId, plan)
+    await logActivity({
+      machineId,
+      kind: 'observation',
+      detail: `Created Meta instant form "Machine — ${project.listingName} — Qualification" (${id}) — this project's lead trials capture in-ad with budget/timeline/purpose qualification.`,
+      data: { projectSlug: project.slug, leadFormId: id },
+    })
+    return id
+  } catch (e) {
+    await logActivity({
+      machineId,
+      kind: 'error',
+      detail: `Instant-form creation for ${project.listingName} failed: ${errMsg(e)} — launching with the landing page instead.`,
+      data: { projectSlug: project.slug },
+    })
+    return null
+  }
 }
 
 // ─── The cycle ───────────────────────────────────────────────────────────────
@@ -390,6 +486,10 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         continue
       }
       try {
+        // In-ad instant form when the project has (or can get) one; the
+        // landing page is the honest fallback, never a silent no-op.
+        const project = plan.projects.find((p) => p.slug === trial.projectSlug)
+        const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
         const launch = await launchFullCampaign({
           campaignName: trial.campaignName,
           objective: 'LEAD_GENERATION',
@@ -398,7 +498,8 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           targeting: trial.targeting,
           creative: trial.creative,
           launchStatus: 'ACTIVE',
-          destination: 'landing',
+          destination: leadFormId ? 'form' : 'landing',
+          ...(leadFormId ? { leadFormId } : {}),
         })
         await addMachineCampaign({
           machineId,
@@ -481,7 +582,12 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       const quality = await getCampaignQuality(row.campaignId, campaignName)
       qualityScore = quality.score
       attributed = quality.attributed
-    } catch { /* fail-soft: quality is null (honest "no signal"), never invented */ }
+    } catch (e) {
+      // Fail-soft (quality stays null — honest "no signal", never invented),
+      // but observable: symmetric with the insights-read failure above.
+      await logActivity({ machineId, kind: 'error', detail: `CRM quality read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
+      result.errors.push(`quality:${row.campaignId}`)
+    }
 
     verdictRequests.push(...await buildVerdictRequests(machineId, row.campaignId, campaignName, untrusted, ownerCache))
 
@@ -685,6 +791,8 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
             newCampaignId = campaignId
           } else {
             if (!unlaunched.targeting || !unlaunched.creative) throw new Error('meta trial has no targeting/creative in the plan')
+            const project = plan.projects.find((p) => p.slug === unlaunched.projectSlug)
+            const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
             const launch = await launchFullCampaign({
               campaignName: unlaunched.campaignName,
               objective: 'LEAD_GENERATION',
@@ -693,7 +801,8 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               targeting: unlaunched.targeting,
               creative: unlaunched.creative,
               launchStatus: 'ACTIVE',
-              destination: 'landing',
+              destination: leadFormId ? 'form' : 'landing',
+              ...(leadFormId ? { leadFormId } : {}),
             })
             newCampaignId = launch.campaignId
           }

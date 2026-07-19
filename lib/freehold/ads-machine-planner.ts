@@ -36,6 +36,7 @@ import type {
   GeneratedCreativeVariant,
 } from '@/lib/meta/types'
 import type { LaunchGoogleCampaignPayload } from '@/lib/google/types'
+import type { ListingFacts } from '@/lib/meta/form-templates'
 
 /** Minimum viable daily trial budget (Meta's ad-set floor; the machine holds
  * Google search trials to the same AED 50/day floor). */
@@ -83,6 +84,14 @@ export interface MachineProjectPlan {
   googleSkipped?: string
   /** Learning-loop targeting note — ADVISORY only, absent when unavailable. */
   advisory?: string
+  /** Real listing facts captured at plan time — the engine materializes the
+   * project's Meta instant lead form from these. Absent on older plans (the
+   * engine then falls back to the fields above). */
+  facts?: ListingFacts
+  /** Meta instant form the engine created for this project's lead trials —
+   * written back by the engine on first launch so every later trial reuses
+   * the SAME form (one qualification form per project per machine). */
+  leadFormId?: string
 }
 
 export type MachinePlan =
@@ -384,6 +393,14 @@ export async function buildMachinePlan(
       trials,
       ...(googleSkipped ? { googleSkipped } : {}),
       ...(advisory ? { advisory } : {}),
+      facts: {
+        name: listingName,
+        area,
+        priceAED: price,
+        paymentPlan: listing?.paymentPlan ?? null,
+        landingUrl,
+        brochureUrl: listing?.brochureUrl ?? null,
+      },
     })
   }
 
