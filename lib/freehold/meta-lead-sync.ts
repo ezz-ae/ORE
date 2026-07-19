@@ -56,6 +56,12 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_lead_id text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_id text`)
 
+  // Campaign attribution: the Graph lead object carries campaign_id — store it
+  // as utm_id so form leads match the SAME attribution every quality/verdict
+  // read uses (utm_id = campaign id). Without this, instant-form leads were
+  // invisible to campaign quality and the Ads Machine feedback loop.
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
+
   let synced = 0
   for (const lead of leads) {
     const contact = extractContact(lead)
@@ -70,9 +76,9 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
     }
     const inserted = await query<{ id: string }>(
       `INSERT INTO freehold_site_leads (
-         id, name, phone, email, source, status, meta_lead_id, meta_form_id, created_at, updated_at
+         id, name, phone, email, source, status, meta_lead_id, meta_form_id, utm_id, created_at, updated_at
        )
-       SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, COALESCE($8::timestamptz, now()), now()
+       SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, NULLIF($9, ''), COALESCE($8::timestamptz, now()), now()
        WHERE NOT EXISTS (
          SELECT 1 FROM freehold_site_leads WHERE meta_lead_id = $6
        )
@@ -86,6 +92,7 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
         lead.id,
         formId,
         lead.created_time || null,
+        lead.campaign_id || '',
       ],
     ).catch((error) => {
       console.error('[meta-leads] CRM sync insert failed', error)

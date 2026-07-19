@@ -157,7 +157,10 @@ export default function MachineDashboardPage() {
       })
       const d = await res.json().catch(() => null)
       if (!res.ok) { toast.error(d?.error || t('lm.machine.ctrl.failed')); return }
-      toast.success(t('lm.machine.ctrl.cycleDone'))
+      // ran:false = the engine had nothing to do (not running/paused, or no
+      // viable plan) — never celebrate a cycle that did not happen.
+      if (d?.cycle?.ran === false) toast.message(t('lm.machine.ctrl.cycleIdle'))
+      else toast.success(t('lm.machine.ctrl.cycleDone'))
       await load({ silent: true })
     } catch {
       toast.error(t('lm.machine.ctrl.failed'))
@@ -267,11 +270,13 @@ export default function MachineDashboardPage() {
               <Square className="h-3.5 w-3.5" /> {t('lm.machine.ctrl.stop')}
             </button>
           )}
-          <button type="button" onClick={runCycle} disabled={cycleBusy}
-            className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
-            {cycleBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            {t('lm.machine.ctrl.runCycle')}
-          </button>
+          {(machine.status === 'running' || machine.status === 'paused') && (
+            <button type="button" onClick={runCycle} disabled={cycleBusy}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+              {cycleBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {t('lm.machine.ctrl.runCycle')}
+            </button>
+          )}
         </div>
       </section>
 
