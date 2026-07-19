@@ -5,8 +5,9 @@
  * orchestrator: the operator picks projects and a HARD daily budget cap, the
  * machine plans/launches/rotates audience trials across channels, and every
  * action lands in an activity feed. This module owns the four tables and the
- * one authoritative cap-sum definition (activeMetaSpendAed) that every
- * budget mutation in the engine checks against.
+ * one authoritative cap-sum definition (activeSpendAed — ONE combined cap
+ * across Meta AND Google) that every budget mutation in the engine checks
+ * against.
  *
  * DB idiom mirrors lib/meta/form-registry.ts: query() + lazy
  * CREATE TABLE IF NOT EXISTS, fail-soft where a failure must never break the
@@ -364,18 +365,19 @@ export async function updateMachineCampaign(
 }
 
 /**
- * THE one cap-sum definition: the machine's committed Meta daily spend is the
- * sum of daily budgets of its ACTIVE Meta campaigns. Every mutation that can
- * add spend (launch, resume, budget raise, cap decrease) must check this
- * fresh — never a cached figure. Google rows never count: Google campaigns
- * are drafts only (PAUSED, no autonomous spend authority).
+ * THE one cap-sum definition: the machine's committed daily spend is the sum
+ * of daily budgets of its ACTIVE campaigns across BOTH channels — Google is a
+ * live channel with the same autonomous-within-cap spend authority as Meta,
+ * and one combined cap governs them together. Every mutation that can add
+ * spend (launch, resume, budget raise, cap decrease) must check this fresh —
+ * never a cached figure. Drafts/paused/stopped rows never count.
  */
-export async function activeMetaSpendAed(machineId: string): Promise<number> {
+export async function activeSpendAed(machineId: string): Promise<number> {
   await ensure()
   const [row] = await query<{ total: number }>(
     `SELECT COALESCE(SUM(daily_budget_aed), 0)::int AS total
      FROM freehold_site_ads_machine_campaigns
-     WHERE machine_id = $1 AND channel = 'meta' AND status = 'active'`,
+     WHERE machine_id = $1 AND channel IN ('meta', 'google') AND status = 'active'`,
     [machineId],
   )
   return Number(row?.total ?? 0) || 0
@@ -511,7 +513,7 @@ const queueSelect = `
   FROM freehold_site_ads_machine_lead_verdicts v
   LEFT JOIN freehold_site_leads l ON l.id = v.lead_id
   LEFT JOIN freehold_site_ads_machine_campaigns c
-    ON c.machine_id = v.machine_id AND c.campaign_id = v.campaign_id AND c.channel = 'meta'
+    ON c.machine_id = v.machine_id AND c.campaign_id = v.campaign_id
   LEFT JOIN freehold_site_ads_machines m ON m.id = v.machine_id`
 
 const queueItem = (r: Record<string, unknown>): VerdictQueueItem => ({

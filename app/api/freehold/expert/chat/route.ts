@@ -171,6 +171,13 @@ function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
   const texts = Object.entries(obj as Record<string, unknown>)
     .filter(([k, v]) => typeof v === 'string' && (v as string).trim().length > 0 && k !== 'type' && k !== 'thinking')
     .map(([, v]) => (v as string).trim())
+    // Never surface bare tool identifiers as an "answer": a malformed
+    // tool-call object salvaged here is exactly how raw names like
+    // "ads_campaign_insights" leaked into chat bubbles (twice, when the
+    // object carried the name under two keys). A snake_case token is never
+    // a human answer — dropping them lets the grounded tools-ran fallback
+    // downstream take over instead.
+    .filter((t) => !/^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(t))
   if (texts.length > 0) return [{ type: 'text', content: texts.join('\n\n') }]
   return null
 }

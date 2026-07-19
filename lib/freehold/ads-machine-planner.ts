@@ -5,8 +5,11 @@
  * persisted, launchable plan: 2–3 Meta audience trials per project — each from
  * a DISTINCT real source (the company's own buyer-match profile, an existing
  * saved audience/lookalike, and an Advantage+ broad baseline) — plus ONE
- * Google SEARCH draft payload per project (drafts only; the machine has no
- * autonomous Google spend authority).
+ * Google SEARCH trial per project. Google is a LIVE channel: its trial takes a
+ * share of the same budget split as the Meta trials and ONE combined daily cap
+ * governs both channels. When the per-project share funds the Meta trials but
+ * not the Google one, the Google trial is dropped for that project (noted on
+ * the plan as googleSkipped) instead of failing the whole plan.
  *
  * NOTHING-FAKE rules applied throughout:
  *  - a saved-audience trial exists only when a saved audience actually exists;
@@ -34,10 +37,11 @@ import type {
 } from '@/lib/meta/types'
 import type { LaunchGoogleCampaignPayload } from '@/lib/google/types'
 
-/** Meta's minimum viable daily ad-set budget — a trial below this can't run. */
+/** Minimum viable daily trial budget (Meta's ad-set floor; the machine holds
+ * Google search trials to the same AED 50/day floor). */
 export const META_MIN_TRIAL_BUDGET_AED = 50
 
-export type TrialSource = 'buyer-match' | 'saved-audience' | 'lookalike' | 'advantage-broad'
+export type TrialSource = 'buyer-match' | 'saved-audience' | 'lookalike' | 'advantage-broad' | 'google-search'
 
 export interface MachineTrialPlan {
   /** Stable id within the plan — the engine matches launched campaigns to it. */
@@ -45,12 +49,17 @@ export interface MachineTrialPlan {
   /** Human-readable trial label; unique per project (one per source). */
   label: string
   source: TrialSource
+  /** Launch channel. Absent on plans persisted before Google went live = 'meta'. */
+  channel?: 'meta' | 'google'
   projectSlug: string
   campaignName: string
   listingName: string
   dailyBudgetAed: number
-  targeting: CampaignTargeting
-  creative: CampaignCreative
+  /** Meta trials only. */
+  targeting?: CampaignTargeting
+  creative?: CampaignCreative
+  /** Google search trials only — the full real launch payload (RSA + keywords). */
+  google?: LaunchGoogleCampaignPayload
   /** Set only for saved-audience / lookalike trials — the REAL saved audience used. */
   savedAudienceId?: string
   savedAudienceName?: string
@@ -67,8 +76,11 @@ export interface MachineProjectPlan {
   landingUrl: string
   dailyBudgetAed: number
   trials: MachineTrialPlan[]
-  /** ONE Google SEARCH draft per project — createLocalCampaign payload, PAUSED. */
-  googleDraft: LaunchGoogleCampaignPayload
+  /** Legacy (pre-live-Google plans only): ONE Google SEARCH draft payload.
+   * New plans carry the Google search campaign as a real trial instead. */
+  googleDraft?: LaunchGoogleCampaignPayload
+  /** Honest note when the split funds the Meta trials but not the Google one. */
+  googleSkipped?: string
   /** Learning-loop targeting note — ADVISORY only, absent when unavailable. */
   advisory?: string
 }
@@ -79,7 +91,10 @@ export type MachinePlan =
 
 const SITE_BASE = 'https://www.freeholdproperty.ae'
 
-const ANGLE_FOR_SOURCE: Record<TrialSource, CreativeAngle> = {
+/** Meta trial sources only — the google-search trial builds RSA copy directly
+ * from listing fields and never uses these angles. */
+type MetaTrialSource = Exclude<TrialSource, 'google-search'>
+const ANGLE_FOR_SOURCE: Record<MetaTrialSource, CreativeAngle> = {
   'buyer-match': 'investor',
   'saved-audience': 'yield',
   'lookalike': 'yield',
@@ -99,7 +114,7 @@ function variantToCreative(v: GeneratedCreativeVariant, landingUrl: string, imag
 
 /** Google RSA fields have hard length limits (headline 30, description 90).
  * Everything here is derived from real listing fields, then truncated. */
-function buildGoogleDraft(params: {
+function buildGoogleSearchPayload(params: {
   slug: string
   listingName: string
   area: string
@@ -107,6 +122,7 @@ function buildGoogleDraft(params: {
   landingUrl: string
   dailyBudgetAed: number
   price: number | null
+  campaignName: string
 }): LaunchGoogleCampaignPayload {
   const h = (s: string) => s.trim().slice(0, 30)
   const d = (s: string) => s.trim().slice(0, 90)
@@ -135,7 +151,7 @@ function buildGoogleDraft(params: {
     listingId: params.slug,
     listingName: params.listingName,
     area: params.area,
-    campaignName: `Ads Machine — ${params.listingName} — Google Search (draft)`,
+    campaignName: params.campaignName,
     type: 'SEARCH',
     biddingStrategy: 'MAXIMIZE_CONVERSIONS',
     dailyBudgetAED: params.dailyBudgetAed,
@@ -207,7 +223,7 @@ export async function buildMachinePlan(
       .catch(() => null)
 
     // ── Trial candidates: 2–3 DISTINCT real sources ──
-    type Candidate = { source: TrialSource; label: string; targeting: CampaignTargeting; rationale: string; savedAudienceId?: string; savedAudienceName?: string }
+    type Candidate = { source: MetaTrialSource; label: string; targeting: CampaignTargeting; rationale: string; savedAudienceId?: string; savedAudienceName?: string }
     const candidates: Candidate[] = []
 
     if (buyerMatch) {
@@ -262,10 +278,19 @@ export async function buildMachinePlan(
     })
 
     // Fund as many distinct trials as the per-project share allows at the
-    // AED 50 floor (perProject >= 50 was already guaranteed above).
+    // AED 50 floor (perProject >= 50 was already guaranteed above). The Meta
+    // trials are the backbone and are funded first; the Google SEARCH trial
+    // takes the NEXT floor-sized slot of the SAME split. If the share funds
+    // the Meta trials but not the Google one, the Google trial is dropped for
+    // this project — noted on the plan, never a failure of the whole plan.
     const fundable = Math.max(1, Math.floor(perProject / META_MIN_TRIAL_BUDGET_AED))
     const chosen = candidates.slice(0, Math.min(candidates.length, fundable))
-    const perTrial = Math.floor(perProject / chosen.length)
+    const includeGoogle = fundable >= chosen.length + 1
+    const trialCount = chosen.length + (includeGoogle ? 1 : 0)
+    const perTrial = Math.floor(perProject / trialCount)
+    const googleSkipped = includeGoogle
+      ? undefined
+      : `AED ${perProject}/day funds ${chosen.length} Meta trial(s) at the AED ${META_MIN_TRIAL_BUDGET_AED}/day floor but not an additional Google Search trial — it was dropped for this project. Raise the cap to fund it.`
 
     // ── Copy: one grounded generation per project (Gemini when live), the
     // deterministic template per angle otherwise. ──
@@ -281,6 +306,7 @@ export async function buildMachinePlan(
     }
     const aiVariants = await geminiCreatives({ ...basePayload, angle: 'investor' }).catch(() => null)
 
+    const namePrefix = opts?.machineName ? `${opts.machineName} — ` : 'Ads Machine — '
     const trials: MachineTrialPlan[] = chosen.map((c, i) => {
       let variant: GeneratedCreativeVariant
       let copySource: 'gemini' | 'template'
@@ -296,8 +322,9 @@ export async function buildMachinePlan(
         id: `trial-${randomUUID()}`,
         label: c.label,
         source: c.source,
+        channel: 'meta' as const,
         projectSlug: slug,
-        campaignName: `${opts?.machineName ? `${opts.machineName} — ` : 'Ads Machine — '}${listingName} — ${c.label}`,
+        campaignName: `${namePrefix}${listingName} — ${c.label}`,
         listingName,
         dailyBudgetAed: perTrial,
         targeting: c.targeting,
@@ -307,6 +334,32 @@ export async function buildMachinePlan(
         rationale: c.rationale,
       }
     })
+
+    // The Google SEARCH trial — a REAL trial in the same pool: same split,
+    // same cap, launched live by the engine. RSA copy + keywords are derived
+    // deterministically from the listing's real fields (template, never
+    // pretend-AI).
+    if (includeGoogle) {
+      const googlePayload = buildGoogleSearchPayload({
+        slug, listingName, area, developer, landingUrl,
+        dailyBudgetAed: perTrial,
+        price,
+        campaignName: `${namePrefix}${listingName} — Google Search`,
+      })
+      trials.push({
+        id: `trial-${randomUUID()}`,
+        label: 'Google Search',
+        source: 'google-search',
+        channel: 'google',
+        projectSlug: slug,
+        campaignName: googlePayload.campaignName,
+        listingName,
+        dailyBudgetAed: perTrial,
+        google: googlePayload,
+        copySource: 'template',
+        rationale: `Search-intent trial: real keywords from the listing and area (${(googlePayload.keywords ?? []).map((k) => `"${k.text}"`).join(', ')}), RSA copy from the listing's real fields.`,
+      })
+    }
 
     // Learning-loop targeting — strictly ADVISORY and fail-soft: a note for
     // the operator, never a mutation of the trials above. Bounded so plan
@@ -329,13 +382,7 @@ export async function buildMachinePlan(
       landingUrl,
       dailyBudgetAed: perProject,
       trials,
-      googleDraft: buildGoogleDraft({
-        slug, listingName, area, developer, landingUrl,
-        // The draft carries the same per-project figure as an honest suggested
-        // budget — it never spends (PAUSED local draft, operator-launched only).
-        dailyBudgetAed: perProject,
-        price,
-      }),
+      ...(googleSkipped ? { googleSkipped } : {}),
       ...(advisory ? { advisory } : {}),
     })
   }

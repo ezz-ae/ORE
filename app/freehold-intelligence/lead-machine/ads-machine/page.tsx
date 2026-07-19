@@ -36,6 +36,7 @@ const SOURCE_KEY: Record<TrialSource, string> = {
   'saved-audience': 'lm.machine.plan.source.saved-audience',
   'lookalike': 'lm.machine.plan.source.lookalike',
   'advantage-broad': 'lm.machine.plan.source.advantage-broad',
+  'google-search': 'lm.machine.plan.source.google-search',
 }
 
 interface PickListing {
@@ -186,8 +187,11 @@ function ProjectMultiPicker({
 }
 
 /** The persisted plan, rendered per project: trial cards with real source,
- * budget split, copy headline + honest copy origin, plus the Google draft
- * note and the advisory when the learning loop produced one. */
+ * budget split, copy headline + honest copy origin — the Google Search trial
+ * renders like the others with its own source badge. Legacy plans (pre-live
+ * Google) still show their draft note; a dropped Google trial shows the
+ * planner's honest reason; the advisory shows when the learning loop produced
+ * one. */
 function PlanPreview({ plan }: { plan: MachinePlan }) {
   const t = useT()
   if (!plan.viable) {
@@ -224,7 +228,7 @@ function PlanPreview({ plan }: { plan: MachinePlan }) {
                   <div className="mt-2 truncate text-[11px] text-slate-400">“{trial.savedAudienceName}”</div>
                 )}
                 <div className="mt-3 text-[10px] uppercase tracking-wider text-slate-500">{t('lm.machine.plan.headline')}</div>
-                <div className="mt-1 text-sm text-white">{trial.creative.headline}</div>
+                <div className="mt-1 text-sm text-white">{trial.creative?.headline ?? trial.google?.headlines?.[0] ?? ''}</div>
                 <div className="mt-2.5 inline-flex items-center gap-1 text-[11px] text-slate-400">
                   {trial.copySource === 'gemini'
                     ? <><Sparkles className="h-3 w-3 text-gold/70" /> {t('lm.machine.plan.copy.gemini')}</>
@@ -235,12 +239,25 @@ function PlanPreview({ plan }: { plan: MachinePlan }) {
             ))}
           </div>
 
-          <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-line bg-surface-2/40 px-3.5 py-2.5">
-            <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              {t('lm.machine.plan.googleDraft', { n: p.googleDraft.dailyBudgetAED.toLocaleString() })}
-            </p>
-          </div>
+          {/* Legacy plans only (built before Google went live as a channel). */}
+          {p.googleDraft && (
+            <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-line bg-surface-2/40 px-3.5 py-2.5">
+              <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <p className="text-[11px] leading-relaxed text-slate-400">
+                {t('lm.machine.plan.googleDraft', { n: p.googleDraft.dailyBudgetAED.toLocaleString() })}
+              </p>
+            </div>
+          )}
+
+          {/* The planner's honest reason when the split couldn't fund the
+              Google Search trial for this project — verbatim, like the
+              plan-level viability reason. */}
+          {p.googleSkipped && (
+            <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-orange-400/20 bg-orange-400/[0.04] px-3.5 py-2.5">
+              <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-400/70" />
+              <p className="text-[11px] leading-relaxed text-slate-400">{p.googleSkipped}</p>
+            </div>
+          )}
 
           {p.advisory && (
             <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-gold/15 bg-gold/[0.04] px-3.5 py-2.5">

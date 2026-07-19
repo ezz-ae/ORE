@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, AlertCircle, ArrowUpRight, Info } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, AlertCircle, ArrowUpRight, Info, Zap } from 'lucide-react'
 import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { GeneratedRsaVariant, GenerateRsaPayload } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
@@ -93,6 +94,7 @@ function CharBadge({ text, limit, warn }: { text: string; limit: number; warn: n
 
 export default function GenerateRsaPage() {
   const t = useT()
+  const router = useRouter()
   const { projects } = useLiveProjects()
   const [listingId, setListingId] = useState<string>('')
   useEffect(() => {
@@ -181,6 +183,26 @@ export default function GenerateRsaPage() {
     v.headlines.forEach((h, i) => lines.push(`HEADLINE ${i + 1}: ${h}`))
     v.descriptions.forEach((d, i) => lines.push(`DESCRIPTION ${i + 1}: ${d}`))
     return lines.join('\n')
+  }
+
+  // ── Hand off copy to the campaign wizard ─────────────────────────────────────
+  // One-shot sessionStorage handoff: campaigns/new reads + clears
+  // 'google-rsa-prefill' on mount and prefills its headline/description inputs.
+
+  function sendToWizard(headlines: string[], descriptions: string[]) {
+    sessionStorage.setItem('google-rsa-prefill', JSON.stringify({
+      headlines:    headlines.filter(Boolean).slice(0, 15),
+      descriptions: descriptions.filter(Boolean).slice(0, 4),
+    }))
+    router.push('/freehold-intelligence/lead-machine/google/campaigns/new')
+  }
+
+  // Combined set across all variants (deduped, RSA caps applied).
+  function sendCombinedToWizard() {
+    sendToWizard(
+      [...new Set(variants.flatMap((v) => v.headlines))],
+      [...new Set(variants.flatMap((v) => v.descriptions))],
+    )
   }
 
   // ── Char limit warning summary ───────────────────────────────────────────────
@@ -381,8 +403,18 @@ export default function GenerateRsaPage() {
           {/* Variant cards */}
           {variants.length > 0 && (
             <div className="space-y-5">
-              <div className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-                {variants.length} variant{variants.length !== 1 ? 's' : ''} — {angleConfig.label} · {tone}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
+                  {variants.length} variant{variants.length !== 1 ? 's' : ''} — {angleConfig.label} · {tone}
+                </div>
+                {variants.length > 1 && (
+                  <button
+                    onClick={sendCombinedToWizard}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#4285F4]/30 bg-[#4285F4]/10 px-4 py-1.5 text-xs font-semibold text-[#4285F4] transition hover:bg-[#4285F4]/20"
+                  >
+                    <Zap className="h-3.5 w-3.5" /> {t('lm.google.adsGenerate.useAllInCampaign')}
+                  </button>
+                )}
               </div>
 
               {variants.map((v, i) => {
@@ -476,13 +508,19 @@ export default function GenerateRsaPage() {
                       </div>
                     </div>
 
-                    {/* Copy all for Google Ads button */}
-                    <div className="border-t border-line pt-4">
+                    {/* Copy all + hand off to the campaign wizard */}
+                    <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+                      <button
+                        onClick={() => sendToWizard(v.headlines, v.descriptions)}
+                        className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#5A97F5]"
+                      >
+                        <Zap className="h-3.5 w-3.5" /> {t('lm.google.adsGenerate.useInCampaign')}
+                      </button>
                       <CopyButton
                         text={copyAllText}
-                        className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#5A97F5]"
+                        className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-400 transition hover:border-[#4285F4]/30 hover:text-white"
                       />
-                      <span className="ml-2 text-sm text-slate-600">
+                      <span className="text-sm text-slate-600">
                         Copy all for Google Ads
                       </span>
                     </div>

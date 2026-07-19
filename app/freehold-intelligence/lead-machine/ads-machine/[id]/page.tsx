@@ -3,9 +3,10 @@
 /**
  * Ads Machine — machine dashboard. Everything on this page is the GET
  * response of /api/freehold/ads/machine/[id]: controls (pause/resume/stop/
- * run-cycle/cap), the real budget stats (committed + headroom), the trials
- * table (no invented spend/lead columns — Meta rows link to the ads-live
- * detail for the full live data), the activity feed ("what the machine is
+ * run-cycle/cap), the real budget stats (combined Meta+Google committed +
+ * headroom), the trials table (no invented spend/lead columns — Meta rows
+ * link to the ads-live detail, Google rows to the Google campaign detail, for
+ * the full live data), the activity feed ("what the machine is
  * doing now", auto-refreshed every 60s), the admin verdict queue with its
  * accuracy warning FIRST, and the per-member / per-day answer aggregates.
  */
@@ -366,14 +367,14 @@ export default function MachineDashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-end font-medium text-slate-200">AED {c.dailyBudgetAed.toLocaleString()}</td>
                       <td className="px-4 py-3 text-end">
-                        {c.channel === 'meta' && (
-                          <Link
-                            href={`/freehold-intelligence/ads-live/meta/${encodeURIComponent(c.campaignId)}`}
-                            className="inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
-                          >
-                            {t('lm.machine.trials.live')} <ArrowUpRight className="h-3 w-3" />
-                          </Link>
-                        )}
+                        <Link
+                          href={c.channel === 'meta'
+                            ? `/freehold-intelligence/ads-live/meta/${encodeURIComponent(c.campaignId)}`
+                            : `/freehold-intelligence/lead-machine/google/campaigns/${encodeURIComponent(c.campaignId)}`}
+                          className="inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
+                        >
+                          {t('lm.machine.trials.live')} <ArrowUpRight className="h-3 w-3" />
+                        </Link>
                       </td>
                     </tr>
                   )

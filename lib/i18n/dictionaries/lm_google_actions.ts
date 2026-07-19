@@ -18,6 +18,18 @@ const en: Dict = {
   'lm.google.extensions.addBtn': 'Create',
   'lm.google.extensions.added': 'Extension created',
   'lm.google.actions.failed': 'Action failed — try again',
+  'lm.google.keywords.campaignLabel': 'Campaign',
+  'lm.google.budget.edit': 'Edit daily budget',
+  'lm.google.budget.save': 'Save',
+  'lm.google.budget.cancel': 'Cancel',
+  'lm.google.budget.updated': 'Budget updated',
+  'lm.google.budget.failed': 'Budget update failed — try again',
+  'lm.google.budget.min': 'Minimum daily budget is AED 50',
+  'lm.google.localOnly.title': 'Saved locally — apply it in Google Ads',
+  'lm.google.localOnly.audiences': 'Audiences created here are stored in Freehold only. Create the actual user list in Google Ads to target it in live campaigns.',
+  'lm.google.localOnly.extensions': 'Sitelinks and callouts created here are stored in Freehold only. Add the actual asset in Google Ads for it to serve with your ads.',
+  'lm.google.adsGenerate.useInCampaign': 'Use in new campaign',
+  'lm.google.adsGenerate.useAllInCampaign': 'Use all variants in new campaign',
 }
 
 const ar: Dict = {
@@ -35,6 +47,18 @@ const ar: Dict = {
   'lm.google.extensions.addBtn': 'إنشاء',
   'lm.google.extensions.added': 'تم إنشاء الإضافة',
   'lm.google.actions.failed': 'فشل الإجراء — حاول مرة أخرى',
+  'lm.google.keywords.campaignLabel': 'الحملة',
+  'lm.google.budget.edit': 'تعديل الميزانية اليومية',
+  'lm.google.budget.save': 'حفظ',
+  'lm.google.budget.cancel': 'إلغاء',
+  'lm.google.budget.updated': 'تم تحديث الميزانية',
+  'lm.google.budget.failed': 'فشل تحديث الميزانية — حاول مرة أخرى',
+  'lm.google.budget.min': 'الحد الأدنى للميزانية اليومية 50 درهمًا',
+  'lm.google.localOnly.title': 'محفوظ محليًا — طبِّقه في Google Ads',
+  'lm.google.localOnly.audiences': 'الجماهير المُنشأة هنا تُخزَّن في Freehold فقط. أنشئ قائمة المستخدمين الفعلية في Google Ads لاستهدافها في الحملات الفعلية.',
+  'lm.google.localOnly.extensions': 'الروابط الفرعية والأوصاف المُنشأة هنا تُخزَّن في Freehold فقط. أضف الأصل الفعلي في Google Ads ليظهر مع إعلاناتك.',
+  'lm.google.adsGenerate.useInCampaign': 'استخدمه في حملة جديدة',
+  'lm.google.adsGenerate.useAllInCampaign': 'استخدم كل النسخ في حملة جديدة',
 }
 
 const ru: Dict = {
@@ -52,6 +76,18 @@ const ru: Dict = {
   'lm.google.extensions.addBtn': 'Создать',
   'lm.google.extensions.added': 'Расширение создано',
   'lm.google.actions.failed': 'Не удалось выполнить — попробуйте снова',
+  'lm.google.keywords.campaignLabel': 'Кампания',
+  'lm.google.budget.edit': 'Изменить дневной бюджет',
+  'lm.google.budget.save': 'Сохранить',
+  'lm.google.budget.cancel': 'Отмена',
+  'lm.google.budget.updated': 'Бюджет обновлён',
+  'lm.google.budget.failed': 'Не удалось обновить бюджет — попробуйте снова',
+  'lm.google.budget.min': 'Минимальный дневной бюджет — 50 AED',
+  'lm.google.localOnly.title': 'Сохранено локально — примените в Google Ads',
+  'lm.google.localOnly.audiences': 'Созданные здесь аудитории хранятся только в Freehold. Создайте реальный список пользователей в Google Ads, чтобы таргетировать его в живых кампаниях.',
+  'lm.google.localOnly.extensions': 'Созданные здесь дополнительные ссылки и уточнения хранятся только в Freehold. Добавьте реальный ассет в Google Ads, чтобы он показывался с вашими объявлениями.',
+  'lm.google.adsGenerate.useInCampaign': 'Использовать в новой кампании',
+  'lm.google.adsGenerate.useAllInCampaign': 'Все варианты в новую кампанию',
 }
 
 export const lm_google_actions = { en, ar, ru }

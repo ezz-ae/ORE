@@ -485,6 +485,16 @@ export default function GoogleExtensionsPage() {
             </button>
           </div>
 
+          {/* Honesty note: creating here NEVER creates a Google asset — the
+              row is stored in Freehold only (the API flags it savedLocally). */}
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3.5 py-2.5 text-xs leading-snug text-amber-200/90">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+              <span className="font-semibold">{t('lm.google.localOnly.title')}</span>
+              {' — '}{t('lm.google.localOnly.extensions')}
+            </span>
+          </div>
+
           {/* ── Extension groups ── */}
           {filteredGroups.length > 0 ? (
             filteredGroups.map(([type, exts]) => (

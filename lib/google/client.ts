@@ -9,6 +9,7 @@ import {
   type GoogleAudience,
   type GoogleExtension,
   type GoogleReportSummary,
+  type GoogleKeywordMatchType,
   type LaunchGoogleCampaignPayload,
   type NegativeKeyword,
 } from './types'
@@ -260,6 +261,77 @@ export async function updateCampaignStatus(
       },
       updateMask: 'status',
     },
+  }])
+}
+
+/**
+ * Set a campaign's daily budget. Budgets live on a separate campaign_budget
+ * resource, so we first resolve the campaign's budget resource name via GAQL,
+ * then mutate that budget's amount_micros (same AED→micros convention as
+ * launchSearchCampaign: 1 AED = 1_000_000 micros, account currency is AED).
+ */
+export async function updateCampaignBudget(
+  campaignId: string,
+  dailyBudgetAED: number,
+): Promise<void> {
+  if (!/^\d+$/.test(campaignId)) {
+    throw new GoogleApiError(`Invalid campaign id "${campaignId}"`, 400)
+  }
+  const rows = await gaqlQuery<Record<string, any>>(`
+    SELECT campaign.id, campaign.campaign_budget
+    FROM campaign
+    WHERE campaign.id = ${campaignId}
+    LIMIT 1
+  `)
+  const budgetResourceName = rows[0]?.campaign?.campaign_budget
+    ? String(rows[0].campaign.campaign_budget)
+    : ''
+  if (!budgetResourceName) {
+    throw new GoogleApiError(`Campaign ${campaignId} not found or has no budget`, 404)
+  }
+  await mutate([{
+    campaignBudgetOperation: {
+      update: {
+        resourceName: budgetResourceName,
+        amountMicros: Math.round(dailyBudgetAED * 1_000_000),
+      },
+      updateMask: 'amountMicros',
+    },
+  }])
+}
+
+// ─── Keyword mutations ───────────────────────────────────────────────────────
+
+/**
+ * Add keywords to an ad group (adGroupCriterionOperation create).
+ * Returns the created criterion resource names, in input order.
+ */
+export async function addKeywords(
+  adGroupId: string,
+  keywords: { text: string; matchType: GoogleKeywordMatchType }[],
+): Promise<string[]> {
+  const { customerId } = await creds()
+  const result = await mutate(keywords.map((kw) => ({
+    adGroupCriterionOperation: {
+      create: {
+        adGroup: `customers/${customerId}/adGroups/${adGroupId}`,
+        status:  'ENABLED',
+        keyword: { text: kw.text, matchType: kw.matchType },
+      },
+    },
+  }))) as { mutateOperationResponses?: { adGroupCriterionResult?: { resourceName?: string } }[] }
+  return (result?.mutateOperationResponses ?? [])
+    .map((r) => r.adGroupCriterionResult?.resourceName ?? '')
+    .filter(Boolean)
+}
+
+/** Remove a keyword by its ad_group_criterion resource name. */
+export async function removeKeyword(criterionResourceName: string): Promise<void> {
+  if (!/^customers\/\d+\/adGroupCriteria\/[\d~]+$/.test(criterionResourceName)) {
+    throw new GoogleApiError(`Invalid keyword resource name "${criterionResourceName}"`, 400)
+  }
+  await mutate([{
+    adGroupCriterionOperation: { remove: criterionResourceName },
   }])
 }
 
@@ -632,6 +704,16 @@ export async function launchSearchCampaign(p: LaunchGoogleCampaignPayload): Prom
           advertisingChannelType: p.type,
           status:                 'PAUSED',
           campaignBudget:         `customers/${customerId}/campaignBudgets/${tempBudgetKey}`,
+          // Campaign-level tracking template — the Google mirror of the
+          // url_tags lib/meta/client.ts stamps on every Meta creative. {lpurl}
+          // and {campaignid} are Google ValueTrack params substituted at SERVE
+          // time (so referencing the campaign id here works even though the
+          // campaign doesn't exist yet in this atomic mutate). Every served
+          // click lands with utm_source/medium/campaign/id, which is exactly
+          // what the CRM attribution matcher keys on (utm_id = campaign id OR
+          // utm_campaign name) — and what makes getCampaignQuality work for
+          // Google leads. finalUrls stay untouched; Google appends at serve.
+          trackingUrlTemplate:    '{lpurl}?utm_source=google&utm_medium=paid&utm_campaign={campaignid}&utm_id={campaignid}',
           ...(p.biddingStrategy === 'TARGET_CPA'
             ? { targetCpa: { targetCpaMicros: Math.round((p.targetCpaAED ?? 50) * 1_000_000) } }
             : { maximizeConversions: {} }),

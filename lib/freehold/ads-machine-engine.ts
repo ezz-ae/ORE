@@ -2,21 +2,29 @@
  * Ads Machine — engine (stage 1: engine, no UI).
  *
  * runMachineCycle is the machine's heartbeat (cron + manual run_cycle):
- *   LAUNCH   — planned-but-unlaunched trials go live ACTIVE, but only after a
- *              FRESH cap check (activeMetaSpendAed + new budget ≤ cap); a trial
+ *   LAUNCH   — planned-but-unlaunched trials go live, but only after a FRESH
+ *              combined cap check (activeSpendAed + new budget ≤ cap); a trial
  *              that doesn't fit is logged 'cap_enforced' and skipped, and a
- *              Meta failure is logged 'error' without sinking the cycle.
- *   EVALUATE — per campaign: real insights (this_month — the only window the
- *              client exposes), CRM quality, verdict stats; creates per-lead
- *              feedback questions for brokers; ONE aggregated 'observation'
- *              activity per machine per cycle.
+ *              platform failure is logged 'error' without sinking the cycle.
+ *              Google is a LIVE channel: its trials launch for real (created
+ *              PAUSED atomically, then ENABLED) under the same cap as Meta.
+ *              When Google isn't connected (GoogleConfigError) the trial
+ *              degrades honestly to a local PAUSED draft + a
+ *              'google_draft_prepared' activity — the machine still runs Meta.
+ *   EVALUATE — per campaign: real platform metrics (Meta insights this_month;
+ *              Google campaign metrics), CRM quality, verdict stats; creates
+ *              per-lead feedback questions for brokers; ONE aggregated
+ *              'observation' activity per machine per cycle.
  *   ROTATE   — deterministic, per project, ≤1 pause per project per cycle;
  *              only HUMAN-answered decisive verdicts (yes/no) count; freed
- *              budget is reallocated under the cap.
+ *              budget is reallocated under the cap. Meta and Google trials
+ *              share one per-project pool, so cross-channel reallocation is
+ *              allowed — each mutation goes through its own channel's client.
  *
- * Spend authority: autonomous WITHIN the hard daily cap. The cap is checked
- * server-side at every mutation that can add spend — launch, resume, budget
- * raise, cap decrease — always against a fresh activeMetaSpendAed read.
+ * Spend authority: autonomous WITHIN the hard daily cap — for BOTH channels.
+ * The cap is ONE combined figure and is checked server-side at every mutation
+ * that can add spend — launch, resume, budget raise, cap decrease — always
+ * against a fresh activeSpendAed read.
  */
 import { query } from '@/lib/db'
 import {
@@ -24,8 +32,15 @@ import {
   getCampaignInsights,
   listAdSets,
   updateAdSet,
-  updateCampaignStatus,
+  updateCampaignStatus as metaUpdateCampaignStatus,
 } from '@/lib/meta/client'
+import {
+  launchSearchCampaign,
+  listCampaigns as listGoogleCampaigns,
+  updateCampaignStatus as googleUpdateCampaignStatus,
+  updateCampaignBudget as googleUpdateCampaignBudget,
+} from '@/lib/google/client'
+import { GoogleConfigError, type GoogleCampaign } from '@/lib/google/types'
 import { getCampaignQuality, badPhone, QUALIFIED_STATUSES } from '@/lib/freehold/campaign-quality'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { createLocalCampaign } from '@/lib/google/local-store'
@@ -37,11 +52,12 @@ import {
   listMachineCampaigns,
   addMachineCampaign,
   updateMachineCampaign,
-  activeMetaSpendAed,
+  activeSpendAed,
   insertLeadVerdictRequests,
   getVerdictStats,
   type AdsMachine,
   type MachineCampaign,
+  type MachineChannel,
   type TrialVerdictStats,
   type VerdictRequestInput,
   type QuestionKind,
@@ -80,16 +96,39 @@ export interface CycleResult {
   errors: string[]
 }
 
+/**
+ * Per-channel CPL basis (leadBasis): each channel's lead count is its own
+ * honest source-of-truth. Meta reports actual lead events ('lead' actions), so
+ * Meta trials keep using Meta-reported leads. Google 'conversions' are NOT
+ * leads (they can be any conversion action configured on the account), so
+ * Google trials use ATTRIBUTED CRM LEADS — real leads that arrived with
+ * utm_id = the Google campaign id (stamped by the campaign tracking template).
+ * The basis is recorded on every observation so no number pretends to be what
+ * it isn't.
+ */
 interface TrialState {
   row: MachineCampaign
   planTrial: MachineTrialPlan | null
   campaignName: string
   spendAed: number
-  metaLeads: number
+  /** Lead count the CPL divides by — see leadBasis for what it honestly is. */
+  leads: number
+  leadBasis: 'meta-reported' | 'crm-attributed'
   cplAed: number | null
   qualityScore: number | null
   attributed: number
   verdicts: TrialVerdictStats | null
+}
+
+const trialChannel = (t: MachineTrialPlan): MachineChannel => t.channel ?? 'meta'
+
+/** Pause/resume a trial's campaign on its own platform. */
+async function setPlatformStatus(row: MachineCampaign, running: boolean): Promise<void> {
+  if (row.channel === 'google') {
+    await googleUpdateCampaignStatus(row.campaignId, running ? 'ENABLED' : 'PAUSED')
+  } else {
+    await metaUpdateCampaignStatus(row.campaignId, running ? 'ACTIVE' : 'PAUSED')
+  }
 }
 
 const emptyResult = (machineId: string, status: AdsMachine['status'], ran: boolean): CycleResult => ({
@@ -239,59 +278,121 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   let campaigns = await listMachineCampaigns(machineId)
 
   // ── LAUNCH (running only) ──────────────────────────────────────────────────
+  // Google is a LIVE channel: its planned trials launch for real, under the
+  // same fresh COMBINED cap check as Meta launches. One cap governs both.
   if (machine.status === 'running') {
-    // Google SEARCH drafts: one per project, prepared once, always PAUSED —
-    // the machine has NO autonomous Google spend authority.
-    for (const project of plan.projects) {
-      const hasDraft = campaigns.some((c) => c.channel === 'google' && c.projectSlug === project.slug)
-      if (hasDraft) continue
-      try {
-        const draft = await createLocalCampaign(project.googleDraft, `ads-machine:${machineId}`)
-        await addMachineCampaign({
-          machineId,
-          channel: 'google',
-          campaignId: draft.id,
-          projectSlug: project.slug,
-          trialLabel: 'Google Search (draft)',
-          dailyBudgetAed: project.googleDraft.dailyBudgetAED,
-          status: 'draft',
-        })
-        await logActivity({
-          machineId,
-          kind: 'google_draft_prepared',
-          detail: `Prepared Google SEARCH draft for ${project.listingName} (PAUSED — suggested AED ${project.googleDraft.dailyBudgetAED}/day; launches only by operator action).`,
-          campaignId: draft.id,
-          data: { projectSlug: project.slug },
-        })
-        result.googleDraftsPrepared.push(draft.id)
-      } catch (e) {
-        await logActivity({ machineId, kind: 'error', detail: `Google draft for ${project.slug} failed: ${errMsg(e)}` })
-        result.errors.push(`google:${project.slug}`)
-      }
-    }
-    campaigns = await listMachineCampaigns(machineId)
-
-    // Meta trials: planned but not yet launched.
     for (const trial of planTrials(plan)) {
+      const channel = trialChannel(trial)
       const already = campaigns.some(
-        (c) => c.channel === 'meta' && c.projectSlug === trial.projectSlug && c.trialLabel === trial.label,
+        (c) => c.channel === channel && c.projectSlug === trial.projectSlug && c.trialLabel === trial.label,
       )
       if (already) continue
 
       // FRESH cap check immediately before every launch — the cap is the sum
-      // of ACTIVE Meta daily budgets and must never be exceeded.
-      const committed = await activeMetaSpendAed(machineId)
+      // of ACTIVE daily budgets across BOTH channels and must never be exceeded.
+      const committed = await activeSpendAed(machineId)
       if (committed + trial.dailyBudgetAed > machine.dailyCapAed) {
         await logActivity({
           machineId,
           kind: 'cap_enforced',
           detail: `Skipped launching "${trial.label}" for ${trial.listingName}: AED ${committed} already committed + AED ${trial.dailyBudgetAed} would exceed the AED ${machine.dailyCapAed}/day cap.`,
-          data: { trialId: trial.id, committed, requested: trial.dailyBudgetAed, cap: machine.dailyCapAed },
+          data: { trialId: trial.id, channel, committed, requested: trial.dailyBudgetAed, cap: machine.dailyCapAed },
         })
         result.capSkipped.push(trial.id)
         continue
       }
 
+      if (channel === 'google') {
+        if (!trial.google) {
+          await logActivity({ machineId, kind: 'error', detail: `Google trial "${trial.label}" for ${trial.listingName} has no launch payload in the plan — skipped.`, data: { trialId: trial.id } })
+          result.errors.push(`launch:${trial.id}`)
+          continue
+        }
+        const payload = { ...trial.google, dailyBudgetAED: trial.dailyBudgetAed }
+        try {
+          // Atomic real create (budget → campaign PAUSED → ad group → RSA →
+          // keywords), then ENABLED immediately — Google spend authority is
+          // the same autonomous-within-cap model as Meta.
+          const { campaignId } = await launchSearchCampaign(payload)
+          let enabled = true
+          try {
+            await googleUpdateCampaignStatus(campaignId, 'ENABLED')
+          } catch (e) {
+            enabled = false
+            await logActivity({
+              machineId, kind: 'error',
+              detail: `Google campaign for "${trial.label}" (${trial.listingName}) was created PAUSED but enabling it failed: ${errMsg(e)}. It is recorded paused and will not spend until resumed.`,
+              campaignId,
+              data: { trialId: trial.id },
+            })
+            result.errors.push(`enable:${trial.id}`)
+          }
+          await addMachineCampaign({
+            machineId,
+            channel: 'google',
+            campaignId,
+            projectSlug: trial.projectSlug,
+            trialLabel: trial.label,
+            dailyBudgetAed: trial.dailyBudgetAed,
+            status: enabled ? 'active' : 'paused',
+          })
+          if (enabled) {
+            await logActivity({
+              machineId,
+              kind: 'launched',
+              detail: `Launched "${trial.label}" (${trial.source}) for ${trial.listingName} ENABLED at AED ${trial.dailyBudgetAed}/day. ${trial.rationale}`,
+              campaignId,
+              data: { trialId: trial.id, channel: 'google', copySource: trial.copySource },
+            })
+            result.launched.push(campaignId)
+          }
+        } catch (e) {
+          if (e instanceof GoogleConfigError) {
+            // Honest degradation: Google isn't connected, so this trial stays
+            // a local PAUSED draft that never spends — the machine keeps
+            // running its Meta trials.
+            try {
+              const draft = await createLocalCampaign(payload, `ads-machine:${machineId}`)
+              await addMachineCampaign({
+                machineId,
+                channel: 'google',
+                campaignId: draft.id,
+                projectSlug: trial.projectSlug,
+                trialLabel: trial.label,
+                dailyBudgetAed: trial.dailyBudgetAed,
+                status: 'draft',
+              })
+              await logActivity({
+                machineId,
+                kind: 'google_draft_prepared',
+                detail: `Google Ads is not connected — prepared "${trial.label}" for ${trial.listingName} as a local PAUSED draft (planned AED ${trial.dailyBudgetAed}/day; it spends nothing until Google is connected and it is launched).`,
+                campaignId: draft.id,
+                data: { trialId: trial.id, projectSlug: trial.projectSlug },
+              })
+              result.googleDraftsPrepared.push(draft.id)
+            } catch (e2) {
+              await logActivity({ machineId, kind: 'error', detail: `Google draft fallback for "${trial.label}" (${trial.projectSlug}) failed: ${errMsg(e2)}`, data: { trialId: trial.id } })
+              result.errors.push(`launch:${trial.id}`)
+            }
+          } else {
+            await logActivity({
+              machineId,
+              kind: 'error',
+              detail: `Google launch of "${trial.label}" for ${trial.listingName} failed: ${errMsg(e)}`,
+              data: { trialId: trial.id },
+            })
+            result.errors.push(`launch:${trial.id}`)
+          }
+        }
+        continue
+      }
+
+      // Meta trial.
+      if (!trial.targeting || !trial.creative) {
+        await logActivity({ machineId, kind: 'error', detail: `Meta trial "${trial.label}" for ${trial.listingName} has no targeting/creative in the plan — skipped.`, data: { trialId: trial.id } })
+        result.errors.push(`launch:${trial.id}`)
+        continue
+      }
       try {
         const launch = await launchFullCampaign({
           campaignName: trial.campaignName,
@@ -317,7 +418,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           kind: 'launched',
           detail: `Launched "${trial.label}" (${trial.source}) for ${trial.listingName} ACTIVE at AED ${trial.dailyBudgetAed}/day. ${trial.rationale}`,
           campaignId: launch.campaignId,
-          data: { trialId: trial.id, adSetId: launch.adSetId, adId: launch.adId, copySource: trial.copySource },
+          data: { trialId: trial.id, channel: 'meta', adSetId: launch.adSetId, adId: launch.adId, copySource: trial.copySource },
         })
         result.launched.push(launch.campaignId)
       } catch (e) {
@@ -334,26 +435,48 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   }
 
   // ── EVALUATE (running or paused) ──────────────────────────────────────────
-  const metaCampaigns = campaigns.filter((c) => c.channel === 'meta' && (c.status === 'active' || c.status === 'paused'))
+  // Both channels: local Google drafts (status 'draft') are excluded — they
+  // have no live campaign to read and never spend.
+  const evalCampaigns = campaigns.filter((c) => c.status === 'active' || c.status === 'paused')
   const untrusted = await getUntrustedLeadIds().catch(() => new Set<string>())
   const verdictStats = await getVerdictStats(machineId).catch(() => new Map<string, TrialVerdictStats>())
   const ownerCache = new Map<string, string | null>()
 
+  // Google metrics come from ONE listCampaigns read (it already carries
+  // cost_micros/clicks/conversions per campaign), indexed by id.
+  let googleMetricsById: Map<string, GoogleCampaign> | null = null
+  if (evalCampaigns.some((c) => c.channel === 'google')) {
+    try {
+      googleMetricsById = new Map((await listGoogleCampaigns()).map((c) => [c.id, c]))
+    } catch (e) {
+      await logActivity({ machineId, kind: 'error', detail: `Google metrics read failed: ${errMsg(e)}` })
+      result.errors.push('google:metrics')
+    }
+  }
+
   const states: TrialState[] = []
   const verdictRequests: VerdictRequestInput[] = []
-  for (const row of metaCampaigns) {
+  for (const row of evalCampaigns) {
     const planTrial = findPlanTrial(plan, row)
     const campaignName = planTrial?.campaignName ?? ''
 
     let spendAed = 0
     let metaLeads = 0
-    try {
-      const insights = await getCampaignInsights(row.campaignId)
-      spendAed = Number(insights?.spend) || 0
-      metaLeads = leadsFromInsights(insights?.actions)
-    } catch (e) {
-      await logActivity({ machineId, kind: 'error', detail: `Insights read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
-      result.errors.push(`insights:${row.campaignId}`)
+    if (row.channel === 'meta') {
+      try {
+        const insights = await getCampaignInsights(row.campaignId)
+        spendAed = Number(insights?.spend) || 0
+        metaLeads = leadsFromInsights(insights?.actions)
+      } catch (e) {
+        await logActivity({ machineId, kind: 'error', detail: `Insights read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
+        result.errors.push(`insights:${row.campaignId}`)
+      }
+    } else {
+      // Real Google spend: cost_micros → AED (account currency is AED,
+      // 1 AED = 1e6 micros). A missing read leaves spend at 0 — honest "no
+      // signal", which also keeps the rotation spend gate from firing.
+      const m = googleMetricsById?.get(row.campaignId)
+      if (m?.metrics) spendAed = m.metrics.costMicros / 1_000_000
     }
 
     let qualityScore: number | null = null
@@ -366,13 +489,19 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
     verdictRequests.push(...await buildVerdictRequests(machineId, row.campaignId, campaignName, untrusted, ownerCache))
 
+    // CPL basis per channel: Meta = Meta-reported lead actions; Google =
+    // attributed CRM leads (Google conversions are NOT leads). See TrialState.
+    const leadBasis: TrialState['leadBasis'] = row.channel === 'meta' ? 'meta-reported' : 'crm-attributed'
+    const leads = row.channel === 'meta' ? metaLeads : attributed
+
     states.push({
       row,
       planTrial,
       campaignName,
       spendAed,
-      metaLeads,
-      cplAed: metaLeads > 0 ? spendAed / metaLeads : null,
+      leads,
+      leadBasis,
+      cplAed: leads > 0 ? spendAed / leads : null,
       qualityScore,
       attributed,
       verdicts: verdictStats.get(row.campaignId) ?? null,
@@ -393,13 +522,14 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
   if (states.length > 0) {
     result.observed = states.length
-    const committed = await activeMetaSpendAed(machineId)
+    const committed = await activeSpendAed(machineId)
     await logActivity({
       machineId,
       kind: 'observation',
-      detail: `Observed ${states.length} trial(s): AED ${committed}/${machine.dailyCapAed} daily budget committed; ` +
+      detail: `Observed ${states.length} trial(s): AED ${committed}/${machine.dailyCapAed} combined daily budget committed (Meta + Google); ` +
         states.map((s) =>
-          `${s.row.trialLabel}[${s.row.status}] spend AED ${Math.round(s.spendAed)}, ${s.metaLeads} Meta leads` +
+          `${s.row.trialLabel}[${s.row.channel}/${s.row.status}] spend AED ${Math.round(s.spendAed)}, ` +
+          `${s.leads} ${s.leadBasis === 'meta-reported' ? 'Meta-reported leads' : 'CRM-attributed leads'}` +
           `${s.cplAed != null ? `, CPL AED ${s.cplAed.toFixed(0)}` : ''}` +
           `${s.qualityScore != null ? `, quality ${s.qualityScore}` : ', quality n/a'}` +
           `${s.verdicts && s.verdicts.decisive > 0 ? `, verdicts ${s.verdicts.yes}Y/${s.verdicts.no}N` : ''}`,
@@ -411,10 +541,16 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           campaignId: s.row.campaignId,
           trialLabel: s.row.trialLabel,
           projectSlug: s.row.projectSlug,
+          channel: s.row.channel,
           status: s.row.status,
           dailyBudgetAed: s.row.dailyBudgetAed,
           spendAed: s.spendAed,
-          metaLeads: s.metaLeads,
+          leads: s.leads,
+          // Per-channel CPL basis, recorded so the numbers never lie:
+          // 'meta-reported' = Meta lead actions (this_month insights window);
+          // 'crm-attributed' = real CRM leads matched by utm (Google spend is
+          // the campaign's lifetime cost from the Google Ads API).
+          leadBasis: s.leadBasis,
           cplAed: s.cplAed,
           qualityScore: s.qualityScore,
           attributed: s.attributed,
@@ -455,12 +591,13 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       const spendGated = (s: TrialState) => s.spendAed >= SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed
 
       // (C) CPL-condemned vs best sibling — both need ≥3 leads for the ratio
-      // to mean anything.
+      // to mean anything. Siblings may be cross-channel (each side's CPL uses
+      // its own honest lead basis — see TrialState.leadBasis).
       const cplCondemned = (s: TrialState) => {
         if (!spendGated(s) || isProtected(s)) return false
-        if (s.cplAed === null || s.metaLeads < MIN_LEADS_FOR_CPL) return false
+        if (s.cplAed === null || s.leads < MIN_LEADS_FOR_CPL) return false
         const siblingCpls = group
-          .filter((o) => o !== s && o.cplAed !== null && o.metaLeads >= MIN_LEADS_FOR_CPL)
+          .filter((o) => o !== s && o.cplAed !== null && o.leads >= MIN_LEADS_FOR_CPL)
           .map((o) => o.cplAed as number)
         if (!siblingCpls.length) return false
         return s.cplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...siblingCpls)
@@ -492,14 +629,14 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       if (qualityCondemned(target)) reasons.push(`CRM quality ${target.qualityScore} < ${QUALITY_CONDEMN_BELOW} while a sibling holds ≥ ${QUALITY_SIBLING_AT_LEAST}`)
       const evidence = `Evidence: ${verdictEvidence(target.verdicts)}; spend AED ${Math.round(target.spendAed)} on AED ${target.row.dailyBudgetAed}/day.`
 
-      // Pause on Meta FIRST — a failed pause means the budget is NOT freed,
-      // so no reallocation happens.
+      // Pause on the trial's OWN platform FIRST — a failed pause means the
+      // budget is NOT freed, so no reallocation happens.
       try {
-        await updateCampaignStatus(target.row.campaignId, 'PAUSED')
+        await setPlatformStatus(target.row, false)
       } catch (e) {
         await logActivity({
           machineId, kind: 'error',
-          detail: `Wanted to pause "${target.row.trialLabel}" (${projectSlug}) — ${reasons.join('; ')} — but the Meta pause failed: ${errMsg(e)}. No budget was reallocated.`,
+          detail: `Wanted to pause "${target.row.trialLabel}" (${projectSlug}) — ${reasons.join('; ')} — but the ${target.row.channel === 'google' ? 'Google' : 'Meta'} pause failed: ${errMsg(e)}. No budget was reallocated.`,
           campaignId: target.row.campaignId,
         })
         result.errors.push(`pause:${target.row.campaignId}`)
@@ -523,16 +660,20 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       })
       result.paused.push(target.row.campaignId)
 
-      // ── Reallocate the freed budget, always under the cap ──
+      // ── Reallocate the freed budget, always under the combined cap.
+      // Cross-channel is allowed: budget freed on one channel may fund the
+      // other — each mutation goes through its own channel's client. ──
       const freed = target.row.dailyBudgetAed
       const campaignsNow = await listMachineCampaigns(machineId)
-      const headroomAfterPause = machine.dailyCapAed - await activeMetaSpendAed(machineId)
+      const headroomAfterPause = machine.dailyCapAed - await activeSpendAed(machineId)
 
-      // First choice: a planned trial that was previously cap-skipped (never
-      // launched) — the machine keeps trying new audiences before piling more
-      // onto an old one.
+      // First choice: a planned trial (either channel) that was previously
+      // cap-skipped (never launched) — the machine keeps trying new audiences
+      // before piling more onto an old one. Google-not-connected plans leave a
+      // 'draft' row for the google trial, which counts as launched here so the
+      // machine doesn't retry it every rotation.
       const unlaunched = planTrials(plan).find((t) =>
-        !campaignsNow.some((c) => c.channel === 'meta' && c.projectSlug === t.projectSlug && c.trialLabel === t.label),
+        !campaignsNow.some((c) => c.channel === trialChannel(t) && c.projectSlug === t.projectSlug && c.trialLabel === t.label),
       )
       const launchBudget = unlaunched
         ? Math.min(unlaunched.dailyBudgetAed, freed, headroomAfterPause)
@@ -540,30 +681,40 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       if (unlaunched && launchBudget >= META_MIN_TRIAL_BUDGET_AED) {
         try {
-          const launch = await launchFullCampaign({
-            campaignName: unlaunched.campaignName,
-            objective: 'LEAD_GENERATION',
-            listingName: unlaunched.listingName,
-            dailyBudgetAED: launchBudget,
-            targeting: unlaunched.targeting,
-            creative: unlaunched.creative,
-            launchStatus: 'ACTIVE',
-            destination: 'landing',
-          })
+          let newCampaignId: string
+          if (trialChannel(unlaunched) === 'google') {
+            if (!unlaunched.google) throw new Error('google trial has no launch payload in the plan')
+            const { campaignId } = await launchSearchCampaign({ ...unlaunched.google, dailyBudgetAED: launchBudget })
+            await googleUpdateCampaignStatus(campaignId, 'ENABLED')
+            newCampaignId = campaignId
+          } else {
+            if (!unlaunched.targeting || !unlaunched.creative) throw new Error('meta trial has no targeting/creative in the plan')
+            const launch = await launchFullCampaign({
+              campaignName: unlaunched.campaignName,
+              objective: 'LEAD_GENERATION',
+              listingName: unlaunched.listingName,
+              dailyBudgetAED: launchBudget,
+              targeting: unlaunched.targeting,
+              creative: unlaunched.creative,
+              launchStatus: 'ACTIVE',
+              destination: 'landing',
+            })
+            newCampaignId = launch.campaignId
+          }
           await addMachineCampaign({
-            machineId, channel: 'meta', campaignId: launch.campaignId,
+            machineId, channel: trialChannel(unlaunched), campaignId: newCampaignId,
             projectSlug: unlaunched.projectSlug, trialLabel: unlaunched.label,
             dailyBudgetAed: launchBudget, status: 'active',
           })
           await logActivity({
             machineId,
             kind: 'budget_shift',
-            detail: `Shifted AED ${launchBudget}/day freed by pausing "${target.row.trialLabel}" into launching planned trial "${unlaunched.label}" for ${unlaunched.listingName}. ${evidence}`,
-            campaignId: launch.campaignId,
-            data: { fromCampaignId: target.row.campaignId, toTrialId: unlaunched.id, amountAed: launchBudget, verdicts: target.verdicts },
+            detail: `Shifted AED ${launchBudget}/day freed by pausing "${target.row.trialLabel}" into launching planned ${trialChannel(unlaunched)} trial "${unlaunched.label}" for ${unlaunched.listingName}. ${evidence}`,
+            campaignId: newCampaignId,
+            data: { fromCampaignId: target.row.campaignId, toTrialId: unlaunched.id, toChannel: trialChannel(unlaunched), amountAed: launchBudget, verdicts: target.verdicts },
           })
-          result.budgetShifts.push(launch.campaignId)
-          result.launched.push(launch.campaignId)
+          result.budgetShifts.push(newCampaignId)
+          result.launched.push(newCampaignId)
           continue
         } catch (e) {
           await logActivity({
@@ -577,15 +728,17 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       }
 
       // Otherwise: raise the best surviving sibling — protected first, then
-      // lowest CPL with ≥3 leads, then highest CRM quality.
+      // lowest CPL with ≥3 leads, then highest CRM quality. The survivor may
+      // be on the OTHER channel (freed Meta budget can raise a Google trial
+      // and vice versa) — the raise uses the survivor's own channel mutation.
       const survivors = group
         .filter((s) => s !== target)
         .sort((a, b) => {
           const ap = isProtected(a) ? 0 : 1
           const bp = isProtected(b) ? 0 : 1
           if (ap !== bp) return ap - bp
-          const aCpl = a.metaLeads >= MIN_LEADS_FOR_CPL && a.cplAed !== null ? a.cplAed : Infinity
-          const bCpl = b.metaLeads >= MIN_LEADS_FOR_CPL && b.cplAed !== null ? b.cplAed : Infinity
+          const aCpl = a.leads >= MIN_LEADS_FOR_CPL && a.cplAed !== null ? a.cplAed : Infinity
+          const bCpl = b.leads >= MIN_LEADS_FOR_CPL && b.cplAed !== null ? b.cplAed : Infinity
           if (aCpl !== bCpl) return aCpl - bCpl
           return (b.qualityScore ?? -1) - (a.qualityScore ?? -1)
         })
@@ -596,24 +749,30 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       if (increase < 1) continue
 
       try {
-        const adSets = await listAdSets(survivor.row.campaignId)
-        const adSet = adSets[0]
-        if (!adSet) throw new Error('campaign has no ad set to raise')
         const newBudget = survivor.row.dailyBudgetAed + increase
-        await updateAdSet(adSet.id, { dailyBudgetAED: newBudget })
+        if (survivor.row.channel === 'google') {
+          // Google budgets live on the campaign's budget resource.
+          await googleUpdateCampaignBudget(survivor.row.campaignId, newBudget)
+        } else {
+          // Meta budgets live on the ad set.
+          const adSets = await listAdSets(survivor.row.campaignId)
+          const adSet = adSets[0]
+          if (!adSet) throw new Error('campaign has no ad set to raise')
+          await updateAdSet(adSet.id, { dailyBudgetAED: newBudget })
+        }
         await updateMachineCampaign(survivor.row.id, { dailyBudgetAed: newBudget })
         await logActivity({
           machineId,
           kind: 'budget_shift',
-          detail: `Raised "${survivor.row.trialLabel}" (${projectSlug}) from AED ${survivor.row.dailyBudgetAed} to AED ${newBudget}/day with budget freed by pausing "${target.row.trialLabel}". ${evidence}`,
+          detail: `Raised "${survivor.row.trialLabel}" (${projectSlug}, ${survivor.row.channel}) from AED ${survivor.row.dailyBudgetAed} to AED ${newBudget}/day with budget freed by pausing "${target.row.trialLabel}" (${target.row.channel}). ${evidence}`,
           campaignId: survivor.row.campaignId,
-          data: { fromCampaignId: target.row.campaignId, toCampaignId: survivor.row.campaignId, amountAed: increase, verdicts: target.verdicts },
+          data: { fromCampaignId: target.row.campaignId, fromChannel: target.row.channel, toCampaignId: survivor.row.campaignId, toChannel: survivor.row.channel, amountAed: increase, verdicts: target.verdicts },
         })
         result.budgetShifts.push(survivor.row.campaignId)
       } catch (e) {
         await logActivity({
           machineId, kind: 'error',
-          detail: `Budget raise on "${survivor.row.trialLabel}" failed: ${errMsg(e)}`,
+          detail: `Budget raise on "${survivor.row.trialLabel}" (${survivor.row.channel}) failed: ${errMsg(e)}`,
           campaignId: survivor.row.campaignId,
         })
         result.errors.push(`realloc-raise:${survivor.row.campaignId}`)
@@ -626,31 +785,33 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
 // ─── Machine-level controls ──────────────────────────────────────────────────
 
-/** One action pauses the whole machine: every active Meta campaign is paused
- * on Meta, then the machine stops launching/rotating. A Meta pause failure is
- * logged but does not block pausing the rest. */
+/** One action pauses the whole machine: every active campaign — Meta AND
+ * Google — is paused on its own platform, then the machine stops
+ * launching/rotating. A platform pause failure is logged but does not block
+ * pausing the rest. */
 export async function pauseMachine(machineId: string): Promise<{ paused: number; failed: string[] }> {
   const campaigns = await listMachineCampaigns(machineId)
   let paused = 0
   const failed: string[] = []
   for (const c of campaigns) {
-    if (c.channel !== 'meta' || c.status !== 'active') continue
+    if (c.status !== 'active') continue
     try {
-      await updateCampaignStatus(c.campaignId, 'PAUSED')
+      await setPlatformStatus(c, false)
       await updateMachineCampaign(c.id, { status: 'paused' })
-      await logActivity({ machineId, kind: 'trial_paused', detail: `Machine pause: paused "${c.trialLabel}" (${c.projectSlug}).`, campaignId: c.campaignId })
+      await logActivity({ machineId, kind: 'trial_paused', detail: `Machine pause: paused "${c.trialLabel}" (${c.projectSlug}, ${c.channel}).`, campaignId: c.campaignId })
       paused++
     } catch (e) {
       failed.push(c.campaignId)
-      await logActivity({ machineId, kind: 'error', detail: `Machine pause: Meta pause of "${c.trialLabel}" failed: ${errMsg(e)}`, campaignId: c.campaignId })
+      await logActivity({ machineId, kind: 'error', detail: `Machine pause: ${c.channel === 'google' ? 'Google' : 'Meta'} pause of "${c.trialLabel}" failed: ${errMsg(e)}`, campaignId: c.campaignId })
     }
   }
   await setMachineStatus(machineId, 'paused')
   return { paused, failed }
 }
 
-/** Resume: reactivate paused trials in launch order — but each one only while
- * the fresh cap sum stays under the cap; the rest are logged 'cap_enforced'. */
+/** Resume: reactivate paused trials — Meta AND Google — in launch order, but
+ * each one only while the fresh COMBINED cap sum stays under the cap; the
+ * rest are logged 'cap_enforced'. */
 export async function resumeMachine(machineId: string): Promise<{ resumed: number; capSkipped: number }> {
   const machine = await getMachine(machineId)
   if (!machine) throw new Error(`Ads machine not found: ${machineId}`)
@@ -659,30 +820,30 @@ export async function resumeMachine(machineId: string): Promise<{ resumed: numbe
   let resumed = 0
   let capSkipped = 0
   for (const c of campaigns) {
-    if (c.channel !== 'meta' || c.status !== 'paused') continue
-    const committed = await activeMetaSpendAed(machineId)
+    if (c.status !== 'paused') continue
+    const committed = await activeSpendAed(machineId)
     if (committed + c.dailyBudgetAed > machine.dailyCapAed) {
       capSkipped++
       await logActivity({
         machineId, kind: 'cap_enforced',
-        detail: `Resume skipped "${c.trialLabel}" (${c.projectSlug}): AED ${committed} committed + AED ${c.dailyBudgetAed} would exceed the AED ${machine.dailyCapAed}/day cap.`,
+        detail: `Resume skipped "${c.trialLabel}" (${c.projectSlug}, ${c.channel}): AED ${committed} committed + AED ${c.dailyBudgetAed} would exceed the AED ${machine.dailyCapAed}/day cap.`,
         campaignId: c.campaignId,
       })
       continue
     }
     try {
-      await updateCampaignStatus(c.campaignId, 'ACTIVE')
+      await setPlatformStatus(c, true)
       await updateMachineCampaign(c.id, { status: 'active' })
-      await logActivity({ machineId, kind: 'trial_resumed', detail: `Resumed "${c.trialLabel}" (${c.projectSlug}) at AED ${c.dailyBudgetAed}/day.`, campaignId: c.campaignId })
+      await logActivity({ machineId, kind: 'trial_resumed', detail: `Resumed "${c.trialLabel}" (${c.projectSlug}, ${c.channel}) at AED ${c.dailyBudgetAed}/day.`, campaignId: c.campaignId })
       resumed++
     } catch (e) {
-      await logActivity({ machineId, kind: 'error', detail: `Resume of "${c.trialLabel}" failed: ${errMsg(e)}`, campaignId: c.campaignId })
+      await logActivity({ machineId, kind: 'error', detail: `Resume of "${c.trialLabel}" (${c.channel}) failed: ${errMsg(e)}`, campaignId: c.campaignId })
     }
   }
   return { resumed, capSkipped }
 }
 
-/** Stop: pause everything on Meta and mark the machine stopped. */
+/** Stop: pause everything on both platforms and mark the machine stopped. */
 export async function stopMachine(machineId: string): Promise<{ paused: number; failed: string[] }> {
   const out = await pauseMachine(machineId)
   await setMachineStatus(machineId, 'stopped')
@@ -698,26 +859,28 @@ export async function changeMachineCap(machineId: string, newCapAed: number): Pr
   const cap = Math.max(0, Math.round(newCapAed))
   await setMachineCap(machineId, cap)
   let pausedForCap = 0
-  let committed = await activeMetaSpendAed(machineId)
+  let committed = await activeSpendAed(machineId)
   if (committed > cap) {
     const campaigns = await listMachineCampaigns(machineId)
+    // Both channels count against the ONE combined cap, so both are eligible
+    // for enforcement pausing — newest first.
     const active = campaigns
-      .filter((c) => c.channel === 'meta' && c.status === 'active')
+      .filter((c) => c.status === 'active')
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)) // newest first
     for (const c of active) {
       if (committed <= cap) break
       try {
-        await updateCampaignStatus(c.campaignId, 'PAUSED')
+        await setPlatformStatus(c, false)
         await updateMachineCampaign(c.id, { status: 'paused' })
         committed -= c.dailyBudgetAed
         pausedForCap++
         await logActivity({
           machineId, kind: 'cap_enforced',
-          detail: `Cap lowered to AED ${cap}/day: paused "${c.trialLabel}" (${c.projectSlug}, AED ${c.dailyBudgetAed}/day) to get committed spend from AED ${committed + c.dailyBudgetAed} under the cap.`,
+          detail: `Cap lowered to AED ${cap}/day: paused "${c.trialLabel}" (${c.projectSlug}, ${c.channel}, AED ${c.dailyBudgetAed}/day) to get committed spend from AED ${committed + c.dailyBudgetAed} under the cap.`,
           campaignId: c.campaignId,
         })
       } catch (e) {
-        await logActivity({ machineId, kind: 'error', detail: `Cap enforcement pause of "${c.trialLabel}" failed: ${errMsg(e)}`, campaignId: c.campaignId })
+        await logActivity({ machineId, kind: 'error', detail: `Cap enforcement pause of "${c.trialLabel}" (${c.channel}) failed: ${errMsg(e)}`, campaignId: c.campaignId })
       }
     }
   }

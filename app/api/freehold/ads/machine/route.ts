@@ -52,16 +52,18 @@ export async function POST(req: NextRequest) {
     plan,
     createdBy: auth.user.email,
   })
-  const trialCount = plan.projects.reduce((n, p) => n + p.trials.length, 0)
+  const metaTrials = plan.projects.reduce((n, p) => n + p.trials.filter((t) => (t.channel ?? 'meta') === 'meta').length, 0)
+  const googleTrials = plan.projects.reduce((n, p) => n + p.trials.filter((t) => t.channel === 'google').length, 0)
   await logActivity({
     machineId: machine.id,
     kind: 'planned',
-    detail: `Planned ${trialCount} Meta trial(s) + ${plan.projects.length} Google draft(s) across ${plan.projects.length} project(s) under a hard cap of AED ${machine.dailyCapAed}/day. Nothing launches until the machine is started.`,
+    detail: `Planned ${metaTrials} Meta trial(s) + ${googleTrials} Google Search trial(s) across ${plan.projects.length} project(s) under ONE combined hard cap of AED ${machine.dailyCapAed}/day. Nothing launches until the machine is started.`,
     data: {
       projects: plan.projects.map((p) => ({
         slug: p.slug,
         dailyBudgetAed: p.dailyBudgetAed,
-        trials: p.trials.map((t) => ({ id: t.id, label: t.label, source: t.source, dailyBudgetAed: t.dailyBudgetAed })),
+        trials: p.trials.map((t) => ({ id: t.id, label: t.label, source: t.source, channel: t.channel ?? 'meta', dailyBudgetAed: t.dailyBudgetAed })),
+        ...(p.googleSkipped ? { googleSkipped: p.googleSkipped } : {}),
       })),
     },
   })

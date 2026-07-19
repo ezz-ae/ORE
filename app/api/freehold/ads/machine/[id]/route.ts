@@ -8,7 +8,7 @@ import {
   listActivity,
   listUnansweredVerdicts,
   getVerdictAggregates,
-  activeMetaSpendAed,
+  activeSpendAed,
   submitVerdictAnswer,
   getVerdictRow,
 } from '@/lib/freehold/ads-machine'
@@ -38,7 +38,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     listActivity(id, 100),
     listUnansweredVerdicts(id),
     getVerdictAggregates(id),
-    activeMetaSpendAed(id),
+    activeSpendAed(id),
   ])
 
   return NextResponse.json({
