@@ -31,7 +31,7 @@ interface WizardListing {
   paymentPlan: string | null
   landingUrl: string
 }
-import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride } from '@/lib/meta/types'
+import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel } from '@/lib/meta/types'
 
 // A saved audience from the Audiences tab, attachable to this launch.
 interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec: CampaignTargeting }
@@ -62,10 +62,22 @@ interface WizardState {
   genders:       number[]
   interestIds:   string[]
   publisherPlatforms: string[]
+  // 'automatic' (default) = today's publisherPlatforms-derived delivery,
+  // unchanged. 'manual' narrows delivery to EXACTLY the surfaces picked in
+  // manualPlacements below (real per-surface control, not the coarse
+  // facebook/instagram/audience_network platform toggle above).
+  placementMode: 'automatic' | 'manual'
+  // PlacementKey values (see PLACEMENT_KEYS) selected when placementMode is
+  // 'manual'. Ignored (and can be non-empty) when placementMode is 'automatic'.
+  manualPlacements: string[]
   // Step 3
   primaryText:   string
-  headline:      string
-  description:   string
+  // Meta's real "Multiple text options" / dynamic-creative feature — Meta
+  // auto-tests combinations of these within ONE ad (never several separate
+  // ads). Always at least 1 entry (Meta requires ≥1); capped at 5 (Meta's
+  // real limit for both titles and descriptions).
+  headlines:     string[]
+  descriptions:  string[]
   landingUrl:    string
   cta:           MetaCta
   imageUrl:      string
@@ -77,6 +89,9 @@ interface WizardState {
   launchStatus:  'ACTIVE' | 'PAUSED'
   cplCapAED:     number
   autoEnhance:   'on' | 'off' | 'approval'
+  // Conversion pixel override — '' means "use the ad account's default
+  // pixel" (today's unchanged behavior). Populated from /api/meta/pixels.
+  pixelId:       string
 }
 
 // Auto-enhancement lets the AI act on delivery: 'on' = apply automatically,
@@ -129,6 +144,14 @@ const STEPS: { n: number; labelKey: string; icon: typeof Megaphone }[] = [
   { n: 4, labelKey: 'lm.newCampaign.step.launch',    icon: Rocket },
 ]
 
+// Placement control: 'automatic' keeps the coarse facebook/instagram/audience
+// network toggle above driving delivery (today's behavior, unchanged).
+// 'manual' switches to picking exact placement surfaces from PLACEMENT_KEYS.
+const PLACEMENT_MODE_OPTIONS: { value: 'automatic' | 'manual'; labelKey: string; descKey: string }[] = [
+  { value: 'automatic', labelKey: 'lm.newCampaign.s2.placementMode.automatic', descKey: 'lm.newCampaign.s2.placementMode.automaticDesc' },
+  { value: 'manual',    labelKey: 'lm.newCampaign.s2.placementMode.manual',    descKey: 'lm.newCampaign.s2.placementMode.manualDesc' },
+]
+
 const LAUNCH_MODE_OPTIONS: { value: 'PAUSED' | 'ACTIVE'; labelKey: string; descKey: string }[] = [
   { value: 'PAUSED', labelKey: 'lm.newCampaign.launchMode.paused.label', descKey: 'lm.newCampaign.launchMode.paused.desc' },
   { value: 'ACTIVE', labelKey: 'lm.newCampaign.launchMode.active.label', descKey: 'lm.newCampaign.launchMode.active.desc' },
@@ -162,6 +185,20 @@ function estimateMonthlyResults(dailyBudgetAED: number, cplCapAED: number): numb
 }
 const fmtReach = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n))
 
+// Appends one AI copy variant to a headlines/descriptions list for Meta's
+// real multi-text feature — exact-string duplicates are skipped, and once
+// Meta's real 5-entry cap is reached the LAST entry is replaced (with a
+// toast) rather than silently growing past what Meta allows.
+function appendCapped(list: string[], value: string, capMessage: string): string[] {
+  const next = value.trim()
+  if (!next || list.includes(next)) return list
+  if (list.length >= 5) {
+    toast(capMessage)
+    return [...list.slice(0, 4), next]
+  }
+  return [...list, next]
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function NewCampaignPage() {
   const t = useT()
@@ -190,9 +227,11 @@ export default function NewCampaignPage() {
     genders:      [],
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
     publisherPlatforms: ['facebook', 'instagram'],
+    placementMode: 'automatic',
+    manualPlacements: [],
     primaryText:  '',
-    headline:     '',
-    description:  'Request the investor summary now.',
+    headlines:    [''],
+    descriptions: ['Request the investor summary now.'],
     landingUrl:   'https://www.freeholdproperty.ae',
     cta:          'LEARN_MORE',
     imageUrl:     '',
@@ -201,6 +240,7 @@ export default function NewCampaignPage() {
     launchStatus: 'PAUSED',
     cplCapAED:    150,
     autoEnhance:  'approval',
+    pixelId:      '',
   })
   // Campaign source material — brochure extracts, listing/developer links,
   // notes. THE input for new launches that have no landing page yet: copy
@@ -260,6 +300,42 @@ export default function NewCampaignPage() {
   }
   const [uploadingImg, setUploadingImg] = useState(false)
   const [audienceOpen, setAudienceOpen] = useState(false)
+
+  // Live Meta reach estimate for the manual "Edit Audience" popup — reuses the
+  // SAME /api/freehold/ads/audiences/reach endpoint (and request/response
+  // shape) as the standalone Audiences builder's checkBuilderReach. Debounced
+  // so it fires once the operator pauses, never on every keystroke/click, and
+  // never shows a fabricated number — only a real Meta estimate or an honest
+  // connect/warming state.
+  const [audienceReach, setAudienceReach] = useState<{ lower: number; upper: number; ready: boolean } | null>(null)
+  const [audienceReachLoading, setAudienceReachLoading] = useState(false)
+  const [audienceReachConnected, setAudienceReachConnected] = useState(true)
+  useEffect(() => {
+    if (!audienceOpen) return
+    setAudienceReachLoading(true)
+    const timer = setTimeout(() => {
+      const spec: Partial<CampaignTargeting> = {
+        countries: form.countries,
+        cityKeys: form.cityKeys,
+        ageMin: form.ageMin,
+        ageMax: form.ageMax,
+        genders: form.genders.length ? form.genders : undefined,
+        interests: UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id)),
+      }
+      fetch('/api/freehold/ads/audiences/reach', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ spec }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          setAudienceReachConnected(d?.connected !== false)
+          setAudienceReach(d?.reach ?? null)
+        })
+        .catch(() => setAudienceReach(null))
+        .finally(() => setAudienceReachLoading(false))
+    }, 650)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audienceOpen, form.countries, form.cityKeys, form.ageMin, form.ageMax, form.genders, form.interestIds])
 
   // Saved audiences (Audiences tab). Attaching one overrides the audience
   // fields of the launch — countries, age, gender, language, interests,
@@ -384,7 +460,15 @@ export default function NewCampaignPage() {
     }
   }
   function applyVariant(v: GeneratedCreativeVariant) {
-    setForm((prev) => ({ ...prev, primaryText: v.primaryText, headline: v.headline, description: v.description || prev.description, cta: v.cta }))
+    // Multi-variant copy is Meta's real "Multiple text options" feature —
+    // ADD each generated headline/description to the ad's list (deduped,
+    // capped at 5) instead of replacing the single value, so every accepted
+    // variant becomes one more combination Meta auto-tests within this ad.
+    const headlines = appendCapped(form.headlines, v.headline, t('lm.newCampaign.s3.headlineCapReached'))
+    const descriptions = v.description
+      ? appendCapped(form.descriptions, v.description, t('lm.newCampaign.s3.descriptionCapReached'))
+      : form.descriptions
+    setForm((prev) => ({ ...prev, primaryText: v.primaryText, headlines, descriptions, cta: v.cta }))
   }
 
   // The learning loop: fetch AI targeting learned from ACTUAL lead outcomes.
@@ -456,6 +540,20 @@ export default function NewCampaignPage() {
   // call ads still use one shared creative for every placement.
   const supportsPlacementCreative = activeObjective.dest === 'landing' || activeObjective.dest === 'form'
 
+  // Meta's real "Multiple text options" (dynamic creative) feature only
+  // actually engages for a plain landing-click ad with NO active
+  // per-placement creative override — the exact eligibility createAdCreative
+  // enforces server-side (client.ts: an active override takes the
+  // asset_customization_rules path instead, before wantsMultiText is even
+  // evaluated; Meta Lead/WhatsApp/Call destinations never reach it either).
+  // Gate the "add another headline/description" affordance and the review
+  // step's "+N more variants" promise on this so we never invite copy that
+  // Meta will silently ignore.
+  const hasActivePlacementOverrides = Object.values(form.placementOverrides).some(
+    (ov) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl),
+  )
+  const multiTextEligible = activeObjective.dest === 'landing' && !hasActivePlacementOverrides
+
   // Lead form — wired into the Meta Lead objective. The forms feature already
   // exists (/lead-machine/forms + /api/meta/forms); the builder now lets you
   // pick, create, or edit the in-ad form the leads land in.
@@ -525,6 +623,20 @@ export default function NewCampaignPage() {
   const [leadFormsLoading, setLeadFormsLoading] = useState(false)
   // Destination number for call / WhatsApp objectives (E.164, e.g. +9715…).
   const [destinationPhone, setDestinationPhone] = useState('')
+  // Conversion pixel picker (step 4) — real pixels on the connected ad
+  // account via the existing /api/meta/pixels endpoint. Loaded once; an empty
+  // list (not connected, or no pixels) just leaves the "account default"
+  // option, so a demo/disconnected session never blocks the wizard.
+  const [pixels, setPixels] = useState<MetaPixel[]>([])
+  const [pixelsLoading, setPixelsLoading] = useState(false)
+  useEffect(() => {
+    setPixelsLoading(true)
+    fetch('/api/meta/pixels', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.pixels)) setPixels(d.pixels as MetaPixel[]) })
+      .catch(() => {})
+      .finally(() => setPixelsLoading(false))
+  }, [])
   useEffect(() => {
     if (form.productObjective !== 'meta_lead') return
     setLeadFormsLoading(true)
@@ -648,7 +760,7 @@ export default function NewCampaignPage() {
       ...prev,
       listingId: project || prev.listingId,
       campaignName: `${displayName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
-      headline: displayName,
+      headlines: [displayName],
       primaryText: priceNum > 0
         ? `${displayName} — starting from AED ${priceNum.toLocaleString()}. Request the investor summary now.`
         : `${displayName} — request the investor summary now.`,
@@ -667,7 +779,7 @@ export default function NewCampaignPage() {
       listingId:    listing.id,
       campaignName: `${listing.projectName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
       primaryText:  `${listing.projectName} — starting from AED ${listing.startingPrice?.toLocaleString() ?? '—'}. ${listing.paymentPlan ?? 'Request the investor summary now.'}`.trim(),
-      headline:     listing.projectName,
+      headlines:    [listing.projectName],
       landingUrl:   listing.landingUrl,
       imageUrl:     listing.imageUrl,
       imageHash:    '',   // fall back to the listing photo unless a new file is uploaded
@@ -880,8 +992,14 @@ export default function NewCampaignPage() {
           },
       creative: {
         primaryText: form.primaryText,
-        headline:    form.headline,
-        description: form.description,
+        // Singular fields stay the honest single-value fallback (headlines[0]
+        // / descriptions[0]) for any backward-compatible reader; the plural
+        // arrays below are what actually enables Meta's real multi-text
+        // feature server-side when more than one entry is present.
+        headline:     form.headlines[0] || '',
+        headlines:    form.headlines,
+        description:  form.descriptions[0] || '',
+        descriptions: form.descriptions,
         // New launches often have no landing page yet — an empty URL falls
         // back to the project's public page, which always exists for a
         // listed project. Never block a launch on a missing LP.
@@ -909,6 +1027,15 @@ export default function NewCampaignPage() {
       // spend_cap on the campaign, COST_CAP bid on the ad set.
       lifetimeCapAED:   form.lifetimeCapAED > 0 ? form.lifetimeCapAED : undefined,
       cplCapAED:        form.cplCapAED > 0 ? form.cplCapAED : undefined,
+      // Real conversion pixel override picked in step 4 — '' (account
+      // default) sends undefined so createAdSet falls back to the
+      // account's default pixel exactly as before.
+      pixelId:          form.pixelId || undefined,
+      // Real per-surface placement control — 'automatic' (default) keeps the
+      // publisherPlatforms-derived behavior above; only sent as 'manual' with
+      // its picks when the operator actually chose specific surfaces.
+      placementMode:    form.placementMode,
+      manualPlacements: form.placementMode === 'manual' ? form.manualPlacements : undefined,
       // Persisted per campaign — the autopilot pass enforces it.
       autoEnhance:      form.autoEnhance,
     }
@@ -998,6 +1125,12 @@ export default function NewCampaignPage() {
 
   const selectedListing = listings.find((l) => l.id === form.listingId)
 
+  // AdMock renders ONE combo — the first headline/description — as an honest
+  // single preview even though the launched ad may carry more of each (Meta's
+  // real multi-text feature auto-tests the rest; a mock can't show every
+  // combination Meta might serve).
+  const previewCreative = { ...form, headline: form.headlines[0] || '', description: form.descriptions[0] || '' }
+
   // Landing preview target — the /lp/ path inside whatever URL is set, so the
   // rail iframes the same deployment (works in preview and production alike).
   const lpMatch = form.landingUrl.match(/\/lp\/[A-Za-z0-9-]+/)
@@ -1008,7 +1141,10 @@ export default function NewCampaignPage() {
     { labelKey: 'lm.newCampaign.s4.tileLabel.objective',  value: t(activeObjective.labelKey) },
     { labelKey: 'lm.newCampaign.s4.tileLabel.budget',     value: `AED ${form.dailyBudgetAED.toLocaleString()}` },
     { labelKey: 'lm.newCampaign.s4.tileLabel.audience',   value: t('lm.newCampaign.s4.audienceValue', { min: String(form.ageMin), max: String(form.ageMax) }) },
-    { labelKey: 'lm.newCampaign.s4.tileLabel.platforms',  value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.platforms',
+      value: form.placementMode === 'manual' && form.manualPlacements.length > 0
+        ? form.manualPlacements.map((k) => t(`lm.newCampaign.s3.pl.${k}`)).join(' + ')
+        : form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
     { labelKey: 'lm.newCampaign.s4.tileLabel.cta',        value: t(`lm.creatives.generate.cta.${form.cta}`) },
   ]
 
@@ -1497,25 +1633,84 @@ export default function NewCampaignPage() {
               </div>
             </div>
 
+            {/* Live Meta reach estimate — same badge/pill pattern as the Buyer
+                Match panel's live reach (Gauge icon, range, honest empty
+                state), debounced to the popup's current selections above. */}
+            <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 p-3">
+              <Gauge className="h-4 w-4 text-gold" />
+              {audienceReachLoading ? (
+                <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.newCampaign.s2.reach.loading')}
+                </span>
+              ) : !audienceReachConnected ? (
+                <span className="text-xs text-slate-400">{t('lm.newCampaign.s2.reach.connect')}</span>
+              ) : audienceReach ? (
+                <div className="text-sm">
+                  <span className="font-semibold text-white">{fmtReach(audienceReach.lower)}–{fmtReach(audienceReach.upper)}</span>
+                  <span className="ms-2 text-xs text-slate-500">{t('lm.newCampaign.s2.reach.label')}</span>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400">{t('lm.newCampaign.s2.reach.warming')}</span>
+              )}
+            </div>
+
             <div>
-              <Label>{t('lm.newCampaign.s2.label.platforms')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: 'facebook',  label: 'Facebook' },
-                  { value: 'instagram', label: 'Instagram' },
-                  { value: 'audience_network', label: 'Audience Network' },
-                ].map((p) => {
-                  const selected = form.publisherPlatforms.includes(p.value)
-                  return (
-                    <button key={p.value} type="button"
-                      onClick={() => update('publisherPlatforms', selected ? form.publisherPlatforms.filter((v) => v !== p.value) : [...form.publisherPlatforms, p.value])}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                      {p.label}
-                    </button>
-                  )
-                })}
+              <Label>{t('lm.newCampaign.s2.label.placementMode')}</Label>
+              <div className="flex gap-3">
+                {PLACEMENT_MODE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update('placementMode', opt.value)}
+                    className={`flex-1 rounded-[14px] border p-3 text-left transition ${
+                      form.placementMode === opt.value ? 'border-gold/40 bg-gold/[0.06]' : 'border-line hover:border-white/10'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold text-white">{t(opt.labelKey)}</div>
+                    <p className="mt-1 text-xs text-slate-500">{t(opt.descKey)}</p>
+                  </button>
+                ))}
               </div>
             </div>
+
+            {form.placementMode === 'automatic' ? (
+              <div>
+                <Label>{t('lm.newCampaign.s2.label.platforms')}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'facebook',  label: 'Facebook' },
+                    { value: 'instagram', label: 'Instagram' },
+                    { value: 'audience_network', label: 'Audience Network' },
+                  ].map((p) => {
+                    const selected = form.publisherPlatforms.includes(p.value)
+                    return (
+                      <button key={p.value} type="button"
+                        onClick={() => update('publisherPlatforms', selected ? form.publisherPlatforms.filter((v) => v !== p.value) : [...form.publisherPlatforms, p.value])}
+                        className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
+                        {p.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <Label>{t('lm.newCampaign.s2.label.manualPlacements')}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PLACEMENT_KEYS.map((key) => {
+                    const selected = form.manualPlacements.includes(key)
+                    return (
+                      <button key={key} type="button"
+                        onClick={() => update('manualPlacements', selected ? form.manualPlacements.filter((v) => v !== key) : [...form.manualPlacements, key])}
+                        className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
+                        {t(`lm.newCampaign.s3.pl.${key}`)}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.manualPlacementsHint')}</p>
+              </div>
+            )}
           </div>
         </TabPopup>
 
@@ -1582,7 +1777,7 @@ export default function NewCampaignPage() {
                     {t('lm.newCampaign.s3.previewAll')}
                   </button>
                 </div>
-                <AdMock form={form} placement={previewPlacement} t={t} />
+                <AdMock form={previewCreative} placement={previewPlacement} t={t} />
               </div>
 
               {/* AI copy generation — real Gemini variants (existing generator) */}
@@ -1630,24 +1825,91 @@ export default function NewCampaignPage() {
               </p>
             </div>
 
+            {/* Meta's real multi-text ("Multiple text options" / dynamic
+                creative) feature — up to 5 headlines Meta auto-tests in
+                combination within this ONE ad, not several separate ads. */}
             <div>
               <Label>{t('lm.newCampaign.s3.label.headline')}</Label>
-              <input
-                className={inputCls(!form.headline)}
-                value={form.headline}
-                onChange={(e) => update('headline', e.target.value)}
-                placeholder={t('lm.headlinePlaceholder')}
-              />
+              <div className="space-y-2">
+                {form.headlines.map((h, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      className={inputCls(i === 0 && !h)}
+                      value={h}
+                      onChange={(e) => {
+                        const next = [...form.headlines]
+                        next[i] = e.target.value
+                        update('headlines', next)
+                      }}
+                      placeholder={t('lm.headlinePlaceholder')}
+                    />
+                    {form.headlines.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => update('headlines', form.headlines.filter((_, j) => j !== i))}
+                        aria-label={`Remove headline ${i + 1}`}
+                        className="shrink-0 rounded-full border border-line bg-surface-2 p-1.5 text-slate-500 transition hover:text-rose-300"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {form.headlines.length < 5 && multiTextEligible && (
+                <button
+                  type="button"
+                  onClick={() => update('headlines', [...form.headlines, ''])}
+                  className="mt-2 text-xs font-semibold text-gold/80 transition hover:text-gold"
+                >
+                  + {t('lm.newCampaign.s3.addHeadline')}
+                </button>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                {multiTextEligible ? t('lm.newCampaign.s3.headlinesHint') : t('lm.newCampaign.s3.multiTextIneligible')}
+              </p>
             </div>
 
             <div>
               <Label>{t('lm.newCampaign.s3.label.description')}</Label>
-              <input
-                className={inputCls()}
-                value={form.description}
-                onChange={(e) => update('description', e.target.value)}
-                placeholder={t('lm.descriptionPlaceholder')}
-              />
+              <div className="space-y-2">
+                {form.descriptions.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      className={inputCls()}
+                      value={d}
+                      onChange={(e) => {
+                        const next = [...form.descriptions]
+                        next[i] = e.target.value
+                        update('descriptions', next)
+                      }}
+                      placeholder={t('lm.descriptionPlaceholder')}
+                    />
+                    {form.descriptions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => update('descriptions', form.descriptions.filter((_, j) => j !== i))}
+                        aria-label={`Remove description ${i + 1}`}
+                        className="shrink-0 rounded-full border border-line bg-surface-2 p-1.5 text-slate-500 transition hover:text-rose-300"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {form.descriptions.length < 5 && multiTextEligible && (
+                <button
+                  type="button"
+                  onClick={() => update('descriptions', [...form.descriptions, ''])}
+                  className="mt-2 text-xs font-semibold text-gold/80 transition hover:text-gold"
+                >
+                  + {t('lm.newCampaign.s3.addDescription')}
+                </button>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                {multiTextEligible ? t('lm.newCampaign.s3.descriptionsHint') : t('lm.newCampaign.s3.multiTextIneligible')}
+              </p>
             </div>
 
             <div>
@@ -1782,7 +2044,7 @@ export default function NewCampaignPage() {
                         <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.headline')}</label>
                         <input className={inputCls()} value={overrideOf(overrideOpenKey).headline ?? ''}
                           onChange={(e) => setOverrideField(overrideOpenKey!, 'headline', e.target.value)}
-                          placeholder={form.headline || t('lm.headlinePlaceholder')} />
+                          placeholder={form.headlines[0] || t('lm.headlinePlaceholder')} />
                       </div>
                       <div>
                         <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.primaryText')}</label>
@@ -1917,7 +2179,7 @@ export default function NewCampaignPage() {
                   // an honest preview of what actually ships, not the same
                   // creative re-shaped into 5 mock layouts.
                   const ov = supportsPlacementCreative ? overrideOf(key) : {}
-                  const tileHeadline = ov.headline?.trim() || form.headline
+                  const tileHeadline = ov.headline?.trim() || form.headlines[0] || ''
                   const tilePrimaryText = ov.primaryText?.trim() || form.primaryText
                   const tileImageUrl = ov.imageUrl || form.imageUrl
                   const customized = isCustomized(key) && supportsPlacementCreative
@@ -1986,11 +2248,18 @@ export default function NewCampaignPage() {
             <div className="rounded-[16px] border border-line bg-surface-2 p-5">
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">{t('lm.newCampaign.s4.creativePreview')}</div>
               <div className="grid gap-4 sm:grid-cols-[minmax(0,240px)_1fr]">
-                <AdMock form={form} placement="feed" t={t} />
+                <AdMock form={previewCreative} placement="feed" t={t} />
                 <div>
                   <div className="text-xs leading-relaxed text-slate-400 mb-2 whitespace-pre-line">{form.primaryText}</div>
-                  <div className="text-[14px] font-semibold text-white">{form.headline}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{form.description}</div>
+                  <div className="text-[14px] font-semibold text-white">{form.headlines[0]}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{form.descriptions[0]}</div>
+                  {(form.headlines.length > 1 || form.descriptions.length > 1) && (
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      {multiTextEligible
+                        ? t('lm.newCampaign.s4.moreVariants', { n: String(Math.max(form.headlines.length, form.descriptions.length)) })
+                        : t('lm.newCampaign.s4.moreVariantsIgnored')}
+                    </p>
+                  )}
                   <div className="mt-2 inline-flex items-center rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs text-gold">
                     {t(`lm.creatives.generate.cta.${form.cta}`)}
                   </div>
@@ -2020,6 +2289,24 @@ export default function NewCampaignPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Conversion pixel — real pixels on the connected ad account.
+                Blank = account default (today's unchanged behavior); this is
+                the one control that actually sets pixelId all the way through
+                to createAdSet's promoted_object. */}
+            <div>
+              <Label>{t('lm.newCampaign.s4.label.pixel')}</Label>
+              <select
+                value={form.pixelId}
+                onChange={(e) => update('pixelId', e.target.value)}
+                className={`${inputCls()} max-w-sm`}
+              >
+                <option value="">{pixelsLoading ? t('common.loading') : t('lm.newCampaign.s4.pixel.none')}</option>
+                {pixels.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* CPL cap — the number that actually matters before there's a real CPL. */}
@@ -2090,7 +2377,7 @@ export default function NewCampaignPage() {
             disabled={
               (step === 1 && (!form.listingId || !form.campaignName)) ||
               (step === 2 && form.dailyBudgetAED < 50) ||
-              (step === 3 && (!form.primaryText || !form.headline || (!form.landingUrl && !form.listingId)))
+              (step === 3 && (!form.primaryText || !form.headlines[0] || (!form.landingUrl && !form.listingId)))
             }
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -2138,7 +2425,7 @@ export default function NewCampaignPage() {
           <div className="mt-3">
             {previewTab === 'ad' ? (
               <>
-                <AdMock form={form} placement={previewPlacement} t={t} />
+                <AdMock form={previewCreative} placement={previewPlacement} t={t} />
                 <button type="button" onClick={() => setPlacementsOpen(true)}
                   className="mt-3 w-full rounded-full border border-gold/40 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
                   {t('lm.newCampaign.s3.previewAll')}

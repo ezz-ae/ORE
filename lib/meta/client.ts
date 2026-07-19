@@ -324,10 +324,45 @@ export async function createAdSet(params: {
    * launchFullCampaign). Overrides the platform-derived placementSpec below.
    */
   placementOverride?: { publisher_platforms: string[]; facebook_positions?: string[]; instagram_positions?: string[] }
+  /**
+   * Placement targeting mode from the wizard. 'automatic' (or omitted — the
+   * default, and what every existing caller sends today) keeps the
+   * platform-derived placementSpec below exactly as before. 'manual' (with a
+   * non-empty manualPlacements) instead narrows to ONLY those placement
+   * surfaces via PLACEMENT_TARGETING. Ignored entirely when placementOverride
+   * is set — that mechanism (per-placement ad-set split) already picks an
+   * exact placement set of its own.
+   */
+  placementMode?: 'automatic' | 'manual'
+  /** PlacementKey values to run on when placementMode is 'manual'. */
+  manualPlacements?: string[]
+  /**
+   * Set Meta's real ad-set-level `is_dynamic_creative` flag. This is what
+   * gates whether the ad's asset_feed_spec (multiple titles/bodies/
+   * descriptions, zero asset_customization_rules) is actually treated as
+   * dynamic/auto-tested creative rather than a malformed or silently-ignored
+   * payload — see createAdCreative's `wantsMultiText`. Callers must pass
+   * exactly that same eligibility here so the ad set's flag and the ad's
+   * actual creative shape always agree.
+   */
+  wantsDynamicCreative?: boolean
 }): Promise<{ id: string }> {
   const { adAccountId, pageId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
   const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId, params.destination)
+
+  // Manual placements: an operator-picked EXACT set of real placement
+  // surfaces (fbFeed/igFeed/igStory/fbStory/reels), unioned into the same
+  // publisher_platforms/facebook_positions/instagram_positions shape via
+  // PLACEMENT_TARGETING. Only unknown/stale keys are dropped defensively —
+  // an empty or all-invalid list falls through to the automatic behavior
+  // below rather than accidentally narrowing to nothing.
+  const manualKeys = (params.manualPlacements ?? []).filter(
+    (k): k is PlacementKey => PLACEMENT_KEYS.includes(k as PlacementKey),
+  )
+  const manualPlacementSpec = params.placementMode === 'manual' && manualKeys.length > 0
+    ? unionPlacementTargeting(manualKeys)
+    : null
 
   // Placements: an EMPTY platform list means Advantage+ placements (fully
   // automatic — Meta's recommendation). Explicit platforms get the complete
@@ -335,6 +370,8 @@ export async function createAdSet(params: {
   const platforms = params.targeting.publisherPlatforms
   const placementSpec: Record<string, unknown> = params.placementOverride
     ? { ...params.placementOverride }
+    : manualPlacementSpec
+    ? { ...manualPlacementSpec }
     : platforms.length === 0 ? {} : {
         publisher_platforms: platforms,
         ...(platforms.includes('facebook')
@@ -427,6 +464,10 @@ export async function createAdSet(params: {
     daily_budget:      params.dailyBudgetAED * 100, // AED → fils (smallest unit)
     targeting:         targetingSpec,
     status:            params.status,
+    // Meta's real Dynamic Creative flag — REQUIRED for the ad's
+    // asset_feed_spec (multiple titles/bodies, no asset_customization_rules)
+    // to actually be auto-tested rather than error/silently misbehave.
+    ...(params.wantsDynamicCreative ? { is_dynamic_creative: true } : {}),
   }
 
   // Destination wiring — where a click/submit actually goes.
@@ -576,10 +617,21 @@ function buildAssetFeedSpec(params: {
   defaultCreative: CampaignCreative
   overrides: Array<[PlacementKey, PlacementCreativeOverride]>
   ctaType: string
+  /**
+   * Meta's real "Multiple text options" / dynamic-creative headline variants
+   * — Meta auto-tests every combination of these (plus `descriptions` below)
+   * within this ONE ad. Only set by the plain multi-text launch path (no
+   * per-placement overrides); the per-placement-override path leaves this
+   * empty and titles off the single default headline exactly as before.
+   */
+  titles?: string[]
+  /** Description variants for the same multi-text feature — see `titles`. */
+  descriptions?: string[]
 }) {
-  const imageLabels = new Map<string, string>()   // hash -> label
-  const bodyLabels = new Map<string, string>()     // text -> label
-  const titleLabels = new Map<string, string>()    // text -> label
+  const imageLabels = new Map<string, string>()       // hash -> label
+  const bodyLabels = new Map<string, string>()         // text -> label
+  const titleLabels = new Map<string, string>()        // text -> label
+  const descriptionLabels = new Map<string, string>()  // text -> label
   const labelFor = (map: Map<string, string>, prefix: string, value: string) => {
     let label = map.get(value)
     if (!label) { label = `${prefix}_${map.size}`; map.set(value, label) }
@@ -592,6 +644,10 @@ function buildAssetFeedSpec(params: {
   if (defaultImageHash) labelFor(imageLabels, 'img', defaultImageHash)
   labelFor(bodyLabels, 'body', defaultBody)
   labelFor(titleLabels, 'title', defaultTitle)
+  // Multi-text variants beyond the single default — every one becomes its
+  // own labelled asset so Meta can freely recombine them.
+  for (const title of params.titles ?? []) labelFor(titleLabels, 'title', title)
+  for (const description of params.descriptions ?? []) labelFor(descriptionLabels, 'desc', description)
 
   const rules: Record<string, unknown>[] = params.overrides.map(([key, ov], i) => {
     const imageHash = ov.imageHash || defaultImageHash
@@ -606,22 +662,31 @@ function buildAssetFeedSpec(params: {
     }
   })
   // Catch-all — broadest customization_spec, lowest priority, always last —
-  // covers every placement the ad set serves that has no specific rule above.
-  rules.push({
-    customization_spec: { publisher_platforms: ['facebook', 'instagram'] },
-    ...(defaultImageHash ? { image_label: { name: labelFor(imageLabels, 'img', defaultImageHash) } } : {}),
-    body_label: { name: labelFor(bodyLabels, 'body', defaultBody) },
-    title_label: { name: labelFor(titleLabels, 'title', defaultTitle) },
-    priority: rules.length + 1,
-  })
+  // covers every placement the ad set serves that has no specific rule
+  // above. Only meaningful when there ARE per-placement rules to fall back
+  // from; a plain multi-text launch (no overrides) omits it entirely so Meta
+  // freely auto-tests every title/body/description combo everywhere,
+  // instead of pinning every placement to one fixed combo.
+  if (params.overrides.length > 0) {
+    rules.push({
+      customization_spec: { publisher_platforms: ['facebook', 'instagram'] },
+      ...(defaultImageHash ? { image_label: { name: labelFor(imageLabels, 'img', defaultImageHash) } } : {}),
+      body_label: { name: labelFor(bodyLabels, 'body', defaultBody) },
+      title_label: { name: labelFor(titleLabels, 'title', defaultTitle) },
+      priority: rules.length + 1,
+    })
+  }
 
   return {
     images: [...imageLabels.entries()].map(([hash, label]) => ({ hash, adlabels: [{ name: label }] })),
     bodies: [...bodyLabels.entries()].map(([text, label]) => ({ text, adlabels: [{ name: label }] })),
     titles: [...titleLabels.entries()].map(([text, label]) => ({ text, adlabels: [{ name: label }] })),
+    ...(descriptionLabels.size > 0
+      ? { descriptions: [...descriptionLabels.entries()].map(([text, label]) => ({ text, adlabels: [{ name: label }] })) }
+      : {}),
     link_urls: [{ website_url: params.defaultCreative.landingUrl }],
     call_to_action_types: [params.ctaType],
-    asset_customization_rules: rules,
+    ...(rules.length > 0 ? { asset_customization_rules: rules } : {}),
   }
 }
 
@@ -673,6 +738,35 @@ export async function createAdCreative(params: {
       defaultCreative: params.creative,
       overrides: overrideEntries,
       ctaType: params.creative.cta,
+    })
+    return apiPost(`/${adAccountId}/adcreatives`, {
+      name:              params.name,
+      object_story_spec: { page_id: pageId },
+      asset_feed_spec:   assetFeedSpec,
+      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+    })
+  }
+
+  // Meta's real "Multiple text options" / dynamic-creative feature — Meta
+  // auto-tests every combination of the headlines/descriptions provided
+  // within this ONE ad (never several separate ads). Only valid for a plain
+  // link-click creative: asset_feed_spec's call_to_action_types carries no
+  // `value` (lead_gen_form_id / WhatsApp app_destination / tel: link) — the
+  // same restriction that keeps the per-placement path above off form/
+  // WhatsApp/call ads — so those destinations always fall through to the
+  // exact single-creative path below, even with a multi-entry array.
+  const headlines = params.creative.headlines?.length ? params.creative.headlines : [params.creative.headline]
+  const descriptions = params.creative.descriptions?.length ? params.creative.descriptions : [params.creative.description]
+  const wantsMultiText = (headlines.length > 1 || descriptions.length > 1)
+    && (params.destination === undefined || params.destination === 'landing')
+
+  if (wantsMultiText) {
+    const assetFeedSpec = buildAssetFeedSpec({
+      defaultCreative: params.creative,
+      overrides: [],
+      ctaType: params.creative.cta,
+      titles: headlines,
+      descriptions,
     })
     return apiPost(`/${adAccountId}/adcreatives`, {
       name:              params.name,
@@ -1524,6 +1618,10 @@ export async function launchFullCampaign(params: {
   lifetimeCapAED?: number
   /** Cost-per-result ceiling in AED → ad set COST_CAP bid strategy. */
   cplCapAED?: number
+  /** Placement targeting mode — see createAdSet. 'automatic'/omitted = unchanged behavior. */
+  placementMode?: 'automatic' | 'manual'
+  /** PlacementKey values to run on when placementMode is 'manual'. */
+  manualPlacements?: string[]
 }): Promise<LaunchCampaignResult> {
   const { adAccountId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -1586,6 +1684,17 @@ export async function launchFullCampaign(params: {
 
   const overridePairs = (Object.entries(creativeInput.placementOverrides ?? {}) as Array<[PlacementKey, PlacementCreativeOverride]>)
     .filter(([, ov]) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl))
+
+  // Mirrors createAdCreative's EXACT `wantsMultiText` eligibility so the
+  // single ad set's is_dynamic_creative flag and the ad's actual creative
+  // shape always agree: a plain landing-click ad (destination undefined or
+  // 'landing'), with no active per-placement overrides (those take the
+  // asset_customization_rules path instead — a different real feature), and
+  // more than one headline or description.
+  const singleAdSetWantsDynamicCreative =
+    (params.destination === undefined || params.destination === 'landing') &&
+    overridePairs.length === 0 &&
+    ((creativeInput.headlines?.length ?? 0) > 1 || (creativeInput.descriptions?.length ?? 0) > 1)
 
   // Lead-form ads with per-placement overrides can't use asset_feed_spec
   // (see createAdCreative) — the real mechanism is a separate single-creative
@@ -1688,6 +1797,9 @@ export async function launchFullCampaign(params: {
     pixelId:        pixelId ?? undefined,
     destination:    params.destination,
     cplCapAED:      params.cplCapAED,
+    placementMode:      params.placementMode,
+    manualPlacements:   params.manualPlacements,
+    wantsDynamicCreative: singleAdSetWantsDynamicCreative,
   }))
 
   // 5 — Creative
