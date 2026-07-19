@@ -75,6 +75,18 @@ export async function updateLocalCampaignStatus(id: string, status: GoogleCampai
   return getLocalCampaign(id)
 }
 
+export async function updateLocalCampaignBudget(id: string, dailyBudgetAED: number): Promise<GoogleCampaign | null> {
+  try {
+    await ensure()
+    await query(
+      `UPDATE freehold_site_google_campaigns
+       SET data = jsonb_set(data, '{dailyBudgetMicros}', to_jsonb($2::bigint))
+       WHERE id = $1`, [id, Math.round(dailyBudgetAED * M)],
+    )
+  } catch { /* fail soft */ }
+  return getLocalCampaign(id)
+}
+
 export async function createLocalCampaign(p: LaunchGoogleCampaignPayload, createdBy?: string): Promise<GoogleCampaign> {
   const id = `local-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).replace(/-/g, '').slice(0, 12)}`
   const campaign: GoogleCampaign = {

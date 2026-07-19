@@ -374,6 +374,16 @@ export default function GoogleAudiencesPage() {
             </button>
           </div>
 
+          {/* Honesty note: creating here NEVER creates a Google user list — the
+              row is stored in Freehold only (the API flags it savedLocally). */}
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3.5 py-2.5 text-xs leading-snug text-amber-200/90">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+              <span className="font-semibold">{t('lm.google.localOnly.title')}</span>
+              {' — '}{t('lm.google.localOnly.audiences')}
+            </span>
+          </div>
+
           {filtered.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {filtered.map((audience) => (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { ArrowUpRight, RefreshCw, AlertCircle, Zap, Copy } from 'lucide-react'
+import { ArrowUpRight, RefreshCw, AlertCircle, Zap, Copy, Pencil, Check, X } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
@@ -84,6 +84,78 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
         ))}
       </div>
     </div>
+  )
+}
+
+// ─── Inline daily-budget editor (pencil → input → save) ──────────────────────
+// Same PATCH { dailyBudgetAED } path the campaign detail page uses: a real
+// campaignBudget mutation when connected, the local draft row for local-* ids.
+
+function BudgetCell({ campaign, onSaved }: { campaign: GoogleCampaign; onSaved: (micros: number) => void }) {
+  const t = useT()
+  const [editing, setEditing] = useState(false)
+  const [val, setVal]         = useState('')
+  const [busy, setBusy]       = useState(false)
+  const aed = Math.round((campaign.dailyBudgetMicros ?? 0) / 1_000_000)
+
+  async function save() {
+    const target = Number(val)
+    if (!Number.isFinite(target) || target < 50) { toast.error(t('lm.google.budget.min')); return }
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/google/campaigns/${campaign.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ dailyBudgetAED: target }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json.error) throw new Error(json.error)
+      onSaved(Math.round(target * 1_000_000))
+      setEditing(false)
+      toast.success(t('lm.google.budget.updated'))
+    } catch {
+      toast.error(t('lm.google.budget.failed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <span className="flex items-center gap-1">
+        <input
+          type="number"
+          min={50}
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
+          autoFocus
+          className="w-16 rounded-md border border-line bg-surface px-1.5 py-0.5 text-xs text-white outline-none focus:border-[#4285F4]/50"
+        />
+        <button onClick={save} disabled={busy} title={t('lm.google.budget.save')} aria-label={t('lm.google.budget.save')}
+          className="rounded p-0.5 text-[#4285F4] transition hover:text-[#5A97F5] disabled:opacity-40">
+          <Check className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={() => setEditing(false)} disabled={busy} title={t('lm.google.budget.cancel')} aria-label={t('lm.google.budget.cancel')}
+          className="rounded p-0.5 text-slate-500 transition hover:text-white disabled:opacity-40">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </span>
+    )
+  }
+
+  return (
+    <span className="flex items-center gap-1 text-xs text-slate-300">
+      {aed > 0 ? `AED ${aed.toLocaleString()}` : '—'}
+      <button
+        onClick={() => { setVal(String(aed || 50)); setEditing(true) }}
+        title={t('lm.google.budget.edit')}
+        aria-label={t('lm.google.budget.edit')}
+        className="rounded p-0.5 text-slate-500 transition hover:text-white"
+      >
+        <Pencil className="h-3 w-3" />
+      </button>
+    </span>
   )
 }
 
@@ -285,13 +357,14 @@ export default function GoogleAdsPage() {
             <section className="mt-10">
               <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{t('padsg.campaigns')}</div>
               <div className="overflow-x-auto">
-                <div className="min-w-[700px] overflow-hidden rounded-xl border border-line bg-surface-2">
+                <div className="min-w-[800px] overflow-hidden rounded-xl border border-line bg-surface-2">
                   {/* Header */}
-                  <div className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_32px_56px] gap-3 border-b border-line px-5 py-3">
+                  <div className="grid grid-cols-[2fr_80px_70px_100px_90px_70px_70px_70px_32px_56px] gap-3 border-b border-line px-5 py-3">
                     {[
                       { label: t('padsg.thCampaign'), col: null },
                       { label: t('padsg.thType'),     col: null },
                       { label: t('padsg.thStatus'),   col: null },
+                      { label: t('padsg.thBudget'),   col: null },
                       { label: t('padsg.thSpend'),    col: 'costMicros'  as SortCol },
                       { label: t('padsg.thImpr'),    col: 'impressions' as SortCol },
                       { label: t('padsg.thClicks'),   col: 'clicks'      as SortCol },
@@ -318,7 +391,7 @@ export default function GoogleAdsPage() {
                   {/* Rows */}
                   <div className="divide-y divide-line">
                     {sorted.map((c) => (
-                      <div key={c.id} className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_32px_56px] gap-3 items-center px-5 py-4">
+                      <div key={c.id} className="grid grid-cols-[2fr_80px_70px_100px_90px_70px_70px_70px_32px_56px] gap-3 items-center px-5 py-4">
                         <Link
                           href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
                           className="flex items-center gap-2 min-w-0 hover:text-white transition"
@@ -339,6 +412,12 @@ export default function GoogleAdsPage() {
                         }`}>
                           {c.status === 'ENABLED' ? t('padsg.statusActive') : t('padsg.statusPaused')}
                         </span>
+                        <BudgetCell
+                          campaign={c}
+                          onSaved={(micros) =>
+                            setCampaigns((prev) => prev.map((x) => x.id === c.id ? { ...x, dailyBudgetMicros: micros } : x))
+                          }
+                        />
                         <span className="text-xs text-slate-300">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
                         <span className="text-xs text-slate-400">{(c.metrics?.impressions ?? 0).toLocaleString()}</span>
                         <span className="text-xs text-slate-400">{(c.metrics?.clicks ?? 0).toLocaleString()}</span>

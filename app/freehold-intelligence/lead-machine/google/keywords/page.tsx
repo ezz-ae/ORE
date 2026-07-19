@@ -97,6 +97,23 @@ export default function GoogleKeywordsPage() {
   const [newKw, setNewKw]             = useState('')
   const [newMatch, setNewMatch]       = useState<GoogleKeywordMatchType>('BROAD')
   const [adding, setAdding]           = useState(false)
+  // Target campaign for new keywords — when connected, the API adds the
+  // keyword LIVE to that campaign's first ad group.
+  const [campaignOpts, setCampaignOpts] = useState<{ id: string; name: string }[]>([])
+  const [campaignSel, setCampaignSel]   = useState('')
+
+  useEffect(() => {
+    fetch('/api/google/campaigns')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const opts = Array.isArray(d?.campaigns)
+          ? (d.campaigns as { id: string; name: string }[]).map((c) => ({ id: c.id, name: c.name }))
+          : []
+        setCampaignOpts(opts)
+        setCampaignSel((prev) => prev || opts[0]?.id || '')
+      })
+      .catch(() => {})
+  }, [])
 
   async function addKeyword() {
     const text = newKw.trim()
@@ -106,22 +123,27 @@ export default function GoogleKeywordsPage() {
       const res = await fetch('/api/google/keywords', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, matchType: newMatch }),
+        body: JSON.stringify({ text, matchType: newMatch, campaignId: campaignSel || undefined }),
       })
-      if (!res.ok) throw new Error()
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error)
       setNewKw('')
       toast.success(t('lm.google.keywords.added'))
       fetchData(true)
-    } catch {
-      toast.error(t('lm.google.actions.failed'))
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : t('lm.google.actions.failed'))
     } finally {
       setAdding(false)
     }
   }
 
-  async function removeKeyword(id: string) {
+  async function removeKeyword(kw: GoogleKeyword) {
     try {
-      const res = await fetch(`/api/google/keywords?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      // Live keywords are removed by criterion resource name; local drafts by id.
+      const qs = kw.id.startsWith('local-')
+        ? `id=${encodeURIComponent(kw.id)}`
+        : `id=${encodeURIComponent(kw.id)}&resourceName=${encodeURIComponent(kw.resourceName)}`
+      const res = await fetch(`/api/google/keywords?${qs}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
       toast.success(t('lm.google.keywords.removed'))
       fetchData(true)
@@ -308,6 +330,19 @@ export default function GoogleKeywordsPage() {
               <option value="PHRASE">{t('lm.google.keywords.matchPhrase')}</option>
               <option value="EXACT">{t('lm.google.keywords.matchExact')}</option>
             </select>
+            {campaignOpts.length > 0 && (
+              <select
+                value={campaignSel}
+                onChange={(e) => setCampaignSel(e.target.value)}
+                title={t('lm.google.keywords.campaignLabel')}
+                aria-label={t('lm.google.keywords.campaignLabel')}
+                className="max-w-[220px] truncate rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-slate-200 outline-none"
+              >
+                {campaignOpts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
             <button
               onClick={addKeyword}
               disabled={adding || !newKw.trim()}
@@ -346,9 +381,9 @@ export default function GoogleKeywordsPage() {
                         }`}
                       />
                       <span className="truncate font-medium text-white">{kw.text}</span>
-                      {kw.id.startsWith('local-') && (
+                      {(kw.id.startsWith('local-') || kw.resourceName) && (
                         <button
-                          onClick={() => removeKeyword(kw.id)}
+                          onClick={() => removeKeyword(kw)}
                           title={t('common.remove')}
                           className="ml-auto shrink-0 rounded p-0.5 text-slate-600 transition hover:bg-white/[0.06] hover:text-red-400"
                         >

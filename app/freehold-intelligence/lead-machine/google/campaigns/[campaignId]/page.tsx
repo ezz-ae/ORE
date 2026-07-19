@@ -13,6 +13,8 @@ import {
   Search,
   ArrowUpRight,
   Copy,
+  Pencil,
+  X,
 } from 'lucide-react'
 import type {
   GoogleCampaign,
@@ -154,6 +156,9 @@ export default function GoogleCampaignDetailPage({
   const [error, setError]         = useState<string | null>(null)
   const [configErr, setConfigErr] = useState(false)
   const [togglingStatus, setTogglingStatus] = useState(false)
+  const [editingBudget, setEditingBudget]   = useState(false)
+  const [budgetInput, setBudgetInput]       = useState('')
+  const [savingBudget, setSavingBudget]     = useState(false)
 
   // ── Resolve params promise ─────────────────────────────────────────────────
 
@@ -245,6 +250,34 @@ export default function GoogleCampaignDetailPage({
       setError('Network error — could not update campaign')
     } finally {
       setTogglingStatus(false)
+    }
+  }
+
+  // ── Edit daily budget (real mutation when connected; local row for drafts) ─
+
+  async function saveBudget() {
+    if (!campaignId || !campaign || savingBudget) return
+    const target = Number(budgetInput)
+    if (!Number.isFinite(target) || target < 50) {
+      toast.error(t('lm.google.budget.min'))
+      return
+    }
+    setSavingBudget(true)
+    try {
+      const res = await fetch(`/api/google/campaigns/${campaignId}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ dailyBudgetAED: target }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json.error) throw new Error(json.error)
+      setCampaign((prev) => (prev ? { ...prev, dailyBudgetMicros: Math.round(target * 1_000_000) } : prev))
+      setEditingBudget(false)
+      toast.success(t('lm.google.budget.updated'))
+    } catch {
+      toast.error(t('lm.google.budget.failed'))
+    } finally {
+      setSavingBudget(false)
     }
   }
 
@@ -403,14 +436,60 @@ export default function GoogleCampaignDetailPage({
 
                 {/* Meta row */}
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                  <span>
+                  <span className="inline-flex items-center gap-1.5">
                     Daily budget:{' '}
-                    <span className="text-slate-300">
-                      AED{' '}
-                      {Math.round(
-                        campaign.dailyBudgetMicros / 1_000_000,
-                      ).toLocaleString()}
-                    </span>
+                    {editingBudget ? (
+                      <>
+                        <input
+                          type="number"
+                          min={50}
+                          value={budgetInput}
+                          onChange={(e) => setBudgetInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveBudget()
+                            if (e.key === 'Escape') setEditingBudget(false)
+                          }}
+                          autoFocus
+                          className="w-20 rounded-md border border-line bg-surface-2 px-2 py-0.5 text-xs text-white outline-none focus:border-[#4285F4]/50"
+                        />
+                        <button
+                          onClick={saveBudget}
+                          disabled={savingBudget}
+                          className="inline-flex items-center gap-1 text-[#4285F4] transition hover:text-[#5A97F5] disabled:opacity-40"
+                        >
+                          {savingBudget && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {t('lm.google.budget.save')}
+                        </button>
+                        <button
+                          onClick={() => setEditingBudget(false)}
+                          disabled={savingBudget}
+                          title={t('lm.google.budget.cancel')}
+                          className="rounded p-0.5 text-slate-500 transition hover:text-white disabled:opacity-40"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-slate-300">
+                          AED{' '}
+                          {Math.round(
+                            campaign.dailyBudgetMicros / 1_000_000,
+                          ).toLocaleString()}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setBudgetInput(String(Math.round(campaign.dailyBudgetMicros / 1_000_000) || 50))
+                            setEditingBudget(true)
+                          }}
+                          title={t('lm.google.budget.edit')}
+                          aria-label={t('lm.google.budget.edit')}
+                          className="rounded p-0.5 text-slate-500 transition hover:text-white"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
                   </span>
                   <span>
                     Bidding:{' '}

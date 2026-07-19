@@ -25,6 +25,10 @@ export async function GET() {
   }
 }
 
+// Create an audience — ALWAYS a local save. Real Google userList mutations
+// (Customer Match uploads, membership processing) are a much bigger surface
+// than a name+type row, so we don't pretend: the response is flagged
+// savedLocally and the page shows "Saved locally — apply it in Google Ads".
 export async function POST(req: Request) {
   const __auth = await requireSession()
   if ('res' in __auth) return __auth.res
@@ -43,7 +47,7 @@ export async function POST(req: Request) {
     description: body?.description?.trim() || undefined,
   }
   await createLocalEntity(KIND, audience)
-  return NextResponse.json({ audience, demo: true }, { status: 201 })
+  return NextResponse.json({ audience, demo: true, savedLocally: true }, { status: 201 })
 }
 
 export async function DELETE(req: Request) {

@@ -97,6 +97,27 @@ export default function GoogleCampaignNewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects])
 
+  // One-shot prefill from the RSA generator ("Use in new campaign"): read +
+  // clear 'google-rsa-prefill' on mount and replace the default ad copy only
+  // when the handoff actually carried something.
+  useEffect(() => {
+    const raw = sessionStorage.getItem('google-rsa-prefill')
+    if (!raw) return
+    sessionStorage.removeItem('google-rsa-prefill')
+    try {
+      const { headlines, descriptions } = JSON.parse(raw) as { headlines?: string[]; descriptions?: string[] }
+      const h = (headlines ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 15)
+      const d = (descriptions ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 4)
+      if (h.length || d.length) {
+        setForm((f) => ({
+          ...f,
+          headlines:    h.length ? h : f.headlines,
+          descriptions: d.length ? d : f.descriptions,
+        }))
+      }
+    } catch { /* ignore malformed prefill */ }
+  }, [])
+
   function toggleTheme(id: string) {
     patch({
       selectedThemes: form.selectedThemes.includes(id)
@@ -517,7 +538,8 @@ export default function GoogleCampaignNewPage() {
               Headlines <span className="text-slate-600">(30 chars max each)</span>
             </div>
             <div className="space-y-2">
-              {Array.from({ length: 5 }).map((_, i) => {
+              {/* At least 5 rows; grows to fit prefilled RSA copy (max 15). */}
+              {Array.from({ length: Math.min(15, Math.max(5, form.headlines.length)) }).map((_, i) => {
                 const val = form.headlines[i] ?? ''
                 const over = val.length > 30
                 return (
@@ -548,7 +570,8 @@ export default function GoogleCampaignNewPage() {
               Descriptions <span className="text-slate-600">(90 chars max each)</span>
             </div>
             <div className="space-y-2">
-              {Array.from({ length: 2 }).map((_, i) => {
+              {/* At least 2 rows; grows to fit prefilled RSA copy (max 4). */}
+              {Array.from({ length: Math.min(4, Math.max(2, form.descriptions.length)) }).map((_, i) => {
                 const val = form.descriptions[i] ?? ''
                 const over = val.length > 90
                 return (
