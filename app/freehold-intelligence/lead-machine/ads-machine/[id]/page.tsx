@@ -20,6 +20,7 @@ import {
   Rocket, Shield, Square, X,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
+import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
 import type {
   ActivityKind, AdsMachine, MachineActivity, MachineCampaign, MachineStatus,
   VerdictAggregates, VerdictQueueItem,
@@ -274,6 +275,26 @@ export default function MachineDashboardPage() {
         </div>
       </section>
 
+      {/* ── Now / next: what the machine is doing and what happens next —
+          derived entirely from real state (plan, campaigns, activity). ── */}
+      {(() => {
+        const planTrials = machine.plan?.viable ? machine.plan.projects.reduce((n, pr) => n + pr.trials.length, 0) : 0
+        const launched = campaigns.filter((c) => c.status !== 'draft').length
+        const lastAct = activity[0]
+        const text = machine.status === 'planning'
+          ? t('lm.machine.now.planning', { n: String(planTrials), m: String(machine.plan?.viable ? machine.plan.projects.length : 0), cap: machine.dailyCapAed.toLocaleString() })
+          : machine.status === 'running'
+            ? t('lm.machine.now.running', { x: String(launched), n: String(planTrials), when: lastAct ? relTime(lastAct.createdAt, locale) : t('lm.machine.now.noActivity') })
+            : machine.status === 'paused'
+              ? t('lm.machine.now.paused')
+              : t('lm.machine.now.stopped')
+        return (
+          <section className="mt-5 rounded-[16px] border border-gold/15 bg-gold/[0.04] px-4 py-3">
+            <p className="text-sm leading-relaxed text-slate-300">{text}</p>
+          </section>
+        )
+      })()}
+
       {/* ── Stat row (all from the GET — nothing invented) ── */}
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-[18px] border border-line bg-surface p-4">
@@ -335,6 +356,16 @@ export default function MachineDashboardPage() {
       </div>
 
       {/* ── Trials ── */}
+      {/* ── The plan: what the machine is creating, per project ── */}
+      {machine.plan && (
+        <section className="mt-12">
+          <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.plan.sectionTitle')}</div>
+          <div className="mt-4">
+            <MachinePlanPreview plan={machine.plan} />
+          </div>
+        </section>
+      )}
+
       <section className="mt-12">
         <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.trials.title')}</div>
         {campaigns.length === 0 ? (
@@ -381,6 +412,39 @@ export default function MachineDashboardPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+      </section>
+
+      {/* ── Activity feed ── */}
+      <section className="mt-12">
+        <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.activity.title')}</div>
+        {activity.length === 0 ? (
+          <div className="mt-4 rounded-[18px] border border-line bg-surface-2/40 px-5 py-8 text-center text-sm text-slate-500">
+            {t('lm.machine.activity.empty')}
+          </div>
+        ) : (
+          <div className="mt-4 space-y-2.5">
+            {activity.map((a) => {
+              const meta = KIND_META[a.kind] ?? KIND_META.observation
+              const Icon = meta.Icon
+              return (
+                <div key={a.id} className="flex items-start gap-3 rounded-[16px] border border-line bg-surface p-4">
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${meta.bg}`}>
+                    <Icon className={`h-4 w-4 ${meta.color}`} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                      <span className={`text-xs font-semibold ${meta.color}`}>{t(meta.labelKey)}</span>
+                      <span className="text-[11px] text-slate-500" title={new Date(a.createdAt).toLocaleString(dateLocale)}>
+                        {relTime(a.createdAt, locale)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-300">{a.detail}</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>
@@ -550,40 +614,7 @@ export default function MachineDashboardPage() {
         )}
       </section>
 
-      {/* ── Activity feed ── */}
-      <section className="mt-12">
-        <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.activity.title')}</div>
-        {activity.length === 0 ? (
-          <div className="mt-4 rounded-[18px] border border-line bg-surface-2/40 px-5 py-8 text-center text-sm text-slate-500">
-            {t('lm.machine.activity.empty')}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2.5">
-            {activity.map((a) => {
-              const meta = KIND_META[a.kind] ?? KIND_META.observation
-              const Icon = meta.Icon
-              return (
-                <div key={a.id} className="flex items-start gap-3 rounded-[16px] border border-line bg-surface p-4">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${meta.bg}`}>
-                    <Icon className={`h-4 w-4 ${meta.color}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-                      <span className={`text-xs font-semibold ${meta.color}`}>{t(meta.labelKey)}</span>
-                      <span className="text-[11px] text-slate-500" title={new Date(a.createdAt).toLocaleString(dateLocale)}>
-                        {relTime(a.createdAt, locale)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-300">{a.detail}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* ── Confirm dialogs ── */}
+            {/* ── Confirm dialogs ── */}
       {confirm && (
         <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl border border-line bg-app p-6 shadow-2xl">
