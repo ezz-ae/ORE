@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 import Link from 'next/link'
 import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap, Layers } from 'lucide-react'
 import { CampaignList } from './_components/CampaignList'
@@ -64,7 +65,7 @@ function fmtSpend(spend: string | undefined) {
 }
 
 function getLeads(campaign: CampaignWithInsights) {
-  return campaign.insights?.actions?.find((a: { action_type: string; value: string }) => a.action_type === 'lead')?.value ?? '0'
+  return String(metaLeadCount(campaign.insights?.actions))
 }
 
 export default async function CampaignsPage() {

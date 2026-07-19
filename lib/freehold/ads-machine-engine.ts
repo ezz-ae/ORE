@@ -27,6 +27,7 @@
  * against a fresh activeSpendAed read.
  */
 import { query } from '@/lib/db'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 import {
   launchFullCampaign,
   getCampaignInsights,
@@ -148,15 +149,10 @@ function findPlanTrial(plan: MachinePlan, row: MachineCampaign): MachineTrialPla
   return planTrials(plan).find((t) => t.projectSlug === row.projectSlug && t.label === row.trialLabel) ?? null
 }
 
-/** Meta insights → lead count: exact 'lead' action first, otherwise the first
- * lead-flavored action type. Never invented — no actions means 0. */
-function leadsFromInsights(actions: Array<{ action_type: string; value: string }> | undefined): number {
-  if (!actions?.length) return 0
-  const exact = actions.find((a) => a.action_type === 'lead')
-  if (exact) return Number(exact.value) || 0
-  const flavored = actions.find((a) => a.action_type.includes('lead'))
-  return flavored ? Number(flavored.value) || 0 : 0
-}
+// Canonical Meta lead extraction — shared with every surface that counts
+// leads, so no page can drift back into summing overlapping action types.
+const leadsFromInsights = (actions: Array<{ action_type: string; value: string }> | undefined) =>
+  metaLeadCount(actions)
 
 function verdictEvidence(v: TrialVerdictStats | null): string {
   if (!v || v.decisive === 0) return 'no decisive human verdicts yet'

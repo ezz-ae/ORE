@@ -7,6 +7,7 @@ import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp, Load
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 const META_BLUE = '#1877F2'
 
@@ -29,10 +30,7 @@ interface Row {
 }
 
 function leadsFrom(insights: MetaInsights | null | undefined): number {
-  if (!insights?.actions) return 0
-  return insights.actions
-    .filter((a) => a.action_type.includes('lead'))
-    .reduce((sum, a) => sum + (Number(a.value) || 0), 0)
+  return metaLeadCount(insights?.actions)
 }
 
 function toRow(c: MetaCampaign & { insights?: MetaInsights | null }): Row {
