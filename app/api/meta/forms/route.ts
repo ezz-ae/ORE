@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
     if (!body.questions.length) {
       return NextResponse.json({ error: 'At least one question is required' }, { status: 400 })
     }
+    if (body.thankYouButtonType === 'CALL_BUSINESS' && !body.thankYouBusinessPhone) {
+      return NextResponse.json({ error: 'thankYouBusinessPhone is required for a CALL_BUSINESS thank-you button' }, { status: 400 })
+    }
 
     const result = await createLeadForm(body)
     // Best-effort local record of the created form (drafts can be missing

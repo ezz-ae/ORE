@@ -1399,10 +1399,25 @@ export async function getLeadgenSubscriptionStatus(): Promise<{ subscribed: bool
   return { subscribed: apps.some((a) => (a.subscribed_fields ?? []).includes('leadgen')) }
 }
 
+// The rich read set — everything the builder writes that Meta lets us read
+// back (questions incl. options, intro card, thank-you page, form type). If a
+// Graph version rejects one of the richer fields ((#100) nonexistent field),
+// fall back to the always-safe basic set so the detail page and duplication
+// keep working instead of hard-failing.
+const LEAD_FORM_FIELDS_RICH =
+  'id,name,status,leads_count,created_time,locale,follow_up_action_url,privacy_policy_url,questions,context_card,thank_you_page,is_optimized_for_quality,question_page_custom_headline'
+const LEAD_FORM_FIELDS_BASIC =
+  'id,name,status,leads_count,created_time,locale,follow_up_action_url,questions'
+
 export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
-  return apiFetch<MetaLeadForm>(`/${formId}`, undefined, {
-    fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url,questions',
-  })
+  try {
+    return await apiFetch<MetaLeadForm>(`/${formId}`, undefined, { fields: LEAD_FORM_FIELDS_RICH })
+  } catch (e) {
+    if (e instanceof MetaApiError && e.code === 100) {
+      return apiFetch<MetaLeadForm>(`/${formId}`, undefined, { fields: LEAD_FORM_FIELDS_BASIC })
+    }
+    throw e
+  }
 }
 
 export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ id: string }> {
@@ -1413,6 +1428,46 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
     ...(q.key     ? { key:     q.key     } : {}),
     ...(q.options ? { options: q.options } : {}),
   }))
+
+  // Attribution that rides on every lead this form ever collects
+  // (tracking_parameters is echoed back with each lead's field data).
+  // Caller-provided params are merged over the defaults.
+  const campaignSlug = payload.name.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'lead-form'
+  const trackingParameters: Record<string, string> = {
+    utm_source:   'meta-form',
+    utm_medium:   'paid',
+    utm_campaign: campaignSlug,
+    ...(payload.trackingParameters ?? {}),
+  }
+
+  // Thank-you button — each type carries the companion field Meta requires:
+  // VIEW_WEBSITE / DOWNLOAD → website_url, CALL_BUSINESS → business_phone_number
+  // (+ country_code). A CALL_BUSINESS request without a phone number falls back
+  // to the landing-page button rather than sending Meta an invalid page.
+  const buttonType: string =
+    payload.thankYouButtonType === 'CALL_BUSINESS' && !payload.thankYouBusinessPhone
+      ? 'VIEW_WEBSITE'
+      : (payload.thankYouButtonType ?? 'VIEW_WEBSITE')
+  const thankYouButton =
+    buttonType === 'CALL_BUSINESS'
+      ? {
+          button_type: 'CALL_BUSINESS',
+          button_text: payload.thankYouButtonText || 'Call us',
+          business_phone_number: payload.thankYouBusinessPhone,
+          country_code: payload.thankYouPhoneCountryCode || 'AE',
+        }
+      : buttonType === 'DOWNLOAD'
+        ? {
+            button_type: 'DOWNLOAD',
+            button_text: payload.thankYouButtonText || 'Download',
+            website_url: payload.thankYouWebsiteUrl || payload.landingUrl,
+          }
+        : {
+            button_type: 'VIEW_WEBSITE',
+            button_text: payload.thankYouButtonText || 'Visit site',
+            website_url: payload.thankYouWebsiteUrl || payload.landingUrl,
+          }
 
   return apiPost(`/${pageId}/leadgen_forms`, {
     name:               payload.name,
@@ -1425,17 +1480,38 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
       url:       payload.privacyPolicyUrl,
       link_text: 'Privacy Policy',
     },
+    tracking_parameters: trackingParameters,
+    // "Higher intent" (review screen) vs "More volume". Only sent when the
+    // caller chose — omitting keeps Meta's default (More volume) untouched.
+    ...(payload.isOptimizedForQuality !== undefined
+      ? { is_optimized_for_quality: payload.isOptimizedForQuality }
+      : {}),
+    ...(payload.questionPageHeadline
+      ? { question_page_custom_headline: payload.questionPageHeadline }
+      : {}),
+    // Text-only intro card. A cover photo needs a separate page-photo upload
+    // (context_card takes a photo id, not a URL) — intentionally not sent.
+    ...(payload.contextCard
+      ? {
+          context_card: {
+            title:   payload.contextCard.title,
+            style:   payload.contextCard.style ?? 'LIST_STYLE',
+            content: payload.contextCard.content,
+            ...(payload.contextCard.buttonText ? { button_text: payload.contextCard.buttonText } : {}),
+          },
+        }
+      : {}),
+    // Meta's SMS OTP verification of the lead's phone number — documented as
+    // is_phone_sms_verify_enabled on POST /{page}/leadgen_forms.
+    ...(payload.phoneSmsVerification ? { is_phone_sms_verify_enabled: true } : {}),
     ...(payload.thankYouTitle
       ? {
           thank_you_page: {
             title: payload.thankYouTitle,
             body: payload.thankYouBody ?? '',
             // Meta requires a button on the thank-you page ((#100)
-            // thank_you_page[button_type] is required) — send the lead to the
-            // property landing page.
-            button_type: 'VIEW_WEBSITE',
-            button_text: 'Visit site',
-            website_url: payload.landingUrl,
+            // thank_you_page[button_type] is required).
+            ...thankYouButton,
           },
         }
       : {}),

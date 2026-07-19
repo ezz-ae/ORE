@@ -17,6 +17,8 @@ export interface LiveProject {
   landingUrl: string
   /** Whether a dedicated landing page is published (vs. the project page). */
   hasLanding: boolean
+  /** Real brochure file URL when the project has one — null otherwise. */
+  brochureUrl: string | null
 }
 
 const SITE = 'https://www.freeholdproperty.ae'
@@ -41,6 +43,7 @@ export function useLiveProjects() {
             heroImage: (p.heroImage as string) || null,
             landingUrl: p.landingUrl ? `${SITE}${p.landingUrl}` : `${SITE}/projects/${p.slug}`,
             hasLanding: !!p.landingUrl,
+            brochureUrl: typeof p.brochureUrl === 'string' && p.brochureUrl ? p.brochureUrl : null,
           }))
           .filter((p: LiveProject) => p.id && p.name)
         setProjects(rows)

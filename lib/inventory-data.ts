@@ -85,6 +85,19 @@ function extractPaymentPlan(payload: Record<string, unknown> | null): string | n
   return null
 }
 
+// Real brochure file URL — payload.brochureUrl (top-level or the PF snapshot)
+// or payload.media.brochure, mirroring lib/landing-pages.ts. Only a genuine
+// http(s) URL passes; anything else is null (never invented).
+function extractBrochureUrl(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null
+  const media = (payload.media && typeof payload.media === 'object' ? payload.media : {}) as Record<string, unknown>
+  const candidates = [payload.brochureUrl, pfDetail(payload).brochureUrl, media.brochure]
+  for (const c of candidates) {
+    if (typeof c === 'string' && /^https?:\/\//i.test(c.trim())) return c.trim()
+  }
+  return null
+}
+
 function extractUnitTypes(payload: Record<string, unknown> | null): string[] {
   if (!payload) return []
   if (Array.isArray(payload.unitTypes)) return payload.unitTypes as string[]
@@ -243,6 +256,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     // resolves by the page's own slug and 404s on drafts. Drafts render as a
     // non-clickable badge instead of a dead "Live ↗" link.
     landingUrl: landing?.published ? `/lp/${landing.slug}` : null,
+    brochureUrl: extractBrochureUrl(row.payload),
     hasImages,
     imageCount: hasImages ? 1 : 0,
     dataQuality,
