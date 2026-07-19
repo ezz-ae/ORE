@@ -5,6 +5,7 @@ import { SpacesNav } from '@/components/freehold/spaces-nav'
 import { MobileTabBar } from '@/components/freehold/mobile-tab-bar'
 import { ExpertChat } from '@/components/freehold/expert-chat'
 import { MachineVerdictNotifier } from '@/components/freehold/machine-verdict-notifier'
+import { FiErrorBoundary } from '@/components/freehold/fi-error-boundary'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { BRAND } from '@/lib/freehold/brand'
 import { I18nProvider, useI18n } from '@/lib/i18n/provider'
@@ -46,15 +47,22 @@ function FreeholdShell({ children }: { children: React.ReactNode }) {
         <SpacesNav />
         <div className="flex min-h-0 flex-1">
           <main className="fi-content min-w-0 flex-1 overflow-y-auto">
-            {children}
+            {/* A page render crash shows its actual error here instead of
+                blanking the whole app into Next's generic error screen. */}
+            <FiErrorBoundary label="page">{children}</FiErrorBoundary>
           </main>
-          <ExpertChat />
+          <FiErrorBoundary label="expert-chat">
+            <ExpertChat />
+          </FiErrorBoundary>
         </div>
         {/* Phone-only bottom tabs — the top spine hides on small screens */}
         <MobileTabBar />
         {/* Ads Machine feedback questions — floats on the START side, opposite
-            the Toaster / What's-New popover (both on the end side). */}
-        <MachineVerdictNotifier />
+            the Toaster / What's-New popover (both on the end side). A broken
+            notifier vanishes silently rather than taking the app down. */}
+        <FiErrorBoundary label="verdict-notifier" silent>
+          <MachineVerdictNotifier />
+        </FiErrorBoundary>
       </CoachProvider>
       <Toaster
         theme="dark"

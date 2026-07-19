@@ -218,7 +218,7 @@ function PlanPreview({ plan }: { plan: MachinePlan }) {
               <div key={trial.id} className="rounded-[16px] border border-line bg-surface-2/50 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold">
-                    {t(SOURCE_KEY[trial.source])}
+                    {SOURCE_KEY[trial.source] ? t(SOURCE_KEY[trial.source]) : trial.source}
                   </span>
                   <span className="text-xs font-medium text-slate-300">
                     {t('lm.machine.plan.perDay', { n: trial.dailyBudgetAed.toLocaleString() })}
@@ -502,9 +502,9 @@ export default function AdsMachinePage() {
                   <div className="text-sm font-semibold text-white">{created.name}</div>
                   <div className="mt-0.5 text-xs text-slate-500">{t('lm.machine.plan.title')} · {t('lm.machine.plan.note')}</div>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_PILL[created.status].cls}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${STATUS_PILL[created.status].dot}`} />
-                  {t(STATUS_PILL[created.status].labelKey)}
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${(STATUS_PILL[created.status] ?? STATUS_PILL.planning).cls}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${(STATUS_PILL[created.status] ?? STATUS_PILL.planning).dot}`} />
+                  {t((STATUS_PILL[created.status] ?? STATUS_PILL.planning).labelKey)}
                 </span>
               </div>
 
@@ -585,7 +585,7 @@ export default function AdsMachinePage() {
           <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.list.title')}</div>
           <div className="mt-4 space-y-3">
             {machines.map((m) => {
-              const pill = STATUS_PILL[m.status]
+              const pill = STATUS_PILL[m.status] ?? STATUS_PILL.planning
               return (
                 <Link
                   key={m.id}
