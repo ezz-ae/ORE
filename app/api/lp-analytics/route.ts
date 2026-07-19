@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 
 export const runtime = "nodejs"
@@ -52,6 +52,11 @@ const ensureAnalyticsSchema = async () => {
       ADD COLUMN IF NOT EXISTS meta jsonb,
       ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()
   `)
+  // The behaviour scorer reads WHERE session_id = $1 on every lead submit,
+  // and the landing dashboard/attribution readers scan (landing_slug,
+  // event_name) — both were sequential scans before these.
+  await query(`CREATE INDEX IF NOT EXISTS freehold_site_lp_analytics_session_idx ON freehold_site_lp_analytics (session_id)`)
+  await query(`CREATE INDEX IF NOT EXISTS freehold_site_lp_analytics_slug_event_idx ON freehold_site_lp_analytics (landing_slug, event_name)`)
 }
 
 const toText = (value: unknown) => (typeof value === "string" ? value.trim() : "")
@@ -102,7 +107,12 @@ export async function POST(req: NextRequest) {
         toText(req.headers.get("x-vercel-ip-country-region")),
         toText(req.headers.get("x-vercel-ip-city")),
         JSON.stringify({
-          ipHash: toText(req.headers.get("x-forwarded-for")).slice(0, 64),
+          // A real hash — the name must not promise more privacy than the
+          // code delivers (this used to store the raw IP, merely truncated).
+          ipHash: (() => {
+            const ip = toText(req.headers.get("x-forwarded-for"))
+            return ip ? createHash("sha256").update(ip).digest("hex").slice(0, 32) : ""
+          })(),
         }),
       ],
     )
