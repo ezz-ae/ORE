@@ -30,8 +30,12 @@ interface WizardListing {
   startingPrice: number | null
   paymentPlan: string | null
   landingUrl: string
+  /** Real brochure file URL when the project has one — gates form templates
+      that end on a Download button. */
+  brochureUrl: string | null
 }
-import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel } from '@/lib/meta/types'
+import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel, CreateLeadFormPayload } from '@/lib/meta/types'
+import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTemplateKey } from '@/lib/meta/form-templates'
 
 // A saved audience from the Audiences tab, attachable to this launch.
 interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec: CampaignTargeting }
@@ -615,10 +619,18 @@ export default function NewCampaignPage() {
     { value: 'ru_RU', label: 'Русский' },
   ]
   const [newFormLocale, setNewFormLocale] = useState('en_US')
+  // Quick-create can start from one of the shared real-estate templates —
+  // '' = the plain contact form (previous behavior).
+  const [newFormTemplate, setNewFormTemplate] = useState<'' | FormTemplateKey>('')
   const [formBusy, setFormBusy] = useState(false)
   const [dupBusyId, setDupBusyId] = useState<string | null>(null)
 
-  async function createFormPayload(name: string, questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }>, locale?: string) {
+  async function createFormPayload(
+    name: string,
+    questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }>,
+    locale?: string,
+    extras?: Partial<CreateLeadFormPayload>,
+  ) {
     const listing = listings.find((l) => l.id === form.listingId)
     const res = await fetch('/api/meta/forms', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -632,6 +644,7 @@ export default function NewCampaignPage() {
         ...(locale ? { locale } : {}),
         thankYouTitle: t('pforms.default.thankYouTitle'),
         thankYouBody: t('pforms.default.thankYouBody'),
+        ...(extras ?? {}),
       }),
     })
     const d = await res.json().catch(() => ({}))
@@ -650,7 +663,39 @@ export default function NewCampaignPage() {
     if (!newFormName.trim() || formBusy) return
     setFormBusy(true)
     try {
-      const id = await createFormPayload(newFormName.trim(), [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }], newFormLocale)
+      const tpl = newFormTemplate ? FORM_TEMPLATES.find((x) => x.key === newFormTemplate) : undefined
+      let questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }> =
+        [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }]
+      let extras: Partial<CreateLeadFormPayload> | undefined
+      if (tpl) {
+        // Materialize the shared template from THIS ad's real listing facts —
+        // the same prefill the full builder would produce.
+        const listing = listings.find((l) => l.id === form.listingId)
+        const m = materializeTemplate(tpl, {
+          name: listing?.projectName,
+          area: listing?.area,
+          priceAED: listing?.startingPrice ?? null,
+          paymentPlan: listing?.paymentPlan ?? null,
+          landingUrl: form.landingUrl,
+          brochureUrl: listing?.brochureUrl ?? null,
+        }, t)
+        questions = [
+          ...m.contact.map((type) => ({ type })),
+          ...m.customs.map((q, i) => customToMetaQuestion(q, i)),
+        ]
+        extras = {
+          isOptimizedForQuality: m.higherIntent,
+          ...(m.intro.enabled && m.intro.title && m.intro.bullets.length > 0
+            ? { contextCard: { title: m.intro.title, style: 'LIST_STYLE', content: m.intro.bullets } }
+            : {}),
+          // CALL_BUSINESS needs a number the quick popup doesn't collect —
+          // downgrade to the landing-page button here; the full builder is
+          // where a call button gets its number.
+          thankYouButtonType: m.thankYouButton === 'CALL_BUSINESS' ? 'VIEW_WEBSITE' : m.thankYouButton,
+          ...(m.thankYouWebsiteUrl ? { thankYouWebsiteUrl: m.thankYouWebsiteUrl } : {}),
+        }
+      }
+      const id = await createFormPayload(newFormName.trim(), questions, newFormLocale, extras)
       attachForm(id, newFormName.trim())
     } catch (e) { toast.error(e instanceof Error ? e.message : t('pforms.error.createFailed')) }
     finally { setFormBusy(false) }
@@ -664,7 +709,16 @@ export default function NewCampaignPage() {
       const res = await fetch(`/api/meta/forms/${src.id}`, { cache: 'no-store' })
       const d = await res.json().catch(() => ({}))
       const qs = Array.isArray(d.form?.questions) && d.form.questions.length
-        ? d.form.questions.map((q: { type: string; label?: string; key?: string }) => ({ type: q.type, ...(q.label ? { label: q.label } : {}), ...(q.key ? { key: q.key } : {}) }))
+        ? d.form.questions.map((q: { type: string; label?: string; key?: string; options?: Array<{ value?: string; label?: string }> }) => ({
+            type: q.type,
+            ...(q.label ? { label: q.label } : {}),
+            ...(q.key ? { key: q.key } : {}),
+            // Carry multiple-choice options across so the duplicate really
+            // matches the source form, not a flattened version of it.
+            ...(Array.isArray(q.options) && q.options.length
+              ? { options: q.options.filter((o) => o.label || o.value).map((o, i) => ({ value: o.value || `opt_${i + 1}`, label: o.label || o.value || `Option ${i + 1}` })) }
+              : {}),
+          }))
         : [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }]
       const name = `${src.name} · copy`
       const id = await createFormPayload(name, qs)
@@ -771,6 +825,7 @@ export default function NewCampaignPage() {
             landingUrl: p.landingUrl
               ? `https://www.freeholdproperty.ae${p.landingUrl}`
               : `https://www.freeholdproperty.ae/lp/${p.slug}`,
+            brochureUrl: typeof p.brochureUrl === 'string' && p.brochureUrl ? p.brochureUrl : null,
           }))
           .filter((l: WizardListing) => l.id && l.projectName)
         setListings(props)
@@ -2229,6 +2284,15 @@ export default function NewCampaignPage() {
 
               <label className="mt-4 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lm.newCampaign.leadForm.nameLabel')}</label>
               <input value={newFormName} onChange={(e) => setNewFormName(e.target.value)} className={`${inputCls(!newFormName.trim())} mt-1`} />
+              {/* Shared real-estate templates — same definitions as the full
+                  builder, materialized from THIS ad's listing. */}
+              <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('pforms.tpl.title')}</label>
+              <select value={newFormTemplate} onChange={(e) => setNewFormTemplate(e.target.value as '' | FormTemplateKey)} className={`${inputCls()} mt-1`}>
+                <option value="">{t('pforms.tpl.quickBlank')}</option>
+                {FORM_TEMPLATES.map((tpl) => (
+                  <option key={tpl.key} value={tpl.key}>{t(tpl.nameKey)}</option>
+                ))}
+              </select>
               <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('pforms.basics.language')}</label>
               <select value={newFormLocale} onChange={(e) => setNewFormLocale(e.target.value)} className={`${inputCls()} mt-1`}>
                 {FORM_LOCALES.map((l) => (
@@ -2239,6 +2303,15 @@ export default function NewCampaignPage() {
                 className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
                 {formBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('lm.newCampaign.leadForm.createAttach')}
               </button>
+              {/* Intro cards, custom questions, phone verification etc. live in
+                  the full builder — the popup stays quick. */}
+              <Link
+                href={`/freehold-intelligence/lead-machine/forms/new?project=${encodeURIComponent(form.listingId)}&lp=${encodeURIComponent(form.landingUrl)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-line px-4 py-2 text-xs text-slate-300 transition hover:text-white"
+              >
+                {t('pforms.popup.fullBuilder')} <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
 
               {leadForms.length > 0 && (
                 <>

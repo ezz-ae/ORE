@@ -4,9 +4,16 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText } from 'lucide-react'
 import { isMetaConfigErrorMessage } from '@/lib/meta/error-messages'
+import { contactLabelKey } from '@/lib/meta/form-templates'
 import { useT } from '@/lib/i18n/provider'
 
-interface FormQuestion { type: string; label: string; id: string }
+interface FormQuestion {
+  type: string
+  label?: string
+  id?: string
+  key?: string
+  options?: { value?: string; label?: string }[]
+}
 
 interface LeadForm {
   id: string
@@ -16,6 +23,19 @@ interface LeadForm {
   created_time: string
   follow_up_action_url?: string
   questions?: FormQuestion[]
+  // Richer read fields — absent on forms/API versions that don't return them,
+  // in which case the matching cards simply don't render.
+  is_optimized_for_quality?: boolean
+  question_page_custom_headline?: string
+  context_card?: { title?: string; style?: string; content?: string[]; button_text?: string }
+  thank_you_page?: {
+    title?: string
+    body?: string
+    button_type?: string
+    button_text?: string
+    website_url?: string
+    business_phone_number?: string
+  }
 }
 
 interface FormLead {
@@ -266,18 +286,93 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          {/* Questions */}
+          {/* Form type — only when Meta actually returned the flag. */}
+          {typeof form.is_optimized_for_quality === 'boolean' && (
+            <div className="rounded-[20px] border border-line bg-surface p-5">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.kind.title')}</div>
+              <div className="text-sm font-medium text-white">
+                {form.is_optimized_for_quality ? t('pforms.kind.intent') : t('pforms.kind.volume')}
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                {form.is_optimized_for_quality ? t('pforms.kind.intentDesc') : t('pforms.kind.volumeDesc')}
+              </p>
+            </div>
+          )}
+
+          {/* Intro card */}
+          {form.context_card?.title && (
+            <div className="rounded-[20px] border border-line bg-surface p-5">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.sidebar.introCard')}</div>
+              <div className="text-sm font-medium text-white">{form.context_card.title}</div>
+              {(form.context_card.content ?? []).length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {form.context_card.content!.map((line, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-slate-400">
+                      <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-gold/60" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Questions — type-aware: prefill fields show their catalog name,
+              customs show their options or "open text". */}
           {form.questions && form.questions.length > 0 && (
             <div className="rounded-[20px] border border-line bg-surface p-5">
               <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.sidebar.questions')}</div>
-              <div className="space-y-2">
-                {form.questions.map((q, i) => (
-                  <div key={q.id} className="flex items-center gap-2.5 text-xs">
-                    <span className="text-slate-500 w-4 text-right shrink-0">{i + 1}.</span>
-                    <span className="text-slate-300">{q.label ?? q.type}</span>
-                  </div>
-                ))}
+              {form.question_page_custom_headline && (
+                <p className="mb-3 text-xs italic text-slate-400">“{form.question_page_custom_headline}”</p>
+              )}
+              <div className="space-y-2.5">
+                {form.questions.map((q, i) => {
+                  const catalogKey = contactLabelKey(q.type)
+                  const display = q.label ?? (catalogKey ? t(catalogKey) : q.type)
+                  return (
+                    <div key={q.id ?? `${q.type}_${i}`} className="flex items-start gap-2.5 text-xs">
+                      <span className="text-slate-500 w-4 text-right shrink-0">{i + 1}.</span>
+                      <div className="min-w-0">
+                        <span className="text-slate-300">{display}</span>
+                        <span className="ms-2 rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-500">
+                          {q.type === 'CUSTOM'
+                            ? (q.options?.length
+                                ? t('pforms.review.customWithOptions', { n: q.options.length })
+                                : t('pforms.review.customOpenText'))
+                            : t('pforms.review.standardAutofill')}
+                        </span>
+                        {q.type === 'CUSTOM' && (q.options?.length ?? 0) > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
+                            {q.options!.map((o, j) => <span key={j}>{o.label ?? o.value}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
+            </div>
+          )}
+
+          {/* Thank-you page */}
+          {form.thank_you_page?.title && (
+            <div className="rounded-[20px] border border-line bg-surface p-5">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.review.thankYouPage')}</div>
+              <div className="text-sm font-medium text-white">{form.thank_you_page.title}</div>
+              {form.thank_you_page.body && <p className="mt-1 text-xs text-slate-400">{form.thank_you_page.body}</p>}
+              {form.thank_you_page.button_type && (
+                <p className="mt-2 text-[11px] text-slate-500">
+                  {t('pforms.detail.button')}{': '}
+                  <span className="text-slate-300">
+                    {form.thank_you_page.button_type === 'CALL_BUSINESS' ? t('pforms.thankYou.btn.call')
+                      : form.thank_you_page.button_type === 'DOWNLOAD' ? t('pforms.thankYou.btn.download')
+                      : form.thank_you_page.button_type === 'VIEW_WEBSITE' ? t('pforms.thankYou.btn.website')
+                      : form.thank_you_page.button_type}
+                  </span>
+                  {form.thank_you_page.business_phone_number ? ` · ${form.thank_you_page.business_phone_number}` : ''}
+                  {form.thank_you_page.website_url ? ` · ${form.thank_you_page.website_url}` : ''}
+                </p>
+              )}
             </div>
           )}
 

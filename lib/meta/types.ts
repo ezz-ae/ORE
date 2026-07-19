@@ -289,22 +289,51 @@ export interface LaunchCampaignResult {
 
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────
 
+// The Meta prefill catalog relevant to real estate — every value here is a
+// documented `questions[].type` enum member of POST /{page}/leadgen_forms
+// (verified against Meta's leadgen_forms reference; the full enum also holds
+// auto/ID types like VIN or ID_CPF that make no sense for property leads).
 export type MetaFormQuestionType =
   | 'FULL_NAME'
+  | 'FIRST_NAME'
+  | 'LAST_NAME'
   | 'PHONE'
   | 'EMAIL'
+  | 'WORK_EMAIL'
+  | 'WORK_PHONE_NUMBER'
   | 'CITY'
   | 'STATE'
+  | 'ZIP'
   | 'COUNTRY'
-  | 'CUSTOM'
-  | 'WORK_EMAIL'
   | 'COMPANY_NAME'
+  | 'JOB_TITLE'
+  | 'DOB'
+  | 'GENDER'
+  | 'CUSTOM'
 
 export interface MetaFormQuestion {
   type: MetaFormQuestionType
   key?: string
   label?: string
   options?: { value: string; label: string }[]
+}
+
+/** Thank-you-page button variants this platform supports (subset of Meta's
+ *  enum — the three that make sense for property leads). Each carries its own
+ *  required companion field: VIEW_WEBSITE/DOWNLOAD → website_url,
+ *  CALL_BUSINESS → business_phone_number (+ country_code). */
+export type ThankYouButtonType = 'VIEW_WEBSITE' | 'CALL_BUSINESS' | 'DOWNLOAD'
+
+/** Meta context card — the optional intro screen shown before the questions.
+ *  Note: a cover PHOTO on the card requires a separate page-photo upload flow
+ *  (context_card takes a photo id, not a URL) — deliberately not implemented,
+ *  so the card here is text-only. */
+export interface FormContextCard {
+  title: string
+  /** LIST_STYLE renders `content` as bullets, PARAGRAPH_STYLE as prose. */
+  style?: 'LIST_STYLE' | 'PARAGRAPH_STYLE'
+  content: string[]
+  buttonText?: string
 }
 
 export interface MetaLeadForm {
@@ -319,7 +348,28 @@ export interface MetaLeadForm {
   created_time: string
   locale?: string
   follow_up_action_url?: string
-  questions?: { type: string; label: string; id: string }[]
+  questions?: {
+    type: string
+    label?: string
+    id?: string
+    key?: string
+    options?: { value?: string; label?: string; key?: string }[]
+  }[]
+  // Richer read fields (requested by getLeadForm; absent on older forms or
+  // when Meta declines the field — render nothing rather than a placeholder).
+  is_optimized_for_quality?: boolean
+  question_page_custom_headline?: string
+  privacy_policy_url?: string
+  context_card?: { title?: string; style?: string; content?: string[]; button_text?: string }
+  thank_you_page?: {
+    title?: string
+    body?: string
+    button_type?: string
+    button_text?: string
+    website_url?: string
+    business_phone_number?: string
+    country_code?: string
+  }
 }
 
 export interface MetaFormLead {
@@ -342,6 +392,38 @@ export interface CreateLeadFormPayload {
   thankYouBody?: string
   /** Meta form locale (en_US / ar_AR / ru_RU). Defaults to en_US when omitted. */
   locale?: string
+  /**
+   * Meta's form type: false/omitted = "More volume" (short, one-tap submit),
+   * true = "Higher intent" (adds Meta's review-before-submit screen; fewer but
+   * better-qualified leads). Maps to is_optimized_for_quality.
+   */
+  isOptimizedForQuality?: boolean
+  /** Custom headline above the questions (question_page_custom_headline). */
+  questionPageHeadline?: string
+  /** Optional intro card shown before the questions (context_card). */
+  contextCard?: FormContextCard
+  /**
+   * Meta's SMS phone verification (is_phone_sms_verify_enabled) — the lead
+   * must confirm an OTP texted to their number before submitting, so the
+   * phone on the lead is a verified one. Only meaningful when the form asks
+   * for PHONE. Documented on POST /{page}/leadgen_forms.
+   */
+  phoneSmsVerification?: boolean
+  /** Thank-you button. Defaults to VIEW_WEBSITE → landingUrl (today's behavior). */
+  thankYouButtonType?: ThankYouButtonType
+  thankYouButtonText?: string
+  /** Target for VIEW_WEBSITE, or the file URL for DOWNLOAD. Falls back to landingUrl. */
+  thankYouWebsiteUrl?: string
+  /** E.164 number the CALL_BUSINESS button dials. Required for that button type. */
+  thankYouBusinessPhone?: string
+  /** ISO country code for the CALL_BUSINESS number (defaults to AE). */
+  thankYouPhoneCountryCode?: string
+  /**
+   * Extra tracking_parameters merged OVER the auto-injected attribution set
+   * ({ utm_source: 'meta-form', utm_medium: 'paid', utm_campaign: <name slug> })
+   * — these ride on every lead's field data for attribution.
+   */
+  trackingParameters?: Record<string, string>
 }
 
 // ─── Creatives ────────────────────────────────────────────────────────────────

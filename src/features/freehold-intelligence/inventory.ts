@@ -39,6 +39,10 @@ export interface InventoryProperty {
       else null. Used to preview/edit a draft landing that landingUrl hides. */
   landingSlug: string | null
   landingUrl: string | null
+  /** Real brochure file URL from the project payload (payload.brochureUrl,
+      mirrored by the refresh pipeline), else null — never invented. Gates the
+      lead-form "Download brochure" button. */
+  brochureUrl?: string | null
   hasImages: boolean
   imageCount: number
   dataQuality: number
