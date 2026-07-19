@@ -1,6 +1,6 @@
 'use client'
 
-import { Sparkles, FileText, Search, Lightbulb } from 'lucide-react'
+import { Sparkles, FileText, Search, Lightbulb, Scale } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { MachinePlan, TrialSource } from '@/lib/freehold/ads-machine-planner'
 
@@ -84,6 +84,18 @@ export function MachinePlanPreview({ plan }: { plan: MachinePlan }) {
             <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-orange-400/20 bg-orange-400/[0.04] px-3.5 py-2.5">
               <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-400/70" />
               <p className="text-[11px] leading-relaxed text-slate-400">{p.googleSkipped}</p>
+            </div>
+          )}
+
+          {/* Why THIS project got its share of the cap — the planner's honest
+              opportunity-weighted (or equal-split) reasoning, verbatim. */}
+          {p.budgetRationale && (
+            <div className="mt-3 flex items-start gap-2 rounded-[14px] border border-line bg-surface-2/40 px-3.5 py-2.5">
+              <Scale className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <p className="text-[11px] leading-relaxed text-slate-400">
+                <span className="font-semibold text-slate-300">{t('lm.machine.plan.budgetRationale')}: </span>
+                {p.budgetRationale}
+              </p>
             </div>
           )}
 

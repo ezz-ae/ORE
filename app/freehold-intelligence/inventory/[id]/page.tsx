@@ -13,10 +13,12 @@ import {
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getProjectDealActivity } from '@/lib/deals'
+import { readOpportunityScore } from '@/lib/freehold/opportunity'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { type PropertyStatus } from '@/src/features/freehold-intelligence/inventory'
 import { getServerT } from '@/lib/i18n/server'
+import { OpportunityRefreshButton } from './opportunity-refresh'
 
 function fmtAed(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -66,12 +68,15 @@ function DetailRow({ label, value }: { label: string; value: string | number | n
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { t } = await getServerT()
+  const { t, locale } = await getServerT()
 
-  // Real DB inventory only — no seed fallback.
-  const [prop, sales, sessionUser] = await Promise.all([
+  // Real DB inventory only — no seed fallback. The opportunity score is served
+  // from the persisted table (its computed_at is shown honestly below), never
+  // recomputed on page load.
+  const [prop, sales, opportunity, sessionUser] = await Promise.all([
     getInventoryPropertyBySlug(id),
     getProjectDealActivity(id),
+    readOpportunityScore(id),
     verifySession((await cookies()).get(SESSION_COOKIE)?.value),
   ])
   // Recent-deal drill-down carries agent + client names, so it is management-only;
@@ -256,6 +261,74 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* ── Opportunity Engine (Layer 3) — everything below comes from the
+              persisted score row; absent components are labelled, never
+              zero-filled, and the computed-at stamp is the table's own. ── */}
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                {t('inv.opp.title')}
+              </p>
+              {canLaunchAds && <OpportunityRefreshButton />}
+            </div>
+
+            {!opportunity ? (
+              <p className="text-sm text-slate-500">{t('inv.opp.notComputed')}</p>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-3">
+                  {opportunity.score !== null ? (
+                    <div className="text-[28px] font-semibold tabular-nums leading-none text-gold">
+                      {opportunity.score}<span className="text-[16px] text-slate-500"> / 100</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-amber-300">{t('inv.opp.insufficient')}</div>
+                  )}
+                  <span className="text-xs text-slate-500">
+                    {t('inv.opp.coverage', {
+                      present: opportunity.components.filter((c) => c.score !== null).length,
+                      total: opportunity.components.length,
+                    })}
+                  </span>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  {opportunity.components.map((c) => (
+                    <div key={c.key}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                        <span className="text-slate-400">{t(`inv.opp.c.${c.key}`)}</span>
+                        {c.score !== null ? (
+                          <span className="tabular-nums font-semibold text-slate-300">{c.score} / 100</span>
+                        ) : (
+                          <span className="text-slate-500">{t('inv.opp.noData')}</span>
+                        )}
+                      </div>
+                      {c.score !== null && (
+                        <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+                          <div
+                            className={`h-full rounded-full transition-all ${readinessBar(c.score)}`}
+                            style={{ width: `${c.score}%` }}
+                          />
+                        </div>
+                      )}
+                      {/* The real numbers behind the score (or why it's absent). */}
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{c.evidence}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 border-t border-line pt-3 text-xs text-slate-500">
+                  {t('inv.opp.computedAt', {
+                    date: new Date(opportunity.computedAt).toLocaleString(locale, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }),
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {prop.lastUpdated && (

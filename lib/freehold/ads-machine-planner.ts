@@ -24,6 +24,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
+import { readOpportunityScores } from '@/lib/freehold/opportunity'
 import { getBuyerMatchProfile } from '@/lib/freehold/buyer-match'
 import { listAudiences, type SavedAudience } from '@/lib/freehold/audiences'
 import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
@@ -84,6 +85,11 @@ export interface MachineProjectPlan {
   googleSkipped?: string
   /** Learning-loop targeting note — ADVISORY only, absent when unavailable. */
   advisory?: string
+  /** Honest note explaining THIS project's share of the daily cap — the
+   * opportunity-weighted split (with the real scores used) or the equal-split
+   * fallback when no stored scores exist. Absent on single-project plans and
+   * plans persisted before the Opportunity Engine existed. */
+  budgetRationale?: string
   /** Real listing facts captured at plan time — the engine materializes the
    * project's Meta instant lead form from these. Absent on older plans (the
    * engine then falls back to the fields above). */
@@ -172,6 +178,85 @@ function buildGoogleSearchPayload(params: {
 }
 
 /**
+ * Opportunity-weighted per-project budget split (Layer 3). Pure — no I/O.
+ *
+ * Rule: with 2+ projects and at least one stored opportunity score
+ * (lib/freehold/opportunity), each project's share of the cap is proportional
+ * to its score. A project with no stored score gets the mean score of the
+ * scored ones (neutral weight — a missing score is absent data, never a
+ * penalty). Bounded: no project drops below the AED 50/day trial floor
+ * (floored projects pin at 50 and the rest reshare the remainder
+ * proportionally — feasible whenever the equal split clears the floor, which
+ * buildMachinePlan guarantees before calling). With NO scores the split stays
+ * equal, and the rationale says so honestly. Every project's reasoning lands
+ * in rationaleBySlug → MachineProjectPlan.budgetRationale so the dashboard
+ * shows WHY budgets differ.
+ */
+export function allocateBudgetsByOpportunity(
+  slugs: string[],
+  capAed: number,
+  scoreBySlug: Map<string, number>,
+): { budgetBySlug: Map<string, number>; rationaleBySlug: Map<string, string> } {
+  const perProject = Math.floor(capAed / slugs.length)
+  const budgetBySlug = new Map<string, number>(slugs.map((s) => [s, perProject]))
+  const rationaleBySlug = new Map<string, string>()
+  if (slugs.length < 2) return { budgetBySlug, rationaleBySlug }
+
+  const scoredValues = slugs
+    .map((s) => scoreBySlug.get(s))
+    .filter((v): v is number => v !== undefined)
+  if (scoredValues.length === 0) {
+    for (const s of slugs) {
+      rationaleBySlug.set(
+        s,
+        `Equal split (AED ${perProject}/day each of the AED ${capAed}/day cap) — no opportunity scores were available at plan time.`,
+      )
+    }
+    return { budgetBySlug, rationaleBySlug }
+  }
+
+  const meanScore = scoredValues.reduce((n, v) => n + v, 0) / scoredValues.length
+  const weightOf = (s: string) => scoreBySlug.get(s) ?? meanScore
+
+  // Proportional allocation with the AED 50 floor: pin any share that falls
+  // below the floor, reshare the rest, repeat until stable.
+  const pinned = new Set<string>()
+  for (let pass = 0; pass < slugs.length; pass++) {
+    const free = slugs.filter((s) => !pinned.has(s))
+    const freeCap = capAed - pinned.size * META_MIN_TRIAL_BUDGET_AED
+    const weightSum = free.reduce((n, s) => n + weightOf(s), 0)
+    if (weightSum <= 0) {
+      for (const s of free) budgetBySlug.set(s, Math.floor(freeCap / free.length))
+      break
+    }
+    let repinned = false
+    for (const s of free) {
+      const share = Math.floor((freeCap * weightOf(s)) / weightSum)
+      if (share < META_MIN_TRIAL_BUDGET_AED) {
+        pinned.add(s)
+        budgetBySlug.set(s, META_MIN_TRIAL_BUDGET_AED)
+        repinned = true
+      } else {
+        budgetBySlug.set(s, share)
+      }
+    }
+    if (!repinned) break
+  }
+
+  for (const s of slugs) {
+    const b = budgetBySlug.get(s) ?? perProject
+    const score = scoreBySlug.get(s)
+    rationaleBySlug.set(
+      s,
+      score !== undefined
+        ? `Opportunity-weighted split: score ${score}/100 vs fleet mean ${Math.round(meanScore)}/100 → AED ${b}/day of the AED ${capAed}/day cap (AED ${META_MIN_TRIAL_BUDGET_AED}/day trial floor guaranteed).`
+        : `No stored opportunity score for this project — given the fleet-mean weight (${Math.round(meanScore)}/100) in the split → AED ${b}/day of the AED ${capAed}/day cap.`,
+    )
+  }
+  return { budgetBySlug, rationaleBySlug }
+}
+
+/**
  * Build the full machine plan. Pure planning — persists nothing, launches
  * nothing; the caller stores the result on the machine row.
  */
@@ -189,9 +274,10 @@ export async function buildMachinePlan(
     return { viable: false, reason: 'The daily cap must be a positive amount in AED.' }
   }
 
-  // Budget: equal split per project, then per trial, floor AED 50/day (Meta's
-  // minimum). If even ONE trial per project at the floor doesn't fit, the
-  // machine cannot honestly run — say so instead of planning a fiction.
+  // Budget: split the cap per project, then per trial, floor AED 50/day
+  // (Meta's minimum). Viability is judged on the EQUAL split: if even ONE
+  // trial per project at the floor doesn't fit, the machine cannot honestly
+  // run — say so instead of planning a fiction.
   const perProject = Math.floor(cap / slugs.length)
   if (perProject < META_MIN_TRIAL_BUDGET_AED) {
     return {
@@ -199,6 +285,20 @@ export async function buildMachinePlan(
       reason: `A daily cap of AED ${cap} across ${slugs.length} project(s) leaves AED ${perProject}/project — below Meta's AED ${META_MIN_TRIAL_BUDGET_AED}/day minimum for even one trial each. Raise the cap or pick fewer projects.`,
     }
   }
+
+  // Opportunity-weighted split (Layer 3): read the STORED scores fail-soft —
+  // an unreadable score table just means an equal split, never a failed plan.
+  let scoreBySlug = new Map<string, number>()
+  if (slugs.length > 1) {
+    try {
+      const stored = await readOpportunityScores(slugs)
+      scoreBySlug = new Map(
+        stored.filter((s) => s.score !== null).map((s) => [s.projectSlug, s.score as number]),
+      )
+    } catch { /* scores unavailable → equal split */ }
+  }
+  const { budgetBySlug, rationaleBySlug: budgetRationaleBySlug } =
+    allocateBudgetsByOpportunity(slugs, cap, scoreBySlug)
 
   // Saved audiences are shared assets — use the freshest one when it exists;
   // NEVER invent one when the list is empty.
@@ -210,6 +310,10 @@ export async function buildMachinePlan(
 
   const projects: MachineProjectPlan[] = []
   for (const slug of slugs) {
+    // This project's share of the cap — opportunity-weighted when stored
+    // scores existed above, otherwise the equal split. Never below the floor.
+    const projectBudget = budgetBySlug.get(slug) ?? perProject
+    const budgetRationale = budgetRationaleBySlug.get(slug)
     const listing = await getInventoryPropertyBySlug(slug).catch(() => null)
     const listingName = listing?.name || slug
     const area = listing?.area || 'Dubai'
@@ -287,19 +391,19 @@ export async function buildMachinePlan(
     })
 
     // Fund as many distinct trials as the per-project share allows at the
-    // AED 50 floor (perProject >= 50 was already guaranteed above). The Meta
+    // AED 50 floor (every share >= 50 was already guaranteed above). The Meta
     // trials are the backbone and are funded first; the Google SEARCH trial
     // takes the NEXT floor-sized slot of the SAME split. If the share funds
     // the Meta trials but not the Google one, the Google trial is dropped for
     // this project — noted on the plan, never a failure of the whole plan.
-    const fundable = Math.max(1, Math.floor(perProject / META_MIN_TRIAL_BUDGET_AED))
+    const fundable = Math.max(1, Math.floor(projectBudget / META_MIN_TRIAL_BUDGET_AED))
     const chosen = candidates.slice(0, Math.min(candidates.length, fundable))
     const includeGoogle = fundable >= chosen.length + 1
     const trialCount = chosen.length + (includeGoogle ? 1 : 0)
-    const perTrial = Math.floor(perProject / trialCount)
+    const perTrial = Math.floor(projectBudget / trialCount)
     const googleSkipped = includeGoogle
       ? undefined
-      : `AED ${perProject}/day funds ${chosen.length} Meta trial(s) at the AED ${META_MIN_TRIAL_BUDGET_AED}/day floor but not an additional Google Search trial — it was dropped for this project. Raise the cap to fund it.`
+      : `AED ${projectBudget}/day funds ${chosen.length} Meta trial(s) at the AED ${META_MIN_TRIAL_BUDGET_AED}/day floor but not an additional Google Search trial — it was dropped for this project. Raise the cap to fund it.`
 
     // ── Copy: one grounded generation per project (Gemini when live), the
     // deterministic template per angle otherwise. ──
@@ -389,10 +493,11 @@ export async function buildMachinePlan(
       listingName,
       area,
       landingUrl,
-      dailyBudgetAed: perProject,
+      dailyBudgetAed: projectBudget,
       trials,
       ...(googleSkipped ? { googleSkipped } : {}),
       ...(advisory ? { advisory } : {}),
+      ...(budgetRationale ? { budgetRationale } : {}),
       facts: {
         name: listingName,
         area,
