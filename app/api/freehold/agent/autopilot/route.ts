@@ -10,6 +10,7 @@ import {
 } from '@/lib/meta/client'
 import { getAutoEnhanceModes } from '@/lib/meta/campaign-prefs'
 import { saveLibraryItem } from '@/lib/freehold/library'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -71,9 +72,7 @@ export async function POST() {
       const impressions = Number(insights?.impressions ?? 0)
       const clicks = Number(insights?.clicks ?? 0)
       const spend = Number(insights?.spend ?? 0)
-      const leads = (insights?.actions ?? [])
-        .filter((a) => a.action_type.includes('lead'))
-        .reduce((s, a) => s + Number(a.value || 0), 0)
+      const leads = metaLeadCount(insights?.actions)
       const metrics: RuleMetrics = {
         quality: quality.score,
         cpl: leads > 0 ? spend / leads : 0,

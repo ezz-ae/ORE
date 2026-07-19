@@ -8,6 +8,7 @@ import { listCampaigns, getCampaignInsights, listAdSets, listAds, MetaConfigErro
 import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // Run async work with a concurrency cap, so a big group doesn't fan out hundreds
 // of simultaneous Meta insight calls and trip the rate limiter.
@@ -59,8 +60,7 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
   return map
 }
 
-const metaLeads = (ins: MetaInsights | null) =>
-  (ins?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+const metaLeads = (ins: MetaInsights | null) => metaLeadCount(ins?.actions)
 
 const filsToAed = (v: string | undefined | null) => (v ? Number(v) / 100 : 0)
 // Spend/leads/CPL for any node id (campaign, ad set, or ad) — the /{id}/insights

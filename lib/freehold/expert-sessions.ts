@@ -42,11 +42,29 @@ const ensure = async () => {
 }
 const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
 
+// A line that is nothing but snake_case identifiers is a leaked tool name
+// ("ads_campaign_insights"), never a human answer. Conversations saved before
+// the chat-route salvage filter existed still carry these — scrub them at
+// read time so they neither render as bubbles nor replay into model history.
+const isBareToolToken = (text: string): boolean => {
+  const lines = text.trim().split(/\n+/).map((l) => l.trim()).filter(Boolean)
+  return lines.length > 0 && lines.every((l) => /^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(l))
+}
+
+const scrubBlocks = (blocks: ExpertBlock[] | undefined): ExpertBlock[] | undefined => {
+  if (!blocks?.length) return blocks
+  const clean = blocks.filter((b) => !(b?.type === 'text' && isBareToolToken(String(b.content ?? ''))))
+  return clean.length > 0 ? clean : undefined
+}
+
 const parseMessages = (v: unknown): ExpertTurnMessage[] => {
   let raw: unknown = v
   if (typeof v === 'string') { try { raw = JSON.parse(v) } catch { raw = [] } }
   if (!Array.isArray(raw)) return []
-  return raw.filter((m): m is ExpertTurnMessage => !!m && typeof m === 'object' && 'role' in m)
+  return raw
+    .filter((m): m is ExpertTurnMessage => !!m && typeof m === 'object' && 'role' in m)
+    .map((m) => (m.role === 'assistant' ? { ...m, blocks: scrubBlocks(m.blocks) } : m))
+    .filter((m) => m.role === 'user' || (m.blocks?.length ?? 0) > 0)
 }
 
 const titleFrom = (text: string): string => {

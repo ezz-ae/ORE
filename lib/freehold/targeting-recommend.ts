@@ -3,6 +3,7 @@ import { listCampaigns, getCampaignInsights } from '@/lib/meta/client'
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { query } from '@/lib/db'
 import { getNetworkBenchmarks, refreshLiveTenantSignals } from '@/lib/entrestate/targeting-base'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // The learning loop's SHARED brain: reads what actually happened (spend, CPL,
 // how each campaign's leads progressed in the CRM), folds in the network's
@@ -56,7 +57,7 @@ async function gatherPerformance(): Promise<{ connected: boolean; campaigns: Cam
       try {
         const ins = await getCampaignInsights(c.id)
         spend = Number(ins?.spend) || 0
-        leads = (ins?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+        leads = metaLeadCount(ins?.actions)
       } catch { /* insights unavailable for this campaign */ }
       return {
         id: c.id,

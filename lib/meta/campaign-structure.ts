@@ -2,6 +2,7 @@ import { query } from '@/lib/db'
 import { getCampaign, getCampaignInsights, listAdSets, listAds } from '@/lib/meta/client'
 import type { MetaCampaign, MetaAdSet, MetaInsights, CampaignTargeting } from '@/lib/meta/types'
 import type { ProjectAdStructure, ExistingCampaign, ExistingAdSet, ExistingAd } from '@/lib/meta/campaign-router'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 
 // Builds the live per-project ad structure the intent router reads. Two jobs:
 //  1. Remember which campaigns belong to which project (a link table written at
@@ -141,8 +142,7 @@ const ageDaysFrom = (iso: string | undefined): number => {
   return Math.max(0, Math.floor((Date.now() - t) / 86_400_000))
 }
 
-const metaLeads = (ins: MetaInsights | null) =>
-  (ins?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
+const metaLeads = (ins: MetaInsights | null) => metaLeadCount(ins?.actions)
 
 const filsToAed = (v: string | undefined | null): number => (v ? Number(v) / 100 : 0)
 
