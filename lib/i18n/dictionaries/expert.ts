@@ -1,5 +1,6 @@
 // Freehold Expert chat UI strings (EN/AR/RU). Keys under expert.*
 // (expert.save/saved/saveOk/saveErr live in the core dictionary.)
+import { BRAND, brandName } from '@/lib/freehold/brand'
 type Dict = Record<string, string>
 
 const en: Dict = {
@@ -42,9 +43,9 @@ const en: Dict = {
   "expert.st.crm3": "Draft a WhatsApp follow-up for my hottest lead",
   "expert.pageLeadMachine": "Lead Machine",
   "expert.pageWorkspace": "Workspace",
-  "expert.title": "Freehold Expert",
+  "expert.title": `${BRAND.company} Expert`,
   "expert.subtitle": "Full-system · {page}",
-  "expert.openAria": "Open Freehold Expert",
+  "expert.openAria": `Open ${BRAND.company} Expert`,
   "expert.closeAria": "Close Expert",
   "expert.sendAria": "Send",
   "expert.newChat": "New chat",
@@ -142,9 +143,9 @@ const ar: Dict = {
   "expert.st.crm3": "اكتب متابعة واتساب لأهم عميل لدي",
   "expert.pageLeadMachine": "آلة العملاء المحتملين",
   "expert.pageWorkspace": "مساحة العمل",
-  "expert.title": "خبير Freehold",
+  "expert.title": `خبير ${BRAND.company}`,
   "expert.subtitle": "النظام الكامل · {page}",
-  "expert.openAria": "فتح خبير Freehold",
+  "expert.openAria": `فتح خبير ${BRAND.company}`,
   "expert.closeAria": "إغلاق الخبير",
   "expert.sendAria": "إرسال",
   "expert.newChat": "محادثة جديدة",
@@ -242,9 +243,9 @@ const ru: Dict = {
   "expert.st.crm3": "Составь WhatsApp-фоллоу-ап для самого горячего лида",
   "expert.pageLeadMachine": "Машина лидов",
   "expert.pageWorkspace": "Рабочее пространство",
-  "expert.title": "Эксперт Freehold",
+  "expert.title": `Эксперт ${BRAND.company}`,
   "expert.subtitle": "Вся система · {page}",
-  "expert.openAria": "Открыть Эксперт Freehold",
+  "expert.openAria": `Открыть Эксперт ${BRAND.company}`,
   "expert.closeAria": "Закрыть Эксперт",
   "expert.sendAria": "Отправить",
   "expert.newChat": "Новый чат",

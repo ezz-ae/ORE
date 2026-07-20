@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 // Client-facing changelog — the source for the "What's new" panel.
 // RULE: only FEATURES / options / things that make the product easier to use.
 // Never list bug fixes or internal plumbing (e.g. "fixed Meta integration").
@@ -61,7 +62,7 @@ export const CHANGELOG: ChangeEntry[] = [
     date: '2026-07-01',
     title: 'Connect your own ad & messaging accounts',
     items: [
-      { title: 'Connect Meta Ads in-app', body: 'Paste your token in Integrations → Meta Ads, pick your ad account + Facebook Page, and launch real campaigns from Freehold.' },
+      { title: 'Connect Meta Ads in-app', body: 'Paste your token in Integrations → Meta Ads, pick your ad account + Facebook Page, and launch real campaigns from ' + BRAND.company + '.' },
       { title: 'Connect WhatsApp in-app', body: 'Connect your WhatsApp Business number in Integrations → WhatsApp and the CRM can message leads directly.' },
       { title: 'Advertise a project in one click', body: 'From an inventory project or a generated listing, jump straight into the campaign builder pre-filled with that project.' },
     ],

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getBrandSiteUrl } from '@/lib/freehold/brand'
 import { FileText, Globe, ArrowUpRight, LayoutTemplate } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -8,7 +9,7 @@ import { useT } from '@/lib/i18n/provider'
 // open, plus the live landing pages generated from Inventory. No invented SEO
 // scores, word counts or review statuses.
 
-const SITE = 'https://www.freeholdproperty.ae'
+const SITE = getBrandSiteUrl()
 
 const CORE_PAGES: { title: string; url: string }[] = [
   { title: 'Home',              url: '/' },

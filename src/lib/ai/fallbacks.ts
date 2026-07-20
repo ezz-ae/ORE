@@ -1,4 +1,5 @@
 import type { Project } from "@/src/types/project"
+import { BRAND } from "@/lib/freehold/brand"
 import type { Lead } from "@/src/types/lead"
 import type {
   AdGenerationOutput,
@@ -23,15 +24,15 @@ export function buildAdFallback(project: Project = projects[0], input?: Partial<
     campaignAngle: `${project.adAngle} Position ${project.projectName} for ${buyerType} buyers with a ${platform} campaign focused on ${objective}.`,
     headline: `${project.area} Opportunity From ${formatAED(project.startingPrice)}`,
     shortAdCopy: `${project.projectName} gives qualified buyers a clear ${project.area} entry point with ${project.paymentPlan}.`,
-    longAdCopy: `Freehold can position ${project.projectName} around ${project.salesAngle.toLowerCase()} The campaign should move buyers from curiosity into a qualified WhatsApp conversation by showing starting price, payment structure, buyer fit, and the next action without making official return claims.`,
-    instagramCaption: `${project.area} buyers are not looking for another brochure. They need price, payment plan, buyer fit, and a clear next step. Ask Freehold for the ${project.projectName} brief.`,
-    googleSearchHeadlines: [`${project.area} Property`, `${project.projectName}`, `${formatAED(project.startingPrice)} Entry`, "Freehold Property UAE"],
+    longAdCopy: `${BRAND.company} can position ${project.projectName} around ${project.salesAngle.toLowerCase()} The campaign should move buyers from curiosity into a qualified WhatsApp conversation by showing starting price, payment structure, buyer fit, and the next action without making official return claims.`,
+    instagramCaption: `${project.area} buyers are not looking for another brochure. They need price, payment plan, buyer fit, and a clear next step. Ask ${BRAND.company} for the ${project.projectName} brief.`,
+    googleSearchHeadlines: [`${project.area} Property`, `${project.projectName}`, `${formatAED(project.startingPrice)} Entry`, `${BRAND.legalName} UAE`],
     googleSearchDescriptions: [
-      `Compare ${project.area} units, payment plan, buyer fit, and next steps with Freehold.`,
+      `Compare ${project.area} units, payment plan, buyer fit, and next steps with ${BRAND.company}.`,
       "Internal planning data for campaign execution. Speak with an advisor before deciding.",
       `Request a focused ${project.area} shortlist instead of a generic brochure.`,
     ],
-    whatsappOpener: `Hi, this is Freehold Property UAE. You asked about ${project.projectName}. Are you buying to live, invest, or compare payment plans first?`,
+    whatsappOpener: `Hi, this is ${BRAND.legalName} UAE. You asked about ${project.projectName}. Are you buying to live, invest, or compare payment plans first?`,
     leadFormQuestions: [
       "Are you buying to live, invest, or compare options?",
       "What budget band should the advisor stay within?",
@@ -53,7 +54,7 @@ export function buildLeadSummaryFallback(lead: Lead = leads[0]): LeadSummaryOutp
     budgetFit: lead.budget > 0 ? `${formatAED(lead.budget)} should be checked against current inventory and payment-plan pressure.` : "No buyer budget because this is an owner-side opportunity.",
     urgency: lead.leadTemperature === "Priority" || lead.leadTemperature === "Hot" ? "High. Same-day manager visibility recommended." : "Medium. Follow up with a concise qualifier before sending brochures.",
     recommendedNextAction: lead.nextAction,
-    whatsappMessage: `Hi ${lead.leadName.split(" ")[0]}, this is Freehold. I reviewed your interest in ${lead.interestedProjectName}. Should I send the payment-plan brief, the buyer-fit summary, or book a quick call?`,
+    whatsappMessage: `Hi ${lead.leadName.split(" ")[0]}, this is ${BRAND.company}. I reviewed your interest in ${lead.interestedProjectName}. Should I send the payment-plan brief, the buyer-fit summary, or book a quick call?`,
     callScript: `Open with their stated interest in ${lead.interestedProjectName}, confirm budget and purpose, ask what would stop them from moving forward, then offer one clear next step.`,
     objectionToExpect: "Expect questions around payment pressure, market demand, and whether this is the right area compared with nearby alternatives.",
     managerNote: `Manager action: keep ${lead.assignedAgent} focused on one next step and capture the objection in the Market Notebook after the call.`,
@@ -80,9 +81,9 @@ export function buildOwnerSessionFallback(input: OwnerSessionRequest): OwnerSess
   return {
     propertyAngle: `${input.location} ${input.propertyType} positioned as a structured ${input.transactionType} campaign, not a passive listing. Lead with the owner goal: ${input.ownerGoal}.`,
     targetAudience: `Qualified ${input.transactionType === "rent" ? "tenants" : "buyers"} who already understand ${input.location} and need proof of value, property condition, and next-step clarity.`,
-    metaAdCopy: `Selling or renting a ${input.propertyType} in ${input.location}? Freehold builds the advertising system around the property: buyer angle, lead filter, WhatsApp script, and launch checklist before the campaign goes live.`,
+    metaAdCopy: `Selling or renting a ${input.propertyType} in ${input.location}? ${BRAND.company} builds the advertising system around the property: buyer angle, lead filter, WhatsApp script, and launch checklist before the campaign goes live.`,
     instagramCaption: "A property campaign should not start with a listing. It starts with the buyer angle, photos, follow-up script, and a clean launch plan.",
-    whatsappScript: `Hi, this is Freehold Property UAE. We can build the campaign system around your ${input.location} ${input.propertyType}. Are the photos ready, and is your priority speed, price, or qualified inquiries?`,
+    whatsappScript: `Hi, this is ${BRAND.legalName} UAE. We can build the campaign system around your ${input.location} ${input.propertyType}. Are the photos ready, and is your priority speed, price, or qualified inquiries?`,
     leadForm: ["Is the property vacant, rented, or owner-occupied?", "Are professional photos ready?", "What is the target price or rent range?", "Is the priority speed, price, or lead quality?"],
     followUpScript: "Thanks for sharing the property details. I will map the ad angle, target buyer, photo readiness, lead filter, and launch checklist before we decide the campaign channel.",
     launchChecklist: ["Confirm price expectation against comparable listings.", "Check photo quality and missing media.", "Define buyer profile and disqualifying questions.", "Prepare WhatsApp follow-up script.", "Confirm campaign budget and response owner."],

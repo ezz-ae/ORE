@@ -1,4 +1,6 @@
-export const metadata = { title: 'Freehold Property — Team Sign In' }
+import { BRAND } from '@/lib/freehold/brand'
+
+export const metadata = { title: `${BRAND.legalName} — Team Sign In` }
 
 export default function ServerLayout({ children }: { children: React.ReactNode }) {
   return (

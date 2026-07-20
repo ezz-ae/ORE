@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers"
+import { BRAND } from "@/lib/freehold/brand"
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto"
 import { promisify } from "node:util"
 import { query } from "@/lib/db"
@@ -277,7 +278,7 @@ export async function getSessionUser() {
   return null
 }
 
-const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN?.trim() || (process.env.NODE_ENV === "production" ? ".freeholdproperty.ae" : undefined)
+const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN?.trim() || (process.env.NODE_ENV === "production" ? `.${BRAND.domain}` : undefined)
 
 const cookieOptions = {
   name: SESSION_COOKIE,

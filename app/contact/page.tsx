@@ -1,21 +1,23 @@
 import { Button } from "@/components/ui/button"
+import { BRAND } from "@/lib/freehold/brand"
+import { COMPANY_EMAIL, COMPANY_PHONE, COMPANY_PHONE_E164, COMPANY_WHATSAPP_URL } from "@/lib/site"
 import { Phone, Mail, MapPin, MessageCircle, Instagram, Clock, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { ContactEnquiryForm } from "@/components/contact-enquiry-form"
 
 export const metadata = {
-  title: "Contact Freehold Property UAE | Dubai Real Estate Advisors",
-  description: "Get in touch with Freehold Property UAE — schedule a consultation, ask about Dubai projects, or visit our Business Bay office.",
+  title: `Contact ${BRAND.legalName} UAE | Dubai Real Estate Advisors`,
+  description: `Get in touch with ${BRAND.legalName} UAE — schedule a consultation, ask about Dubai projects, or visit our Business Bay office.`,
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: "Contact Freehold Property UAE | Dubai Real Estate Advisors",
+    title: `Contact ${BRAND.legalName} UAE | Dubai Real Estate Advisors`,
     description: "Schedule a consultation or ask about Dubai projects. Our team is available 6 days a week from our Business Bay office.",
     url: "/contact",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: `${BRAND.legalName} UAE` }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Contact Freehold Property UAE",
+    title: `Contact ${BRAND.legalName} UAE`,
     images: ["/og-image.png"],
   },
 }
@@ -25,27 +27,27 @@ const contactChannels = [
     icon: MessageCircle,
     eyebrow: "Fastest",
     label: "WhatsApp",
-    value: "+971 50 417 3622",
+    value: COMPANY_PHONE,
     helper: "Available 24/7 · usually answers in minutes",
-    href: "https://wa.me/971504173622",
+    href: COMPANY_WHATSAPP_URL,
     accent: "from-emerald-500/20 to-emerald-500/[0.05] text-emerald-300 border-emerald-400/25",
   },
   {
     icon: Phone,
     eyebrow: "Direct",
     label: "Call Center",
-    value: "+971 50 417 3622",
+    value: COMPANY_PHONE,
     helper: "Mon–Sat · 9:00 AM – 7:00 PM (GST)",
-    href: "tel:+971504173622",
+    href: `tel:${COMPANY_PHONE_E164}`,
     accent: "from-[#C69B3E]/20 to-[#C69B3E]/[0.05] text-[#D4AC50] border-[#C69B3E]/25",
   },
   {
     icon: Mail,
     eyebrow: "Detailed",
     label: "Email",
-    value: "info@freeholdproperty.ae",
+    value: COMPANY_EMAIL,
     helper: "Briefings, NDAs, large-document threads",
-    href: "mailto:info@freeholdproperty.ae",
+    href: `mailto:${COMPANY_EMAIL}`,
     accent: "from-sky-500/20 to-sky-500/[0.05] text-sky-300 border-sky-400/25",
   },
   {
@@ -75,7 +77,7 @@ export default function ContactPage() {
               Senior advisors online now
             </span>
             <h1 className="mt-8 font-serif text-5xl font-bold leading-[1.04] tracking-tight md:text-6xl lg:text-7xl">
-              Talk to a <span className="freehold-text-gradient italic">Freehold</span> advisor.
+              Talk to a <span className="freehold-text-gradient italic">{BRAND.company}</span> advisor.
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/60">
               WhatsApp is fastest. Phone is direct. Email for documents. Pick whatever fits — we route the same to a senior desk.

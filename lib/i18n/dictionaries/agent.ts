@@ -1,4 +1,5 @@
 import type { Locale } from '../config'
+import { BRAND, brandName } from '@/lib/freehold/brand'
 
 // Agent (broker) personal workspace. Keys are namespaced `agent.*`.
 type Dict = Record<string, string>
@@ -37,7 +38,7 @@ export const agent: Record<Locale, Dict> = {
     'agent.bioLinkMetric': 'Your shareable page + QR',
     'agent.bioLinkSub': 'Projects, contact & lead capture',
     'agent.poweredByAi': 'Powered by AI',
-    'agent.freeholdIntelligence': 'Freehold Intelligence',
+    'agent.freeholdIntelligence': `${brandName}`,
     'agent.settings': 'Settings',
     'agent.preferences': 'Preferences',
     'agent.accountPreferences': 'Account preferences',
@@ -253,7 +254,7 @@ export const agent: Record<Locale, Dict> = {
     'agent.bioLinkMetric': 'صفحتك القابلة للمشاركة + رمز QR',
     'agent.bioLinkSub': 'المشاريع والتواصل والتقاط العملاء',
     'agent.poweredByAi': 'مدعوم بالذكاء الاصطناعي',
-    'agent.freeholdIntelligence': 'Freehold Intelligence',
+    'agent.freeholdIntelligence': `${brandName}`,
     'agent.settings': 'الإعدادات',
     'agent.preferences': 'التفضيلات',
     'agent.accountPreferences': 'تفضيلات الحساب',
@@ -469,7 +470,7 @@ export const agent: Record<Locale, Dict> = {
     'agent.bioLinkMetric': 'Ваша страница для шеринга + QR',
     'agent.bioLinkSub': 'Проекты, контакты и захват лидов',
     'agent.poweredByAi': 'На базе ИИ',
-    'agent.freeholdIntelligence': 'Freehold Intelligence',
+    'agent.freeholdIntelligence': `${brandName}`,
     'agent.settings': 'Настройки',
     'agent.preferences': 'Предпочтения',
     'agent.accountPreferences': 'Настройки аккаунта',

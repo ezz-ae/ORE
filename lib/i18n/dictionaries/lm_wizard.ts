@@ -1,4 +1,5 @@
 import type { Locale } from '../config'
+import { BRAND } from '@/lib/freehold/brand'
 
 // Lead Machine / Ads namespace (lm_wizard). Keys prefixed `lm.`.
 type Dict = Record<string, string>
@@ -269,9 +270,9 @@ export const lm_wizard: Record<Locale, Dict> = {
     'lm.descriptionLabel': 'Description (optional — shown under headline on some placements)',
     'lm.descriptionPlaceholder': 'e.g. Request the investor summary now.',
     'lm.landingUrlLabel': 'Landing page URL',
-    'lm.landingUrlPlaceholder': 'https://freeholdproperty.ae/…',
+    'lm.landingUrlPlaceholder': `https://${BRAND.domain}/…`,
     'lm.imageUrlLabel': 'Image URL (optional — leave blank to let Meta use link preview)',
-    'lm.imageUrlPlaceholder': 'https://cdn.freeholdproperty.ae/images/…',
+    'lm.imageUrlPlaceholder': `https://cdn.${BRAND.domain}/images/…`,
     'lm.callToActionLabel': 'Call to action',
     'lm.reviewLaunch': 'Review & launch',
     'lm.objectiveLabel': 'Objective',
@@ -542,9 +543,9 @@ export const lm_wizard: Record<Locale, Dict> = {
     'lm.descriptionLabel': 'الوصف (اختياري — يظهر تحت العنوان في بعض المواضع)',
     'lm.descriptionPlaceholder': 'مثال: اطلب ملخص المستثمر الآن.',
     'lm.landingUrlLabel': 'رابط صفحة الهبوط',
-    'lm.landingUrlPlaceholder': 'https://freeholdproperty.ae/…',
+    'lm.landingUrlPlaceholder': `https://${BRAND.domain}/…`,
     'lm.imageUrlLabel': 'رابط الصورة (اختياري — اتركه فارغاً ليستخدم Meta معاينة الرابط)',
-    'lm.imageUrlPlaceholder': 'https://cdn.freeholdproperty.ae/images/…',
+    'lm.imageUrlPlaceholder': `https://cdn.${BRAND.domain}/images/…`,
     'lm.callToActionLabel': 'دعوة لاتخاذ إجراء',
     'lm.reviewLaunch': 'المراجعة والإطلاق',
     'lm.objectiveLabel': 'الهدف',
@@ -815,9 +816,9 @@ export const lm_wizard: Record<Locale, Dict> = {
     'lm.descriptionLabel': 'Описание (необязательно — показано под заголовком в некоторых размещениях)',
     'lm.descriptionPlaceholder': 'напр. Запросите сводку для инвестора сейчас.',
     'lm.landingUrlLabel': 'URL лендинга',
-    'lm.landingUrlPlaceholder': 'https://freeholdproperty.ae/…',
+    'lm.landingUrlPlaceholder': `https://${BRAND.domain}/…`,
     'lm.imageUrlLabel': 'URL изображения (необязательно — оставьте пустым, чтобы Meta использовала превью ссылки)',
-    'lm.imageUrlPlaceholder': 'https://cdn.freeholdproperty.ae/images/…',
+    'lm.imageUrlPlaceholder': `https://cdn.${BRAND.domain}/images/…`,
     'lm.callToActionLabel': 'Призыв к действию',
     'lm.reviewLaunch': 'Проверка и запуск',
     'lm.objectiveLabel': 'Цель',

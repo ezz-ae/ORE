@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import {
   Sparkles, Check, ArrowLeft, Eye, Globe, ChevronDown, ChevronUp,
@@ -334,7 +335,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             </span>
             <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
               className={`font-mono text-xs underline underline-offset-2 ${pendingAuth ? 'text-amber-400/80 hover:text-amber-400' : 'text-emerald-400/80 hover:text-emerald-400'}`}>
-              freeholdproperty.ae{publishedUrl}
+              {BRAND.domain}{publishedUrl}
             </a>
           </div>
           {/* Hand off to the ONE canonical landing editor (Ads → Landing pages)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSiteUrl } from "@/lib/site"
 import { query } from "@/lib/db"
 import { ensureLeadsTable, ensureUsersTable } from "@/lib/data"
 import {
@@ -10,7 +11,7 @@ import {
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
+const baseUrl = getSiteUrl()
 
 interface OverdueLeadRow {
   id: string

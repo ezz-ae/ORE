@@ -1,3 +1,4 @@
+import { BRAND, brandName } from "@/lib/freehold/brand"
 // Generate an .ics (iCalendar) file for a single calendar event so any event can
 // be exported to Apple Calendar, Google Calendar, Outlook, etc.
 // Adapted from the uploaded events-calendar design; rebranded for Freehold.
@@ -27,11 +28,11 @@ function escapeText(text: string): string {
 export function generateICS(event: IcsEvent): string {
   const start = toDate(event.startsAt)
   const end = toDate(event.endsAt)
-  const uid = `${event.id || "event"}@freeholdproperty.ae`
+  const uid = `${event.id || "event"}@${BRAND.domain}`
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Freehold Intelligence//Calendar//EN",
+    `PRODID:-//${brandName}//Calendar//EN`,
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     `UID:${uid}`,

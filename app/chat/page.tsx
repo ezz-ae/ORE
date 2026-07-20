@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { BRAND } from "@/lib/freehold/brand"
 import { ChatMessage } from "@/components/chat-message"
 import { ChatInput } from "@/components/chat-input"
 import { PropertyCard } from "@/components/property-card"
@@ -172,7 +173,7 @@ export default function ChatPage() {
                 ←
               </Link>
               <div className="h-5 w-px bg-white/10" />
-              <span className="text-[13px] font-medium text-[#152E24] lg:text-white/80">Freehold AI</span>
+              <span className="text-[13px] font-medium text-[#152E24] lg:text-white/80">{BRAND.company} AI</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
             </div>
             <span className="text-[11px] text-[#152E24]/30 lg:text-white/30">Dubai Real Estate Intelligence</span>
@@ -197,7 +198,7 @@ export default function ChatPage() {
                       <Sparkles className="h-7 w-7 text-[#D4AF37]" />
                     </span>
                   </div>
-                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C69B3E] lg:text-[#D4AF37]">Freehold AI</p>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C69B3E] lg:text-[#D4AF37]">{BRAND.company} AI</p>
                   <h2 className="mt-2.5 font-serif text-[28px] font-semibold leading-[1.1] tracking-tight text-[#152E24] lg:text-white sm:text-[32px]">
                     What are we figuring out today?
                   </h2>
@@ -275,7 +276,7 @@ export default function ChatPage() {
             <ChatInput
               onSend={handleSendMessage}
               disabled={isLoading}
-              placeholder="Ask Freehold about Dubai properties, ROI, or Golden Visa eligibility"
+              placeholder={`Ask ${BRAND.company} about Dubai properties, ROI, or Golden Visa eligibility`}
               suggestedQuestions={suggestedQuestions}
             />
           </div>

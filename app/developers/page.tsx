@@ -1,4 +1,5 @@
 import { DeveloperCard } from "@/components/developer-card"
+import { BRAND } from "@/lib/freehold/brand"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getDevelopers } from "@/lib/data"
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     canonical: "/developers",
   },
   openGraph: {
-    title: "Top Real Estate Developers in Dubai | Freehold",
+    title: `Top Real Estate Developers in Dubai | ${BRAND.company}`,
     description: "Learn about the leading real estate developers in Dubai.",
     images: ["/og-image.png"],
   },

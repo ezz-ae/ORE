@@ -4,12 +4,14 @@
 // Homepage intelligence block — 3 panels + pulse strip
 // ─────────────────────────────────────────────────────────────────
 import Image from "next/image"
+import { brandName } from "@/lib/freehold/brand"
+import { getSiteUrl } from "@/lib/site"
 import Link  from "next/link"
 
 type Props = { data: Awaited<ReturnType<typeof fetchIntelligenceBlock>> }
 
 export async function fetchIntelligenceBlock() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/intelligence-block`, {
+  const res = await fetch(`${getSiteUrl()}/api/intelligence-block`, {
     next: { revalidate: 600 },
   })
   if (!res.ok) throw new Error("intelligence-block fetch failed")
@@ -34,7 +36,7 @@ export function IntelligenceBlock({ data }: Props) {
             </h2>
           </div>
           <span className="text-xs text-zinc-500">
-            Data: Freehold Intelligence · Updated every 10 min
+            Data: {brandName} · Updated every 10 min
           </span>
         </div>
 

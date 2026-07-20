@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { BRAND } from '@/lib/freehold/brand'
 import { memo, useMemo, useState } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { FileText, Clock, Sparkles, Loader2 } from "lucide-react"
@@ -61,7 +62,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: `Write a punchy vertical property-reel voiceover for ${brief}. One or two short sentences, under ${maxCharacters} characters (~${maxSeconds}s spoken), ending with a clear call to action. Return only the voiceover text, no quotes or notes.`,
-          system: "You are a senior Dubai real-estate video copywriter for Freehold Property UAE. Write natural spoken lines for short social reels. No placeholders, no emojis.",
+          system: `You are a senior Dubai real-estate video copywriter for ${BRAND.legalName} UAE. Write natural spoken lines for short social reels. No placeholders, no emojis.`,
         }),
       })
       const d = await res.json()

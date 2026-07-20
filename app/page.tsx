@@ -1,4 +1,5 @@
 import { HeroWithMotion } from "@/components/hero-with-motion"
+import { BRAND } from "@/lib/freehold/brand"
 import { FeaturedProperties } from "@/components/featured-properties"
 import { MarketSnapshot } from "@/components/market-snapshot"
 import { BlogSection } from "@/components/blog-section"
@@ -10,21 +11,21 @@ import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Dubai Real Estate | Freehold Property UAE",
+  title: `Dubai Real Estate | ${BRAND.legalName} UAE`,
   description:
-    "Buy, sell, and invest in Dubai real estate with Freehold Property — off-plan projects, ready properties, Golden Visa investment, and expert advisory since 2006.",
+    `Buy, sell, and invest in Dubai real estate with ${BRAND.legalName} — off-plan projects, ready properties, Golden Visa investment, and expert advisory since 2006.`,
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Dubai Real Estate | Freehold Property UAE",
+    title: `Dubai Real Estate | ${BRAND.legalName} UAE`,
     description:
-      "Buy, sell, and invest in Dubai real estate with Freehold Property — off-plan projects, ready properties, Golden Visa investment, and expert advisory since 2006.",
+      `Buy, sell, and invest in Dubai real estate with ${BRAND.legalName} — off-plan projects, ready properties, Golden Visa investment, and expert advisory since 2006.`,
     url: "/",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: `${BRAND.legalName} UAE` }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dubai Real Estate | Freehold Property UAE",
-    description: "Buy, sell, and invest in Dubai real estate with Freehold Property.",
+    title: `Dubai Real Estate | ${BRAND.legalName} UAE`,
+    description: `Buy, sell, and invest in Dubai real estate with ${BRAND.legalName}.`,
     images: ["/og-image.png"],
   },
 }
@@ -160,7 +161,7 @@ export default async function Home() {
       {/* ── Mobile entry ──────────────────────────────────────────────── */}
       <div className="block lg:hidden bg-[#0A1F17] px-5 pt-12 pb-8 text-white">
         <div className="mb-6">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">Freehold</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">{BRAND.company}</span>
           <h1 className="mt-2 text-[30px] font-bold leading-[1.08] text-white font-serif">
             Invest smarter in<br/>Dubai real estate.
           </h1>
@@ -262,7 +263,7 @@ export default async function Home() {
           <div className="container relative z-10">
             <div className="mx-auto mb-16 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">
-                The Freehold Advantage
+                The {BRAND.company} Advantage
               </p>
               <h2 className="font-serif text-4xl font-bold text-white md:text-5xl lg:text-6xl">
                 A brokerage with{" "}
@@ -313,7 +314,7 @@ export default async function Home() {
           style={{ backgroundImage: "radial-gradient(circle, #152E24 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
         <div className="container relative z-10">
           <div className="mb-14 text-center">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">Why Freehold</p>
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">Why {BRAND.company}</p>
             <h2 className="font-serif text-3xl font-bold text-[#152E24] md:text-4xl lg:text-5xl">
               Local expertise, clean execution.
             </h2>
@@ -351,7 +352,7 @@ export default async function Home() {
                 <span className="italic text-[#D4AC50]"> with clear advice.</span>
               </h2>
               <p className="mt-5 max-w-md text-base leading-relaxed text-white/40">
-                Speak with Freehold for project sales, secondary market, rentals, commercial, or owner valuation support.
+                Speak with {BRAND.company} for project sales, secondary market, rentals, commercial, or owner valuation support.
               </p>
 
               <div className="mt-10 space-y-7">
@@ -405,7 +406,7 @@ export default async function Home() {
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#C69B3E]/25 bg-[#C69B3E]/[0.08] px-4 py-2">
               <span className="h-1.5 w-1.5 rounded-full bg-[#D4AC50]" />
               <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">
-                Freehold Property UAE
+                {BRAND.legalName} UAE
               </span>
             </div>
 

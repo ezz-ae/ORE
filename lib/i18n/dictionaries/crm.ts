@@ -1,4 +1,5 @@
 import type { Locale } from '../config'
+import { BRAND, brandName } from '@/lib/freehold/brand'
 
 // CRM surface (leads, pipeline, board, follow-up, inbox, activity, agents,
 // reports, assignment, duplicates). Keys are namespaced `crm.*`.
@@ -451,7 +452,7 @@ export const crm: Record<Locale, Dict> = {
     // ── Reports ──
     'crm.reportsEyebrow': 'CRM · Reports',
     'crm.leadIntelligence': 'Lead Intelligence',
-    'crm.reportsSubtitle': 'Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending.',
+    'crm.reportsSubtitle': `Source mix, intent signals, and monthly revenue trend. Live lead stats from ${BRAND.company} CRM · HubSpot sync pending.`,
     'crm.statActiveLeads': 'Active leads',
     'crm.statCriticalCount': '{count} critical',
     'crm.statHighIntent': 'High intent',
@@ -1000,7 +1001,7 @@ export const crm: Record<Locale, Dict> = {
 
     'crm.reportsEyebrow': 'CRM · التقارير',
     'crm.leadIntelligence': 'ذكاء العملاء المحتملين',
-    'crm.reportsSubtitle': 'مزيج المصادر وإشارات النية واتجاه الإيرادات الشهرية. إحصاءات مباشرة من Freehold CRM · مزامنة HubSpot قيد الانتظار.',
+    'crm.reportsSubtitle': `مزيج المصادر وإشارات النية واتجاه الإيرادات الشهرية. إحصاءات مباشرة من ${BRAND.company} CRM · مزامنة HubSpot قيد الانتظار.`,
     'crm.statActiveLeads': 'العملاء المحتملون النشطون',
     'crm.statCriticalCount': '{count} حرج',
     'crm.statHighIntent': 'نية مرتفعة',
@@ -1547,7 +1548,7 @@ export const crm: Record<Locale, Dict> = {
 
     'crm.reportsEyebrow': 'CRM · Отчёты',
     'crm.leadIntelligence': 'Аналитика лидов',
-    'crm.reportsSubtitle': 'Структура источников, сигналы намерения и тренд месячной выручки. Данные лидов онлайн из Freehold CRM · синхронизация HubSpot ожидается.',
+    'crm.reportsSubtitle': `Структура источников, сигналы намерения и тренд месячной выручки. Данные лидов онлайн из ${BRAND.company} CRM · синхронизация HubSpot ожидается.`,
     'crm.statActiveLeads': 'Активные лиды',
     'crm.statCriticalCount': '{count} критических',
     'crm.statHighIntent': 'Высокое намерение',

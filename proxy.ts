@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { BRAND } from "@/lib/freehold/brand"
 import type { NextRequest } from "next/server"
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
@@ -137,7 +138,7 @@ export async function proxy(request: NextRequest) {
       res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
       return res
     }
-    url.hostname = "freeholdproperty.ae"
+    url.hostname = BRAND.domain
     url.protocol = "https:"
     if (!pathname.startsWith("/crm")) {
       url.pathname = `/crm${pathname}`

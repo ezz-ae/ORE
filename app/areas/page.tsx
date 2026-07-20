@@ -1,4 +1,5 @@
 import { AreaCard } from "@/components/area-card"
+import { BRAND } from "@/lib/freehold/brand"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SmallLeadForm } from "@/components/small-lead-form"
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     canonical: "/areas",
   },
   openGraph: {
-    title: "Dubai Area Guides & Neighborhood Insights | Freehold",
+    title: `Dubai Area Guides & Neighborhood Insights | ${BRAND.company}`,
     description: "Discover the best places to live and invest in Dubai.",
     images: ["/og-image.png"],
   },

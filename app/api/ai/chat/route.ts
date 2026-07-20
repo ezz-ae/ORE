@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { BRAND, brandName } from "@/lib/freehold/brand"
+import { getSiteUrl } from "@/lib/site"
 import { randomUUID } from "node:crypto"
 
 export const runtime = "nodejs"
@@ -131,7 +133,7 @@ const buildGroundedBriefReply = (
   projects: Awaited<ReturnType<typeof searchProjects>>,
 ) => {
   if (!projects.length) {
-    return "I don't have verified matches for that criteria right now. Share your budget range, preferred area, and bedroom count and I'll refine the Freehold shortlist."
+    return `I don't have verified matches for that criteria right now. Share your budget range, preferred area, and bedroom count and I'll refine the ${BRAND.company} shortlist.`
   }
   const lines = projects.slice(0, 3).map((p) => {
     const prop = projectToProperty(p)
@@ -141,7 +143,7 @@ const buildGroundedBriefReply = (
       : "investment-ready"
     return `[PROJECT:${p.slug}]\n${prop.title} — ${prop.location.area}, from ${price} · ${roi}`
   })
-  return `Here are Freehold-verified matches:\n\n${lines.join("\n\n")}\n\nWant me to compare these or prepare a private investment brief? Share your WhatsApp and I'll send it directly.`
+  return `Here are ${BRAND.company}-verified matches:\n\n${lines.join("\n\n")}\n\nWant me to compare these or prepare a private investment brief? Share your WhatsApp and I'll send it directly.`
 }
 
 const hasCompareIntent = (message: string) => {
@@ -184,13 +186,13 @@ const buildFallbackReply = (
   hasContact: boolean,
 ) => {
   if (!wantsProperties) {
-    return "I can help with Freehold-curated Dubai property search, ROI, Golden Visa eligibility, and area comparison. Tell me your budget, preferred area, or goal and I’ll narrow it down."
+    return `I can help with ${BRAND.company}-curated Dubai property search, ROI, Golden Visa eligibility, and area comparison. Tell me your budget, preferred area, or goal and I’ll narrow it down.`
   }
 
   if (!projects.length) {
     return hasContact
-      ? "I couldn’t find an exact match right now, but Freehold has captured your request and a private advisor can refine the shortlist for you."
-      : "I couldn’t find an exact match right now. Share your budget range, preferred area, and bedroom count, and I’ll refine the Freehold shortlist."
+      ? `I couldn’t find an exact match right now, but ${BRAND.company} has captured your request and a private advisor can refine the shortlist for you.`
+      : `I couldn’t find an exact match right now. Share your budget range, preferred area, and bedroom count, and I’ll refine the ${BRAND.company} shortlist.`
   }
 
   const lines = projects.slice(0, 3).map((project) => {
@@ -205,10 +207,10 @@ const buildFallbackReply = (
   })
 
   const followUp = hasContact
-    ? "I’ve also marked your request for Freehold advisor follow-up."
-    : "If you want, share your name and WhatsApp or email and I can arrange an Freehold advisor follow-up."
+    ? `I’ve also marked your request for ${BRAND.company} advisor follow-up.`
+    : `If you want, share your name and WhatsApp or email and I can arrange a ${BRAND.company} advisor follow-up.`
 
-  return `Here are strong Freehold matches right now:\n${lines.join("\n")}\n\n${followUp}`
+  return `Here are strong ${BRAND.company} matches right now:\n${lines.join("\n")}\n\n${followUp}`
 }
 
 const buildLeadGuidance = (contact: ReturnType<typeof extractContactDetails>, userTurns: number) => `
@@ -222,13 +224,13 @@ BEHAVIOR RULES:
 - Be conversational and answer the user first.
 - Do not ask for contact details in every reply.
 - If contact details are missing, only ask after you provide value, or when the user wants brochure, availability, callback, WhatsApp, email, report, or shortlist delivery.
-- Once contact details are available, acknowledge naturally and mention Freehold advisor follow-up only if relevant.
+- Once contact details are available, acknowledge naturally and mention ${BRAND.company} advisor follow-up only if relevant.
 `
 
 const maybeAppendEmailConfirmation = (reply: string, emailSent: boolean) => {
   if (!emailSent) return reply
   if (/email|inbox|sent/i.test(reply)) return reply
-  return `${reply}\n\nI’ve also sent the Freehold project details to your email.`
+  return `${reply}\n\nI’ve also sent the ${BRAND.company} project details to your email.`
 }
 
 const persistAiLead = async (input: {
@@ -326,7 +328,7 @@ const maybeSendLeadAck = async (input: {
       priceFrom: project.units?.[0]?.priceFrom ?? null,
       roi: project.investmentHighlights.expectedROI ?? null,
       brochureUrl: project.brochure || null,
-      projectUrl: `${process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"}/projects/${project.slug}`,
+      projectUrl: `${getSiteUrl()}/projects/${project.slug}`,
     })),
   })
 
@@ -362,7 +364,7 @@ const maybeNotifyInternalTeam = async (input: {
     priceFrom: project.units?.[0]?.priceFrom ?? null,
     roi: project.investmentHighlights.expectedROI ?? null,
     brochureUrl: project.brochure || null,
-    projectUrl: `${process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"}/projects/${project.slug}`,
+    projectUrl: `${getSiteUrl()}/projects/${project.slug}`,
   }))
 
   const emailResult = leadershipRecipients.emails.length
@@ -510,7 +512,7 @@ export async function POST(req: NextRequest) {
             role: "model",
             parts: [
               {
-                text: "I’m your Freehold AI consultant for Dubai real estate. I can help with project search, ROI context, area comparison, and next-step guidance.",
+                text: `I’m your ${BRAND.company} AI consultant for Dubai real estate. I can help with project search, ROI context, area comparison, and next-step guidance.`,
               },
             ],
           },
@@ -520,7 +522,7 @@ export async function POST(req: NextRequest) {
 
     const leadGuidance = buildLeadGuidance(contact, userTurnCount)
     const contextBlock = areaContext
-      ? `\n\nAREA INTELLIGENCE (Data: Freehold Intelligence)\n${areaContext}`
+      ? `\n\nAREA INTELLIGENCE (Data: ${brandName})\n${areaContext}`
       : ""
 
     let aiReply = ""
@@ -595,7 +597,7 @@ export async function POST(req: NextRequest) {
         ? relevantProjects.slice(0, resultLimit).map((project) => projectToProperty(project))
         : [], // Smoke test compatibility
       evidence: {
-        sources_used: wantsProperties ? ["Freehold Intelligence Database"] : ["AI Knowledge Base"]
+        sources_used: wantsProperties ? [`${brandName} Database`] : ["AI Knowledge Base"]
       },
       compiler_output: {
         output_type: wantsProperties ? "table_spec" : "text",

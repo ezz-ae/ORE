@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { BRAND } from "@/lib/freehold/brand"
 import { MarketSnapshot } from "@/components/market-snapshot"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -61,7 +62,7 @@ export default function MarketTrackerPage() {
 
             <div className="mt-10 text-center">
               <Button className="freehold-gradient" asChild>
-                <Link href="/chat">Ask Freehold AI for market insight</Link>
+                <Link href="/chat">Ask {BRAND.company} AI for market insight</Link>
               </Button>
             </div>
           </div>

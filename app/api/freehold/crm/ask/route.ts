@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { BRAND } from '@/lib/freehold/brand'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     }
   } catch { /* non-fatal */ }
 
-  const systemPrompt = `You are the Freehold CRM Sales AI. You help the sales team manage Dubai real estate leads.
+  const systemPrompt = `You are the ${BRAND.company} CRM Sales AI. You help the sales team manage Dubai real estate leads.
 ${leadContext}
 Answer only about CRM topics: lead prioritisation, follow-up actions, pipeline, WhatsApp drafts.
 Do not invent project names, phone numbers, or prices. Keep answers under 150 words.`

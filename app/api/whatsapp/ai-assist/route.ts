@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { BRAND } from "@/lib/freehold/brand"
 import Anthropic from '@anthropic-ai/sdk'
 import type { WAMessage, WAExtractedData } from '@/src/features/freehold-intelligence/whatsapp-conversations'
 import type { CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
       .map((p) => `- ${p.name} (${p.area}): from AED ${((p.startingPriceAED ?? 0) / 1_000_000).toFixed(1)}M, ${p.bedrooms} BR, ${p.roi ?? '–'}% ROI, ${p.paymentPlan}, handover ${p.handoverYear ?? 'Ready'}`)
       .join('\n')
 
-    const systemPrompt = `You are an expert Dubai real estate agent AI assistant for Freehold Property. You help agents respond to WhatsApp conversations with leads.
+    const systemPrompt = `You are an expert Dubai real estate agent AI assistant for ${BRAND.legalName}. You help agents respond to WhatsApp conversations with leads.
 
 Lead profile:
 - Name: ${body.lead.name}

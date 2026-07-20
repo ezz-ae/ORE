@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { BRAND } from "@/lib/freehold/brand"
 
 const ArrowRightIcon = ({ className }: { className?: string }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -64,7 +65,7 @@ export function HomeCallbackForm() {
         </div>
         <p className="text-lg font-bold text-white">Request received.</p>
         <p className="mt-2 text-sm text-white/45">
-          A Freehold private advisor will reach out to you shortly. Your details are now with our team.
+          A {BRAND.company} private advisor will reach out to you shortly. Your details are now with our team.
         </p>
       </div>
     )

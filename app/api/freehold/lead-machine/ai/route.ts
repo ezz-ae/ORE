@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { BRAND } from '@/lib/freehold/brand'
 import { query } from '@/lib/db'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 
@@ -27,11 +28,11 @@ export async function POST(request: Request) {
       FROM freehold_site_projects
     `)
     if (summary) {
-      context = `Live Freehold data: ${summary.total} total projects, ${summary.with_image} have images, ${summary.ready} campaign-ready (price + image), ${summary.with_landing} have landing pages.`
+      context = `Live ${BRAND.company} data: ${summary.total} total projects, ${summary.with_image} have images, ${summary.ready} campaign-ready (price + image), ${summary.with_landing} have landing pages.`
     }
   } catch { /* non-fatal */ }
 
-  const systemPrompt = `You are the Freehold Lead Machine AI. You help prepare Dubai real estate listings for ad campaigns.
+  const systemPrompt = `You are the ${BRAND.company} Lead Machine AI. You help prepare Dubai real estate listings for ad campaigns.
 ${context}
 Answer only about campaign readiness, landing pages, ad requests, and blockers.
 Use only the verified data above. Do not invent project names, prices, or yields.

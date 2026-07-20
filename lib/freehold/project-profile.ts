@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 /**
  * Project Intelligence Profiles (Layer 2 completion) — the four-dimension
  * read on a project (investment / lifestyle / financial / market), generated
@@ -196,7 +197,7 @@ export async function getProjectProfile(
 
 // ─── Generate ────────────────────────────────────────────────────────────────
 
-const PROFILE_SYSTEM_PROMPT = `You are the project-intelligence analyst for Freehold, a Dubai real estate platform.
+const PROFILE_SYSTEM_PROMPT = `You are the project-intelligence analyst for ${BRAND.company}, a Dubai real estate platform.
 You write a four-dimension profile of ONE project using ONLY the stored facts provided. You never invent numbers, amenities, transport links, schools, or market figures. If the stored facts cannot support a dimension, you say so honestly instead of writing filler.
 You respond with pure JSON only.`
 

@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
+import { BRAND } from "@/lib/freehold/brand"
 import { SectionShell } from "@/components/lp/section-shell"
 
 interface LocationSectionProps {
@@ -11,7 +12,7 @@ export function LocationSection({ data }: LocationSectionProps) {
     (typeof data.subtitle === "string" && data.subtitle) ||
     "Commercial positioning points derived from the listing and campaign."
   const area = (typeof data.area === "string" && data.area) || "Dubai"
-  const developer = (typeof data.developer === "string" && data.developer) || "Freehold"
+  const developer = (typeof data.developer === "string" && data.developer) || BRAND.company
   const highlights = Array.isArray(data.highlights)
     ? data.highlights.map((item) => (typeof item === "string" ? item : "")).filter(Boolean)
     : []

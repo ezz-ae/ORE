@@ -214,7 +214,7 @@ function ServerAuthInner() {
                   type="email"
                   value={email}
                   onChange={e => { setEmail(e.target.value); setError(false); setSelected(null) }}
-                  placeholder="you@freeholdproperty.ae"
+                  placeholder={`you@${BRAND.domain}`}
                   autoComplete="username"
                   className={[
                     'w-full rounded-xl border bg-surface-2 py-2.5 ps-10 pe-4 text-sm text-white outline-none transition-colors placeholder:text-slate-700',

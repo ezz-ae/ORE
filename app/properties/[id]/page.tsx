@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { BRAND } from "@/lib/freehold/brand"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,7 +24,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { getProperties, getPropertyBySlug } from "@/lib/data"
-import { COMPANY_PHONE_E164, COMPANY_WHATSAPP_URL } from "@/lib/site"
+import { COMPANY_EMAIL, COMPANY_PHONE_E164, COMPANY_WHATSAPP_URL, getSiteUrl } from "@/lib/site"
 import { notFound } from "next/navigation"
 
 export const runtime = "nodejs"
@@ -113,7 +114,7 @@ export default async function PropertyPage({
     "@type": "RealEstateListing",
     "name": property.title,
     "description": description,
-    "url": `https://freeholdproperty.ae/properties/${property.slug}`,
+    "url": `${getSiteUrl()}/properties/${property.slug}`,
     "image": images[0],
     "datePosted": property.createdAt,
     "address": {
@@ -145,7 +146,7 @@ export default async function PropertyPage({
             <div className="lg:col-span-2">
               {/* Property Header */}
               <div className="space-y-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">Freehold Signature Listing</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">{BRAND.company} Signature Listing</p>
                 <div className="flex flex-wrap gap-2">
                   <Badge className="border-none ore-gradient text-[#152E24]">
                     {property.type === "off-plan"
@@ -411,7 +412,7 @@ export default async function PropertyPage({
                         </a>
                       </Button>
                       <Button className="w-full border-[#152E24]/10 bg-white text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]" variant="outline" size="lg" asChild>
-                        <a href="mailto:info@freeholdproperty.ae">
+                        <a href={`mailto:${COMPANY_EMAIL}`}>
                           <Mail className="mr-2 h-4 w-4" />
                           Email Inquiry
                         </a>
@@ -440,7 +441,7 @@ export default async function PropertyPage({
                 <Card className="border-[#152E24]/10 bg-[#FAF8F5] shadow-none">
                   <CardContent className="p-6 space-y-4">
                     <h3 className="font-serif text-lg font-semibold">Property ID</h3>
-                    <div className="text-sm text-muted-foreground font-mono">Freehold-{property.id.slice(0, 8).toUpperCase()}</div>
+                    <div className="text-sm text-muted-foreground font-mono">{BRAND.company}-{property.id.slice(0, 8).toUpperCase()}</div>
                     <Separator />
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between">

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { BRAND } from "@/lib/freehold/brand"
 import Link from "next/link"
 import Image from "next/image"
 import dynamic from "next/dynamic"
@@ -75,10 +76,10 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-[#152E24]/[0.06] bg-[#FAF8F5]/85 backdrop-blur-2xl h-[4.5rem] transition-all duration-300 lg:h-20">
       <div className="container flex h-full items-center justify-between px-6 max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href="/" className="group shrink-0 transition-opacity hover:opacity-80" aria-label="Freehold Properties — Home">
+        <Link href="/" className="group shrink-0 transition-opacity hover:opacity-80" aria-label={`${BRAND.company} Properties — Home`}>
           <Image
             src="/freehold-logo.png"
-            alt="Freehold Properties"
+            alt={`${BRAND.company} Properties`}
             width={1042}
             height={417}
             priority
@@ -189,10 +190,10 @@ export function SiteHeader() {
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex flex-col h-full bg-[#FAF8F5]">
                 <div className="p-6 border-b border-[#152E24]/[0.06]">
-                  <Link href="/" onClick={() => setIsOpen(false)} className="shrink-0" aria-label="Freehold Properties — Home">
+                  <Link href="/" onClick={() => setIsOpen(false)} className="shrink-0" aria-label={`${BRAND.company} Properties — Home`}>
                     <Image
                       src="/freehold-logo.png"
-                      alt="Freehold Properties"
+                      alt={`${BRAND.company} Properties`}
                       width={1042}
                       height={417}
                       className="h-14 w-auto"

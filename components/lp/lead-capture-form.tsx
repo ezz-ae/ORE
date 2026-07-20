@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { BRAND } from "@/lib/freehold/brand"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -134,7 +135,7 @@ export function LeadCaptureForm({
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-emerald-300">
             <p className="font-semibold">Thanks. Your request was sent successfully.</p>
             <p className="mt-1 text-sm text-emerald-200/90">
-              A Freehold consultant will contact you shortly with live availability and pricing.
+              A {BRAND.company} consultant will contact you shortly with live availability and pricing.
             </p>
           </div>
         ) : (

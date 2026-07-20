@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { BRAND } from "@/lib/freehold/brand"
 import Anthropic from '@anthropic-ai/sdk'
 import type { WAMessage, WAExtractedData } from '@/src/features/freehold-intelligence/whatsapp-conversations'
 
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1600,
-      system: `You are a CRM intelligence assistant for Freehold Property, a Dubai real estate agency.
+      system: `You are a CRM intelligence assistant for ${BRAND.legalName}, a Dubai real estate agency.
 Your job is to analyze WhatsApp conversations and produce structured intelligence for the sales team.
 Always output valid JSON. Be concise and actionable.`,
       messages: [

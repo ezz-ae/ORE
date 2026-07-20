@@ -1,4 +1,5 @@
 import { getGlobalPixels, mergePixels } from '@/lib/freehold/tracking-pixels'
+import { BRAND } from '@/lib/freehold/brand'
 
 import { query } from "@/lib/db"
 import { normalizePaymentPlan } from "@/lib/payment-plan"
@@ -379,7 +380,7 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
         summary: marketSummary,
         bullets: [
           `Area focus: ${project?.area || "Dubai"}`,
-          `Developer: ${project?.developerName || "Freehold"}`,
+          `Developer: ${project?.developerName || BRAND.company}`,
           `Entry point: ${startPrice}`,
           `Income lens: ${yieldText}`,
         ],
@@ -434,12 +435,12 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
       type: "location",
       data: {
         area: project?.area || "Dubai",
-        developer: project?.developerName || "Freehold",
+        developer: project?.developerName || BRAND.company,
         title: "Location & Positioning",
         subtitle: "The commercial frame brokers can use immediately in a client conversation.",
         highlights: [
           `${project?.area || "Dubai"} demand corridor`,
-          `Developer: ${project?.developerName || "Freehold"}`,
+          `Developer: ${project?.developerName || BRAND.company}`,
           `Entry point: ${startPrice}`,
         ],
       },
@@ -447,7 +448,7 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
     {
       type: "ai-concierge",
       data: {
-        title: "Ask Freehold AI",
+        title: `Ask ${BRAND.company} AI`,
         subtitle: "Let the AI explain ROI, compare areas, and qualify the next step before a broker call.",
         prompts: [
           `Is ${project?.name || "this project"} better for rental yield or appreciation?`,
@@ -491,7 +492,7 @@ export const buildCampaignSections = (
       ? `Discover ${project.name} in ${project.area} with curated investment insights and live availability.`
       : "Discover premium Dubai investment opportunities.")
   const area = project?.area || "Dubai"
-  const developer = project?.developerName || "Freehold"
+  const developer = project?.developerName || BRAND.company
   const startPrice =
     typeof project?.priceFromAed === "number" && project.priceFromAed > 0
       ? formatAed(project.priceFromAed)
@@ -845,7 +846,7 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     slug: pickString(row.slug, payload.slug) || projectSlug,
     name: pickString(row.name, payload.name) || "Dubai Project",
     area: pickString(row.area, toObject(payload.location).area) || "Dubai",
-    developerName: pickString(row.developer_name, toObject(payload.developer).name) || "Freehold",
+    developerName: pickString(row.developer_name, toObject(payload.developer).name) || BRAND.company,
     heroImage: pickString(row.hero_image, payload.heroImage, toObject(payload.mediaSource).heroImage) || "/logo.png",
     priceFromAed: pickNumber(row.price_from_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceFrom : null),
     priceToAed: pickNumber(row.price_to_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceTo : null),
@@ -901,12 +902,12 @@ export async function getLandingPageBySlug(
     ).then((r) => r.length > 0 && Number(r[0].available) === 0).catch(() => false)
   }
 
-  const title = pickString(row.headline, row.title, project?.name) || "Freehold Real Estate"
+  const title = pickString(row.headline, row.title, project?.name) || `${BRAND.company} Real Estate`
   const subtitle =
     pickString(row.subheadline, row.subtitle) ||
     (project
       ? `${project.name} in ${project.area} crafted for investors seeking strong fundamentals.`
-      : "Exclusive project campaign by Freehold.")
+      : `Exclusive project campaign by ${BRAND.company}.`)
 
   const heroImage = pickString(row.hero_image, row.heroImage, row.og_image, project?.heroImage) || "/logo.png"
   const ctaText = pickString(row.cta_text, row.ctaText, row.primary_cta) || "Request Availability"

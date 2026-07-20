@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSiteUrl } from "@/lib/site"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
@@ -17,7 +18,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const toText = (value: unknown) => (typeof value === "string" ? value.trim() : "")
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
+const baseUrl = getSiteUrl()
 
 // Compare on the last 9 digits so "+971 50 123 4567", "0501234567" and
 // "971501234567" all match the same person.

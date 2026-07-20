@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { BRAND, brandName } from '@/lib/freehold/brand'
 import {
   DEFAULT_GEMINI_MODELS,
   PUBLIC_SYSTEM_PROMPT,
@@ -83,8 +84,8 @@ Highlights: ${(p.highlights || []).join(', ')}`
   } catch (error) {
     console.error("Public chat AI fallback:", error)
     aiReply = wantsProperties
-      ? "Freehold can still prepare a shortlist from the live inventory. Review the matched options below, then share your budget, preferred area, and handover timing so a Freehold advisor can refine the brief."
-      : "Freehold can help with Dubai real estate strategy, market yield, area selection, and investment planning. Share your target budget, preferred area, and timeline, and I will turn it into a practical Freehold investment brief."
+      ? `${BRAND.company} can still prepare a shortlist from the live inventory. Review the matched options below, then share your budget, preferred area, and handover timing so a ${BRAND.company} advisor can refine the brief.`
+      : `${BRAND.company} can help with Dubai real estate strategy, market yield, area selection, and investment planning. Share your target budget, preferred area, and timeline, and I will turn it into a practical ${BRAND.company} investment brief.`
   }
   
   return {
@@ -95,7 +96,7 @@ Highlights: ${(p.highlights || []).join(', ')}`
     projects: relevantProjects,
     dataCards: relevantProjects.map(p => projectToProperty(p)),
     evidence: {
-      sources_used: wantsProperties ? ["Freehold Intelligence Database"] : ["AI Knowledge Base"]
+      sources_used: wantsProperties ? [`${brandName} Database`] : ["AI Knowledge Base"]
     },
     compiler_output: {
       output_type: wantsProperties ? "table_spec" : "text",

@@ -1,6 +1,7 @@
 // Integrations — WhatsApp (pintwa.*) and Google Ads (pintg.*) pages — EN/AR/RU.
 // Brand names (WhatsApp, Google, Google Ads, Freehold, Meta, Cloud API),
 // code identifiers, env-var names, URLs, CSS classes and runtime data stay untranslated.
+import { BRAND, brandName } from '@/lib/freehold/brand'
 type Dict = Record<string, string>
 
 const en: Dict = {
@@ -36,9 +37,9 @@ const en: Dict = {
 
   // Google Ads page
   'pintg.title': 'Google Ads',
-  'pintg.subtitle': 'Store your credentials — syncs via the Freehold backend',
+  'pintg.subtitle': `Store your credentials — syncs via the ${BRAND.company} backend`,
   'pintg.clearCredentials': 'Clear credentials',
-  'pintg.infoBanner': 'Google Ads API requires a Developer Token and server-side OAuth — browser calls are blocked. When you save, we validate the credentials against Google and store them for the Freehold backend, so campaigns launch and live data syncs from the server. Nothing is sent to any third party.',
+  'pintg.infoBanner': `Google Ads API requires a Developer Token and server-side OAuth — browser calls are blocked. When you save, we validate the credentials against Google and store them for the ${BRAND.company} backend, so campaigns launch and live data syncs from the server. Nothing is sent to any third party.`,
   'pintg.copy': 'Copy',
   'pintg.copied': 'Copied',
   'pintg.allRequired': 'All five credentials are required.',
@@ -101,9 +102,9 @@ const ar: Dict = {
 
   // Google Ads page
   'pintg.title': 'Google Ads',
-  'pintg.subtitle': 'احفظ بيانات اعتمادك — تتم المزامنة عبر خادم Freehold',
+  'pintg.subtitle': `احفظ بيانات اعتمادك — تتم المزامنة عبر خادم ${BRAND.company}`,
   'pintg.clearCredentials': 'مسح بيانات الاعتماد',
-  'pintg.infoBanner': 'تتطلب واجهة Google Ads API رمز مطوّر ومصادقة OAuth من جانب الخادم — استدعاءات المتصفح محظورة. تُحفظ بيانات اعتمادك هنا ويستخدمها خادم Freehold لجلب بيانات الحملات المباشرة. لا يُرسل أي شيء إلى أي طرف ثالث.',
+  'pintg.infoBanner': `تتطلب واجهة Google Ads API رمز مطوّر ومصادقة OAuth من جانب الخادم — استدعاءات المتصفح محظورة. تُحفظ بيانات اعتمادك هنا ويستخدمها خادم ${BRAND.company} لجلب بيانات الحملات المباشرة. لا يُرسل أي شيء إلى أي طرف ثالث.`,
   'pintg.copy': 'نسخ',
   'pintg.copied': 'تم النسخ',
   'pintg.allRequired': 'جميع بيانات الاعتماد الخمسة مطلوبة.',
@@ -166,9 +167,9 @@ const ru: Dict = {
 
   // Google Ads page
   'pintg.title': 'Google Ads',
-  'pintg.subtitle': 'Сохраните учётные данные — синхронизация через бэкенд Freehold',
+  'pintg.subtitle': `Сохраните учётные данные — синхронизация через бэкенд ${BRAND.company}`,
   'pintg.clearCredentials': 'Очистить учётные данные',
-  'pintg.infoBanner': 'Для Google Ads API требуется токен разработчика и серверный OAuth — вызовы из браузера заблокированы. Ваши учётные данные сохраняются здесь и используются бэкендом Freehold для получения данных кампаний в реальном времени. Ничего не передаётся третьим сторонам.',
+  'pintg.infoBanner': `Для Google Ads API требуется токен разработчика и серверный OAuth — вызовы из браузера заблокированы. Ваши учётные данные сохраняются здесь и используются бэкендом ${BRAND.company} для получения данных кампаний в реальном времени. Ничего не передаётся третьим сторонам.`,
   'pintg.copy': 'Копировать',
   'pintg.copied': 'Скопировано',
   'pintg.allRequired': 'Необходимы все пять учётных данных.',

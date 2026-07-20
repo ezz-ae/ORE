@@ -1,20 +1,27 @@
 import { Button } from "@/components/ui/button"
+import { BRAND } from "@/lib/freehold/brand"
+
+// Byte-identical default: this page historically used a slightly different
+// public name than BRAND.legalName. Keep the exact legacy text unless the
+// deployment explicitly re-brands via NEXT_PUBLIC_BRAND_* env vars.
+const REBRANDED = Boolean(process.env.NEXT_PUBLIC_BRAND_COMPANY?.trim() || process.env.NEXT_PUBLIC_BRAND_LEGAL_NAME?.trim())
+const LEGAL_ENTITY = REBRANDED ? BRAND.legalName : "Freehold Properties LLC"
 import { Target, Eye, ArrowRight, Quote } from "lucide-react"
 import Link from "next/link"
 
 export const metadata = {
-  title: "About Freehold Property UAE | 19 Years in Dubai Real Estate",
-  description: "Freehold Properties LLC — 19 years of Dubai real estate. Sales, leasing, investments, consultancy, and market intelligence for global investors.",
+  title: `About ${BRAND.legalName} UAE | 19 Years in Dubai Real Estate`,
+  description: `${LEGAL_ENTITY} — 19 years of Dubai real estate. Sales, leasing, investments, consultancy, and market intelligence for global investors.`,
   alternates: { canonical: "/about" },
   openGraph: {
-    title: "About Freehold Property UAE | 19 Years in Dubai Real Estate",
+    title: `About ${BRAND.legalName} UAE | 19 Years in Dubai Real Estate`,
     description: "Full-service Dubai brokerage with deep market knowledge and ethical practice — sales, leasing, advisory, and valuation.",
     url: "/about",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "About Freehold Property UAE" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: `About ${BRAND.legalName} UAE` }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "About Freehold Property UAE",
+    title: `About ${BRAND.legalName} UAE`,
     images: ["/og-image.png"],
   },
 }
@@ -61,14 +68,14 @@ export default function AboutPage() {
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F0D792] backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#D4AC50]" />
-                About Freehold
+                About {BRAND.company}
               </span>
               <h1 className="mt-8 font-serif text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl lg:text-[5.5rem]">
                 Dubai property,<br />
                 <span className="freehold-text-gradient italic">decoded.</span>
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/55">
-                Freehold Properties LLC is a private advisory and brokerage firm built around one idea — clients should never have to guess. Nineteen years inside the Dubai market, 3,500+ projects mapped, and a team of senior advisors who own every brief end-to-end.
+                {LEGAL_ENTITY} is a private advisory and brokerage firm built around one idea — clients should never have to guess. Nineteen years inside the Dubai market, 3,500+ projects mapped, and a team of senior advisors who own every brief end-to-end.
               </p>
 
               <div className="mt-12 flex flex-wrap items-center gap-10">

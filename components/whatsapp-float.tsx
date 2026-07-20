@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import { BRAND } from "@/lib/freehold/brand"
 import { buildWhatsAppUrl } from "@/lib/site"
 
 const WhatsAppGlyph = ({ className }: { className?: string }) => (
@@ -19,7 +20,7 @@ export function WhatsAppFloat() {
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null
 
   const href = buildWhatsAppUrl(
-    "Hello Freehold Property UAE, I'd like to speak with an advisor about Dubai real estate.",
+    `Hello ${BRAND.legalName} UAE, I'd like to speak with an advisor about Dubai real estate.`,
   )
 
   return (
@@ -27,7 +28,7 @@ export function WhatsAppFloat() {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with Freehold on WhatsApp"
+      aria-label={`Chat with ${BRAND.company} on WhatsApp`}
       className="group fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-[#25D366] py-3 pl-3 pr-4 text-white shadow-xl shadow-black/20 transition-all hover:scale-105 hover:bg-[#1FB855] sm:bottom-6 sm:right-6"
     >
       <WhatsAppGlyph className="h-6 w-6" />

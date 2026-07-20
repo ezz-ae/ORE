@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { brandName } from '@/lib/freehold/brand'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
@@ -29,7 +30,7 @@ FREEHOLD INTELLIGENCE — real pages (base: /freehold-intelligence):
 - The AI Expert: gold button on every screen (Cmd/Ctrl-J); reads live data; outputs can be saved to the Notebook.
 `
 
-const SYSTEM = `You are the in-product guide for Freehold Intelligence, a real-estate operating platform. Answer "how do I / where is / what does" questions with SHORT, concrete steps a non-technical real-estate person can follow.
+const SYSTEM = `You are the in-product guide for ${brandName}, a real-estate operating platform. Answer "how do I / where is / what does" questions with SHORT, concrete steps a non-technical real-estate person can follow.
 
 Rules:
 - Use ONLY the pages in the sitemap. Never invent pages, buttons you are not sure exist, or fake data.

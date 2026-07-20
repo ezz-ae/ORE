@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { BRAND } from "@/lib/freehold/brand"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
 import { geminiGenerate } from "@/lib/gemini-rest"
@@ -179,7 +180,7 @@ Target audience: ${audience}
     "items": [
       {"label": "Project", "value": "${project.name || "Property"}"},
       {"label": "Area", "value": "${project.area || "Dubai"}"},
-      {"label": "Developer", "value": "${project.developerName || "Freehold"}"},
+      {"label": "Developer", "value": "${project.developerName || BRAND.company}"},
       {"label": "Starting Price", "value": "<formatted AED price>"}
     ]
   }
@@ -195,7 +196,7 @@ Target audience: ${audience}
   "type": "location",
   "data": {
     "area": "${project.area || "Dubai"}",
-    "developer": "${project.developerName || "Freehold"}",
+    "developer": "${project.developerName || BRAND.company}",
     "title": "<creative location headline>",
     "subtitle": "<why this location matters for this audience, 1 sentence>",
     "highlights": ["<connectivity highlight>", "<lifestyle highlight>", "<investment highlight>"]
@@ -232,7 +233,7 @@ Target audience: ${audience}
     "ai-concierge": `{
   "type": "ai-concierge",
   "data": {
-    "title": "Ask Freehold AI",
+    "title": "Ask ${BRAND.company} AI",
     "subtitle": "Get instant answers about ${project.name || "this property"} from our AI advisor",
     "prompts": [
       "<specific question about yield vs appreciation for this property>",
@@ -277,7 +278,7 @@ Target audience: ${audience}
     .map((s) => sectionInstructions[s])
     .join(",\n    ")
 
-  return `You are a world-class Dubai real estate landing page copywriter for Freehold Property UAE.
+  return `You are a world-class Dubai real estate landing page copywriter for ${BRAND.legalName} UAE.
 Create compelling, UNIQUE landing page content for this specific property. Do NOT use generic templates.
 Every word must be specific to this property, area, and audience. Write like a seasoned Dubai property expert.
 
@@ -309,7 +310,7 @@ Rules:
 - payment-plan numbers must be copied exactly from PROJECT DATA; if the data
   carries no payment plan, OMIT the payment-plan section entirely.
 - All copy must be publication-ready, zero placeholders
-- Write as Freehold's expert team, not as an AI
+- Write as ${BRAND.company}'s expert team, not as an AI
 - Headlines must be specific to ${project.name || "this property"}, not generic Dubai copy`
 }
 

@@ -1,4 +1,5 @@
 import { ProjectCard } from "@/components/project-card"
+import { BRAND } from "@/lib/freehold/brand"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PropertyFilters } from "@/components/property-filters"
@@ -11,13 +12,13 @@ import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
   title: "New Projects & Master Communities in Dubai",
-  description: "Explore live Freehold project inventory, off-plan developments, and master-planned communities in Dubai with area, developer, price, and status filters.",
+  description: `Explore live ${BRAND.company} project inventory, off-plan developments, and master-planned communities in Dubai with area, developer, price, and status filters.`,
   alternates: {
     canonical: "/projects",
   },
   openGraph: {
-    title: "New Projects & Master Communities in Dubai | Freehold",
-    description: "Explore live Freehold project inventory and off-plan developments in Dubai.",
+    title: `New Projects & Master Communities in Dubai | ${BRAND.company}`,
+    description: `Explore live ${BRAND.company} project inventory and off-plan developments in Dubai.`,
     images: ["/og-image.png"],
   },
 }
@@ -88,14 +89,14 @@ export default async function ProjectsPage({
           <div className="mx-auto max-w-3xl text-center flex flex-col items-center">
             <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur-sm mb-6">
               <span className="flex h-1.5 w-1.5 rounded-full bg-[#C69B3E] mr-2"></span>
-              Live Freehold Inventory
+              Live {BRAND.company} Inventory
             </div>
             <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl text-white leading-tight">
               Dubai Projects <br/>
               <span className="italic text-[#D4AF37]">& Communities</span>
             </h1>
             <p className="mt-6 text-lg text-white/70 font-light max-w-2xl mx-auto">
-              Filter live Freehold projects by area, developer, budget, status, bedroom mix, and investment angle.
+              Filter live {BRAND.company} projects by area, developer, budget, status, bedroom mix, and investment angle.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Button className="ore-gradient text-black font-semibold" asChild>
@@ -119,7 +120,7 @@ export default async function ProjectsPage({
                 </Badge>
                 <h2 className="font-serif text-2xl font-bold text-white md:text-3xl">Filtered Developments</h2>
                 <p className="mt-2 text-sm text-white/60">
-                  {total.toLocaleString("en-AE")} projects match the current Freehold filters.
+                  {total.toLocaleString("en-AE")} projects match the current {BRAND.company} filters.
                 </p>
               </div>
               <Button

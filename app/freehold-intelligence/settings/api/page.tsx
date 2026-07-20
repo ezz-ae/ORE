@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { BRAND } from '@/lib/freehold/brand'
 import { Key, ArrowRight, Book, Zap, Globe } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -46,7 +47,7 @@ export default function ApiPage() {
       {/* Base URL */}
       <section className="mb-6 rounded-[16px] border border-gold/15 bg-gold/[0.04] p-4">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">{t('settings.api.baseUrl')}</div>
-        <code className="font-mono text-sm text-gold">https://api.freeholdproperty.ae</code>
+        <code className="font-mono text-sm text-gold">{`https://api.${BRAND.domain}`}</code>
         <div className="mt-2 text-xs text-slate-500">
           {t('settings.api.authPrefix')} <code className="text-slate-400">Authorization: Bearer fh_prod_...</code>
         </div>
@@ -57,7 +58,7 @@ export default function ApiPage() {
         {/* No /api/openapi.json exists — the dead quick-link was removed rather
             than pointing users at a 404. */}
         {[
-          { Icon: Book, labelKey: 'settings.api.quick.fullDocs', color: 'text-violet-400', href: 'https://docs.freeholdproperty.ae' },
+          { Icon: Book, labelKey: 'settings.api.quick.fullDocs', color: 'text-violet-400', href: `https://docs.${BRAND.domain}` },
           { Icon: Zap,  labelKey: 'settings.api.quick.zapier',   color: 'text-amber-400',  href: 'https://zapier.com/apps/freehold-intelligence' },
         ].map(({ Icon, labelKey, color, href }) => (
           <a key={labelKey} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-[12px] border border-line bg-surface px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-line-strong hover:text-slate-100">
