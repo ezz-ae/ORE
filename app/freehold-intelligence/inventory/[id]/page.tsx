@@ -14,11 +14,13 @@ import {
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getProjectDealActivity } from '@/lib/deals'
 import { readOpportunityScore } from '@/lib/freehold/opportunity'
+import { getProjectProfile, PROFILE_DIMENSION_KEYS } from '@/lib/freehold/project-profile'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { type PropertyStatus } from '@/src/features/freehold-intelligence/inventory'
 import { getServerT } from '@/lib/i18n/server'
 import { OpportunityRefreshButton } from './opportunity-refresh'
+import { ProfileGenerateButton } from './profile-generate'
 
 function fmtAed(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -70,13 +72,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   const { id } = await params
   const { t, locale } = await getServerT()
 
-  // Real DB inventory only — no seed fallback. The opportunity score is served
-  // from the persisted table (its computed_at is shown honestly below), never
-  // recomputed on page load.
-  const [prop, sales, opportunity, sessionUser] = await Promise.all([
+  // Real DB inventory only — no seed fallback. The opportunity score and the
+  // intelligence profile are served from their persisted tables (computed_at /
+  // generated_at shown honestly below), never recomputed on page load.
+  const [prop, sales, opportunity, profileState, sessionUser] = await Promise.all([
     getInventoryPropertyBySlug(id),
     getProjectDealActivity(id),
     readOpportunityScore(id),
+    getProjectProfile(id),
     verifySession((await cookies()).get(SESSION_COOKIE)?.value),
   ])
   // Recent-deal drill-down carries agent + client names, so it is management-only;
@@ -322,6 +325,76 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 <div className="mt-5 border-t border-line pt-3 text-xs text-slate-500">
                   {t('inv.opp.computedAt', {
                     date: new Date(opportunity.computedAt).toLocaleString(locale, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }),
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ── Intelligence Profile (Layer 2) — the PERSISTED four-dimension
+              AI profile, generated from this project's stored record and never
+              regenerated on read. Absent dimensions carry an honest note; a
+              facts change since generation shows a stale badge. ── */}
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                  {t('inv.profile.title')}
+                </p>
+                {profileState.profile && profileState.stale && (
+                  <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/[0.08] px-2 py-0.5 text-[10px] font-medium text-amber-300">
+                    {t('inv.profile.stale')}
+                  </span>
+                )}
+              </span>
+              {canLaunchAds && (
+                <ProfileGenerateButton slug={prop.slug} hasProfile={!!profileState.profile} />
+              )}
+            </div>
+
+            {!profileState.profile ? (
+              <p className="text-sm text-slate-500">{t('inv.profile.notGenerated')}</p>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {PROFILE_DIMENSION_KEYS.map((key) => {
+                    const dim = profileState.profile!.dimensions[key]
+                    return (
+                      <div key={key}>
+                        <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                          <span className="text-slate-400">{t(`inv.profile.d.${key}`)}</span>
+                          {dim.summary === null && (
+                            <span className="text-slate-500">{t('inv.profile.noData')}</span>
+                          )}
+                        </div>
+                        {dim.summary !== null ? (
+                          <>
+                            <p className="text-sm leading-relaxed text-slate-300">{dim.summary}</p>
+                            {/* The verbatim stored facts behind the summary. */}
+                            {dim.facts.length > 0 && (
+                              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                                {dim.facts.join(' · ')}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          // Honest absence — the profile's own note says what
+                          // stored data is missing for this dimension.
+                          dim.note && (
+                            <p className="text-[11px] leading-relaxed text-slate-500">{dim.note}</p>
+                          )
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-5 border-t border-line pt-3 text-xs text-slate-500">
+                  {t('inv.profile.generatedAt', {
+                    date: new Date(profileState.profile.generatedAt).toLocaleString(locale, {
                       dateStyle: 'medium',
                       timeStyle: 'short',
                     }),

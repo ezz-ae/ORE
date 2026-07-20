@@ -332,6 +332,20 @@ const en: Dict = {
   'inv.opp.c.areaMomentum': 'Area momentum',
   'inv.opp.c.provenPerformance': 'Proven performance',
   'inv.opp.c.developerDepth': 'Developer depth',
+
+  // Intelligence Profile (Layer 2)
+  'inv.profile.title': 'Intelligence Profile',
+  'inv.profile.notGenerated': 'Not generated yet — generate an AI profile from this project’s stored record.',
+  'inv.profile.generatedAt': 'AI-generated {date} · from this project’s stored record',
+  'inv.profile.stale': 'Facts changed since generation',
+  'inv.profile.generate': 'Generate',
+  'inv.profile.regenerate': 'Regenerate',
+  'inv.profile.generating': 'Generating…',
+  'inv.profile.noData': 'no supporting data',
+  'inv.profile.d.investment': 'Investment',
+  'inv.profile.d.lifestyle': 'Lifestyle',
+  'inv.profile.d.financial': 'Financial',
+  'inv.profile.d.market': 'Market',
 }
 
 const ar: Dict = {
@@ -646,6 +660,20 @@ const ar: Dict = {
   'inv.opp.c.areaMomentum': 'زخم المنطقة',
   'inv.opp.c.provenPerformance': 'أداء مُثبت',
   'inv.opp.c.developerDepth': 'خبرة المطوّر',
+
+  // Intelligence Profile (Layer 2)
+  'inv.profile.title': 'ملف الذكاء',
+  'inv.profile.notGenerated': 'لم يُنشأ بعد — أنشئ ملفًا بالذكاء الاصطناعي من السجل المخزّن لهذا المشروع.',
+  'inv.profile.generatedAt': 'أُنشئ بالذكاء الاصطناعي {date} · من السجل المخزّن لهذا المشروع',
+  'inv.profile.stale': 'تغيّرت البيانات منذ الإنشاء',
+  'inv.profile.generate': 'إنشاء',
+  'inv.profile.regenerate': 'إعادة الإنشاء',
+  'inv.profile.generating': 'جارٍ الإنشاء…',
+  'inv.profile.noData': 'لا بيانات داعمة',
+  'inv.profile.d.investment': 'الاستثمار',
+  'inv.profile.d.lifestyle': 'نمط الحياة',
+  'inv.profile.d.financial': 'المالية',
+  'inv.profile.d.market': 'السوق',
 }
 
 const ru: Dict = {
@@ -960,6 +988,20 @@ const ru: Dict = {
   'inv.opp.c.areaMomentum': 'Динамика района',
   'inv.opp.c.provenPerformance': 'Подтверждённые результаты',
   'inv.opp.c.developerDepth': 'Опыт застройщика',
+
+  // Intelligence Profile (Layer 2)
+  'inv.profile.title': 'Аналитический профиль',
+  'inv.profile.notGenerated': 'Ещё не создан — создайте ИИ-профиль из сохранённых данных этого проекта.',
+  'inv.profile.generatedAt': 'Создано ИИ {date} · из сохранённых данных этого проекта',
+  'inv.profile.stale': 'Данные изменились после создания',
+  'inv.profile.generate': 'Создать',
+  'inv.profile.regenerate': 'Пересоздать',
+  'inv.profile.generating': 'Создание…',
+  'inv.profile.noData': 'нет подтверждающих данных',
+  'inv.profile.d.investment': 'Инвестиции',
+  'inv.profile.d.lifestyle': 'Образ жизни',
+  'inv.profile.d.financial': 'Финансы',
+  'inv.profile.d.market': 'Рынок',
 }
 
 export const inventory: Record<Locale, Dict> = { en, ar, ru }
