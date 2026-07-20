@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createHash, randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
+import { parseIntent } from "@/lib/meta/intent"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -27,6 +28,7 @@ const ensureAnalyticsSchema = async () => {
       geo_region text,
       geo_city text,
       meta jsonb,
+      intent text,
       created_at timestamptz DEFAULT now()
     )
   `)
@@ -50,6 +52,7 @@ const ensureAnalyticsSchema = async () => {
       ADD COLUMN IF NOT EXISTS geo_region text,
       ADD COLUMN IF NOT EXISTS geo_city text,
       ADD COLUMN IF NOT EXISTS meta jsonb,
+      ADD COLUMN IF NOT EXISTS intent text,
       ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()
   `)
   // The behaviour scorer reads WHERE session_id = $1 on every lead submit,
@@ -80,12 +83,12 @@ export async function POST(req: NextRequest) {
       `INSERT INTO freehold_site_lp_analytics (
         id, landing_slug, project_slug, event_name, event_value, session_id, path, referrer,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
-        device, geo_country, geo_region, geo_city, meta, created_at
+        device, geo_country, geo_region, geo_city, meta, intent, created_at
       )
       VALUES (
         $1, $2, NULLIF($3, ''), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''),
         NULLIF($9, ''), NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''),
-        $15::jsonb, NULLIF($16, ''), NULLIF($17, ''), NULLIF($18, ''), $19::jsonb, now()
+        $15::jsonb, NULLIF($16, ''), NULLIF($17, ''), NULLIF($18, ''), $19::jsonb, NULLIF($20, ''), now()
       )`,
       [
         randomUUID(),
@@ -114,6 +117,9 @@ export async function POST(req: NextRequest) {
             return ip ? createHash("sha256").update(ip).digest("hex").slice(0, 32) : ""
           })(),
         }),
+        // Click-carried buyer intent (Layer 4) — validated against the shared
+        // vocabulary so junk from the wild never lands in the column.
+        parseIntent(toText(body.intent)) ?? "",
       ],
     )
 

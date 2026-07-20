@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
-import { trackConversion, collectUtm, getSessionId } from './_tracker'
+import { trackConversion, collectUtm, collectIntent, getSessionId } from './_tracker'
 import type { LpPalette } from '@/lib/landing-theme'
 
 interface LeadFormProps {
@@ -56,6 +56,10 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
           // Links this lead to its landing-page session so the behaviour
           // score computed from that session travels with it.
           sessionId: getSessionId(),
+          // Declared intent from the ad click (?intent=, first-touch) —
+          // stored as click_intent, distinct from behaviour-derived
+          // buyer_intent. Empty when the visit carried no intent.
+          clickIntent: collectIntent(),
         }),
       })
       const payload = await res.json()

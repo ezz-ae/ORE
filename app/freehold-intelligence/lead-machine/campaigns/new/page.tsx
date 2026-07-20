@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
+import { BUYER_INTENTS, withIntent, type BuyerIntent } from '@/lib/meta/intent'
 import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
@@ -92,6 +93,10 @@ interface WizardState {
   headlines:     string[]
   descriptions:  string[]
   landingUrl:    string
+  // Layer 4 — optional buyer intent for this ad. Appended to the landing URL
+  // as ?intent= at launch (withIntent): the SAME landing page adapts its real
+  // sections for that buyer profile. '' = none (today's unchanged page).
+  clickIntent:   BuyerIntent | ''
   cta:           MetaCta
   imageUrl:      string
   imageHash:     string
@@ -260,6 +265,7 @@ export default function NewCampaignPage() {
     headlines:    [''],
     descriptions: ['Request the investor summary now.'],
     landingUrl:   'https://www.freeholdproperty.ae',
+    clickIntent:  '',
     cta:          'LEARN_MORE',
     imageUrl:     '',
     imageHash:    '',
@@ -1113,8 +1119,9 @@ export default function NewCampaignPage() {
         descriptions: form.descriptions,
         // New launches often have no landing page yet — an empty URL falls
         // back to the project's public page, which always exists for a
-        // listed project. Never block a launch on a missing LP.
-        landingUrl:  form.landingUrl || `https://www.freeholdproperty.ae/projects/${encodeURIComponent(form.listingId)}`,
+        // listed project. Never block a launch on a missing LP. The picked
+        // buyer intent rides the click as ?intent= (Layer 4).
+        landingUrl:  withIntent(form.landingUrl || `https://www.freeholdproperty.ae/projects/${encodeURIComponent(form.listingId)}`, form.clickIntent),
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
@@ -2075,6 +2082,24 @@ export default function NewCampaignPage() {
                 onChange={(e) => update('landingUrl', e.target.value)}
                 placeholder={t('lm.landingUrlPlaceholder')}
               />
+            </div>
+
+            {/* Layer 4 — buyer intent carried on the click. Optional: appends
+                ?intent= to the landing URL at launch so the ONE landing page
+                reorders its real sections for this buyer profile. */}
+            <div>
+              <Label>{t('lm.newCampaign.s3.label.clickIntent')}</Label>
+              <select
+                className={inputCls()}
+                value={form.clickIntent}
+                onChange={(e) => update('clickIntent', e.target.value as WizardState['clickIntent'])}
+              >
+                <option value="">{t('lm.intent.none')}</option>
+                {BUYER_INTENTS.map((k) => (
+                  <option key={k} value={k}>{t(`lm.intent.${k}`)}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">{t('lm.newCampaign.s3.clickIntentHint')}</p>
             </div>
 
             <div data-coach="wiz-creative">

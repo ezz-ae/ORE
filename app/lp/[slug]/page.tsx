@@ -14,6 +14,8 @@ import {
 import { resolveTheme, lpPalette, type LpTheme, type LpPalette } from '@/lib/landing-theme'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
+import { parseIntent, type BuyerIntent } from '@/lib/meta/intent'
+import { adaptPageForIntent } from './_intent'
 import { LeadForm } from './_form'
 import { FaqAccordion } from './_faq'
 import { StickyLpCta } from './_sticky'
@@ -1051,18 +1053,19 @@ const LP_LANGS: Array<{ code: LpLang; label: string }> = [
   { code: 'ru', label: 'RU' },
 ]
 
-// Build a landing-page query string preserving both lang and theme.
-function lpHref(lang: LpLang, theme: LpTheme): string {
-  return `?lang=${lang}&theme=${theme}`
+// Build a landing-page query string preserving lang, theme, and the click-
+// carried buyer intent (dropping it would silently reset the adapted page).
+function lpHref(lang: LpLang, theme: LpTheme, intent?: BuyerIntent | null): string {
+  return `?lang=${lang}&theme=${theme}${intent ? `&intent=${intent}` : ''}`
 }
 
-function LangSwitcher({ lang, theme }: { lang: LpLang; theme: LpTheme; }) {
+function LangSwitcher({ lang, theme, intent }: { lang: LpLang; theme: LpTheme; intent?: BuyerIntent | null }) {
   return (
     <div className="flex items-center gap-1" dir="ltr">
       {LP_LANGS.map(({ code, label }) => (
         <a
           key={code}
-          href={lpHref(code, theme)}
+          href={lpHref(code, theme, intent)}
           className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
             code === lang ? 'bg-[#D4AF37]/15 text-[#D4AF37]' : ''
           }`}
@@ -1075,12 +1078,12 @@ function LangSwitcher({ lang, theme }: { lang: LpLang; theme: LpTheme; }) {
   )
 }
 
-function ThemeToggle({ lang, theme, p }: { lang: LpLang; theme: LpTheme; p: LpPalette }) {
+function ThemeToggle({ lang, theme, intent, p }: { lang: LpLang; theme: LpTheme; intent?: BuyerIntent | null; p: LpPalette }) {
   // Link to the OTHER theme and show that theme's icon (moon while in day).
   const next: LpTheme = theme === 'day' ? 'night' : 'day'
   return (
     <a
-      href={lpHref(lang, next)}
+      href={lpHref(lang, next, intent)}
       aria-label={next === 'night' ? 'Switch to night theme' : 'Switch to day theme'}
       className="flex h-8 w-8 items-center justify-center rounded-full border transition hover:border-[#D4AF37]/40"
       style={{ borderColor: p.surfaceBorder, color: p.textMuted }}
@@ -1090,7 +1093,7 @@ function ThemeToggle({ lang, theme, p }: { lang: LpLang; theme: LpTheme; p: LpPa
   )
 }
 
-function Topbar({ page, L, lang, theme, p }: { page: LandingPageData; L: Dict; lang: LpLang; theme: LpTheme; p: LpPalette }) {
+function Topbar({ page, L, lang, theme, intent, p }: { page: LandingPageData; L: Dict; lang: LpLang; theme: LpTheme; intent?: BuyerIntent | null; p: LpPalette }) {
   const hasPrice = !!page.project?.priceFromAed && page.project.priceFromAed > 0
   const price = fmtAed(page.project?.priceFromAed, L)
   const waUrl = `https://wa.me/971504173622?text=${encodeURIComponent(`Hi, I'm interested in ${page.title}`)}`
@@ -1100,8 +1103,8 @@ function Topbar({ page, L, lang, theme, p }: { page: LandingPageData; L: Dict; l
         <div className="text-[13px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD <span className="font-normal" style={{ color: p.textFaint }}>{L['topbar.brandSuffix']}</span></div>
         {hasPrice && <div className="hidden text-[12px] sm:block" style={{ color: p.textFaint }}>{L['topbar.from']} <span className="font-semibold" style={{ color: p.textMuted }}>{price}</span></div>}
         <div className="flex items-center gap-2">
-          <LangSwitcher lang={lang} theme={theme} />
-          <ThemeToggle lang={lang} theme={theme} p={p} />
+          <LangSwitcher lang={lang} theme={theme} intent={intent} />
+          <ThemeToggle lang={lang} theme={theme} intent={intent} p={p} />
           <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-1.5 text-[12px] font-medium text-[#25D366] transition hover:bg-[#25D366]/20">
             <MessageCircle className="h-3.5 w-3.5" /> {L['topbar.whatsapp']}
           </a>
@@ -1219,7 +1222,17 @@ export default async function LandingPage({
   const palette = lpPalette(theme, page.template)
 
   const { page: localized } = await translateLandingContent(page, lang)
-  const price = fmtAed(localized.project?.priceFromAed, L)
+
+  // Layer 4 — intent-differentiated experience. The ad click carries ?intent=;
+  // the SAME page adapts by reordering its REAL sections and (when the facts
+  // exist) reframing the hero subline — nothing is added or hidden. No intent
+  // (or junk) → today's exact page. The page is already fully dynamic
+  // (searchParams + cookies), so this changes nothing about caching.
+  // Skipped inside the staff editor iframe (?lpe=1): the edit bridge maps
+  // sections by index, which must match the editor's canonical order.
+  const intent = sp.lpe === '1' ? null : parseIntent(typeof sp.intent === 'string' ? sp.intent : Array.isArray(sp.intent) ? sp.intent[0] : null)
+  const adapted = adaptPageForIntent(localized, intent, L)
+  const price = fmtAed(adapted.project?.priceFromAed, L)
 
   return (
     <div className={`min-h-screen${theme === 'day' ? ' lp-day' : ''}`} dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary }}>
@@ -1231,23 +1244,23 @@ export default async function LandingPage({
         <style>{`.lp-day [class*="text-[#D4AF37]"]{color:#8E6D1A !important}`}</style>
       )}
       <Tracker
-        slug={localized.slug}
-        projectSlug={localized.projectSlug}
-        metaPixelId={localized.pixels.metaPixelId}
-        googleTagId={localized.pixels.googleTagId}
-        googleConversionId={localized.pixels.googleConversionId}
-        tiktokPixelId={localized.pixels.tiktokPixelId}
+        slug={adapted.slug}
+        projectSlug={adapted.projectSlug}
+        metaPixelId={adapted.pixels.metaPixelId}
+        googleTagId={adapted.pixels.googleTagId}
+        googleConversionId={adapted.pixels.googleConversionId}
+        tiktokPixelId={adapted.pixels.tiktokPixelId}
       />
-      <Topbar page={localized} L={L} lang={lang} theme={theme} p={palette} />
+      <Topbar page={adapted} L={L} lang={lang} theme={theme} intent={intent} p={palette} />
       <div className="pt-[52px]">
-        {localized.sections.map((section, i) => (
+        {adapted.sections.map((section, i) => (
           <div key={`${section.type}-${i}`} data-lpe-sec={i}>
-            <Section section={section} page={localized} L={L} p={palette} />
+            <Section section={section} page={adapted} L={L} p={palette} />
           </div>
         ))}
-        <Footer page={localized} L={L} p={palette} />
+        <Footer page={adapted} L={L} p={palette} />
       </div>
-      <StickyLpCta price={price} ctaText={localized.ctaText} slug={localized.slug} L={L} palette={palette} />
+      <StickyLpCta price={price} ctaText={adapted.ctaText} slug={adapted.slug} L={L} palette={palette} />
       {/* On-canvas editing bridge — active only inside the staff editor's
           iframe (?lpe=1). Persisting still goes through the authed editor API. */}
       {sp.lpe === '1' && <LpEditBridge />}

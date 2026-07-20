@@ -111,6 +111,10 @@ export type CRMLeadIntelligence = {
   buyerIntent?: string | null
   purchaseProbability?: number | null
   budgetConfidence?: string | null
+  /** Layer 4 — declared intent from the ad clicked (?intent= on the landing
+      URL). Distinct from buyerIntent, which is derived from observed
+      behaviour; null when the visit carried no intent. */
+  clickIntent?: string | null
 }
 
 export type NotebookOutput = {

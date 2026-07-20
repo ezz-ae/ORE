@@ -56,6 +56,19 @@ export const lm_wizard: Record<Locale, Dict> = {
     'lm.interest.goldenVisa': 'Visa & Residency',
     'lm.interest.offplan': 'Off-Plan Buyers',
 
+    // ── Buyer intent (Layer 4 — click-carried ?intent=) ──
+    'lm.newCampaign.s3.label.clickIntent': 'Buyer intent (optional)',
+    'lm.newCampaign.s3.clickIntentHint': 'Appends ?intent= to the landing URL — the same landing page reorders its real sections for this buyer profile. None = the default page.',
+    'lm.intent.none': 'None — default page',
+    'lm.intent.investor': 'Investor',
+    'lm.intent.end_user': 'End user',
+    'lm.intent.family': 'Family',
+    'lm.intent.luxury': 'Luxury',
+    'lm.intent.holiday': 'Holiday home',
+    'lm.intent.rental_income': 'Rental income',
+    'lm.intent.first_time': 'First-time buyer',
+    'lm.intent.international': 'International buyer',
+
     // ── CTAs ──
     'lm.cta.learnMore': 'Learn More',
     'lm.cta.getDetails': 'Get Details',
@@ -328,6 +341,19 @@ export const lm_wizard: Record<Locale, Dict> = {
     'lm.interest.goldenVisa': 'التأشيرة والإقامة',
     'lm.interest.offplan': 'مشترو العقارات على الخارطة',
 
+    // ── نية المشتري (الطبقة 4) ──
+    'lm.newCampaign.s3.label.clickIntent': 'نية المشتري (اختياري)',
+    'lm.newCampaign.s3.clickIntentHint': 'يضيف ‎?intent=‎ إلى رابط صفحة الهبوط — فتعيد الصفحة نفسها ترتيب أقسامها الحقيقية لملاءمة هذا المشتري. بدون = الصفحة الافتراضية.',
+    'lm.intent.none': 'بدون — الصفحة الافتراضية',
+    'lm.intent.investor': 'مستثمر',
+    'lm.intent.end_user': 'مستخدم نهائي',
+    'lm.intent.family': 'عائلة',
+    'lm.intent.luxury': 'فاخر',
+    'lm.intent.holiday': 'منزل عطلات',
+    'lm.intent.rental_income': 'دخل إيجاري',
+    'lm.intent.first_time': 'مشترٍ لأول مرة',
+    'lm.intent.international': 'مشترٍ دولي',
+
     'lm.cta.learnMore': 'اعرف المزيد',
     'lm.cta.getDetails': 'احصل على التفاصيل',
     'lm.cta.bookViewing': 'احجز معاينة',
@@ -587,6 +613,19 @@ export const lm_wizard: Record<Locale, Dict> = {
     'lm.interest.mortgage': 'Ищущие ипотеку',
     'lm.interest.goldenVisa': 'Виза и резидентство',
     'lm.interest.offplan': 'Покупатели на стадии строительства',
+
+    // ── Намерение покупателя (слой 4) ──
+    'lm.newCampaign.s3.label.clickIntent': 'Намерение покупателя (необязательно)',
+    'lm.newCampaign.s3.clickIntentHint': 'Добавляет ?intent= к ссылке на лендинг — та же страница перестраивает свои реальные разделы под этот профиль покупателя. Без — страница по умолчанию.',
+    'lm.intent.none': 'Без — страница по умолчанию',
+    'lm.intent.investor': 'Инвестор',
+    'lm.intent.end_user': 'Конечный покупатель',
+    'lm.intent.family': 'Семья',
+    'lm.intent.luxury': 'Люкс',
+    'lm.intent.holiday': 'Дом для отдыха',
+    'lm.intent.rental_income': 'Арендный доход',
+    'lm.intent.first_time': 'Первая покупка',
+    'lm.intent.international': 'Международный покупатель',
 
     'lm.cta.learnMore': 'Узнать больше',
     'lm.cta.getDetails': 'Получить детали',

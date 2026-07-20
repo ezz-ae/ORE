@@ -23,6 +23,9 @@ import { MachineVerdictLeadChip } from '@/components/freehold/machine-verdict-no
 async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadIntelligence | null> {
   try {
     await ensureLeadsTable()
+    // click_intent is written by /api/leads on submit; ensure it exists before
+    // selecting so a fresh deploy (no LP submits yet) doesn't 404 every lead.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS click_intent text`).catch(() => undefined)
     const queryParams: unknown[] = [id]
     let ownerFilter = ''
     if (ownerId) { queryParams.push(ownerId); ownerFilter = ' AND assigned_broker_id = $2' }
@@ -36,11 +39,12 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       last_contact_at: string | null; snooze_until: string | null;
       behaviour_score: number | null; buyer_intent: string | null;
       purchase_probability: number | null; budget_confidence: string | null;
+      click_intent: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
               utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text,
-              behaviour_score, buyer_intent, purchase_probability, budget_confidence
+              behaviour_score, buyer_intent, purchase_probability, budget_confidence, click_intent
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -65,6 +69,7 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       leadCode: r.lead_code ?? null, snoozeUntil: r.snooze_until ?? null,
       behaviourScore: r.behaviour_score, buyerIntent: r.buyer_intent,
       purchaseProbability: r.purchase_probability, budgetConfidence: r.budget_confidence,
+      clickIntent: r.click_intent,
     } as unknown as CRMLeadIntelligence
   } catch { return null }
 }
@@ -255,24 +260,36 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           )}
 
           {/* Layer 8/9 — behavioural intelligence, read from the landing session.
-              Zero-protection: no session, no block — never a defaulted number. */}
-          {lead.behaviourScore !== null && lead.behaviourScore !== undefined && (
+              Zero-protection: no session, no block — never a defaulted number.
+              Layer 4 — click_intent (declared by the ad clicked) shows even
+              without a behaviour score: both honest, both labelled by source. */}
+          {(lead.behaviourScore !== null && lead.behaviourScore !== undefined) || lead.clickIntent ? (
             <div className="rounded-xl border border-line bg-surface p-6">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-400">
                 <Activity className="h-3.5 w-3.5 text-gold" /> {t('crm.intelligence')}
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.behaviourScore')}</p>
-                  <p className="mt-0.5 text-lg font-semibold text-white">{lead.behaviourScore}<span className="text-xs text-slate-500"> / 100</span></p>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                    <div className="h-full rounded-full bg-gold/70" style={{ width: `${lead.behaviourScore}%` }} />
+                {lead.behaviourScore !== null && lead.behaviourScore !== undefined && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.behaviourScore')}</p>
+                    <p className="mt-0.5 text-lg font-semibold text-white">{lead.behaviourScore}<span className="text-xs text-slate-500"> / 100</span></p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                      <div className="h-full rounded-full bg-gold/70" style={{ width: `${lead.behaviourScore}%` }} />
+                    </div>
                   </div>
-                </div>
+                )}
                 {lead.buyerIntent && (
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.buyerIntent')}</p>
                     <p className="mt-0.5 text-sm font-medium text-white">{t(`crm.intent.${lead.buyerIntent}`)}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{t('crm.buyerIntentSource')}</p>
+                  </div>
+                )}
+                {lead.clickIntent && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.clickIntent')}</p>
+                    <p className="mt-0.5 text-sm font-medium text-white">{t(`crm.clickIntent.${lead.clickIntent}`)}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{t('crm.clickIntentSource')}</p>
                   </div>
                 )}
                 {lead.purchaseProbability !== null && lead.purchaseProbability !== undefined && (
@@ -290,7 +307,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </div>
               <p className="mt-4 text-xs text-slate-500">{t('crm.intelligenceNote')}</p>
             </div>
-          )}
+          ) : null}
 
           {/* AI Summary */}
           <div className="rounded-xl border border-gold/15 bg-gold/[0.04] p-6">
