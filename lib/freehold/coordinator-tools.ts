@@ -16,6 +16,8 @@ import {
   type RuleMetric, type RuleOperator, type RuleAction,
 } from '@/lib/freehold/campaign-rules'
 import { getLandingPagesForDashboard, getLandingPageForEditor } from '@/lib/landing-pages'
+import { getInventoryPropertyBySlug, getInventoryPropertiesFromDB } from '@/lib/inventory-data'
+import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
 import { listLibrary, saveLibraryItem } from '@/lib/freehold/library'
 import { listAudiences, getAudience, type SavedAudience } from '@/lib/freehold/audiences'
@@ -625,6 +627,45 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   },
 
   // ── landing_agent ──────────────────────────────────────────────────────────
+  {
+    name: 'listing_get', agent: 'landing_agent',
+    description: 'Load ONE catalog project/listing by slug (or exact name): the REAL stored record (price, area, developer, payment plan, handover, yield) PLUS the PERSISTED four-dimension AI intelligence profile (investment / lifestyle / financial / market, with its generated_at and staleness) when one exists. For investment-case / lifestyle / market questions about a project, use this and cite the settled profile instead of re-deriving it.',
+    params: '{ "slug": string }', roles: EVERYONE,
+    schema: z.object({ slug: z.string().describe('project slug from the catalog (an exact project name also resolves)') }),
+    run: async (args) => {
+      const ref = s(args.slug)
+      if (!ref) return { error: 'slug is required' }
+      // Slug first (the canonical id), then an exact-name fallback — the model
+      // often knows the project by name from conversation, not by slug.
+      let prop = await getInventoryPropertyBySlug(ref)
+      if (!prop) {
+        const all = await getInventoryPropertiesFromDB()
+        prop = all.find((p) => p.name.toLowerCase() === ref.toLowerCase()) ?? null
+      }
+      if (!prop) return { error: `No catalog project matching "${ref}" — check the slug or exact name.` }
+      const { profile, stale } = await getProjectProfile(prop.slug)
+      return {
+        listing: {
+          slug: prop.slug, name: prop.name, area: prop.area, developer: prop.developer,
+          type: prop.type, status: prop.status,
+          startingPriceAED: prop.startingPriceAED, maxPriceAED: prop.maxPriceAED,
+          paymentPlan: prop.paymentPlan, handoverYear: prop.handoverYear,
+          expectedRentalYieldPct: prop.roi, unitMix: prop.bedrooms,
+          landingUrl: prop.landingUrl,
+        },
+        // The settled intelligence: stored, timestamped, never regenerated on
+        // read. Null when never generated — say so instead of inventing one.
+        intelligenceProfile: profile
+          ? { generatedAt: profile.generatedAt, stale, dimensions: profile.dimensions }
+          : null,
+        note: profile
+          ? (stale
+              ? 'AI-generated profile from this project\'s stored record — its facts changed since generation, so present it as possibly outdated (an operator can regenerate it on the project page).'
+              : 'AI-generated profile from this project\'s stored record — reuse its summaries and cited facts instead of re-deriving the case.')
+          : 'No stored intelligence profile yet for this project — answer from the listing record only and mention the profile has not been generated.',
+      }
+    },
+  },
   {
     name: 'landing_list', agent: 'landing_agent',
     description: 'List the landing pages (slug, title, status, leads) — the ONE store behind /lp/<slug>.',
