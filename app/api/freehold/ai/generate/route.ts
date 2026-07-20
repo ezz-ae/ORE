@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { googleAiKey } from "@/lib/creative-studio/providers"
+import { BRAND } from '@/lib/freehold/brand'
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }) }
 
   const prompt = String(body.prompt || "").trim()
-  const system = String(body.system || "You are a senior Dubai real-estate content writer for Freehold Property UAE. Write clear, specific, publication-ready copy. No placeholders.")
+  const system = String(body.system || `You are a senior Dubai real-estate content writer for ${BRAND.legalName} UAE. Write clear, specific, publication-ready copy. No placeholders.`)
   if (!prompt) return NextResponse.json({ error: "prompt is required" }, { status: 400 })
 
   const apiKey = googleAiKey()

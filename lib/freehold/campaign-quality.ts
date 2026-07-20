@@ -9,9 +9,10 @@ import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
  * delivering junk, and only the downstream funnel reveals it.
  *
  * Attribution: when a campaign is launched its landing links carry
- * utm_campaign=<name> / utm_id=<id>, and Meta lead-form leads carry the campaign
- * name. We match either (case-insensitive). No attribution → score is null
- * (honest "not enough signal yet", never a fabricated number).
+ * utm_campaign=<name> / utm_id=<id>, and Meta instant-form leads carry the
+ * Graph lead's campaign_id stored as utm_id at sync time. We match either
+ * (case-insensitive). No attribution → score is null (honest "not enough
+ * signal yet", never a fabricated number).
  */
 
 export interface CampaignQuality {

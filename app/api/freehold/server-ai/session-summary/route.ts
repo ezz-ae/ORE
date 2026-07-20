@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { executeTool } from '@/lib/freehold/mcp/execute-tool';
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge';
+import { BRAND } from '@/lib/freehold/brand'
 
 // Aggregates owner-level server, integration, and launch-blocker data — restrict
 // to operators. Brokers/marketing must never see infra blockers or billing state.
@@ -29,7 +30,7 @@ export async function GET() {
       period: '24h',
       role: 'owner',
       accountLevel: 'owner',
-      summaryText: `Good evening. I reviewed the Freehold private server. There are ${blockers.data?.blockers?.length || 0} open launch requirements and ${leadMachine.data?.totalListings || 0} live listings available for Lead Machine decisions.`,
+      summaryText: `Good evening. I reviewed the ${BRAND.company} private server. There are ${blockers.data?.blockers?.length || 0} open launch requirements and ${leadMachine.data?.totalListings || 0} live listings available for Lead Machine decisions.`,
       server: server.data,
       integrations: integrations.data,
       blockedItems: blockers.data?.blockers || [],

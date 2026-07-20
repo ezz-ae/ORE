@@ -248,7 +248,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Cap AI usage per user (per-IP-ish for anon) so a runaway loop can't drain credits.
-    const rl = await checkRateLimit(`expert-chat:${sessionUser?.email ?? 'anon'}`, { limit: 40, windowSec: 60 })
+    // Each turn can fan out to up to 6 pro-tier model calls (initial + 5 tool
+    // continuations) — the cap is per POST, so keep it sized for pro pricing.
+    const rl = await checkRateLimit(`expert-chat:${sessionUser?.email ?? 'anon'}`, { limit: 20, windowSec: 60 })
     if (!rl.ok) {
       return NextResponse.json(
         { layer: 'expert', status: 'error', data: { blocks: [{ type: 'text', content: 'You’re sending requests too quickly — give me a few seconds.' }] }, retryAfterSec: rl.retryAfterSec, generatedAt },

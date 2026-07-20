@@ -243,12 +243,12 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
           <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Readiness Scores
+              {t('inv.detail.readinessScores')}
             </p>
             <div className="space-y-4">
               {[
-                { label: 'Data Quality', value: prop.dataQuality },
-                { label: 'Ad Readiness', value: prop.adReadiness },
+                { label: t('inv.detail.dataQuality'), value: prop.dataQuality },
+                { label: t('inv.detail.adReadiness'), value: prop.adReadiness },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <div className="mb-1.5 flex items-center justify-between text-xs">
@@ -406,7 +406,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
           {prop.lastUpdated && (
             <div className="rounded-[16px] border border-line bg-surface-2 px-4 py-3">
-              <span className="text-sm text-slate-500">Last updated: </span>
+              <span className="text-sm text-slate-500">{t('inv.detail.lastUpdated')} </span>
               <span className="text-sm text-slate-400">{prop.lastUpdated}</span>
             </div>
           )}

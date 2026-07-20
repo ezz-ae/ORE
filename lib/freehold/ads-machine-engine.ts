@@ -45,6 +45,7 @@ import {
   type TFn,
 } from '@/lib/meta/form-templates'
 import { p_forms } from '@/lib/i18n/dictionaries/p_forms'
+import { withIntent } from '@/lib/meta/intent'
 import {
   launchSearchCampaign,
   listCampaigns as listGoogleCampaigns,
@@ -315,7 +316,10 @@ async function ensureProjectLeadForm(
       name: `Machine — ${project.listingName} — Qualification`,
       listingId: project.slug,
       listingName: project.listingName,
-      landingUrl: project.landingUrl,
+      // The form's follow-up button sends the qualified lead to the landing
+      // page — carry the investor intent the qualification form implies, so
+      // the page they land on leads with ROI and payment plan.
+      landingUrl: withIntent(project.landingUrl, 'investor'),
       questions: [
         ...m.contact.map((type) => ({ type })),
         ...m.customs.map((q, i) => customToMetaQuestion(q, i)),

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
+import { brandName } from '@/lib/freehold/brand'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     ? 'Transcribe this voice note EXACTLY as spoken (it may be English, Arabic or Russian — keep the original language). Return ONLY the transcript, no preamble.'
     : kind === 'pdf'
     ? `This is a real-estate brochure or fact sheet. Extract ONLY facts that are explicitly stated: project name, developer, location, unit types and sizes, prices, payment plan, handover date, amenities, and any unique selling points. Plain text, one fact per line, no invention — omit anything not stated.${note ? ` The user says: "${note}".` : ''}`
-    : `This is a screenshot of the Freehold Intelligence real-estate marketing app. Describe precisely what is on screen — page/section, visible numbers, statuses, table rows, warnings — so an assistant that cannot see the image can act on it. If a red rectangle marks an area, focus on that area first.${note ? ` The user says: "${note}".` : ''} Be concrete and compact (under 200 words).`
+    : `This is a screenshot of the ${brandName} real-estate marketing app. Describe precisely what is on screen — page/section, visible numbers, statuses, table rows, warnings — so an assistant that cannot see the image can act on it. If a red rectangle marks an area, focus on that area first.${note ? ` The user says: "${note}".` : ''} Be concrete and compact (under 200 words).`
 
   try {
     const resp = await geminiGenerate(apiKey, [{

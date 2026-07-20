@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon } from 'lucide-react'
+import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon, Bot, ClipboardList } from 'lucide-react'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
 import { getServerT } from '@/lib/i18n/server'
@@ -33,6 +33,12 @@ export default async function LeadMachineOverviewPage() {
 
   const navSections = [
     {
+      label: t('lm.hub.nav.machine'),
+      href: '/freehold-intelligence/lead-machine/ads-machine',
+      icon: Bot,
+      desc: t('lm.hub.nav.machine.desc'),
+    },
+    {
       label: t('lm.hub.nav.landings'),
       href: '/freehold-intelligence/lead-machine/landings',
       icon: Monitor,
@@ -45,6 +51,12 @@ export default async function LeadMachineOverviewPage() {
       href: '/freehold-intelligence/lead-machine/campaigns',
       icon: Megaphone,
       desc: t('lm.hub.nav.metaCampaigns.desc'),
+    },
+    {
+      label: t('lm.hub.nav.forms'),
+      href: '/freehold-intelligence/lead-machine/forms',
+      icon: ClipboardList,
+      desc: t('lm.hub.nav.forms.desc'),
     },
     {
       label: t('lm.hub.nav.google'),
