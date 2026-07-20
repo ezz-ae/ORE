@@ -6,6 +6,7 @@
 // suggested prompts, and the roles allowed to use it.
 
 import { LANDING_TEMPLATES } from '@/lib/landing-templates'
+import { BRAND } from '@/lib/freehold/brand'
 
 // A compact catalog of the landing designs the chat can create with, so the
 // model names/recommends a real template instead of inventing one.
@@ -35,7 +36,7 @@ export interface AiSkill {
 
 const ALL_ROLES = ['owner', 'admin', 'marketing', 'sales_manager', 'sales_agent', 'data_manager', 'viewer']
 
-const BRAND_CONTEXT = `Freehold is a premium Dubai / UAE real estate company (off-plan and ready residential).
+const BRAND_CONTEXT = `${BRAND.company} is a premium Dubai / UAE real estate company (off-plan and ready residential).
 Be specific, actionable, and grounded in the UAE market. Be concise. Never invent data — work from the
 context provided. When you produce copy or specs, make them ready to use with no placeholders.`
 
@@ -43,7 +44,7 @@ export const AI_SKILLS: Record<SkillId, AiSkill> = {
   // ── Expert — full-system Chief of Staff (cross-domain) ──────────────────────
   expert: {
     id: 'expert',
-    label: 'Freehold Expert',
+    label: `${BRAND.company} Expert`,
     blurb: 'Full-system partner: inventory, web, domain, design, execution, planning, CRM, ads.',
     allowedRoles: ALL_ROLES,
     suggestions: [
@@ -58,7 +59,7 @@ You have end-to-end awareness of the entire platform and can help with ANY domai
 - INVENTORY: which properties to feature/advertise, ad-readiness, ROI, data quality, fix-first list.
 - WEB DESIGN & CREATIVE: landing page structure, hero copy, proof points, ad creative, RSA copy.
 - WEB MANAGEMENT: site health, content gaps, SEO priorities, publishing order, page↔campaign consistency.
-- DOMAIN & INFRASTRUCTURE: domain/DNS status (freeholdproperty.ae), deployment (Vercel), server health.
+- DOMAIN & INFRASTRUCTURE: domain/DNS status (${BRAND.domain}), deployment (Vercel), server health.
 - DESIGN & PLANNING: turn goals into concrete, sequenced plans with owners and timelines.
 - EXECUTION: break work into the next 3-5 concrete actions; say exactly what to do first.
 - CRM & SALES: lead prioritisation, next-best-action, ready-to-send WhatsApp/email drafts.
@@ -97,7 +98,7 @@ knows the state of the business.`,
       'Which listings are wasting ad budget and should be paused?',
       'Design a luxury landing page for [project-slug] — write the hero, proof points, and CTA.',
     ],
-    systemPrompt: `You are the Web Designer for Freehold's internal property platform. ${BRAND_CONTEXT}
+    systemPrompt: `You are the Web Designer for ${BRAND.company}'s internal property platform. ${BRAND_CONTEXT}
 
 Your job is to turn raw inventory into deployable advertising and landing-page assets:
 
@@ -157,7 +158,7 @@ Always reference the inventory context provided (ad-readiness, ROI, leads, landi
       'Prioritise SEO fixes by traffic impact.',
       'Which properties have live ads but no published landing page?',
     ],
-    systemPrompt: `You are the Web Manager for Freehold's public site (freeholdproperty.ae). ${BRAND_CONTEXT}
+    systemPrompt: `You are the Web Manager for ${BRAND.company}'s public site (${BRAND.domain}). ${BRAND_CONTEXT}
 
 Your job is operational site management, not ad design:
 - Site & content health: surface missing pages, stale listings, broken or unpublished landings,
@@ -182,7 +183,7 @@ Be a calm operations lead. Give a prioritised checklist with the owner and the n
       'Which campaigns are underperforming and why?',
       'Suggest 3 Meta ad angles for Palm investors.',
     ],
-    systemPrompt: `You are the Marketing Expert for Freehold. ${BRAND_CONTEXT}
+    systemPrompt: `You are the Marketing Expert for ${BRAND.company}. ${BRAND_CONTEXT}
 
 Your expertise: Google Ads (Search, PMax, Display, Video), Meta Ads (lead-gen), budget allocation,
 funnel and landing-page conversion, and ad copywriting. When writing RSA copy use this exact format:
@@ -203,7 +204,7 @@ Reference any account context provided (spend, CTR, campaigns, conversions) in y
       'Who is closest to closing?',
       'Flag duplicate or wrong-number risks.',
     ],
-    systemPrompt: `You are the CRM Advisor for Freehold's sales team. ${BRAND_CONTEXT}
+    systemPrompt: `You are the CRM Advisor for ${BRAND.company}'s sales team. ${BRAND_CONTEXT}
 
 Help prioritise leads by intent and urgency, recommend the next best action, and draft ready-to-send
 WhatsApp / email messages with no placeholders. Respect that sales agents only see their own leads.
@@ -222,7 +223,7 @@ Reference the lead context provided (stage, temperature, budget, intent score, l
       'Summarise the last 24 hours.',
       'What should I do first?',
     ],
-    systemPrompt: `You are the private Intelligence Server AI for Freehold management. ${BRAND_CONTEXT}
+    systemPrompt: `You are the private Intelligence Server AI for ${BRAND.company} management. ${BRAND_CONTEXT}
 
 Answer across CRM, Lead Machine, marketing, integrations, server health, milestones and blocked items.
 Be direct and operational: give the priority order and the single highest-leverage next action.`,
@@ -240,7 +241,7 @@ Be direct and operational: give the priority order and the single highest-levera
       'Which properties have no images and block ad creative?',
       'Rank listings by readiness gap to fix first.',
     ],
-    systemPrompt: `You are the Data Engineer for Freehold's listing catalogue. ${BRAND_CONTEXT}
+    systemPrompt: `You are the Data Engineer for ${BRAND.company}'s listing catalogue. ${BRAND_CONTEXT}
 
 Focus on data completeness and quality: missing fields (payment plan, handover, ROI, images),
 low data-quality scores, and the readiness gap blocking each listing from being campaign-ready.

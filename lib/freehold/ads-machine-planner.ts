@@ -1,3 +1,4 @@
+import { getSiteUrl } from '@/lib/site'
 /**
  * Ads Machine — planner (stage 1: engine, no UI).
  *
@@ -105,7 +106,7 @@ export type MachinePlan =
   | { viable: true; builtAt: string; dailyCapAed: number; projects: MachineProjectPlan[] }
   | { viable: false; reason: string }
 
-const SITE_BASE = 'https://www.freeholdproperty.ae'
+const SITE_BASE = getSiteUrl()
 
 /** Meta trial sources only — the google-search trial builds RSA copy directly
  * from listing fields and never uses these angles. */

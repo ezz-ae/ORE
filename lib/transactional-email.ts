@@ -1,4 +1,6 @@
 import { query } from "@/lib/db"
+import { BRAND } from "@/lib/freehold/brand"
+import { getSiteUrl } from "@/lib/site"
 import { ensureUsersTable } from "@/lib/data"
 
 interface ShortProjectEmailItem {
@@ -25,12 +27,12 @@ interface LeadershipRecipient {
   orgTitle: string | null
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
+const baseUrl = getSiteUrl()
 const resendApiKey = process.env.RESEND_API_KEY?.trim() || ""
 const fromEmail =
   process.env.LEADS_FROM_EMAIL?.trim() ||
   process.env.NOTIFICATIONS_FROM_EMAIL?.trim() ||
-  "Freehold <hello@freeholdproperty.ae>"
+  `${BRAND.emailFrom} <hello@${BRAND.domain}>`
 const whatsappWebhookUrl =
   process.env.LEADS_WHATSAPP_WEBHOOK_URL?.trim() ||
   process.env.CRM_WHATSAPP_WEBHOOK_URL?.trim() ||
@@ -65,24 +67,24 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   if (!resendApiKey || !to) {
     return { sent: false, reason: "missing-config" as const }
   }
-  const text = `We received a request to reset your Freehold password.
+  const text = `We received a request to reset your ${BRAND.company} password.
 
 Reset it here (valid for 1 hour): ${resetUrl}
 
 If you didn't request this, you can safely ignore this email.
 
-Freehold Real Estate`
+${BRAND.company} Real Estate`
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-      <p>We received a request to reset your <strong>Freehold</strong> password.</p>
+      <p>We received a request to reset your <strong>${BRAND.company}</strong> password.</p>
       <p><a href="${resetUrl}">Reset your password</a> — this link is valid for 1 hour.</p>
       <p>If you didn't request this, you can safely ignore this email.</p>
-      <p>Freehold Real Estate</p>
+      <p>${BRAND.company} Real Estate</p>
     </div>`
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromEmail, to: [to], subject: "Reset your Freehold password", text, html }),
+    body: JSON.stringify({ from: fromEmail, to: [to], subject: `Reset your ${BRAND.company} password`, text, html }),
   })
   if (!response.ok) {
     const payload = await response.text().catch(() => "")
@@ -94,21 +96,21 @@ Freehold Real Estate`
 
 export async function sendPasswordChangedEmail(to: string) {
   if (!resendApiKey || !to) return { sent: false, reason: "missing-config" as const }
-  const text = `Your Freehold password was just changed.
+  const text = `Your ${BRAND.company} password was just changed.
 
 If this was you, no action is needed. If you did not do this, reset your password immediately at ${baseUrl}/crm/login and contact your administrator.
 
-Freehold Real Estate`
+${BRAND.company} Real Estate`
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-      <p>Your <strong>Freehold</strong> password was just changed.</p>
+      <p>Your <strong>${BRAND.company}</strong> password was just changed.</p>
       <p>If this was you, no action is needed. If you did not do this, <a href="${baseUrl}/crm/login">reset your password immediately</a> and contact your administrator.</p>
-      <p>Freehold Real Estate</p>
+      <p>${BRAND.company} Real Estate</p>
     </div>`
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromEmail, to: [to], subject: "Your Freehold password was changed", text, html }),
+    body: JSON.stringify({ from: fromEmail, to: [to], subject: `Your ${BRAND.company} password was changed`, text, html }),
   })
   if (!response.ok) {
     console.error("[email] password-changed error", await response.text().catch(() => ""))
@@ -135,13 +137,13 @@ Your ad-credit balance is down to ${balance} credit${balance === 1 ? "" : "s"}. 
 
 Top up or request an allocation: ${url}
 
-Freehold`
+${BRAND.company}`
     const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
         <p>Hi ${rows[0]?.name ?? ""},</p>
         <p>Your ad-credit balance is down to <strong>${balance}</strong> credit${balance === 1 ? "" : "s"}. Campaign launches will be refused once it runs out.</p>
         <p><a href="${url}">Top up or request an allocation →</a></p>
-        <p>Freehold</p>
+        <p>${BRAND.company}</p>
       </div>`
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -177,7 +179,7 @@ ${lines.join("\n")}
 Open the lead: ${leadUrl}
 
 Respond fast — speed-to-lead wins deals.
-Freehold`
+${BRAND.company}`
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
       <p>${brokerName ? `Hi ${brokerName},` : "Hi,"}</p>
@@ -185,7 +187,7 @@ Freehold`
       ${lines.length ? `<ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
       <p><a href="${leadUrl}">Open the lead →</a></p>
       <p style="color:#6b7280">Respond fast — speed-to-lead wins deals.</p>
-      <p>Freehold</p>
+      <p>${BRAND.company}</p>
     </div>`
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -282,24 +284,24 @@ export async function sendLeadAcknowledgementEmail(input: LeadAckEmailInput) {
 
   const text = `${greeting}
 
-Thank you for contacting Freehold. Your request has been received and one of our consultants will contact you shortly.
+Thank you for contacting ${BRAND.company}. Your request has been received and one of our consultants will contact you shortly.
 
 ${input.inquiry ? `Your request: ${input.inquiry}\n` : ""}Shortlist:
 ${projectText}
 
 You can also continue the conversation here: ${baseUrl}/chat
 
-Freehold Real Estate`
+${BRAND.company} Real Estate`
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
       <p>${greeting}</p>
-      <p>Thank you for contacting <strong>Freehold</strong>. Your request has been received and one of our consultants will contact you shortly.</p>
+      <p>Thank you for contacting <strong>${BRAND.company}</strong>. Your request has been received and one of our consultants will contact you shortly.</p>
       ${input.inquiry ? `<p><strong>Your request:</strong> ${input.inquiry}</p>` : ""}
       <p><strong>Shortlist</strong></p>
       ${projectHtml}
       <p><a href="${baseUrl}/chat">Continue with the AI assistant</a></p>
-      <p>Freehold Real Estate</p>
+      <p>${BRAND.company} Real Estate</p>
     </div>
   `
 
@@ -312,7 +314,7 @@ Freehold Real Estate`
     body: JSON.stringify({
       from: fromEmail,
       to: [input.to],
-      subject: "Freehold received your inquiry",
+      subject: `${BRAND.company} received your inquiry`,
       text,
       html,
     }),

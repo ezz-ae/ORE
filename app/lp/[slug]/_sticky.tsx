@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
+import { buildWhatsAppUrl } from '@/lib/site'
 import { MessageCircle, ChevronRight } from 'lucide-react'
 import type { LpPalette } from '@/lib/landing-theme'
 
@@ -21,7 +23,7 @@ export function StickyLpCta({ price, ctaText, slug, L, palette }: Props) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const waUrl = `https://wa.me/971504173622?text=${encodeURIComponent(`Hi, I'm interested in this property: freeholdproperty.ae/lp/${slug}`)}`
+  const waUrl = buildWhatsAppUrl(`Hi, I'm interested in this property: ${BRAND.domain}/lp/${slug}`)
 
   return (
     <>

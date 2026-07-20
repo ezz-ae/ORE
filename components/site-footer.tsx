@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { COMPANY_PHONE, COMPANY_EMAIL, COMPANY_WHATSAPP_URL } from "@/lib/site"
+import { BRAND } from "@/lib/freehold/brand"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -82,10 +84,10 @@ export function SiteFooter() {
       <div className="container px-6 max-w-7xl mx-auto">
         <div className="grid gap-14 lg:grid-cols-[1.4fr,2fr]">
           <div className="space-y-8">
-            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85" aria-label="Freehold Properties — Home">
+            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85" aria-label={`${BRAND.company} Properties — Home`}>
               <Image
                 src="/freehold-logo.png"
-                alt="Freehold Properties"
+                alt={`${BRAND.company} Properties`}
                 width={1042}
                 height={417}
                 className="h-auto w-44"
@@ -113,7 +115,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                    <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Intelligence Desk</span>
-                   <span className="text-white/65">+971 50 417 3622</span>
+                   <span className="text-white/65">{COMPANY_PHONE}</span>
                 </div>
               </div>
 
@@ -123,7 +125,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                    <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Secure Channel</span>
-                   <span className="text-white/65">info@freeholdproperty.ae</span>
+                   <span className="text-white/65">{COMPANY_EMAIL}</span>
                 </div>
               </div>
             </div>
@@ -133,7 +135,7 @@ export function SiteFooter() {
                 { icon: <FacebookIcon />, href: "https://www.facebook.com/FreeholdProperty/" },
                 { icon: <InstagramIcon />, href: "https://www.instagram.com/freeholdproperty/" },
                 { icon: <LinkedinIcon />, href: "https://www.linkedin.com/company/freehold-property-uae/" },
-                { icon: <MessageCircleIcon />, href: "https://wa.me/971504173622" }
+                { icon: <MessageCircleIcon />, href: COMPANY_WHATSAPP_URL }
               ].map((social, i) => (
                 <a
                   key={i}
@@ -192,7 +194,7 @@ export function SiteFooter() {
         <div className="mt-16 border-t border-white/[0.04] pt-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <p className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-white/35 md:text-left">
-              &copy; {new Date().getFullYear()} Freehold Property UAE &middot; RERA ORN: 28628 &middot; Business Bay &middot; DUBAI
+              &copy; {new Date().getFullYear()} {BRAND.legalName} UAE &middot; RERA ORN: 28628 &middot; Business Bay &middot; DUBAI
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/38 md:gap-8">
               <Link href="/privacy" className="transition-colors hover:text-[#D4AC50]">Privacy Policy</Link>

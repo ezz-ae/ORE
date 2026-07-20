@@ -5,6 +5,7 @@
 //  `pfin.` prefix has no keys.)
 // en / ar / ru keep strict key parity. Brand/product names (Freehold, Neon,
 // Vercel, MCP) are preserved across all locales.
+import { BRAND, brandName } from '@/lib/freehold/brand'
 type Dict = Record<string, string>
 
 const en: Dict = {
@@ -49,7 +50,7 @@ const en: Dict = {
   'pmile.noMatch': 'No milestones match these filters.',
   'pmile.clear': 'Clear',
   'pmile.unassigned': 'Unassigned',
-  'pmile.descriptionFallback': 'Execution milestone for the Freehold Intelligence V1 skeleton.',
+  'pmile.descriptionFallback': `Execution milestone for the ${brandName} V1 skeleton.`,
   'pmile.owner': 'Owner',
   'pmile.deadline': 'Deadline',
   'pmile.daysRemaining': '{n}d remaining',
@@ -69,7 +70,7 @@ const en: Dict = {
   'pnbk.conversation': 'Conversation',
   'pnbk.meta': '{messages} messages · {outputs} saved outputs',
   'pnbk.msgMeta': '{messages} messages',
-  'pnbk.assistant': 'Freehold AI',
+  'pnbk.assistant': `${BRAND.company} AI`,
   'pnbk.you': 'You',
   'pnbk.savedOutputs': 'Saved outputs',
   'pnbk.fromThisConversation': 'From this conversation',
@@ -118,7 +119,7 @@ const ar: Dict = {
   'pmile.noMatch': 'لا توجد معالم تطابق هذه المرشحات.',
   'pmile.clear': 'مسح',
   'pmile.unassigned': 'غير مُعيَّن',
-  'pmile.descriptionFallback': 'معلم تنفيذي للهيكل الأساسي لـ Freehold Intelligence V1.',
+  'pmile.descriptionFallback': `معلم تنفيذي للهيكل الأساسي لـ ${brandName} V1.`,
   'pmile.owner': 'المسؤول',
   'pmile.deadline': 'الموعد النهائي',
   'pmile.daysRemaining': 'متبقٍ {n} يوم',
@@ -138,7 +139,7 @@ const ar: Dict = {
   'pnbk.conversation': 'محادثة',
   'pnbk.meta': '{messages} رسالة · {outputs} مخرجات محفوظة',
   'pnbk.msgMeta': '{messages} رسالة',
-  'pnbk.assistant': 'ذكاء Freehold',
+  'pnbk.assistant': `ذكاء ${BRAND.company}`,
   'pnbk.you': 'أنت',
   'pnbk.savedOutputs': 'المخرجات المحفوظة',
   'pnbk.fromThisConversation': 'من هذه المحادثة',
@@ -187,7 +188,7 @@ const ru: Dict = {
   'pmile.noMatch': 'Нет этапов, соответствующих этим фильтрам.',
   'pmile.clear': 'Сбросить',
   'pmile.unassigned': 'Не назначено',
-  'pmile.descriptionFallback': 'Этап реализации каркаса Freehold Intelligence V1.',
+  'pmile.descriptionFallback': `Этап реализации каркаса ${brandName} V1.`,
   'pmile.owner': 'Ответственный',
   'pmile.deadline': 'Срок',
   'pmile.daysRemaining': 'осталось {n} дн.',
@@ -207,7 +208,7 @@ const ru: Dict = {
   'pnbk.conversation': 'Разговор',
   'pnbk.meta': '{messages} сообщений · {outputs} сохранённых результатов',
   'pnbk.msgMeta': 'Сообщений: {messages}',
-  'pnbk.assistant': 'Freehold AI',
+  'pnbk.assistant': `${BRAND.company} AI`,
   'pnbk.you': 'Вы',
   'pnbk.savedOutputs': 'Сохранённые результаты',
   'pnbk.fromThisConversation': 'Из этого разговора',

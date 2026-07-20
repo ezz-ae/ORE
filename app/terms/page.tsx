@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
+import { BRAND, brandName } from "@/lib/freehold/brand"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Freehold Property UAE",
-  description: "Terms governing use of the Freehold Property UAE platform, advisory services, and AI-powered tools.",
+  title: `Terms of Service | ${BRAND.legalName} UAE`,
+  description: `Terms governing use of the ${BRAND.legalName} UAE platform, advisory services, and AI-powered tools.`,
   alternates: { canonical: "/terms" },
   robots: { index: false },
 }
@@ -12,11 +13,11 @@ export const metadata: Metadata = {
 const termsItems = [
   {
     title: "Use of platform",
-    body: "Freehold provides curated Dubai market intelligence, chat, and tools for registered investors. Access to each feature is governed by tier-specific entitlements.",
+    body: `${BRAND.company} provides curated Dubai market intelligence, chat, and tools for registered investors. Access to each feature is governed by tier-specific entitlements.`,
   },
   {
     title: "Data accuracy",
-    body: "Every number is backed by live Freehold data. We do not guarantee future performance, but we strive to show meaningful signals while guarding against zero-value artifacts.",
+    body: `Every number is backed by live ${BRAND.company} data. We do not guarantee future performance, but we strive to show meaningful signals while guarding against zero-value artifacts.`,
   },
   {
     title: "Content & conduct",
@@ -34,7 +35,7 @@ export default function TermsPage() {
           </Badge>
           <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight">Terms of Service</h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            These terms explain how you may interact with Freehold Real Estate and the Freehold Intelligence tools embedded across the platform.
+            These terms explain how you may interact with {BRAND.company} Real Estate and the {brandName} tools embedded across the platform.
           </p>
         </div>
       </section>

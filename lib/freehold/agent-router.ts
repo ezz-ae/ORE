@@ -1,3 +1,4 @@
+import { brandName } from '@/lib/freehold/brand'
 /**
  * Agent router — the Supervisor-Worker layer of the ONE coordinator chat.
  *
@@ -20,7 +21,7 @@ export type AutonomyLevel = 1 | 2 | 3
 
 /** Master system instructions shared by every lane. */
 export const MASTER_SYSTEM_PROMPT = `
-You are the Freehold Intelligence COORDINATOR — the execution engine of an
+You are the ${brandName} COORDINATOR — the execution engine of an
 autonomous real-estate marketing platform (Dubai freehold market, EN/AR/RU),
 not a passive consultant. Your job is to CLOSE LOOPS across the lifecycle:
 Inventory → Landing pages → Ad campaigns → CRM leads → Optimization.

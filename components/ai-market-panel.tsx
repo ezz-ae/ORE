@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { BRAND } from "@/lib/freehold/brand"
 import Link from "next/link"
 import { AISearchBar } from "@/components/ai-search-bar"
 
@@ -9,18 +10,18 @@ export function AIMarketPanel() {
     <section className="py-16 bg-muted/30">
       <div className="container">
         <div className="mx-auto max-w-3xl space-y-6 rounded-2xl border border-border bg-card p-8 text-center">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Freehold AI Market Analysis</p>
-          <h2 className="font-serif text-3xl font-bold">Ask Freehold AI</h2>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{BRAND.company} AI Market Analysis</p>
+          <h2 className="font-serif text-3xl font-bold">Ask {BRAND.company} AI</h2>
           <p className="text-muted-foreground">
-            Connect your search with Freehold AI for live intelligence, demand trends,
+            Connect your search with {BRAND.company} AI for live intelligence, demand trends,
             and tailored recommendations.
           </p>
           <div className="mx-auto max-w-xl">
-            <AISearchBar placeholder="Ask Freehold about Dubai market trends, yields, or off-plan strategy..." />
+            <AISearchBar placeholder={`Ask ${BRAND.company} about Dubai market trends, yields, or off-plan strategy...`} />
           </div>
           <div className="flex flex-wrap justify-center gap-3">
             <Button size="lg" className="ore-gradient" asChild>
-              <Link href="/chat">Open Freehold AI</Link>
+              <Link href="/chat">Open {BRAND.company} AI</Link>
             </Button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { BRAND } from '@/lib/freehold/brand'
 import { useRouter } from "next/navigation"
 
 const SearchIcon = ({ className }: { className?: string }) => (
@@ -31,7 +32,7 @@ const matchHint = (q: string): string | null => {
   const matchedArea = areas.find((a) => t.includes(a))
   // Intent keywords
   if (t.includes('golden visa') || t.includes('golde')) return 'Shortlisting Golden Visa eligible projects…'
-  if (t.includes('roi') || t.includes('return') || t.includes('yield')) return 'Finding highest-yield Freehold opportunities…'
+  if (t.includes('roi') || t.includes('return') || t.includes('yield')) return `Finding highest-yield ${BRAND.company} opportunities…`
   if (t.includes('off-plan') || t.includes('offplan')) return 'Pulling off-plan inventory across Dubai…'
   if (t.includes('under') && /\d/.test(t)) return 'Filtering by your budget…'
   // Specific project + developer (long enough query)
@@ -40,7 +41,7 @@ const matchHint = (q: string): string | null => {
   }
   if (matchedDev) return `Browsing all ${matchedDev.charAt(0).toUpperCase() + matchedDev.slice(1)} projects…`
   if (matchedArea) return `Searching projects in ${matchedArea.charAt(0).toUpperCase() + matchedArea.slice(1)}…`
-  if (t.length > 3) return 'Ask Freehold AI anything…'
+  if (t.length > 3) return `Ask ${BRAND.company} AI anything…`
   return null
 }
 

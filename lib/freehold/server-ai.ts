@@ -1,4 +1,5 @@
 import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION, vertexConfigured } from '@/lib/google/vertex-auth'
+import { BRAND } from '@/lib/freehold/brand'
 import { googleAiKey } from '@/lib/creative-studio/providers'
 
 // Two model tiers. 'flash' is the fast default for bulk surfaces
@@ -16,7 +17,7 @@ const GEMINI_URL = (model: string) =>
   `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${resolveVertexProject()}` +
   `/locations/${VERTEX_LOCATION}/publishers/google/models/${model}:generateContent`
 
-const SYSTEM_PROMPT = `You are the private Intelligence Server for Freehold — a premium Dubai real estate company.
+const SYSTEM_PROMPT = `You are the private Intelligence Server for ${BRAND.company} — a premium Dubai real estate company.
 
 You serve the owner and management team. Answer concisely and directly about:
 - CRM leads: urgency, pipeline stage, recommended next actions, ready-to-send WhatsApp message drafts

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -71,7 +72,7 @@ function makeDefault(t: (key: string) => string): FormState {
     thankYouButton: 'VIEW_WEBSITE',
     thankYouWebsiteUrl: '',
     thankYouPhone: '',
-    privacyPolicyUrl: 'https://freeholdproperty.ae/privacy',
+    privacyPolicyUrl: BRAND.privacyUrl,
     locale: 'en_US',
   }
 }

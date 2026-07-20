@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getBrandSiteUrl } from '@/lib/freehold/brand'
 
 // Live projects for pickers — the ONE source (Inventory / the front-end site).
 // Replaces every seed-listing dropdown across the ad builders.
@@ -21,7 +22,7 @@ export interface LiveProject {
   brochureUrl: string | null
 }
 
-const SITE = 'https://www.freeholdproperty.ae'
+const SITE = getBrandSiteUrl()
 
 export function useLiveProjects() {
   const [projects, setProjects] = useState<LiveProject[]>([])

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useLayoutEffect } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import { Sparkles, ArrowUp } from 'lucide-react'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 
@@ -67,7 +68,7 @@ export function AiPrompt({
           <button
             onClick={() => send()}
             disabled={!value.trim()}
-            aria-label="Send to Freehold Expert"
+            aria-label={`Send to ${BRAND.company} Expert`}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-30"
           >
             <ArrowUp className="h-4 w-4" />

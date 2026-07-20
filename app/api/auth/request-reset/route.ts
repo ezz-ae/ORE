@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSiteUrl } from "@/lib/site"
 import { getUserByEmailForAuth, logActivity, setPasswordResetToken } from "@/lib/auth"
 import { sendPasswordResetEmail } from "@/lib/transactional-email"
 import { randomBytes } from "node:crypto"
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     // Deliver the reset link by email — NEVER return the token/link in the
     // response body (that was an account-takeover-by-known-email vector).
-    const appUrl = process.env.APP_URL?.trim() || process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
+    const appUrl = process.env.APP_URL?.trim() || getSiteUrl()
     await sendPasswordResetEmail(email, `${appUrl}/reset/${token}`).catch((err) =>
       console.error("[reset] email dispatch failed", err),
     )

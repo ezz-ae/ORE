@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 /**
  * Ads Machine — engine (stage 1: engine, no UI).
  *
@@ -319,7 +320,7 @@ async function ensureProjectLeadForm(
         ...m.contact.map((type) => ({ type })),
         ...m.customs.map((q, i) => customToMetaQuestion(q, i)),
       ],
-      privacyPolicyUrl: 'https://freeholdproperty.ae/privacy',
+      privacyPolicyUrl: BRAND.privacyUrl,
       isOptimizedForQuality: m.higherIntent,
       ...(m.intro.enabled && m.intro.title && m.intro.bullets.length > 0
         ? { contextCard: { title: m.intro.title, style: 'LIST_STYLE', content: m.intro.bullets } }

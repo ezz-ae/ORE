@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getSiteUrl } from '@/lib/site'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { listExtensions } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type GoogleExtension } from '@/lib/google/types'
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
       type: 'SITELINK',
       id,
       linkText: text,
-      finalUrls: [body?.finalUrl?.trim() || 'https://freeholdproperty.ae'],
+      finalUrls: [body?.finalUrl?.trim() || getSiteUrl()],
     }
   }
   await createLocalEntity(KIND, extension)

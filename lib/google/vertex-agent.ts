@@ -1,4 +1,5 @@
 import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION, vertexConfigured } from '@/lib/google/vertex-auth'
+import { BRAND } from '@/lib/freehold/brand'
 
 const MODEL = 'gemini-2.5-flash'
 
@@ -15,7 +16,7 @@ function adsExpertFallback(message: string): string {
       'Headline 2: 0% Commission Off-Plan',
       'Headline 3: Flexible 60/40 Payment Plan',
       'Description 1: Handpicked off-plan homes in prime Dubai communities. Book a viewing today.',
-      'Description 2: Golden Visa eligible. Trusted developers. Speak to a Freehold advisor now.',
+      `Description 2: Golden Visa eligible. Trusted developers. Speak to a ${BRAND.company} advisor now.`,
       '',
       '(Offline mode — connect the AI service for tailored, data-grounded copy.)',
     ].join('\n')
@@ -38,7 +39,7 @@ const GEMINI_URL = () =>
   `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${resolveVertexProject()}` +
   `/locations/${VERTEX_LOCATION}/publishers/google/models/${MODEL}:generateContent`
 
-const SYSTEM_PROMPT = `You are the Marketing Expert for Freehold — a premium Dubai real estate brand.
+const SYSTEM_PROMPT = `You are the Marketing Expert for ${BRAND.company} — a premium Dubai real estate brand.
 
 Your expertise covers:
 - Google Ads (Search, Performance Max, Display, Video)

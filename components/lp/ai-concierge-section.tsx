@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { BRAND } from "@/lib/freehold/brand"
 import { Button } from "@/components/ui/button"
 import { SectionShell } from "@/components/lp/section-shell"
 import { Sparkles, MessageSquare, ArrowRight } from "lucide-react"
@@ -17,7 +18,7 @@ const DEFAULT_PROMPTS = [
 ]
 
 export function AiConciergeSection({ data, landingSlug, projectSlug }: AiConciergeSectionProps) {
-  const title = (typeof data.title === "string" && data.title) || "Ask Freehold AI"
+  const title = (typeof data.title === "string" && data.title) || `Ask ${BRAND.company} AI`
   const subtitle =
     (typeof data.subtitle === "string" && data.subtitle) ||
     "Get instant answers about this project — AI qualifies your brief before the broker follows up."

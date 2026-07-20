@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { WhatsAppFloat } from "@/components/whatsapp-float"
 import { BRAND_OG_IMAGE, getMetadataBase, getSiteUrl } from "@/lib/site"
+import { BRAND } from "@/lib/freehold/brand"
 import "./globals.css"
 
 export const dynamic = "force-dynamic"
@@ -31,6 +32,10 @@ const playfair = Playfair_Display({
 
 const siteUrl = getSiteUrl()
 
+// Public-facing brand name (env-driven via NEXT_PUBLIC_BRAND_*; see
+// lib/freehold/brand.ts). Defaults to "Freehold Property UAE".
+const publicName = `${BRAND.legalName} UAE`
+
 // Phone/webapp behaviour: edge-to-edge with safe-area support (viewportFit)
 // and a browser-chrome colour that matches the app instead of default white.
 export const viewport: Viewport = {
@@ -43,16 +48,16 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default: "Freehold Property UAE",
-    template: "%s | Freehold Property UAE",
+    default: publicName,
+    template: `%s | ${publicName}`,
   },
-  applicationName: "Freehold Property UAE",
+  applicationName: publicName,
   description:
-    "Freehold Property UAE real estate advisory for sales, leasing, project marketing, investments, consultancy, valuations, and market intelligence.",
-  generator: "Freehold Property UAE",
-  authors: [{ name: "Freehold Property UAE", url: siteUrl }],
-  creator: "Freehold Property UAE",
-  publisher: "Freehold Property UAE",
+    `${publicName} real estate advisory for sales, leasing, project marketing, investments, consultancy, valuations, and market intelligence.`,
+  generator: publicName,
+  authors: [{ name: publicName, url: siteUrl }],
+  creator: publicName,
+  publisher: publicName,
   category: "Real Estate",
   keywords: [
     "Dubai real estate",
@@ -63,15 +68,15 @@ export const metadata: Metadata = {
     "Dubai Marina",
     "Downtown Dubai",
     "Dubai market intelligence",
-    "Freehold Property UAE",
+    publicName,
     "investment advisors",
   ],
   openGraph: {
-    title: "Freehold Property UAE",
+    title: publicName,
     description:
       "Dubai real estate advisory for buying, selling, renting, project marketing, investments, and market intelligence.",
     url: siteUrl,
-    siteName: "Freehold Property UAE",
+    siteName: publicName,
     type: "website",
     locale: "en_US",
     images: [
@@ -79,13 +84,13 @@ export const metadata: Metadata = {
         url: BRAND_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Freehold Property UAE — Dubai Real Estate Advisory",
+        alt: `${publicName} — Dubai Real Estate Advisory`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Freehold Property UAE",
+    title: publicName,
     description:
       "Dubai real estate advisory backed by practical market intelligence.",
     images: [BRAND_OG_IMAGE],
@@ -103,7 +108,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Freehold",
+    title: BRAND.company,
   },
   robots: {
     index: true,
@@ -126,15 +131,16 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
-    "name": "Freehold Property UAE",
+    "name": publicName,
     "image": `${siteUrl}${BRAND_OG_IMAGE}`,
     "logo": `${siteUrl}/icon.png`,
     "@id": siteUrl,
     "url": siteUrl,
-    "telephone": "+971 50 417 3622",
+    "telephone": BRAND.phone,
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "Sobha Sapphire Building, Office 904, Business Bay, Dubai",
+      // Env-overridable office address; the default is the Freehold office.
+      "streetAddress": process.env.NEXT_PUBLIC_BRAND_ADDRESS?.trim() || "Sobha Sapphire Building, Office 904, Business Bay, Dubai",
       "addressLocality": "Dubai",
       "addressRegion": "Dubai",
       "addressCountry": "AE"
@@ -158,7 +164,7 @@ export default function RootLayout({
       "closes": "18:00"
     },
     "sameAs": [
-      "https://www.freeholdproperty.ae"
+      siteUrl
     ]
   }
 

@@ -1,16 +1,23 @@
 import { Button } from "@/components/ui/button"
+import { BRAND } from "@/lib/freehold/brand"
+
+// Byte-identical default: this page historically used a slightly different
+// public name than BRAND.legalName. Keep the exact legacy text unless the
+// deployment explicitly re-brands via NEXT_PUBLIC_BRAND_* env vars.
+const REBRANDED = Boolean(process.env.NEXT_PUBLIC_BRAND_COMPANY?.trim() || process.env.NEXT_PUBLIC_BRAND_LEGAL_NAME?.trim())
+const PUBLIC_NAME = REBRANDED ? `${BRAND.legalName} UAE` : "Freehold Properties UAE"
 import { Search, TrendingUp, FileText, Globe, Shield, HeadphonesIcon, Home, Briefcase, Check, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export const metadata = {
-  title: "Real Estate Services in Dubai | Freehold Properties UAE",
+  title: `Real Estate Services in Dubai | ${PUBLIC_NAME}`,
   description: "Full-service real estate solutions: property acquisition, investment advisory, Golden Visa support, mortgages, portfolio management, and consultancy for Dubai investors.",
   alternates: { canonical: "/services" },
   openGraph: {
-    title: "Real Estate Services in Dubai | Freehold Properties UAE",
+    title: `Real Estate Services in Dubai | ${PUBLIC_NAME}`,
     description: "Property acquisition, investment advisory, Golden Visa support, mortgages, and portfolio management.",
     url: "/services",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE Services" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: `${BRAND.legalName} UAE Services` }],
   },
 }
 
@@ -158,7 +165,7 @@ export default function ServicesPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(198,155,62,0.08),transparent)]" />
         <div className="container relative z-10">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">Why Freehold</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">Why {BRAND.company}</p>
             <h2 className="mt-4 font-serif text-3xl font-bold leading-[1.05] md:text-5xl">
               Built differently for a reason.
             </h2>

@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useEffect, useState } from 'react'
+import { BRAND } from "@/lib/freehold/brand"
 
 // Public share viewer — no login. Resolves the token to a file and shows it:
 // images render inline; everything else gets a clean open/download button.
@@ -49,7 +50,7 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
               </a>
             </div>
           </div>
-          <p style={{ color: '#475569', fontSize: 12 }}>Shared via Freehold</p>
+          <p style={{ color: '#475569', fontSize: 12 }}>Shared via {BRAND.company}</p>
         </>
       )}
     </div>

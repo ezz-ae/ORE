@@ -1,4 +1,5 @@
 import { PropertyFilters } from "@/components/property-filters"
+import { BRAND } from "@/lib/freehold/brand"
 import { MobilePropertyFilters } from "@/components/mobile-property-filters"
 import { PropertyCard } from "@/components/property-card"
 import { PropertiesToolbar } from "@/components/properties-toolbar"
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     canonical: "/properties",
   },
   openGraph: {
-    title: "Dubai Properties for Sale | Freehold Real Estate",
+    title: `Dubai Properties for Sale | ${BRAND.company} Real Estate`,
     description: "Browse 900+ real project-backed properties and investment opportunities across the UAE.",
     images: ["/og-image.png"],
   },

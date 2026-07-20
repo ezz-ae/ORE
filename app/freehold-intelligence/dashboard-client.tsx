@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -241,7 +242,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
           <div className="mt-0.5 text-sm text-slate-400">{dateStr}</div>
         </div>
         <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-300">
-          <Globe className="h-3.5 w-3.5" /> freeholdproperty.ae
+          <Globe className="h-3.5 w-3.5" /> {BRAND.domain}
         </Link>
       </div>
 

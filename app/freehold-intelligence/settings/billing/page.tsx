@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import { Users, TrendingUp, Mail } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 
@@ -56,7 +57,7 @@ export default function BillingPage() {
         <div className="text-sm font-semibold text-white">{t('settings.billing.contactTitle')}</div>
         <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{t('settings.billing.contactBody')}</p>
         <a
-          href="mailto:support@freeholdproperty.ae?subject=Billing enquiry"
+          href={`mailto:${BRAND.supportEmail}?subject=Billing enquiry`}
           className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2 text-xs font-medium text-gold transition hover:bg-gold/15"
         >
           <Mail className="h-3.5 w-3.5" /> {t('settings.billing.contactBilling')}

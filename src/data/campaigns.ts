@@ -1,4 +1,5 @@
 import type { Campaign } from "@/src/types/campaign"
+import { BRAND } from "@/lib/freehold/brand"
 import { projects } from "@/src/data/projects"
 
 const campaignProjectIds = ["p-002", "p-001", "p-015", "p-025", "p-005", "p-034", "p-003", "p-030"]
@@ -16,11 +17,11 @@ export const campaigns: Campaign[] = campaignProjectIds.map((projectId, index) =
     angle: project.adAngle,
     headline: `${project.area} Opportunity From AED ${(project.startingPrice / 1_000_000).toFixed(1)}M`,
     shortCopy: `${project.projectName} gives qualified buyers a clear ${project.area} angle with ${project.paymentPlan}.`,
-    longCopy: `Freehold can position ${project.projectName} around ${project.salesAngle.toLowerCase()} The campaign should move buyers from ad click to qualified WhatsApp follow-up.`,
-    instagramCaption: `${project.area} buyers need price, payment plan, buyer fit, and a clean next step. Ask Freehold for the project brief.`,
-    googleHeadlines: [`${project.area} Property`, `${project.projectName}`, "Freehold Property UAE"],
-    googleDescriptions: [`Compare ${project.area} options with Freehold.`, "Internal planning intelligence. Verify live inventory before decision."],
-    whatsappOpener: `Hi, this is Freehold. You asked about ${project.projectName}. Are you buying to live, invest, or compare payment plans first?`,
+    longCopy: `${BRAND.company} can position ${project.projectName} around ${project.salesAngle.toLowerCase()} The campaign should move buyers from ad click to qualified WhatsApp follow-up.`,
+    instagramCaption: `${project.area} buyers need price, payment plan, buyer fit, and a clean next step. Ask ${BRAND.company} for the project brief.`,
+    googleHeadlines: [`${project.area} Property`, `${project.projectName}`, `${BRAND.legalName} UAE`],
+    googleDescriptions: [`Compare ${project.area} options with ${BRAND.company}.`, "Internal planning intelligence. Verify live inventory before decision."],
+    whatsappOpener: `Hi, this is ${BRAND.company}. You asked about ${project.projectName}. Are you buying to live, invest, or compare payment plans first?`,
     leadFormQuestions: ["Are you buying to live or invest?", "What budget band should we stay within?", "Do you prefer ready or off-plan?"],
     followUpMessage: `I prepared a short ${project.projectName} brief with buyer fit, payment plan, and risk notes. Should I send it here?`,
     objections: ["Payment plan pressure", "Area comparison", "Inventory availability"],

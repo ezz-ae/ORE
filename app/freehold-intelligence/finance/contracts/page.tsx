@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import { toast } from 'sonner'
 import { FileCheck, Calendar, RefreshCw, CheckCircle2, AlertCircle, Clock, ExternalLink, Plus, ChevronDown, ChevronRight } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
@@ -310,7 +311,7 @@ export default function ContractsPage() {
                       </button>
                     )}
                     <a
-                      href={`mailto:legal@freeholdproperty.ae?subject=Contract document request — ${c.id}`}
+                      href={`mailto:${BRAND.legalEmail}?subject=Contract document request — ${c.id}`}
                       className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition ml-auto">
                       <ExternalLink className="h-3.5 w-3.5" /> {t('finance.contracts.requestDocument')}
                     </a>

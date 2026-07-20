@@ -1,12 +1,13 @@
 import type { Lead } from "@/src/types/lead"
+import { BRAND } from "@/lib/freehold/brand"
 import type { Project } from "@/src/types/project"
 
 export function buildMarketOpportunity(project: Project): Lead {
   return {
     id: `l-market-${project.id}`,
-    leadName: "New Freehold Opportunity",
+    leadName: `New ${BRAND.company} Opportunity`,
     phone: "+971 50 000 2026",
-    email: "opportunity@freeholdproperty.ae",
+    email: `opportunity@${BRAND.domain}`,
     source: "Market Database",
     interestedProjectId: project.id,
     interestedProjectName: project.projectName,

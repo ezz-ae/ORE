@@ -1,6 +1,7 @@
 // lib/freehold/mcp/registry.ts
 
 import { Tool } from '@/types/freehold-mcp';
+import { BRAND } from '@/lib/freehold/brand'
 
 const readRoles = ['owner', 'admin', 'marketing', 'sales_manager', 'sales_agent', 'data_manager', 'viewer', 'user', 'agent'] as const;
 const managerRoles = ['owner', 'admin', 'marketing'] as const;
@@ -11,7 +12,7 @@ export const mcpTools: Tool[] = [
     aliases: ['server_summary', 'summary', 'server.status'],
     name: 'Server Summary',
     category: 'server',
-    description: 'Returns Freehold private-server health, public data counts, pending tasks and launch status.',
+    description: `Returns ${BRAND.company} private-server health, public data counts, pending tasks and launch status.`,
     requiresApproval: false,
     allowedRoles: [...readRoles],
     canWriteExternal: false,

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { BRAND } from "@/lib/freehold/brand"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -196,7 +197,7 @@ export function LeadForm({ projectName, source = "website" }: LeadFormProps) {
       <div className="flex items-start space-x-2">
         <Checkbox id="consent" name="consent" required />
         <Label htmlFor="consent" className="text-sm leading-relaxed cursor-pointer">
-          I agree to receive updates and marketing communications from Freehold Real Estate. *
+          I agree to receive updates and marketing communications from {BRAND.company} Real Estate. *
         </Label>
       </div>
 

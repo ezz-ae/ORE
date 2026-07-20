@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { BRAND } from "@/lib/freehold/brand"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
@@ -294,7 +295,7 @@ export default async function ProjectPage({
   const constructionUpdates = toArray(project.constructionUpdates)
   const testimonials = toArray(project.testimonials)
   const faqs = toArray(project.faqs)
-  const developer = project.developer || { name: "Freehold", logo: "" }
+  const developer = project.developer || { name: BRAND.company, logo: "" }
   const phoneNumber = COMPANY_PHONE_E164
   const heroImage = project.heroImage || "/logo.png"
   const heroImageClass = project.heroImage ? "object-cover" : "object-contain bg-card"
@@ -371,7 +372,7 @@ export default async function ProjectPage({
           <div className="container">
             <div className="grid w-full items-start gap-8 rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] lg:grid-cols-[1.5fr,1fr] lg:p-10">
                 <div className="space-y-6">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">Freehold Signature Development</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">{BRAND.company} Signature Development</p>
                   <div className="flex flex-wrap gap-3">
                     <Badge variant="secondary" className="border-none bg-[#152E24]/[0.06] text-[#152E24]">
                       {project.status?.replace("-", " ")}
@@ -1069,7 +1070,7 @@ export default async function ProjectPage({
                         </Button>
                       )}
                       <Button variant="outline" className={brandOutlineButtonClass} asChild>
-                        <Link href="/chat">Ask Freehold AI</Link>
+                        <Link href="/chat">Ask {BRAND.company} AI</Link>
                       </Button>
                     </div>
                   </CardContent>

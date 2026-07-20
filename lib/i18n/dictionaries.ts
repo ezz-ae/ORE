@@ -1,4 +1,5 @@
 import type { Locale } from './config'
+import { BRAND, brandName } from '@/lib/freehold/brand'
 import { crm } from './dictionaries/crm'
 import { agent } from './dictionaries/agent'
 import { finance } from './dictionaries/finance'
@@ -378,8 +379,8 @@ const en: Dict = {
   'ed.doc.tpl.social': 'Social posts',
   'ed.doc.tpl.brochureBody': '[PROJECT NAME] — [AREA], Dubai\nby [DEVELOPER]\n\n— OVERVIEW —\n[One paragraph on the project, its position and appeal.]\n\n— KEY FACTS —\n• Starting price: AED [price]\n• Unit types: [studio / 1BR / 2BR …]\n• Handover: [quarter/year]\n• Payment plan: [e.g. 60/40]\n\n— AMENITIES —\n• [amenity]\n• [amenity]\n\n— WHY INVEST —\n[Yield, appreciation, location argument — real numbers only.]\n\n— NEXT STEP —\nRequest the full investor pack: [contact / link]',
   'ed.doc.tpl.offerBody': 'OFFER TO PURCHASE\n\nDate: [date]\nBuyer: [full name]\nSeller / Developer: [name]\n\nProperty: [project], Unit [no.], [area], Dubai\nOffer price: AED [amount]\nPayment structure: [deposit %] on booking, [plan]\nValidity: this offer is valid until [date]\n\nConditions:\n• [condition]\n\nNext steps: reservation form → SPA → DLD registration.\n\n[Buyer signature]           [Date]',
-  'ed.doc.tpl.reportBody': '[AREA] MARKET REPORT — [month/year]\n\nSummary: [one line on the market direction.]\n\n— PRICES —\n• Median price/sqft: AED [n]\n• YoY change: [n]%\n\n— YIELDS —\n• Average gross yield: [n]%\n\n— DEMAND —\n• [demand signal from the pipeline data]\n\n— OUTLOOK —\n• [bullet]\n• [bullet]\n\nData: Freehold Intelligence.',
-  'ed.doc.tpl.whatsappBody': '1) FIRST TOUCH\nHi [name], thanks for your interest in [project]. I\'m [broker] from Freehold. Would you like the full price list and payment plan?\n\n2) FOLLOW-UP\n[project] starts from AED [price] with a [plan] payment plan — one of the strongest in [area] right now. Want me to hold a unit for you?\n\n3) VIEWING INVITE\nI can arrange a viewing this week — [day] or [day]? I\'ll send the location pin.',
+  'ed.doc.tpl.reportBody': `[AREA] MARKET REPORT — [month/year]\n\nSummary: [one line on the market direction.]\n\n— PRICES —\n• Median price/sqft: AED [n]\n• YoY change: [n]%\n\n— YIELDS —\n• Average gross yield: [n]%\n\n— DEMAND —\n• [demand signal from the pipeline data]\n\n— OUTLOOK —\n• [bullet]\n• [bullet]\n\nData: ${brandName}.`,
+  'ed.doc.tpl.whatsappBody': `1) FIRST TOUCH\nHi [name], thanks for your interest in [project]. I\'m [broker] from ${BRAND.company}. Would you like the full price list and payment plan?\n\n2) FOLLOW-UP\n[project] starts from AED [price] with a [plan] payment plan — one of the strongest in [area] right now. Want me to hold a unit for you?\n\n3) VIEWING INVITE\nI can arrange a viewing this week — [day] or [day]? I\'ll send the location pin.`,
   'ed.doc.tpl.socialBody': '1) INSTAGRAM\n[hook line about the project]\nStarting AED [price] · [area] · handover [year]\nDM \"[keyword]\" for the investor pack.\n#DubaiRealEstate #[area] #OffPlan\n\n2) LINKEDIN\n[professional angle — yield / capital growth with a real number]\n[project] by [developer] — [one insight].\n\n3) STORY\n[short punchy line] → swipe up / link in bio.',
   // image editor
   'ed.image.preset.square': 'Square 1:1 · Feed',
@@ -607,7 +608,7 @@ const en: Dict = {
   'hub.yesterday': 'Yesterday',
   'hub.briefingLive': '{urgent} urgent, {blocked} blocked and {pending} awaiting approval right now.',
   'hub.noUrgent': 'Nothing urgent right now — you\'re ahead.',
-  'hub.title': 'Freehold Intelligence',
+  'hub.title': `${brandName}`,
   'hub.metric.visitors': '{count}K visitors · 30d',
   'hub.metric.dataQuality': 'Data quality {score} · {count} listings',
   'hub.metric.properties': '{count} properties · {missing} missing',
@@ -679,7 +680,7 @@ const en: Dict = {
   'studio.ai.q3': "Plan this week's content and SEO updates.",
   'studio.ai.q4': 'Review ad readiness across inventory and suggest fixes.',
   'studio.title': 'AI Manager',
-  'studio.subtitle': 'AI-powered content management for freeholdproperty.ae',
+  'studio.subtitle': `AI-powered content management for ${BRAND.domain}`,
   'studio.activity': 'AI Activity',
   'studio.itemCount': '{count} items',
   'studio.draftCount': '{count} draft',
@@ -1023,8 +1024,8 @@ const ar: Dict = {
   'ed.doc.tpl.social': 'منشورات اجتماعية',
   'ed.doc.tpl.brochureBody': '[اسم المشروع] — [المنطقة]، دبي\nمن [المطوّر]\n\n— نظرة عامة —\n[فقرة عن المشروع وموقعه وجاذبيته.]\n\n— حقائق رئيسية —\n• السعر يبدأ من: [السعر] درهم\n• أنواع الوحدات: [استوديو / غرفة / غرفتان …]\n• التسليم: [الربع/السنة]\n• خطة السداد: [مثال 60/40]\n\n— المرافق —\n• [مرفق]\n\n— لماذا الاستثمار —\n[العائد، النمو، الموقع — أرقام حقيقية فقط.]\n\n— الخطوة التالية —\nاطلب حزمة المستثمر: [التواصل / الرابط]',
   'ed.doc.tpl.offerBody': 'عرض شراء\n\nالتاريخ: [التاريخ]\nالمشتري: [الاسم الكامل]\nالبائع / المطوّر: [الاسم]\n\nالعقار: [المشروع]، وحدة [رقم]، [المنطقة]، دبي\nسعر العرض: [المبلغ] درهم\nهيكل السداد: [نسبة الحجز]٪ عند الحجز، [الخطة]\nالصلاحية: حتى [التاريخ]\n\nالشروط:\n• [شرط]\n\nالخطوات: نموذج الحجز ← اتفاقية البيع ← تسجيل دائرة الأراضي.\n\n[توقيع المشتري]           [التاريخ]',
-  'ed.doc.tpl.reportBody': 'تقرير سوق [المنطقة] — [الشهر/السنة]\n\nالملخص: [سطر عن اتجاه السوق.]\n\n— الأسعار —\n• متوسط سعر القدم: [رقم] درهم\n• التغيّر السنوي: [رقم]٪\n\n— العوائد —\n• متوسط العائد الإجمالي: [رقم]٪\n\n— الطلب —\n• [مؤشر طلب من بيانات المسار]\n\n— التوقعات —\n• [نقطة]\n\nالبيانات: Freehold Intelligence.',
-  'ed.doc.tpl.whatsappBody': '1) أول تواصل\nمرحبًا [الاسم]، شكرًا لاهتمامك بـ[المشروع]. أنا [الوسيط] من Freehold. هل ترغب بقائمة الأسعار وخطة السداد؟\n\n2) متابعة\n[المشروع] يبدأ من [السعر] درهم بخطة سداد [الخطة] — من الأقوى في [المنطقة] حاليًا. أحجز لك وحدة؟\n\n3) دعوة معاينة\nأرتّب معاينة هذا الأسبوع — [يوم] أو [يوم]؟ سأرسل الموقع.',
+  'ed.doc.tpl.reportBody': `تقرير سوق [المنطقة] — [الشهر/السنة]\n\nالملخص: [سطر عن اتجاه السوق.]\n\n— الأسعار —\n• متوسط سعر القدم: [رقم] درهم\n• التغيّر السنوي: [رقم]٪\n\n— العوائد —\n• متوسط العائد الإجمالي: [رقم]٪\n\n— الطلب —\n• [مؤشر طلب من بيانات المسار]\n\n— التوقعات —\n• [نقطة]\n\nالبيانات: ${brandName}.`,
+  'ed.doc.tpl.whatsappBody': `1) أول تواصل\nمرحبًا [الاسم]، شكرًا لاهتمامك بـ[المشروع]. أنا [الوسيط] من ${BRAND.company}. هل ترغب بقائمة الأسعار وخطة السداد؟\n\n2) متابعة\n[المشروع] يبدأ من [السعر] درهم بخطة سداد [الخطة] — من الأقوى في [المنطقة] حاليًا. أحجز لك وحدة؟\n\n3) دعوة معاينة\nأرتّب معاينة هذا الأسبوع — [يوم] أو [يوم]؟ سأرسل الموقع.`,
   'ed.doc.tpl.socialBody': '1) إنستغرام\n[سطر جذّاب عن المشروع]\nيبدأ من [السعر] درهم · [المنطقة] · التسليم [السنة]\nراسلنا \"[كلمة]\" لحزمة المستثمر.\n#عقارات_دبي #[المنطقة]\n\n2) لينكدإن\n[زاوية مهنية — عائد / نمو برقم حقيقي]\n\n3) ستوري\n[سطر قصير] ← الرابط في البايو.',
   // image editor
   'ed.image.preset.square': 'مربع 1:1 · منشور',
@@ -1247,7 +1248,7 @@ const ar: Dict = {
   'hub.yesterday': 'أمس',
   'hub.briefingLive': '{urgent} عاجلة، و{blocked} محظورة، و{pending} بانتظار الموافقة الآن.',
   'hub.noUrgent': 'لا شيء عاجل الآن — أنت متقدّم على العمل.',
-  'hub.title': 'Freehold Intelligence',
+  'hub.title': `${brandName}`,
   'hub.metric.visitors': '{count} ألف زائر · 30 يوماً',
   'hub.metric.dataQuality': 'جودة البيانات {score} · {count} قائمة',
   'hub.metric.properties': '{count} عقار · {missing} ناقص',
@@ -1316,7 +1317,7 @@ const ar: Dict = {
   'studio.ai.q3': 'خطّط تحديثات المحتوى وتحسين محركات البحث لهذا الأسبوع.',
   'studio.ai.q4': 'راجع جاهزية الإعلانات عبر المخزون واقترح إصلاحات.',
   'studio.title': 'مدير الذكاء الاصطناعي',
-  'studio.subtitle': 'إدارة محتوى مدعومة بالذكاء الاصطناعي لموقع freeholdproperty.ae',
+  'studio.subtitle': `إدارة محتوى مدعومة بالذكاء الاصطناعي لموقع ${BRAND.domain}`,
   'studio.activity': 'نشاط الذكاء الاصطناعي',
   'studio.itemCount': '{count} عنصر',
   'studio.draftCount': '{count} مسودة',
@@ -1659,8 +1660,8 @@ const ru: Dict = {
   'ed.doc.tpl.social': 'Посты для соцсетей',
   'ed.doc.tpl.brochureBody': '[НАЗВАНИЕ ПРОЕКТА] — [РАЙОН], Дубай\nот [ЗАСТРОЙЩИК]\n\n— ОБЗОР —\n[Абзац о проекте, его расположении и привлекательности.]\n\n— КЛЮЧЕВЫЕ ФАКТЫ —\n• Цена от: AED [цена]\n• Типы юнитов: [студия / 1BR / 2BR …]\n• Сдача: [квартал/год]\n• План оплаты: [напр. 60/40]\n\n— УДОБСТВА —\n• [удобство]\n\n— ПОЧЕМУ ИНВЕСТИРОВАТЬ —\n[Доходность, рост, локация — только реальные числа.]\n\n— СЛЕДУЮЩИЙ ШАГ —\nЗапросите инвест-пакет: [контакт / ссылка]',
   'ed.doc.tpl.offerBody': 'ОФЕРТА НА ПОКУПКУ\n\nДата: [дата]\nПокупатель: [ФИО]\nПродавец / Застройщик: [имя]\n\nОбъект: [проект], юнит [№], [район], Дубай\nЦена предложения: AED [сумма]\nСтруктура оплаты: [депозит %] при бронировании, [план]\nСрок действия: до [дата]\n\nУсловия:\n• [условие]\n\nШаги: форма бронирования → SPA → регистрация DLD.\n\n[Подпись покупателя]           [Дата]',
-  'ed.doc.tpl.reportBody': 'ОТЧЁТ ПО РЫНКУ [РАЙОН] — [месяц/год]\n\nРезюме: [строка о направлении рынка.]\n\n— ЦЕНЫ —\n• Медианная цена/кв.фут: AED [n]\n• Изменение г/г: [n]%\n\n— ДОХОДНОСТЬ —\n• Средняя валовая доходность: [n]%\n\n— СПРОС —\n• [сигнал спроса из данных]\n\n— ПРОГНОЗ —\n• [пункт]\n\nДанные: Freehold Intelligence.',
-  'ed.doc.tpl.whatsappBody': '1) ПЕРВЫЙ КОНТАКТ\nЗдравствуйте, [имя]! Спасибо за интерес к [проект]. Я [брокер] из Freehold. Прислать прайс и план оплаты?\n\n2) ФОЛЛОУ-АП\n[проект] от AED [цена] с планом [план] — один из сильнейших в [район] сейчас. Забронировать юнит?\n\n3) ПРИГЛАШЕНИЕ НА ПРОСМОТР\nМогу организовать просмотр на этой неделе — [день] или [день]? Пришлю геометку.',
+  'ed.doc.tpl.reportBody': `ОТЧЁТ ПО РЫНКУ [РАЙОН] — [месяц/год]\n\nРезюме: [строка о направлении рынка.]\n\n— ЦЕНЫ —\n• Медианная цена/кв.фут: AED [n]\n• Изменение г/г: [n]%\n\n— ДОХОДНОСТЬ —\n• Средняя валовая доходность: [n]%\n\n— СПРОС —\n• [сигнал спроса из данных]\n\n— ПРОГНОЗ —\n• [пункт]\n\nДанные: ${brandName}.`,
+  'ed.doc.tpl.whatsappBody': `1) ПЕРВЫЙ КОНТАКТ\nЗдравствуйте, [имя]! Спасибо за интерес к [проект]. Я [брокер] из ${BRAND.company}. Прислать прайс и план оплаты?\n\n2) ФОЛЛОУ-АП\n[проект] от AED [цена] с планом [план] — один из сильнейших в [район] сейчас. Забронировать юнит?\n\n3) ПРИГЛАШЕНИЕ НА ПРОСМОТР\nМогу организовать просмотр на этой неделе — [день] или [день]? Пришлю геометку.`,
   'ed.doc.tpl.socialBody': '1) INSTAGRAM\n[цепляющая строка о проекте]\nОт AED [цена] · [район] · сдача [год]\nНапишите \"[слово]\" за инвест-пакетом.\n#DubaiRealEstate #[район]\n\n2) LINKEDIN\n[профессиональный угол — доходность/рост с реальным числом]\n\n3) STORY\n[короткая строка] → ссылка в профиле.',
   // image editor
   'ed.image.preset.square': 'Квадрат 1:1 · Лента',
@@ -1883,7 +1884,7 @@ const ru: Dict = {
   'hub.yesterday': 'Вчера',
   'hub.briefingLive': 'Сейчас: {urgent} срочных, {blocked} заблокировано и {pending} ждут согласования.',
   'hub.noUrgent': 'Сейчас ничего срочного — вы на шаг впереди.',
-  'hub.title': 'Freehold Intelligence',
+  'hub.title': `${brandName}`,
   'hub.metric.visitors': '{count}K посетителей · 30д',
   'hub.metric.dataQuality': 'Качество данных {score} · {count} объявл.',
   'hub.metric.properties': '{count} объектов · {missing} без лендинга',
@@ -1952,7 +1953,7 @@ const ru: Dict = {
   'studio.ai.q3': 'Спланируйте обновления контента и SEO на эту неделю.',
   'studio.ai.q4': 'Проверьте готовность к рекламе по объектам и предложите исправления.',
   'studio.title': 'AI-менеджер',
-  'studio.subtitle': 'Управление контентом на базе ИИ для freeholdproperty.ae',
+  'studio.subtitle': `Управление контентом на базе ИИ для ${BRAND.domain}`,
   'studio.activity': 'Активность ИИ',
   'studio.itemCount': '{count} элементов',
   'studio.draftCount': '{count} черновик',

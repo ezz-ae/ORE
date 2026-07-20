@@ -1,3 +1,5 @@
+import { BRAND } from '@/lib/freehold/brand'
+import { getSiteUrl } from '@/lib/site'
 import {
   listCampaigns, getCampaign, getCampaignInsights,
   updateCampaignStatus, updateAdSet, listAdSets, getAdSet,
@@ -362,14 +364,14 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       if (!formName || !listingName) return { error: 'formName and listingName are required' }
       const slug = s(args.listingSlug)
       const landingUrl = s(args.landingUrl)
-        || (slug ? `https://www.freeholdproperty.ae/lp/${slug}` : 'https://www.freeholdproperty.ae')
+        || (slug ? `${getSiteUrl()}/lp/${slug}` : getSiteUrl())
       const created = await createLeadForm({
         name: formName,
         listingId: slug || listingName,
         listingName,
         landingUrl,
         questions: [{ type: 'FULL_NAME' }, { type: 'EMAIL' }, { type: 'PHONE' }],
-        privacyPolicyUrl: 'https://www.freeholdproperty.ae/privacy',
+        privacyPolicyUrl: BRAND.privacyUrl,
         thankYouTitle: `Thank you — ${listingName}`,
         thankYouBody: 'Our advisor will contact you shortly with the full details.',
       })

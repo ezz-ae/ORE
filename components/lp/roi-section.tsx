@@ -1,4 +1,5 @@
 import { SectionShell } from "@/components/lp/section-shell"
+import { brandName } from "@/lib/freehold/brand"
 import { TrendingUp, Home, DollarSign } from "lucide-react"
 
 interface RoiSectionProps {
@@ -103,7 +104,7 @@ export function RoiSection({ data }: RoiSectionProps) {
         })}
       </div>
       <p className="mt-6 text-center text-[11px] text-muted-foreground/60">
-        Projected estimates only · Past performance does not guarantee future returns · Data: Freehold Intelligence
+        Projected estimates only · Past performance does not guarantee future returns · Data: {brandName}
       </p>
     </SectionShell>
   )

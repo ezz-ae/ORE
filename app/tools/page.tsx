@@ -1,4 +1,11 @@
 import Link from "next/link"
+import { BRAND } from "@/lib/freehold/brand"
+
+// Byte-identical default: this page historically used a slightly different
+// public name than BRAND.legalName. Keep the exact legacy text unless the
+// deployment explicitly re-brands via NEXT_PUBLIC_BRAND_* env vars.
+const REBRANDED = Boolean(process.env.NEXT_PUBLIC_BRAND_COMPANY?.trim() || process.env.NEXT_PUBLIC_BRAND_LEGAL_NAME?.trim())
+const PUBLIC_NAME = REBRANDED ? `${BRAND.legalName} UAE` : "Freehold Properties UAE"
 import { Calculator, CreditCard, BarChart3, Sparkles, LineChart, ArrowUpRight } from "lucide-react"
 
 const tools = [
@@ -40,14 +47,14 @@ const tools = [
 ]
 
 export const metadata = {
-  title: "Investment Tools | Freehold Properties UAE",
+  title: `Investment Tools | ${PUBLIC_NAME}`,
   description: "ROI calculator, payment simulator, comparator, AI discovery, market tracker — Dubai property intelligence in one place.",
   alternates: { canonical: "/tools" },
   openGraph: {
-    title: "Investment Tools | Freehold Properties UAE",
+    title: `Investment Tools | ${PUBLIC_NAME}`,
     description: "ROI calculator, payment simulator, and AI property discovery for Dubai investors.",
     url: "/tools",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE Investment Tools" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: `${BRAND.legalName} UAE Investment Tools` }],
   },
 }
 

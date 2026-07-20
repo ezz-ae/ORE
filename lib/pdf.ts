@@ -1,4 +1,5 @@
 import fs from "node:fs"
+import { BRAND, brandName } from '@/lib/freehold/brand'
 import path from "node:path"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import type { Project } from "@/lib/types/project"
@@ -36,7 +37,7 @@ export async function generateProjectPdf(project: Project) {
   const logoHeight = (logo.height / logo.width) * logoWidth
   page.drawImage(logo, { x: 40, y: height - 60, width: logoWidth, height: logoHeight })
 
-  page.drawText("Freehold Real Estate", {
+  page.drawText(`${BRAND.company} Real Estate`, {
     x: 40,
     y: height - 90,
     size: 10,
@@ -74,7 +75,7 @@ export async function generateProjectPdf(project: Project) {
     y -= 14
   })
 
-  page.drawText("Data: Freehold Intelligence", {
+  page.drawText(`Data: ${brandName}`, {
     x: 40,
     y: 30,
     size: 9,
@@ -100,7 +101,7 @@ export async function generateComparisonPdf(projects: Project[]) {
   page.drawImage(logo, { x: 40, y: height - 60, width: logoWidth, height: logoHeight })
 
   page.drawText("Project Comparison", { x: 40, y: height - 120, size: 18, font: fontBold, color: rgb(0, 0, 0) })
-  page.drawText("Freehold Real Estate", {
+  page.drawText(`${BRAND.company} Real Estate`, {
     x: 40,
     y: height - 140,
     size: 10,
@@ -128,7 +129,7 @@ export async function generateComparisonPdf(projects: Project[]) {
     y -= 20
   })
 
-  page.drawText("Data: Freehold Intelligence", {
+  page.drawText(`Data: ${brandName}`, {
     x: 40,
     y: 30,
     size: 9,

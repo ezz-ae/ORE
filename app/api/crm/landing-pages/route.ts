@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { BRAND } from "@/lib/freehold/brand"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
@@ -210,7 +211,7 @@ export async function POST(req: NextRequest) {
     // Extra content pulled from the (now richer) inventory — PF-snapshot aware,
     // so refreshed projects fill the same holders as net-new ones.
     const realDeveloper = toText(toObject(payload.developer).name) || toText(pfd.developerName)
-    const developerName = realDeveloper || "Freehold"
+    const developerName = realDeveloper || BRAND.company
     const developerLogo = toText(toObject(payload.developer).logoUrl) || toText(pfd.developerLogo)
     const descriptionText = (toText(payload.description) || toText(payload.llm_context) || toText(pfd.descriptionPlain)).slice(0, 1400)
     const unitRows = toArray(payload.units)
@@ -308,7 +309,7 @@ export async function POST(req: NextRequest) {
           return { area: toText(project.area) || "Dubai" }
         case "ai-concierge":
           return {
-            title: "Ask Freehold AI",
+            title: `Ask ${BRAND.company} AI`,
             subtitle: "Let the AI explain ROI, compare areas, and qualify the next step before a broker call.",
             prompts: [
               `Is ${toText(project.name) || finalProjectSlug} better for rental yield or appreciation?`,

@@ -1,4 +1,6 @@
 import type { AreaProfile, DeveloperProfile, Project, Property } from "@/lib/types/project"
+import { getSiteUrl } from "@/lib/site"
+import { BRAND } from "@/lib/freehold/brand"
 import { query } from "@/lib/db"
 import { normalizeSlug } from "@/lib/utils/slug"
 
@@ -234,7 +236,7 @@ export const projectToProperty = (project: Project): Property => {
     toRecord(projectRecord.developer)?.name,
     projectRecord.developer_name,
     projectRecord.developer,
-    "Freehold",
+    BRAND.company,
   )
   const developerSlug = safeDeveloper.slug || normalizeSlug(developerName) || "ore"
   const developerLogo = safeDeveloper.pfLogo || safeDeveloper.logo || "/logo.png"
@@ -303,7 +305,7 @@ export const projectToProperty = (project: Project): Property => {
       ? project.mediaSource?.gallery
       : project.gallery
 
-  const projectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://freeholdproperty.ae"}/projects/${project.slug || normalizeSlug(projectName)}`
+  const projectUrl = `${getSiteUrl()}/projects/${project.slug || normalizeSlug(projectName)}`
 
   return {
     id: project.id || project.slug || normalizeSlug(projectName) || "property",
@@ -522,7 +524,7 @@ const normalizeListingProject = (row: ProjectListingRow) => {
     row.developer_name,
     payloadRecord.developerName,
     payloadRecord.developer,
-    "Freehold",
+    BRAND.company,
   )
   enriched.developer = {
     ...(enriched.developer || {}),
@@ -1545,10 +1547,18 @@ export async function ensureLeadsTable() {
   // default backfills existing rows on add and assigns new rows automatically;
   // lead_code is a generated column so it always stays in sync. Best-effort —
   // wrapped so older Postgres or partial schemas never break lead operations.
+  //
+  // White-label: the prefix comes from BRAND.leadPrefix (NEXT_PUBLIC_BRAND_
+  // LEAD_PREFIX, default "FH") at column-creation time, so a FRESH database
+  // gets the deployment's own prefix. ADD COLUMN IF NOT EXISTS means an
+  // existing database keeps its original generated column untouched — we never
+  // ALTER an existing generated column (see DEPLOYMENT.md).
   try {
+    // Sanitised: a generated-column expression cannot be parameterised.
+    const leadPrefix = BRAND.leadPrefix.replace(/[^A-Za-z0-9_-]/g, "") || "FH"
     await query(`CREATE SEQUENCE IF NOT EXISTS freehold_site_lead_seq`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS lead_seq bigint DEFAULT nextval('freehold_site_lead_seq')`)
-    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS lead_code text GENERATED ALWAYS AS ('FH-' || lpad(lead_seq::text, 4, '0')) STORED`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS lead_code text GENERATED ALWAYS AS ('${leadPrefix}-' || lpad(lead_seq::text, 4, '0')) STORED`)
   } catch (error) {
     console.error("[leads] lead_code schema setup skipped", error)
   }
@@ -2017,7 +2027,7 @@ const buildProjectPayload = (input: DashboardProjectInput, existing?: Project | 
   const priceFrom = input.priceFrom ?? existing?.units?.[0]?.priceFrom ?? 0
   const priceTo = input.priceTo ?? existing?.units?.[0]?.priceTo ?? priceFrom
   const roi = input.roi ?? existing?.investmentHighlights?.expectedROI ?? 0
-  const developerName = pickString(input.developer, existing?.developer?.name, "Freehold") || "Freehold"
+  const developerName = pickString(input.developer, existing?.developer?.name, BRAND.company) || BRAND.company
   const slug = normalizeSlug(input.slug)
   const name = pickString(input.name, existing?.name, slugToTitle(slug)) || "Untitled Project"
   const area = pickString(input.area, existing?.location?.area, "Dubai") || "Dubai"

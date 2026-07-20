@@ -10,7 +10,20 @@
 //      page so the visitor never sees blank/partial content.
 
 import { geminiGenerate } from "@/lib/gemini-rest"
+import { BRAND } from "@/lib/freehold/brand"
 import type { LandingPageData } from "@/lib/landing-pages"
+
+// ─── White-label brand tokens ─────────────────────────────────────────────────
+// Interpolated into the chrome strings below. When no NEXT_PUBLIC_BRAND_* env
+// is set, every string renders exactly as before (Freehold defaults, including
+// the Arabic transliteration فريهولد). A re-branded deployment keeps the brand
+// name in Latin script inside AR/RU copy — standard practice for brand names.
+const REBRANDED = Boolean(process.env.NEXT_PUBLIC_BRAND_COMPANY?.trim() || process.env.NEXT_PUBLIC_BRAND_LEGAL_NAME?.trim())
+const COMPANY = BRAND.company
+const LEGAL_UAE = `${BRAND.legalName} UAE`
+const COMPANY_AR = REBRANDED ? BRAND.company : "فريهولد"
+const LEGAL_AR = REBRANDED ? `${BRAND.legalName} UAE` : "عقارات فريهولد الإمارات"
+const ADDRESS_OVERRIDE = process.env.NEXT_PUBLIC_BRAND_ADDRESS?.trim()
 
 export type LpLang = "en" | "ar" | "ru"
 
@@ -88,7 +101,7 @@ const EN: Record<string, string> = {
     "Properties historically appreciate during construction in Dubai, often delivering returns before handover.",
   "payment.card3.title": "0% Commission",
   "payment.card3.desc":
-    "All Freehold transactions are fee-free to buyers. You pay only the agreed purchase price.",
+    `All ${COMPANY} transactions are fee-free to buyers. You pay only the agreed purchase price.`,
 
   "roi.eyebrow": "Investment Returns",
   "roi.title": "Why This Investment Works",
@@ -160,14 +173,14 @@ const EN: Record<string, string> = {
   "ai.eyebrow": "AI Advisor",
   "ai.title": "Ask Our AI Advisor",
   "ai.subtitle":
-    "Get instant, expert-level answers about {name} — from yield analysis to buyer profiles to area comparisons. Powered by Freehold AI.",
+    `Get instant, expert-level answers about {name} — from yield analysis to buyer profiles to area comparisons. Powered by ${COMPANY} AI.`,
   "ai.whatsappTitle": "WhatsApp AI — instant answers",
   "ai.whatsappSub": "Tap any question below to start",
 
   "leadForm.eyebrow": "Contact Us",
   "leadForm.title": "Get the Full Investment Pack",
   "leadForm.subtitle":
-    "Floor plans, pricing, ROI analysis, and brochure — delivered within 24 hours by a senior Freehold consultant.",
+    `Floor plans, pricing, ROI analysis, and brochure — delivered within 24 hours by a senior ${COMPANY} consultant.`,
   "leadForm.benefit1": "Response within 24 hours, guaranteed",
   "leadForm.benefit2": "No pressure sales — honest, expert advice",
   "leadForm.benefit3": "Dedicated investment consultant assigned",
@@ -184,21 +197,21 @@ const EN: Record<string, string> = {
   "faq.subtitle": "Everything investors typically ask before committing to a Dubai off-plan purchase.",
 
   "footer.brandSuffix": "Property UAE",
-  "footer.address": "Sobha Sapphire, Office 904\nBusiness Bay, Dubai, UAE",
+  "footer.address": ADDRESS_OVERRIDE || "Sobha Sapphire, Office 904\nBusiness Bay, Dubai, UAE",
   "footer.contact": "Contact",
   "footer.certifications": "Certifications",
   "footer.cert1": "RERA Licensed Agency",
   "footer.cert2": "DLD Registered Broker",
   "footer.cert3": "Dubai Chamber Member",
   "footer.legal":
-    "Freehold Property UAE. All rights reserved. Prices, yields, and availability subject to change without notice. Projected returns are estimates only and do not constitute financial advice. Regulated by the Dubai Land Department.",
+    `${LEGAL_UAE}. All rights reserved. Prices, yields, and availability subject to change without notice. Projected returns are estimates only and do not constitute financial advice. Regulated by the Dubai Land Department.`,
   "footer.privacy": "Privacy Policy",
 
   "price.onRequest": "Price on request",
 
   "notFound.title": "Page not found",
   "notFound.desc": "This property page is not available or has been removed.",
-  "notFound.back": "← Back to Freehold",
+  "notFound.back": `← Back to ${COMPANY}`,
 
   "sticky.startingFrom": "Starting from",
   "sticky.whatsapp": "WhatsApp",
@@ -210,7 +223,7 @@ const EN: Record<string, string> = {
   "form.email": "Email",
   "form.sending": "Sending…",
   "form.defaultCta": "Request Brochure & Pricing",
-  "form.disclaimer": "By submitting, you agree to be contacted by Freehold Property UAE. No spam, ever.",
+  "form.disclaimer": `By submitting, you agree to be contacted by ${LEGAL_UAE}. No spam, ever.`,
   "form.successTitle": "Request received",
   "form.successPrefix": "Our team will send you the brochure and pricing for",
   "form.successSuffix": "within a few hours.",
@@ -293,7 +306,7 @@ const AR: Record<string, string> = {
     "ترتفع قيمة العقارات تاريخياً أثناء الإنشاء في دبي، وغالباً ما تحقق عوائد قبل التسليم.",
   "payment.card3.title": "عمولة 0%",
   "payment.card3.desc":
-    "جميع معاملات فريهولد بدون رسوم على المشترين. تدفع فقط سعر الشراء المتفق عليه.",
+    `جميع معاملات ${COMPANY_AR} بدون رسوم على المشترين. تدفع فقط سعر الشراء المتفق عليه.`,
 
   "roi.eyebrow": "عوائد الاستثمار",
   "roi.title": "لماذا ينجح هذا الاستثمار",
@@ -365,14 +378,14 @@ const AR: Record<string, string> = {
   "ai.eyebrow": "المستشار الذكي",
   "ai.title": "اسأل مستشارنا الذكي",
   "ai.subtitle":
-    "احصل على إجابات فورية بمستوى الخبراء عن {name} — من تحليل العوائد إلى ملفات المشترين ومقارنات المناطق. مدعوم بذكاء فريهولد.",
+    `احصل على إجابات فورية بمستوى الخبراء عن {name} — من تحليل العوائد إلى ملفات المشترين ومقارنات المناطق. مدعوم بذكاء ${COMPANY_AR}.`,
   "ai.whatsappTitle": "واتساب الذكي — إجابات فورية",
   "ai.whatsappSub": "اضغط على أي سؤال أدناه للبدء",
 
   "leadForm.eyebrow": "تواصل معنا",
   "leadForm.title": "احصل على الحزمة الاستثمارية الكاملة",
   "leadForm.subtitle":
-    "مخططات الطوابق والأسعار وتحليل العائد والكتيّب — تصلك خلال 24 ساعة عبر مستشار استثماري أول من فريهولد.",
+    `مخططات الطوابق والأسعار وتحليل العائد والكتيّب — تصلك خلال 24 ساعة عبر مستشار استثماري أول من ${COMPANY_AR}.`,
   "leadForm.benefit1": "رد خلال 24 ساعة، مضمون",
   "leadForm.benefit2": "بلا ضغوط بيعية — نصيحة صادقة من الخبراء",
   "leadForm.benefit3": "تخصيص مستشار استثماري مخصّص",
@@ -389,21 +402,21 @@ const AR: Record<string, string> = {
   "faq.subtitle": "كل ما يسأل عنه المستثمرون عادةً قبل الالتزام بشراء عقار على الخارطة في دبي.",
 
   "footer.brandSuffix": "عقارات الإمارات",
-  "footer.address": "صبحا سفير، مكتب 904\nالخليج التجاري، دبي، الإمارات",
+  "footer.address": ADDRESS_OVERRIDE || "صبحا سفير، مكتب 904\nالخليج التجاري، دبي، الإمارات",
   "footer.contact": "تواصل",
   "footer.certifications": "الاعتمادات",
   "footer.cert1": "وكالة مرخّصة من مؤسسة التنظيم العقاري",
   "footer.cert2": "وسيط مسجّل لدى دائرة الأراضي والأملاك",
   "footer.cert3": "عضو غرفة تجارة دبي",
   "footer.legal":
-    "عقارات فريهولد الإمارات. جميع الحقوق محفوظة. الأسعار والعوائد والتوفر عرضة للتغيير دون إشعار. العوائد المتوقعة تقديرية فقط ولا تُعد نصيحة مالية. خاضعة لتنظيم دائرة الأراضي والأملاك في دبي.",
+    `${LEGAL_AR}. جميع الحقوق محفوظة. الأسعار والعوائد والتوفر عرضة للتغيير دون إشعار. العوائد المتوقعة تقديرية فقط ولا تُعد نصيحة مالية. خاضعة لتنظيم دائرة الأراضي والأملاك في دبي.`,
   "footer.privacy": "سياسة الخصوصية",
 
   "price.onRequest": "السعر عند الطلب",
 
   "notFound.title": "الصفحة غير موجودة",
   "notFound.desc": "صفحة هذا العقار غير متاحة أو تمت إزالتها.",
-  "notFound.back": "← العودة إلى فريهولد",
+  "notFound.back": `← العودة إلى ${COMPANY_AR}`,
 
   "sticky.startingFrom": "يبدأ من",
   "sticky.whatsapp": "واتساب",
@@ -415,7 +428,7 @@ const AR: Record<string, string> = {
   "form.email": "البريد الإلكتروني",
   "form.sending": "جارٍ الإرسال…",
   "form.defaultCta": "اطلب الكتيّب والأسعار",
-  "form.disclaimer": "بإرسالك للنموذج، فإنك توافق على أن تتواصل معك عقارات فريهولد الإمارات. لا رسائل مزعجة إطلاقاً.",
+  "form.disclaimer": `بإرسالك للنموذج، فإنك توافق على أن تتواصل معك ${LEGAL_AR}. لا رسائل مزعجة إطلاقاً.`,
   "form.successTitle": "تم استلام طلبك",
   "form.successPrefix": "سيرسل لك فريقنا الكتيّب والأسعار الخاصة بـ",
   "form.successSuffix": "خلال ساعات قليلة.",
@@ -496,7 +509,7 @@ const RU: Record<string, string> = {
     "Недвижимость в Дубае исторически дорожает в процессе строительства, часто принося доход ещё до передачи.",
   "payment.card3.title": "Комиссия 0%",
   "payment.card3.desc":
-    "Все сделки Freehold бесплатны для покупателей. Вы платите только согласованную цену покупки.",
+    `Все сделки ${COMPANY} бесплатны для покупателей. Вы платите только согласованную цену покупки.`,
 
   "roi.eyebrow": "Доходность инвестиций",
   "roi.title": "Почему эта инвестиция работает",
@@ -568,14 +581,14 @@ const RU: Record<string, string> = {
   "ai.eyebrow": "ИИ-консультант",
   "ai.title": "Спросите нашего ИИ-консультанта",
   "ai.subtitle":
-    "Получите мгновенные экспертные ответы о {name} — от анализа доходности до профилей покупателей и сравнения районов. На основе Freehold AI.",
+    `Получите мгновенные экспертные ответы о {name} — от анализа доходности до профилей покупателей и сравнения районов. На основе ${COMPANY} AI.`,
   "ai.whatsappTitle": "ИИ в WhatsApp — мгновенные ответы",
   "ai.whatsappSub": "Нажмите любой вопрос ниже, чтобы начать",
 
   "leadForm.eyebrow": "Свяжитесь с нами",
   "leadForm.title": "Получите полный инвестиционный пакет",
   "leadForm.subtitle":
-    "Планировки, цены, анализ доходности и брошюра — в течение 24 часов от старшего консультанта Freehold.",
+    `Планировки, цены, анализ доходности и брошюра — в течение 24 часов от старшего консультанта ${COMPANY}.`,
   "leadForm.benefit1": "Ответ в течение 24 часов, гарантированно",
   "leadForm.benefit2": "Без давления — честный экспертный совет",
   "leadForm.benefit3": "Персональный инвестиционный консультант",
@@ -592,21 +605,21 @@ const RU: Record<string, string> = {
   "faq.subtitle": "Всё, что инвесторы обычно спрашивают перед покупкой строящейся недвижимости в Дубае.",
 
   "footer.brandSuffix": "Недвижимость ОАЭ",
-  "footer.address": "Sobha Sapphire, офис 904\nБизнес Бэй, Дубай, ОАЭ",
+  "footer.address": ADDRESS_OVERRIDE || "Sobha Sapphire, офис 904\nБизнес Бэй, Дубай, ОАЭ",
   "footer.contact": "Контакты",
   "footer.certifications": "Сертификаты",
   "footer.cert1": "Агентство с лицензией RERA",
   "footer.cert2": "Брокер, зарегистрированный в DLD",
   "footer.cert3": "Член Торговой палаты Дубая",
   "footer.legal":
-    "Freehold Property UAE. Все права защищены. Цены, доходность и наличие могут изменяться без уведомления. Прогнозируемая доходность является лишь оценкой и не является финансовой консультацией. Регулируется Земельным департаментом Дубая.",
+    `${LEGAL_UAE}. Все права защищены. Цены, доходность и наличие могут изменяться без уведомления. Прогнозируемая доходность является лишь оценкой и не является финансовой консультацией. Регулируется Земельным департаментом Дубая.`,
   "footer.privacy": "Политика конфиденциальности",
 
   "price.onRequest": "Цена по запросу",
 
   "notFound.title": "Страница не найдена",
   "notFound.desc": "Эта страница объекта недоступна или была удалена.",
-  "notFound.back": "← Назад к Freehold",
+  "notFound.back": `← Назад к ${COMPANY}`,
 
   "sticky.startingFrom": "От",
   "sticky.whatsapp": "WhatsApp",
@@ -618,7 +631,7 @@ const RU: Record<string, string> = {
   "form.email": "Эл. почта",
   "form.sending": "Отправка…",
   "form.defaultCta": "Запросить брошюру и цены",
-  "form.disclaimer": "Отправляя форму, вы соглашаетесь на связь с Freehold Property UAE. Никакого спама.",
+  "form.disclaimer": `Отправляя форму, вы соглашаетесь на связь с ${LEGAL_UAE}. Никакого спама.`,
   "form.successTitle": "Запрос получен",
   "form.successPrefix": "Наша команда пришлёт вам брошюру и цены по объекту",
   "form.successSuffix": "в течение нескольких часов.",
@@ -766,7 +779,7 @@ async function runTranslation(
   try {
     const prompt = `Translate each string in the following JSON array into ${LANG_NAMES[lang]}.
 Return ONLY a JSON array of translated strings with EXACTLY the same length and order as the input — element N of the output is the translation of element N of the input.
-Do NOT translate brand names (e.g. Freehold, FREEHOLD), numbers, prices (e.g. AED 2.5M), or proper nouns such as property names, developer names, and area/neighbourhood names — keep those as they are.
+Do NOT translate brand names (e.g. ${BRAND.company}, ${BRAND.company.toUpperCase()}), numbers, prices (e.g. AED 2.5M), or proper nouns such as property names, developer names, and area/neighbourhood names — keep those as they are.
 Preserve punctuation, symbols and emphasis. Do not add, remove, merge or reorder any elements.
 Input:
 ${JSON.stringify(originals)}`

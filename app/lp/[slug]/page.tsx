@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import type React from 'react'
+import { BRAND, getBrandSiteUrl } from '@/lib/freehold/brand'
 import { cookies } from 'next/headers'
 import {
   Phone, MapPin, Check, TrendingUp, Shield, Star, Building2, Globe, Wifi,
@@ -110,7 +112,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
     ...(prop.roi ? [{ type: 'roi' as const, data: { rentalYield: prop.roi, expectedRoi: prop.roi, startPriceAed: prop.startingPriceAED ?? 0 } }] : []),
     { type: 'golden-visa' as const, data: {} },
     { type: 'why-dubai' as const, data: {} },
-    { type: 'ai-concierge' as const, data: { title: 'Ask Freehold AI', subtitle: `Get instant expert answers about ${prop.name}`, prompts: [`Is ${prop.name} better for yield or capital gains?`, `What type of investor buys in ${prop.area}?`, `Compare ${prop.area} to Downtown Dubai`] } },
+    { type: 'ai-concierge' as const, data: { title: `Ask ${BRAND.company} AI`, subtitle: `Get instant expert answers about ${prop.name}`, prompts: [`Is ${prop.name} better for yield or capital gains?`, `What type of investor buys in ${prop.area}?`, `Compare ${prop.area} to Downtown Dubai`] } },
     { type: 'lead-form' as const, data: { title: 'Get Full Brochure & Pricing', subtitle: 'A senior investment consultant will contact you within 24 hours with floor plans, pricing, and availability.' } },
   ]
 
@@ -119,7 +121,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
     title: prop.name, subtitle: `From ${priceText} · ${yieldText}`,
     heroImage: '/logo.png', ctaText: prop.roi ? 'Get Investment Analysis' : 'Request Brochure',
     isDraft: false,
-    seo: { title: `${prop.name} | Freehold Property UAE`, description: `${prop.name} in ${prop.area}. From ${priceText}. ${yieldText}.`, ogImage: '/logo.png' },
+    seo: { title: `${prop.name} | ${BRAND.legalName} UAE`, description: `${prop.name} in ${prop.area}. From ${priceText}. ${yieldText}.`, ogImage: '/logo.png' },
     pixels: {},
     soldOut: false,
     template: 'classic',
@@ -185,7 +187,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
                     key={i}
                     className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-[11px] font-semibold uppercase tracking-widest"
                     style={i === 0
-                      ? { borderColor: 'rgba(212,175,55,0.40)', background: 'rgba(212,175,55,0.10)', color: '#D4AF37' }
+                      ? { borderColor: 'color-mix(in srgb, var(--color-gold) 40%, transparent)', background: 'color-mix(in srgb, var(--color-gold) 10%, transparent)', color: 'var(--color-gold)' }
                       : { borderColor: p.surfaceBorder, background: p.surfaceStrong, color: p.textFaint }}
                   >
                     {i === 0 && <MapPin className="h-2.5 w-2.5" />}{part}
@@ -211,7 +213,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
                     key={i}
                     className="rounded-xl border px-4 py-2 text-[13px] font-semibold"
                     style={i === 1
-                      ? { borderColor: 'rgba(212,175,55,0.50)', background: 'rgba(212,175,55,0.15)', color: '#D4AF37' }
+                      ? { borderColor: 'color-mix(in srgb, var(--color-gold) 50%, transparent)', background: 'color-mix(in srgb, var(--color-gold) 15%, transparent)', color: 'var(--color-gold)' }
                       : { borderColor: p.surfaceBorder, background: p.surfaceStrong, color: p.textMuted }}
                   >
                     {chip}
@@ -221,7 +223,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
             )}
 
             <div className="mt-10 flex flex-wrap gap-3">
-              <a href="#lead-form" className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-8 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547] active:scale-[0.98]">
+              <a href="#lead-form" className="inline-flex items-center gap-2 rounded-full bg-gold px-8 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547] active:scale-[0.98]">
                 <span data-lpe="ctaText">{page.ctaText}</span> <ChevronRight className="h-4 w-4" />
               </a>
             </div>
@@ -239,7 +241,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
           <div className="lg:pt-4">
             <div className="rounded-2xl border p-7 shadow-2xl backdrop-blur-xl" style={{ borderColor: p.surfaceBorder, background: p.formBg }}>
               <div className="mb-5">
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/70">{L['hero.form.eyebrow']}</div>
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-gold/70">{L['hero.form.eyebrow']}</div>
                 <h3 className="text-[20px] font-bold" style={{ color: p.textPrimary }}>{L['hero.form.title']}</h3>
                 <p className="mt-1 text-[13px]" style={{ color: p.textFaint }}>{L['hero.form.subtitle']}</p>
               </div>
@@ -264,7 +266,7 @@ function DescriptionSection({ d, page, L, p }: { d: Record<string, unknown>; pag
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['desc.eyebrow']}</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['desc.eyebrow']}</div>
             <h2 className="mb-6 text-[34px] font-bold leading-tight" style={{ color: p.textPrimary }}>{title}</h2>
             {body && <div className="space-y-4">{body.split('\n\n').filter(Boolean).map((para, i) => (
               <p key={i} className="text-[16px] leading-[1.75]" style={{ color: p.textMuted }}>{para}</p>
@@ -275,8 +277,8 @@ function DescriptionSection({ d, page, L, p }: { d: Record<string, unknown>; pag
               <div className="mb-5 text-[11px] font-semibold uppercase tracking-widest" style={{ color: p.textFaint }}>{L['desc.highlights']}</div>
               {highlights.map((h, i) => (
                 <div key={i} className="flex items-start gap-3 rounded-xl border px-5 py-4" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15">
-                    <Check className="h-3 w-3 text-[#D4AF37]" />
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15">
+                    <Check className="h-3 w-3 text-gold" />
                   </div>
                   <span className="text-[14px]" style={{ color: p.textMuted }}>{h}</span>
                 </div>
@@ -312,10 +314,10 @@ function GallerySection({ d, page, L, p }: { d: Record<string, unknown>; page: L
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['gallery.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['gallery.eyebrow']}</div>
         <div className="mb-8 flex items-end justify-between">
           <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{title}</h2>
-          <a href="#lead-form" className="hidden text-[13px] text-[#D4AF37]/70 hover:text-[#D4AF37] sm:block">
+          <a href="#lead-form" className="hidden text-[13px] text-gold/70 hover:text-gold sm:block">
             {L['gallery.requestFloorPlans']}
           </a>
         </div>
@@ -352,7 +354,7 @@ function UnitsSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpP
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['units.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['units.eyebrow']}</div>
         <div className="mb-10 flex items-end justify-between">
           <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{title}</h2>
           <span className="hidden text-[13px] sm:block" style={{ color: p.textFaint }}>{L['units.disclaimer']}</span>
@@ -366,12 +368,12 @@ function UnitsSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpP
             const features = Array.isArray(unit.features) ? unit.features.map(toStr).filter(Boolean) : []
 
             return (
-              <div key={i} className="group flex flex-col rounded-2xl border overflow-hidden transition-all hover:border-[#D4AF37]/25" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
+              <div key={i} className="group flex flex-col rounded-2xl border overflow-hidden transition-all hover:border-gold/25" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
                 {/* Color band */}
-                <div className="h-1 w-full" style={{ background: i === 0 ? '#9B8020' : i === 1 ? '#D4AF37' : '#C9A227' }} />
+                <div className="h-1 w-full" style={{ background: i === 0 ? '#9B8020' : i === 1 ? 'var(--color-gold)' : '#C9A227' }} />
                 <div className="flex flex-1 flex-col p-6">
                   <div className="mb-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['units.unitType']}</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['units.unitType']}</div>
                     <div className="mt-1 text-[22px] font-bold" style={{ color: p.textPrimary }}>{type}</div>
                   </div>
 
@@ -380,9 +382,9 @@ function UnitsSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpP
                       <div className="text-[10px] uppercase tracking-wide" style={{ color: p.textFaint }}>{L['units.size']}</div>
                       <div className="mt-0.5 text-[13px] font-semibold" style={{ color: p.textMuted }}>{size}</div>
                     </div>
-                    <div className="rounded-lg bg-[#D4AF37]/[0.08] border border-[#D4AF37]/20 px-3 py-2.5">
-                      <div className="text-[10px] text-[#D4AF37]/60 uppercase tracking-wide">{L['units.price']}</div>
-                      <div className="mt-0.5 text-[13px] font-semibold text-[#D4AF37]">{price}</div>
+                    <div className="rounded-lg bg-gold/[0.08] border border-gold/20 px-3 py-2.5">
+                      <div className="text-[10px] text-gold/60 uppercase tracking-wide">{L['units.price']}</div>
+                      <div className="mt-0.5 text-[13px] font-semibold text-gold">{price}</div>
                     </div>
                   </div>
 
@@ -390,13 +392,13 @@ function UnitsSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpP
                     <ul className="mb-6 space-y-2">
                       {features.slice(0, 3).map((f, j) => (
                         <li key={j} className="flex items-center gap-2 text-[13px]" style={{ color: p.textMuted }}>
-                          <Check className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/50" />{f}
+                          <Check className="h-3.5 w-3.5 shrink-0 text-gold/50" />{f}
                         </li>
                       ))}
                     </ul>
                   )}
 
-                  <a href="#lead-form" className="mt-auto flex items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] py-3 text-[13px] font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37]/15">
+                  <a href="#lead-form" className="mt-auto flex items-center justify-center gap-2 rounded-xl border border-gold/25 bg-gold/[0.07] py-3 text-[13px] font-semibold text-gold transition-all hover:bg-gold/15">
                     {L['units.requestFloorPlan']} <ChevronRight className="h-3.5 w-3.5" />
                   </a>
                 </div>
@@ -451,7 +453,7 @@ function PaymentPlanSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; 
   const post = Number(pick(d, 'postHandover')) || 0
   if (down + during + onHand + post <= 0) return null
   const stages = [
-    { label: L['payment.stage.down'], pct: down, sub: L['payment.stage.downSub'], color: '#D4AF37' },
+    { label: L['payment.stage.down'], pct: down, sub: L['payment.stage.downSub'], color: 'var(--color-gold)' },
     { label: L['payment.stage.during'], pct: during, sub: L['payment.stage.duringSub'], color: '#9B8020' },
     { label: L['payment.stage.handover'], pct: onHand, sub: L['payment.stage.handoverSub'], color: '#6B5A15' },
     ...(post > 0 ? [{ label: L['payment.stage.post'], pct: post, sub: L['payment.stage.postSub'], color: '#3D330B' }] : []),
@@ -462,7 +464,7 @@ function PaymentPlanSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; 
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['payment.eyebrow']}</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['payment.eyebrow']}</div>
             <h2 className="mb-4 text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['payment.title']}</h2>
             <p className="mb-10 text-[15px] leading-relaxed" style={{ color: p.textMuted }}>{L['payment.intro']}</p>
 
@@ -489,8 +491,8 @@ function PaymentPlanSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; 
               { icon: Award, title: L['payment.card3.title'], desc: L['payment.card3.desc'] },
             ].map(({ icon: Icon, title, desc }, i) => (
               <div key={i} className="flex gap-4 rounded-xl border px-5 py-5" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#D4AF37]/10">
-                  <Icon className="h-5 w-5 text-[#D4AF37]/70" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold/10">
+                  <Icon className="h-5 w-5 text-gold/70" />
                 </div>
                 <div>
                   <div className="text-[14px] font-semibold" style={{ color: p.textPrimary }}>{title}</div>
@@ -533,7 +535,7 @@ function RoiSection({ d, page, L, p }: { d: Record<string, unknown>; page: Landi
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['roi.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['roi.eyebrow']}</div>
         <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto]">
           <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['roi.title']}</h2>
           <div className="flex items-center gap-2 text-[13px]" style={{ color: p.textFaint }}>
@@ -542,9 +544,9 @@ function RoiSection({ d, page, L, p }: { d: Record<string, unknown>; page: Landi
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="col-span-2 rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] p-7 text-center sm:col-span-1">
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60 mb-3">{L['roi.projectedYield']}</div>
-            <div className="text-[56px] font-bold text-[#D4AF37] leading-none">{yield_ ? `${yield_.toFixed(1)}%` : '—'}</div>
+          <div className="col-span-2 rounded-2xl border border-gold/25 bg-gold/[0.07] p-7 text-center sm:col-span-1">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-gold/60 mb-3">{L['roi.projectedYield']}</div>
+            <div className="text-[56px] font-bold text-gold leading-none">{yield_ ? `${yield_.toFixed(1)}%` : '—'}</div>
             <div className="mt-2 text-[12px]" style={{ color: p.textFaint }}>{L['roi.projectedYieldSub']}</div>
           </div>
           {[
@@ -581,7 +583,7 @@ function LocationSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['location.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['location.eyebrow']}</div>
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
             <h2 className="mb-3 text-[34px] font-bold" style={{ color: p.textPrimary }}>{title}</h2>
@@ -593,8 +595,8 @@ function LocationSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
                 const Icon = LOCATION_ICONS[iconKey] || MapPin
                 return (
                   <div key={i} className="flex items-center gap-3 rounded-xl border px-4 py-3.5" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#D4AF37]/10">
-                      <Icon className="h-4 w-4 text-[#D4AF37]/60" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gold/10">
+                      <Icon className="h-4 w-4 text-gold/60" />
                     </div>
                     <div>
                       <div className="text-[12px] font-medium" style={{ color: p.textMuted }}>{toStr(item.label)}</div>
@@ -611,7 +613,7 @@ function LocationSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
             <div className="mb-4 overflow-hidden rounded-2xl border" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
               <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderBottomColor: p.divider }}>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-[#D4AF37]/60" />
+                  <MapPin className="h-4 w-4 text-gold/60" />
                   <span className="text-[14px] font-semibold" style={{ color: p.textPrimary }}>{area}{L['location.dubaiSuffix']}</span>
                 </div>
                 <span className="text-[11px]" style={{ color: p.textFaint }}>{L['location.uae']}</span>
@@ -621,7 +623,7 @@ function LocationSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
                   <ul className="space-y-3">
                     {highlights.map((h, i) => (
                       <li key={i} className="flex items-start gap-3 text-[14px]" style={{ color: p.textMuted }}>
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50" />{h}
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-gold/50" />{h}
                       </li>
                     ))}
                   </ul>
@@ -649,15 +651,15 @@ function WhyDubaiSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['whyDubai.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['whyDubai.eyebrow']}</div>
         <div className="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
           <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['whyDubai.title']}</h2>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {whyDubai.map(({ icon: Icon, stat, label, sub }) => (
             <div key={label} className="rounded-xl border p-6" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-              <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-[#D4AF37]/10">
-                <Icon className="h-4.5 w-4.5 text-[#D4AF37]/70" />
+              <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-gold/10">
+                <Icon className="h-4.5 w-4.5 text-gold/70" />
               </div>
               <div className="text-[28px] font-bold" style={{ color: p.textPrimary }}>{stat}</div>
               <div className="mt-1.5 text-[13px] font-medium" style={{ color: p.textMuted }}>{label}</div>
@@ -678,25 +680,25 @@ function GoldenVisaSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
       <div className="mx-auto max-w-6xl">
-        <div className="overflow-hidden rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.10) 0%, rgba(212,175,55,0.04) 60%, transparent 100%)', border: '1px solid rgba(212,175,55,0.18)' }}>
+        <div className="overflow-hidden rounded-2xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-gold) 10%, transparent) 0%, color-mix(in srgb, var(--color-gold) 4%, transparent) 60%, transparent 100%)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}>
           <div className="grid grid-cols-1 gap-0 lg:grid-cols-2">
             <div className="p-10">
               <div className="mb-1 flex items-center gap-2">
-                <Star className="h-4 w-4 text-[#D4AF37]" />
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/70">{L['goldenVisa.eyebrow']}</span>
+                <Star className="h-4 w-4 text-gold" />
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-gold/70">{L['goldenVisa.eyebrow']}</span>
               </div>
               <h2 className="mt-4 text-[36px] font-bold leading-tight" style={{ color: p.textPrimary }}>{L['goldenVisa.title']}</h2>
               <p className="mt-3 text-[15px] leading-relaxed" style={{ color: p.textMuted }}>{lpFill(L['goldenVisa.desc'], { threshold })}</p>
-              <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-7 py-3.5 text-[14px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
+              <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3.5 text-[14px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
                 {L['goldenVisa.cta']} <ChevronRight className="h-4 w-4" />
               </a>
             </div>
-            <div className="border-t border-[#D4AF37]/10 p-10 lg:border-l lg:border-t-0">
+            <div className="border-t border-gold/10 p-10 lg:border-l lg:border-t-0">
               <div className="mb-5 text-[11px] font-semibold uppercase tracking-widest" style={{ color: p.textFaint }}>{L['goldenVisa.whatYouGet']}</div>
               <ul className="space-y-4">
                 {(benefits.length ? benefits : defaultBenefits).map((b, i) => (
                   <li key={i} className="flex items-start gap-3 text-[14px]" style={{ color: p.textMuted }}>
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />{b}
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-gold" />{b}
                   </li>
                 ))}
               </ul>
@@ -723,14 +725,14 @@ function AmenitiesSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p:
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['amenities.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['amenities.eyebrow']}</div>
         <h2 className="mb-8 text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['amenities.title']}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item, i) => {
             const Icon = getIcon(item)
             return (
               <div key={i} className="flex items-center gap-3 rounded-xl border px-4 py-3.5" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-                <Icon className="h-4 w-4 shrink-0 text-[#D4AF37]/50" />
+                <Icon className="h-4 w-4 shrink-0 text-gold/50" />
                 <span className="text-[13px]" style={{ color: p.textMuted }}>{item}</span>
               </div>
             )
@@ -752,7 +754,7 @@ function DeveloperSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p:
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['developer.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['developer.eyebrow']}</div>
         <div className={`grid grid-cols-1 gap-10 ${stats.length ? 'lg:grid-cols-[1fr_320px]' : ''}`}>
           <div>
             <h2 className="mb-4 text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['developer.builtByPrefix']} {name}</h2>
@@ -762,7 +764,7 @@ function DeveloperSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p:
             <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
               {stats.map(({ label, value }, i) => (
                 <div key={i} className="rounded-xl border p-5 text-center lg:text-left" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-                  <div className="text-[28px] font-bold text-[#D4AF37]">{toStr(value)}</div>
+                  <div className="text-[28px] font-bold text-gold">{toStr(value)}</div>
                   <div className="mt-1 text-[12px]" style={{ color: p.textFaint }}>{toStr(label)}</div>
                 </div>
               ))}
@@ -784,11 +786,11 @@ function SocialProofSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['social.eyebrow']}</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['social.eyebrow']}</div>
         <div className="mb-10 flex items-end justify-between">
           <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['social.title']}</h2>
           <div className="hidden items-center gap-1 sm:flex">
-            {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />)}
+            {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-gold text-gold" />)}
             <span className="ml-2 text-[13px]" style={{ color: p.textFaint }}>{avg} {L['social.average']}</span>
           </div>
         </div>
@@ -796,7 +798,7 @@ function SocialProofSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; 
           {list.map((t, i) => (
             <div key={i} className="flex flex-col rounded-2xl border p-7" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
               <div className="mb-4 flex gap-0.5">
-                {[...Array(Number(t.rating) || 5)].map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-[#D4AF37] text-[#D4AF37]" />)}
+                {[...Array(Number(t.rating) || 5)].map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-gold text-gold" />)}
               </div>
               <p className="flex-1 text-[14px] italic leading-relaxed" style={{ color: p.textMuted }}>&ldquo;{toStr(t.quote)}&rdquo;</p>
               <div className="mt-5 border-t pt-4" style={{ borderTopColor: p.divider }}>
@@ -824,7 +826,7 @@ function NeighborhoodSection({ d, page, L, p }: { d: Record<string, unknown>; pa
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['neighborhood.eyebrow']}</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['neighborhood.eyebrow']}</div>
             <h2 className="mb-4 text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['neighborhood.lifeInPrefix']} {area}</h2>
             {description && (
               <p className="text-[15px] leading-relaxed" style={{ color: p.textMuted }}>{description}</p>
@@ -833,8 +835,8 @@ function NeighborhoodSection({ d, page, L, p }: { d: Record<string, unknown>; pa
           <div className="space-y-3">
             {highlights.map((h, i) => (
               <div key={i} className="flex items-start gap-3 rounded-xl border px-5 py-4" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
-                <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15">
-                  <Check className="h-3 w-3 text-[#D4AF37]" />
+                <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15">
+                  <Check className="h-3 w-3 text-gold" />
                 </div>
                 <span className="text-[14px]" style={{ color: p.textMuted }}>{h}</span>
               </div>
@@ -858,8 +860,8 @@ function MarketIntelligenceSection({ d, L, p }: { d: Record<string, unknown>; L:
       <div className="mx-auto max-w-6xl">
         <div className="rounded-2xl border p-8 lg:p-10" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4AF37]/10">
-              <Sparkles className="h-5 w-5 text-[#D4AF37]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10">
+              <Sparkles className="h-5 w-5 text-gold" />
             </div>
             <div>
               <div className="text-[15px] font-semibold" style={{ color: p.textPrimary }}>{L['market.title']}</div>
@@ -869,12 +871,12 @@ function MarketIntelligenceSection({ d, L, p }: { d: Record<string, unknown>; L:
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />{L['market.live']}
             </div>
           </div>
-          {summary && <p className="mb-6 text-[15px] leading-relaxed border-l-2 border-[#D4AF37]/40 pl-5" style={{ color: p.textMuted }}>{summary}</p>}
+          {summary && <p className="mb-6 text-[15px] leading-relaxed border-l-2 border-gold/40 pl-5" style={{ color: p.textMuted }}>{summary}</p>}
           {bullets.length > 0 && (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {bullets.map((b, i) => (
                 <div key={i} className="flex items-start gap-2.5 text-[13px]" style={{ color: p.textMuted }}>
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]/50" />{b}
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold/50" />{b}
                 </div>
               ))}
             </div>
@@ -903,7 +905,7 @@ function AiConciergeSection({ d, page, L, p }: { d: Record<string, unknown>; pag
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_480px]">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['ai.eyebrow']}</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['ai.eyebrow']}</div>
             <h2 className="mb-3 text-[34px] font-bold" style={{ color: p.textPrimary }}>{title}</h2>
             <p className="text-[15px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle || lpFill(L['ai.subtitle'], { name })}</p>
             <div className="mt-6 flex items-center gap-3">
@@ -941,19 +943,19 @@ function LeadFormSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div className="flex flex-col justify-center">
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['leadForm.eyebrow']}</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['leadForm.eyebrow']}</div>
             <h2 className="mb-3 text-[34px] font-bold" style={{ color: p.textPrimary }}>{title}</h2>
             <p className="mb-8 text-[15px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle}</p>
             <div className="space-y-4">
               {[{ icon: Clock, text: L['leadForm.benefit1'] }, { icon: Shield, text: L['leadForm.benefit2'] }, { icon: Users, text: L['leadForm.benefit3'] }, { icon: Award, text: L['leadForm.benefit4'] }].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3 text-[14px]" style={{ color: p.textMuted }}>
-                  <Icon className="h-4 w-4 shrink-0 text-[#D4AF37]/60" />{text}
+                  <Icon className="h-4 w-4 shrink-0 text-gold/60" />{text}
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <div className="rounded-2xl border border-[#D4AF37]/15 p-8" style={{ background: p.surface }}>
+            <div className="rounded-2xl border border-gold/15 p-8" style={{ background: p.surface }}>
               <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} L={L} pixels={page.pixels} palette={p} />
             </div>
           </div>
@@ -975,17 +977,17 @@ function DownloadBrochureSection({ d, page, L, p }: { d: Record<string, unknown>
   return (
     <section className="border-t px-5 py-16 sm:px-8" style={{ borderTopColor: p.divider }}>
       <div className="mx-auto max-w-6xl">
-        <div className="rounded-2xl p-10 text-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.05) 60%, transparent 100%)', border: '1px solid rgba(212,175,55,0.18)' }}>
+        <div className="rounded-2xl p-10 text-center" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-gold) 12%, transparent) 0%, color-mix(in srgb, var(--color-gold) 5%, transparent) 60%, transparent 100%)', border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)' }}>
           <div className="mx-auto max-w-lg">
-            <div className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['brochure.eyebrow']}</div>
+            <div className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['brochure.eyebrow']}</div>
             <h3 className="text-[28px] font-bold" style={{ color: p.textPrimary }}>{title}</h3>
             <p className="mx-auto mt-3 text-[14px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle}</p>
             {hasBrochure ? (
-              <a href={brochureUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
+              <a href={brochureUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
                 {L['brochure.download']} <Download className="h-4 w-4" />
               </a>
             ) : (
-              <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
+              <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
                 {page.ctaText} <ChevronRight className="h-4 w-4" />
               </a>
             )}
@@ -1029,7 +1031,7 @@ function Section({ section, page, L, p }: { section: LandingSection; page: Landi
           <div className="mx-auto max-w-6xl">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[300px_1fr]">
               <div>
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['faq.eyebrow']}</div>
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gold/60">{L['faq.eyebrow']}</div>
                 <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['faq.title']}</h2>
                 <p className="mt-3 text-[14px] leading-relaxed" style={{ color: p.textFaint }}>{L['faq.subtitle']}</p>
               </div>
@@ -1067,7 +1069,7 @@ function LangSwitcher({ lang, theme, intent }: { lang: LpLang; theme: LpTheme; i
           key={code}
           href={lpHref(code, theme, intent)}
           className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-            code === lang ? 'bg-[#D4AF37]/15 text-[#D4AF37]' : ''
+            code === lang ? 'bg-gold/15 text-gold' : ''
           }`}
           style={code === lang ? undefined : { color: theme === 'day' ? 'rgba(11,11,15,0.45)' : 'rgba(255,255,255,0.40)' }}
         >
@@ -1085,7 +1087,7 @@ function ThemeToggle({ lang, theme, intent, p }: { lang: LpLang; theme: LpTheme;
     <a
       href={lpHref(lang, next, intent)}
       aria-label={next === 'night' ? 'Switch to night theme' : 'Switch to day theme'}
-      className="flex h-8 w-8 items-center justify-center rounded-full border transition hover:border-[#D4AF37]/40"
+      className="flex h-8 w-8 items-center justify-center rounded-full border transition hover:border-gold/40"
       style={{ borderColor: p.surfaceBorder, color: p.textMuted }}
     >
       {next === 'night' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -1100,7 +1102,7 @@ function Topbar({ page, L, lang, theme, intent, p }: { page: LandingPageData; L:
   return (
     <div className="fixed left-0 right-0 top-0 z-50 border-b backdrop-blur-md" style={{ borderBottomColor: p.divider, background: p.topbarBg }}>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
-        <div className="text-[13px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD <span className="font-normal" style={{ color: p.textFaint }}>{L['topbar.brandSuffix']}</span></div>
+        <div className="text-[13px] font-bold tracking-wider text-gold">FREEHOLD <span className="font-normal" style={{ color: p.textFaint }}>{L['topbar.brandSuffix']}</span></div>
         {hasPrice && <div className="hidden text-[12px] sm:block" style={{ color: p.textFaint }}>{L['topbar.from']} <span className="font-semibold" style={{ color: p.textMuted }}>{price}</span></div>}
         <div className="flex items-center gap-2">
           <LangSwitcher lang={lang} theme={theme} intent={intent} />
@@ -1128,15 +1130,15 @@ function Footer({ page, L, p }: { page: LandingPageData; L: Dict; p: LpPalette }
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
           <div>
-            <div className="text-[14px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD {L['footer.brandSuffix']}</div>
+            <div className="text-[14px] font-bold tracking-wider text-gold"><span className="uppercase">{BRAND.company}</span> {L['footer.brandSuffix']}</div>
             <div className="mt-2 whitespace-pre-line text-[12px] leading-relaxed" style={{ color: p.textFaint }}>{L['footer.address']}</div>
           </div>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: p.textFaint }}>{L['footer.contact']}</div>
             <div className="space-y-1 text-[12px]" style={{ color: p.textFaint }}>
-              <div dir="ltr">+971 50 417 3622</div>
-              <div dir="ltr">info@freeholdproperty.ae</div>
-              <div dir="ltr">freeholdproperty.ae</div>
+              <div dir="ltr">{BRAND.phone}</div>
+              <div dir="ltr">{BRAND.email}</div>
+              <div dir="ltr">{BRAND.domain}</div>
             </div>
           </div>
           <div>
@@ -1152,7 +1154,7 @@ function Footer({ page, L, p }: { page: LandingPageData; L: Dict; p: LpPalette }
           © {new Date().getFullYear()} {L['footer.legal']}
           {' · '}
           {/* Required for Meta lead ads — the pre-flight test checks for it. */}
-          <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[#D4AF37]">{L['footer.privacy']}</a>
+          <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-gold">{L['footer.privacy']}</a>
         </div>
       </div>
     </footer>
@@ -1161,11 +1163,11 @@ function Footer({ page, L, p }: { page: LandingPageData; L: Dict; p: LpPalette }
 
 function NotFound({ L, p }: { L: Dict; p: LpPalette }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-5 text-center" style={{ background: p.bg }}>
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/40 mb-3">404</div>
+    <div className="flex min-h-screen flex-col items-center justify-center px-5 text-center" style={{ background: p.bg, ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}>
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-gold/40 mb-3">404</div>
       <h1 className="text-[28px] font-bold mb-2" style={{ color: p.textPrimary }}>{L['notFound.title']}</h1>
       <p className="text-[14px]" style={{ color: p.textFaint }}>{L['notFound.desc']}</p>
-      <a href="https://freeholdproperty.ae" className="mt-8 text-[13px] text-[#D4AF37]/60 hover:text-[#D4AF37]">{L['notFound.back']}</a>
+      <a href={getBrandSiteUrl()} className="mt-8 text-[13px] text-gold/60 hover:text-gold">{L['notFound.back']}</a>
     </div>
   )
 }
@@ -1175,8 +1177,8 @@ function NotFound({ L, p }: { L: Dict; p: LpPalette }) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const page = await getPage(slug)
-  if (!page) return { title: 'Property | Freehold UAE' }
-  if (page.isDraft && !(await canPreviewDrafts())) return { title: 'Property | Freehold UAE' }
+  if (!page) return { title: `Property | ${BRAND.company} UAE` }
+  if (page.isDraft && !(await canPreviewDrafts())) return { title: `Property | ${BRAND.company} UAE` }
   return {
     title: page.seo.title || page.title,
     description: page.seo.description || page.subtitle,
@@ -1235,13 +1237,13 @@ export default async function LandingPage({
   const price = fmtAed(adapted.project?.priceFromAed, L)
 
   return (
-    <div className={`min-h-screen${theme === 'day' ? ' lp-day' : ''}`} dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary }}>
+    <div className={`min-h-screen${theme === 'day' ? ' lp-day' : ''}`} dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary, ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}>
       {/* Day-theme contrast: the gold accent (#D4AF37) is tuned for dark
           backgrounds; at 60-80% opacity on off-white it washes out. Remap all
           gold TEXT (labels, eyebrows, stats) to a deep readable gold in day
           mode — gold-filled buttons/backgrounds keep the brand tone. */}
       {theme === 'day' && (
-        <style>{`.lp-day [class*="text-[#D4AF37]"]{color:#8E6D1A !important}`}</style>
+        <style>{`.lp-day [class*="text-gold"]{color:#8E6D1A !important}`}</style>
       )}
       <Tracker
         slug={adapted.slug}

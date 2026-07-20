@@ -1,4 +1,5 @@
 import type { Locale } from '../config'
+import { BRAND, brandName } from '@/lib/freehold/brand'
 
 // Settings surface (general, team, roles, billing, security, notifications,
 // API). Keys are namespaced `settings.*`.
@@ -177,6 +178,14 @@ export const settings: Record<Locale, Dict> = {
     'settings.brand.companyName': 'Company Name',
     'settings.brand.primaryDomain': 'Primary Domain',
     'settings.brand.crmTimezone': 'CRM Timezone',
+    'settings.brand.product': 'Product Name',
+    'settings.brand.legalName': 'Legal Entity',
+    'settings.brand.phone': 'Contact Phone',
+    'settings.brand.email': 'Contact Email',
+    'settings.brand.leadPrefix': 'Lead Serial Prefix',
+    'settings.brand.accent': 'Accent Colour',
+    'settings.brand.live.title': 'Active brand configuration',
+    'settings.brand.live.note': 'Read-only. This deployment reads its brand from environment variables set on the server — to re-brand, change them and redeploy. See:',
     'settings.brand.dashboardTheme': 'Dashboard Theme',
     'settings.brand.theme.dark': 'Dark (current)',
     'settings.brand.theme.darker': 'Darker',
@@ -304,11 +313,11 @@ export const settings: Record<Locale, Dict> = {
     'settings.billing.inv.preparing': 'Preparing {id}…',
     'settings.billing.inv.downloaded': '{id} downloaded',
     'settings.billing.inv.downloadFailed': 'Download failed',
-    'settings.billing.inv.june': 'Freehold Intelligence — June 2026',
-    'settings.billing.inv.may': 'Freehold Intelligence — May 2026',
-    'settings.billing.inv.april': 'Freehold Intelligence — April 2026',
-    'settings.billing.inv.march': 'Freehold Intelligence — March 2026',
-    'settings.billing.inv.february': 'Freehold Intelligence — February 2026',
+    'settings.billing.inv.june': `${brandName} — June 2026`,
+    'settings.billing.inv.may': `${brandName} — May 2026`,
+    'settings.billing.inv.april': `${brandName} — April 2026`,
+    'settings.billing.inv.march': `${brandName} — March 2026`,
+    'settings.billing.inv.february': `${brandName} — February 2026`,
 
     // ── Security page ──
     'settings.security.title': 'Security',
@@ -340,7 +349,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.api.title': 'API Reference',
-    'settings.api.subtitlePrefix': 'RESTful API for integrating Freehold Intelligence with external tools. Manage keys in',
+    'settings.api.subtitlePrefix': `RESTful API for integrating ${brandName} with external tools. Manage keys in`,
     'settings.api.securityLink': 'Security →',
     'settings.api.referenceNote': 'API reference. Endpoints activate as the API rolls out; manage your keys in Security.',
     'settings.api.baseUrl': 'Base URL',
@@ -570,6 +579,14 @@ export const settings: Record<Locale, Dict> = {
     'settings.brand.companyName': 'اسم الشركة',
     'settings.brand.primaryDomain': 'النطاق الأساسي',
     'settings.brand.crmTimezone': 'المنطقة الزمنية لـ CRM',
+    'settings.brand.product': 'اسم المنتج',
+    'settings.brand.legalName': 'الكيان القانوني',
+    'settings.brand.phone': 'هاتف التواصل',
+    'settings.brand.email': 'البريد الإلكتروني للتواصل',
+    'settings.brand.leadPrefix': 'بادئة تسلسل العملاء المحتملين',
+    'settings.brand.accent': 'لون العلامة',
+    'settings.brand.live.title': 'إعدادات العلامة الفعلية',
+    'settings.brand.live.note': 'للقراءة فقط. تقرأ هذه المنصة هويتها من متغيرات البيئة المضبوطة على الخادم — لإعادة تسمية العلامة، غيّرها وأعد النشر. راجع:',
     'settings.brand.dashboardTheme': 'سمة لوحة التحكم',
     'settings.brand.theme.dark': 'داكن (الحالي)',
     'settings.brand.theme.darker': 'أكثر قتامة',
@@ -697,11 +714,11 @@ export const settings: Record<Locale, Dict> = {
     'settings.billing.inv.preparing': 'جارٍ تحضير {id}…',
     'settings.billing.inv.downloaded': 'تم تنزيل {id}',
     'settings.billing.inv.downloadFailed': 'فشل التنزيل',
-    'settings.billing.inv.june': 'Freehold Intelligence — يونيو 2026',
-    'settings.billing.inv.may': 'Freehold Intelligence — مايو 2026',
-    'settings.billing.inv.april': 'Freehold Intelligence — أبريل 2026',
-    'settings.billing.inv.march': 'Freehold Intelligence — مارس 2026',
-    'settings.billing.inv.february': 'Freehold Intelligence — فبراير 2026',
+    'settings.billing.inv.june': `${brandName} — يونيو 2026`,
+    'settings.billing.inv.may': `${brandName} — مايو 2026`,
+    'settings.billing.inv.april': `${brandName} — أبريل 2026`,
+    'settings.billing.inv.march': `${brandName} — مارس 2026`,
+    'settings.billing.inv.february': `${brandName} — فبراير 2026`,
 
     // ── Security page ──
     'settings.security.title': 'الأمان',
@@ -733,7 +750,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.api.title': 'مرجع API',
-    'settings.api.subtitlePrefix': 'واجهة برمجة RESTful لدمج Freehold Intelligence مع الأدوات الخارجية. أدِر المفاتيح في',
+    'settings.api.subtitlePrefix': `واجهة برمجة RESTful لدمج ${brandName} مع الأدوات الخارجية. أدِر المفاتيح في`,
     'settings.api.securityLink': 'الأمان ←',
     'settings.api.referenceNote': 'مرجع واجهة برمجة التطبيقات. تُفعَّل نقاط النهاية مع إطلاق الواجهة؛ أدِر مفاتيحك في الأمان.',
     'settings.api.baseUrl': 'عنوان URL الأساسي',
@@ -963,6 +980,14 @@ export const settings: Record<Locale, Dict> = {
     'settings.brand.companyName': 'Название компании',
     'settings.brand.primaryDomain': 'Основной домен',
     'settings.brand.crmTimezone': 'Часовой пояс CRM',
+    'settings.brand.product': 'Название продукта',
+    'settings.brand.legalName': 'Юридическое лицо',
+    'settings.brand.phone': 'Контактный телефон',
+    'settings.brand.email': 'Контактный email',
+    'settings.brand.leadPrefix': 'Префикс номера лида',
+    'settings.brand.accent': 'Акцентный цвет',
+    'settings.brand.live.title': 'Активная конфигурация бренда',
+    'settings.brand.live.note': 'Только для чтения. Бренд этой платформы задаётся переменными окружения на сервере — чтобы провести ребрендинг, измените их и переразверните. См.:',
     'settings.brand.dashboardTheme': 'Тема панели',
     'settings.brand.theme.dark': 'Тёмная (текущая)',
     'settings.brand.theme.darker': 'Темнее',
@@ -1090,11 +1115,11 @@ export const settings: Record<Locale, Dict> = {
     'settings.billing.inv.preparing': 'Подготовка {id}…',
     'settings.billing.inv.downloaded': '{id} загружен',
     'settings.billing.inv.downloadFailed': 'Ошибка загрузки',
-    'settings.billing.inv.june': 'Freehold Intelligence — июнь 2026',
-    'settings.billing.inv.may': 'Freehold Intelligence — май 2026',
-    'settings.billing.inv.april': 'Freehold Intelligence — апрель 2026',
-    'settings.billing.inv.march': 'Freehold Intelligence — март 2026',
-    'settings.billing.inv.february': 'Freehold Intelligence — февраль 2026',
+    'settings.billing.inv.june': `${brandName} — июнь 2026`,
+    'settings.billing.inv.may': `${brandName} — май 2026`,
+    'settings.billing.inv.april': `${brandName} — апрель 2026`,
+    'settings.billing.inv.march': `${brandName} — март 2026`,
+    'settings.billing.inv.february': `${brandName} — февраль 2026`,
 
     // ── Security page ──
     'settings.security.title': 'Безопасность',
@@ -1126,7 +1151,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.api.title': 'Справочник API',
-    'settings.api.subtitlePrefix': 'RESTful API для интеграции Freehold Intelligence с внешними инструментами. Управляйте ключами в разделе',
+    'settings.api.subtitlePrefix': `RESTful API для интеграции ${brandName} с внешними инструментами. Управляйте ключами в разделе`,
     'settings.api.securityLink': 'Безопасность →',
     'settings.api.referenceNote': 'Справочник по API. Эндпоинты активируются по мере выпуска API; управляйте ключами в разделе «Безопасность».',
     'settings.api.baseUrl': 'Базовый URL',

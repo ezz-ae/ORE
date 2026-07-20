@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { BRAND, brandName } from "@/lib/freehold/brand"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -323,7 +324,7 @@ const generateOfferMarkdown = (input: {
       : "ROI to be confirmed"
 
   return [
-    `Freehold Branded Offer`,
+    `${BRAND.company} Branded Offer`,
     ``,
     `Client: ${input.lead?.name || "Prospective buyer"}`,
     budgetText,
@@ -448,7 +449,7 @@ export async function POST(req: NextRequest) {
         `Would you be available for a quick call this week? I can answer any questions and walk you through the investment potential. 🏙️`,
         ``,
         `Best regards,`,
-        `Freehold Brokerage`,
+        `${BRAND.company} Brokerage`,
       ].join("\n")
 
       attachedData = {
@@ -581,13 +582,13 @@ export async function POST(req: NextRequest) {
       if (matchedArea) {
         const areaContext = await getLlmContextByArea(matchedArea, 6).catch(() => "")
         if (areaContext) {
-          context += `\n\nAREA INTELLIGENCE (Data: Freehold Intelligence — ${matchedArea}):\n${areaContext}`
+          context += `\n\nAREA INTELLIGENCE (Data: ${brandName} — ${matchedArea}):\n${areaContext}`
         }
       }
 
       if (!hasGeminiKey) {
         aiReply =
-          "Freehold AI is temporarily unavailable. I can still list leads, shortlist projects, create listings, update listings, and draft Freehold-branded offers if you phrase the request directly."
+          `${BRAND.company} AI is temporarily unavailable. I can still list leads, shortlist projects, create listings, update listings, and draft ${BRAND.company}-branded offers if you phrase the request directly.`
       } else {
         try {
           const model = getGeminiModel("broker")
@@ -600,7 +601,7 @@ export async function POST(req: NextRequest) {
                 },
                 {
                   role: "model",
-                  parts: [{ text: "Ready to assist with Freehold CRM operations, lead intelligence, listings, and branded sales materials." }],
+                  parts: [{ text: `Ready to assist with ${BRAND.company} CRM operations, lead intelligence, listings, and branded sales materials.` }],
                 },
                 ...buildConversationHistory(history),
               ],

@@ -1,6 +1,7 @@
 // lib/freehold/mcp/execute-tool.ts
 
 import { McpResponseEnvelope, Role } from '@/types/freehold-mcp';
+import { BRAND } from '@/lib/freehold/brand'
 import { getToolById } from '@/lib/freehold/mcp/registry';
 import { userHasRole, isActionApproved } from '@/lib/freehold/mcp/permissions';
 import { getLiveIntegrationStatuses } from '@/lib/freehold/integration-status';
@@ -46,7 +47,7 @@ export async function executeTool(request: ToolCallRequest): Promise<McpResponse
       tool: requestedToolName || undefined,
       layer: 'mcp',
       status: 'error',
-      evidence: ['Tool not found in Freehold MCP registry'],
+      evidence: [`Tool not found in ${BRAND.company} MCP registry`],
       warnings: [`Unknown tool: ${requestedToolName || 'undefined'}`],
       nextActions: ['Call GET /api/freehold/mcp/tools and retry with a listed id or alias'],
       generatedAt: now(),

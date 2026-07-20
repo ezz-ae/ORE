@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { BRAND } from '@/lib/freehold/brand'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Sparkles, Database, Zap, Shield,
@@ -73,11 +74,18 @@ const NOTIFICATION_SETTINGS = [
   { id: 'lead_overdue',    enabled: true  },
 ]
 
-// Brand fields — `labelKey` maps to the dictionary; `value` is real config data.
-const BRAND_SETTINGS = [
-  { labelKey: 'settings.brand.companyName',   value: 'Freehold Property Dubai' },
-  { labelKey: 'settings.brand.primaryDomain', value: 'freeholdproperty.ae' },
-  { labelKey: 'settings.brand.crmTimezone',   value: 'Asia/Dubai (UTC+4)' },
+// Live brand configuration (read-only). These are the ACTUAL values the
+// deployment runs with — sourced from NEXT_PUBLIC_BRAND_* environment
+// variables (lib/freehold/brand.ts), not from an editable settings blob.
+const BRAND_ROWS = [
+  { labelKey: 'settings.brand.companyName',   value: BRAND.company },
+  { labelKey: 'settings.brand.product',       value: BRAND.product },
+  { labelKey: 'settings.brand.legalName',     value: BRAND.legalName },
+  { labelKey: 'settings.brand.primaryDomain', value: BRAND.domain },
+  { labelKey: 'settings.brand.phone',         value: BRAND.phone },
+  { labelKey: 'settings.brand.email',         value: BRAND.email },
+  { labelKey: 'settings.brand.leadPrefix',    value: BRAND.leadPrefix },
+  { labelKey: 'settings.brand.crmTimezone',   value: BRAND.timezone },
 ]
 
 // Theme options — `value` is the persisted identifier; `labelKey` is the display label.
@@ -136,9 +144,6 @@ export default function SettingsPage() {
   const [thresholds,  setThresholds]  = useState<LmThreshold[]>(INITIAL_THRESHOLDS)
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
   const [theme,       setTheme]       = useState('Dark (current)')
-  const [brand,       setBrand]       = useState<Record<string, string>>(
-    () => Object.fromEntries(BRAND_SETTINGS.map((s) => [s.labelKey, s.value])),
-  )
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand' | 'operations'>('ai')
   const loaded = useRef(false)
   const t = useT()
@@ -193,7 +198,6 @@ export default function SettingsPage() {
         if (s?.thresholds) setThresholds(s.thresholds)
         if (s?.notifs) setNotifs(s.notifs)
         if (typeof s?.theme === 'string') setTheme(s.theme)
-        if (s?.brand && typeof s.brand === 'object') setBrand((prev) => ({ ...prev, ...s.brand }))
       })
       .catch(() => {})
       .finally(() => { loaded.current = true })
@@ -205,13 +209,13 @@ export default function SettingsPage() {
     const timer = setTimeout(() => {
       fetch('/api/freehold/settings', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme, brand }),
+        body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme }),
       })
         .then((r) => { if (!r.ok) throw new Error() })
         .catch(() => toast.error(t('settings.general.saveError')))
     }, 400)
     return () => clearTimeout(timer)
-  }, [aiActions, crmFields, thresholds, notifs, theme, brand, t])
+  }, [aiActions, crmFields, thresholds, notifs, theme, t])
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
 
@@ -423,17 +427,33 @@ export default function SettingsPage() {
               sub={t('settings.brand.head.sub')}
             />
             <div className="space-y-4">
-              {BRAND_SETTINGS.map((s) => (
-                <div key={s.labelKey} className="rounded-2xl border border-line bg-surface p-5">
-                  <label className="block text-xs font-medium text-slate-500 mb-2">{t(s.labelKey)}</label>
-                  <input
-                    type="text"
-                    value={brand[s.labelKey] ?? s.value}
-                    onChange={(e) => setBrand((b) => ({ ...b, [s.labelKey]: e.target.value }))}
-                    className="w-full rounded-xl border border-line-strong bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/35 focus:outline-none"
-                  />
+              {/* Active brand configuration — read-only. This deployment's brand
+                  is set via NEXT_PUBLIC_BRAND_* environment variables (see
+                  DEPLOYMENT.md); nothing here persists to a settings blob. */}
+              <div className="rounded-2xl border border-line bg-surface p-5">
+                <div className="mb-1 text-sm font-semibold text-slate-100">{t('settings.brand.live.title')}</div>
+                <p className="mb-4 text-xs leading-relaxed text-slate-500">
+                  {t('settings.brand.live.note')}{' '}
+                  <code className="rounded bg-surface-2 px-1 py-0.5 text-[11px] text-slate-400">NEXT_PUBLIC_BRAND_*</code>
+                  {' · '}
+                  <code className="rounded bg-surface-2 px-1 py-0.5 text-[11px] text-slate-400">DEPLOYMENT.md</code>
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {BRAND_ROWS.map((row) => (
+                    <div key={row.labelKey} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
+                      <span className="text-xs font-medium text-slate-500">{t(row.labelKey)}</span>
+                      <span className="truncate text-sm text-slate-100" dir="ltr">{row.value}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
+                    <span className="text-xs font-medium text-slate-500">{t('settings.brand.accent')}</span>
+                    <span className="flex items-center gap-2 text-sm text-slate-100" dir="ltr">
+                      <span className="h-4 w-4 rounded-full border border-line-strong" style={{ background: BRAND.accent }} />
+                      {BRAND.accent}
+                    </span>
+                  </div>
                 </div>
-              ))}
+              </div>
 
               {/* Theme */}
               <div className="rounded-2xl border border-line bg-surface p-5">

@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
+import { BRAND } from '@/lib/freehold/brand'
 
 // ─── Broker PDF documents ─────────────────────────────────────────────────────
 // One-page, Freehold-branded PDFs a broker generates from a project's real
@@ -51,7 +52,7 @@ export async function buildDraftOffer(d: OfferData): Promise<Uint8Array> {
 
   // ── Header band ──
   page.drawRectangle({ x: 0, y: height - 96, width, height: 96, color: INK })
-  page.drawText((d.brokerCompany || 'Freehold').toUpperCase(), { x: M, y: height - 46, size: 20, font: bold, color: GOLD })
+  page.drawText((d.brokerCompany || BRAND.company).toUpperCase(), { x: M, y: height - 46, size: 20, font: bold, color: GOLD })
   page.drawText('DRAFT SALES OFFER', { x: M, y: height - 74, size: 11, font, color: rgb(0.8, 0.82, 0.85) })
   page.drawText('INDICATIVE — NOT A BINDING OFFER', { x: width - M - bold.widthOfTextAtSize('INDICATIVE — NOT A BINDING OFFER', 8), y: height - 60, size: 8, font: bold, color: rgb(0.8, 0.55, 0.2) })
 
@@ -94,7 +95,7 @@ export async function buildDraftOffer(d: OfferData): Promise<Uint8Array> {
   }
 
   // ── Broker block ──
-  const bName = d.brokerName || 'Your Freehold consultant'
+  const bName = d.brokerName || `Your ${BRAND.company} consultant`
   page.drawText('Prepared by', { x: M, y, size: 9, font: bold, color: GOLD }); y -= 16
   page.drawText(bName, { x: M, y, size: 12, font: bold, color: INK }); y -= 15
   if (d.brokerPhone) { page.drawText(d.brokerPhone, { x: M, y, size: 11, font, color: MUTE }); y -= 15 }
@@ -125,7 +126,7 @@ export async function buildFactSheet(d: OfferData): Promise<Uint8Array> {
 
   // Header
   page.drawRectangle({ x: 0, y: height - 90, width, height: 90, color: INK })
-  page.drawText((d.brokerCompany || 'Freehold').toUpperCase(), { x: M, y: height - 44, size: 20, font: bold, color: GOLD })
+  page.drawText((d.brokerCompany || BRAND.company).toUpperCase(), { x: M, y: height - 44, size: 20, font: bold, color: GOLD })
   page.drawText('PROJECT FACT SHEET', { x: M, y: height - 70, size: 11, font, color: rgb(0.8, 0.82, 0.85) })
 
   y = height - 130
@@ -163,7 +164,7 @@ export async function buildFactSheet(d: OfferData): Promise<Uint8Array> {
 
   // Broker contact — the ONLY contact on the sheet.
   page.drawText('Your consultant', { x: M, y, size: 9, font: bold, color: GOLD }); y -= 16
-  page.drawText(d.brokerName || 'Freehold', { x: M, y, size: 12, font: bold, color: INK }); y -= 15
+  page.drawText(d.brokerName || BRAND.company, { x: M, y, size: 12, font: bold, color: INK }); y -= 15
   if (d.brokerPhone) { page.drawText(d.brokerPhone, { x: M, y, size: 11, font, color: MUTE }); y -= 15 }
 
   const foot = 'Prepared for information only. Figures and availability are subject to change and developer confirmation. Errors and omissions excepted.'

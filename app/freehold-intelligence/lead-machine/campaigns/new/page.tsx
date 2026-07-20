@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { BRAND, getBrandSiteUrl } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
@@ -264,7 +265,7 @@ export default function NewCampaignPage() {
     primaryText:  '',
     headlines:    [''],
     descriptions: ['Request the investor summary now.'],
-    landingUrl:   'https://www.freeholdproperty.ae',
+    landingUrl:   getBrandSiteUrl(),
     clickIntent:  '',
     cta:          'LEARN_MORE',
     imageUrl:     '',
@@ -646,7 +647,7 @@ export default function NewCampaignPage() {
         listingName: listing?.projectName ?? name,
         landingUrl: form.landingUrl,
         questions,
-        privacyPolicyUrl: 'https://freeholdproperty.ae/privacy',
+        privacyPolicyUrl: BRAND.privacyUrl,
         ...(locale ? { locale } : {}),
         thankYouTitle: t('pforms.default.thankYouTitle'),
         thankYouBody: t('pforms.default.thankYouBody'),
@@ -829,8 +830,8 @@ export default function NewCampaignPage() {
             // renders live from inventory — so the ad never points anywhere
             // but the listing's landing.
             landingUrl: p.landingUrl
-              ? `https://www.freeholdproperty.ae${p.landingUrl}`
-              : `https://www.freeholdproperty.ae/lp/${p.slug}`,
+              ? `${getBrandSiteUrl()}${p.landingUrl}`
+              : `${getBrandSiteUrl()}/lp/${p.slug}`,
             brochureUrl: typeof p.brochureUrl === 'string' && p.brochureUrl ? p.brochureUrl : null,
           }))
           .filter((l: WizardListing) => l.id && l.projectName)
@@ -878,8 +879,8 @@ export default function NewCampaignPage() {
         ? `${displayName} — starting from AED ${priceNum.toLocaleString()}. Request the investor summary now.`
         : `${displayName} — request the investor summary now.`,
       landingUrl: lp
-        ? `https://www.freeholdproperty.ae/lp/${lp}`
-        : project ? `https://www.freeholdproperty.ae/lp/${project}` : prev.landingUrl,
+        ? `${getBrandSiteUrl()}/lp/${lp}`
+        : project ? `${getBrandSiteUrl()}/lp/${project}` : prev.landingUrl,
     }))
   }, [])
 
@@ -1121,7 +1122,7 @@ export default function NewCampaignPage() {
         // back to the project's public page, which always exists for a
         // listed project. Never block a launch on a missing LP. The picked
         // buyer intent rides the click as ?intent= (Layer 4).
-        landingUrl:  withIntent(form.landingUrl || `https://www.freeholdproperty.ae/projects/${encodeURIComponent(form.listingId)}`, form.clickIntent),
+        landingUrl:  withIntent(form.landingUrl || `${getBrandSiteUrl()}/projects/${encodeURIComponent(form.listingId)}`, form.clickIntent),
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
