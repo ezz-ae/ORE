@@ -87,6 +87,17 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
   const navSections = isBroker ? BROKER_NAV_SECTIONS : MANAGER_NAV_SECTIONS
   const allTabs     = navSections.flatMap(s => s.items)
 
+  // Nav already hides these from brokers; the guard makes the DIRECT URL match
+  // what the nav says (the data APIs are role-gated separately either way).
+  if (isBroker && navSections === BROKER_NAV_SECTIONS) {
+    const brokerAllowed = allTabs.some(tab => pathname === tab.href || pathname.startsWith(tab.href + '/'))
+    const isHub = pathname === '/freehold-intelligence/lead-machine'
+    if (!brokerAllowed && !isHub && typeof window !== 'undefined') {
+      window.location.replace('/freehold-intelligence/lead-machine')
+      return null
+    }
+  }
+
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href
     return pathname === href || pathname.startsWith(href + '/')

@@ -378,7 +378,7 @@ export default function NewFormPage() {
         href="/freehold-intelligence/lead-machine/forms"
         className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> {t('pforms.allForms')}
+        <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" /> {t('pforms.allForms')}
       </Link>
 
       <div className="mt-7">
@@ -1012,7 +1012,7 @@ export default function NewFormPage() {
               onClick={() => setStep((s) => (s - 1) as WizardStep)}
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> {t('pforms.nav.back')}
+              <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" /> {t('pforms.nav.back')}
             </button>
           )
           : <div />
@@ -1024,7 +1024,7 @@ export default function NewFormPage() {
             disabled={step === 1 && (!form.formName || !form.landingUrl)}
             className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {t('pforms.nav.next')} <ArrowRight className="h-3.5 w-3.5" />
+            {t('pforms.nav.next')} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
           </button>
         ) : (
           <button

@@ -42,7 +42,7 @@ export const mcpTools: Tool[] = [
     aliases: ['project_data', 'project_search', 'listing_search', 'listings'],
     name: 'Project Data',
     category: 'data',
-    description: 'Retrieves live Freehold public project/listing data and counts from freehold_site_projects.',
+    description: `Retrieves live ${BRAND.company} public project/listing data and counts from freehold_site_projects.`,
     requiresApproval: false,
     allowedRoles: [...readRoles],
     canWriteExternal: false,

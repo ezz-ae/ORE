@@ -5,6 +5,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { appendTurn, getConversation } from '@/lib/freehold/notebook-conversations'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { buildNotebookContext, type NotebookSources, type NotebookUpload } from '@/lib/freehold/notebook-context'
+import { BRAND } from '@/lib/freehold/brand'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   // pre-lockdown bug pattern. The envelope echoes the SESSION role only.
   const role = user.role
 
-  const systemPrompt = `You are the Freehold Notebook AI — a private research and drafting assistant for the Freehold team.
+  const systemPrompt = `You are the ${BRAND.company} Notebook AI — a private research and drafting assistant for the ${BRAND.company} team.
 
 You help with: property research, brochure drafts, market summaries, WhatsApp message templates, and investment narratives for Dubai real estate.
 

@@ -190,8 +190,11 @@ async function callGeminiApi(message: string, opts: ServerQueryOptions = {}): Pr
       },
     )
     if (res.ok) {
-      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }> }
+      // Filter thought parts defensively: today includeThoughts is never set so
+      // none arrive, but the day someone enables it, reasoning must not join
+      // the answer text that reaches a chat bubble.
+      const text = data.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? '').join('') ?? ''
       if (!text) throw new Error('Gemini returned no content')
       remember(text)
       return text
@@ -223,10 +226,12 @@ async function callVertex(message: string, opts: ServerQueryOptions = {}): Promi
   }
 
   const data = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>
   }
+  // Same defensive thought-part filter as the API transport — reasoning parts
+  // must never join the user-facing answer.
   const text =
-    data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ??
+    data.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? '').join('') ??
     '(no response)'
 
   remember(text)

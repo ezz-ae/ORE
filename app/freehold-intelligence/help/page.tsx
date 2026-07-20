@@ -207,6 +207,26 @@ const SECTIONS: QASection[] = [
     Icon: Megaphone,
     items: [
       {
+        q: T('What is the Ads Machine and how do I start it?', 'ما هي آلة الإعلانات وكيف أشغّلها؟', 'Что такое Машина рекламы и как её запустить?'),
+        a: T(
+          'The Ads Machine is the autonomous engine: pick projects from the dropdown, set ONE hard daily cap, and it builds a cross-channel plan (Meta audience trials + Google search), launches with in-ad qualification forms, watches real results, asks your team lead-quality questions, and rotates budget from losers to winners — always inside the cap. Review the plan it shows before you press Start; the dashboard shows what it is doing now and what happens next.',
+          'آلة الإعلانات هي المحرك الذاتي: اختر المشاريع من القائمة، وحدد سقفاً يومياً واحداً صارماً، فتبني خطة عبر القنوات (تجارب جماهير ميتا + بحث جوجل)، وتطلق بنماذج تأهيل داخل الإعلان، وتراقب النتائج الحقيقية، وتسأل فريقك عن جودة العملاء، وتنقل الميزانية من الخاسر إلى الرابح — دائماً داخل السقف. راجع الخطة المعروضة قبل الضغط على «ابدأ»؛ وتعرض اللوحة ما تفعله الآن وما التالي.',
+          'Машина рекламы — автономный движок: выберите проекты, задайте ОДИН жёсткий дневной лимит — она строит кросс-канальный план (аудитории Meta + поиск Google), запускает с квалификационными формами в объявлении, следит за реальными результатами, задаёт команде вопросы о качестве лидов и переносит бюджет от проигравших к выигравшим — всегда в пределах лимита. Проверьте план перед стартом; дашборд показывает, что она делает сейчас и что дальше.',
+        ),
+        links: [{ label: T('Open Ads Machine', 'افتح آلة الإعلانات', 'Открыть Машину рекламы'), href: '/freehold-intelligence/lead-machine/ads-machine' }],
+        roles: MGMT_MKT,
+      },
+      {
+        q: T('How do I build a Meta instant lead form without going to Ads Manager?', 'كيف أنشئ نموذج عملاء ميتا الفوري دون الذهاب إلى مدير الإعلانات؟', 'Как создать мгновенную лид-форму Meta без Ads Manager?'),
+        a: T(
+          'Lead Machine → Forms → New form. Five steps by intent: form type (More volume vs Higher intent), introduction from the listing’s real facts, contact details (full prefill catalog + SMS phone verification), qualify-the-buyer questions (budget bands built around the listing’s actual price, timeline, purpose), and after-submit buttons. Start from a ready template — Brochure request, Book a viewing, Investor qualification, Off-plan interest — or duplicate any existing form. Every form auto-carries attribution so its leads reach the CRM tied to their campaign.',
+          'ماكينة العملاء ← النماذج ← نموذج جديد. خمس خطوات حسب الهدف: نوع النموذج (حجم أكبر أو نية أعلى)، ومقدمة من حقائق العقار الحقيقية، وبيانات التواصل (كل حقول التعبئة + التحقق من الهاتف برسالة SMS)، وأسئلة تأهيل المشتري (شرائح ميزانية حول سعر العقار الفعلي، الإطار الزمني، الغرض)، وأزرار ما بعد الإرسال. ابدأ من قالب جاهز — طلب بروشور، حجز معاينة، تأهيل مستثمر، اهتمام على الخارطة — أو كرّر أي نموذج قائم. كل نموذج يحمل الإسناد تلقائياً فتصل عملاؤه إلى CRM مرتبطين بحملتهم.',
+          'Машина лидов → Формы → Новая форма. Пять шагов по цели: тип формы (больше объёма или выше намерение), введение из реальных фактов объекта, контактные данные (полный каталог полей + SMS-проверка телефона), квалификационные вопросы (диапазоны бюджета вокруг реальной цены, сроки, цель) и кнопки после отправки. Начните с готового шаблона — брошюра, просмотр, квалификация инвестора, интерес к офф-плану — или продублируйте любую форму. Каждая форма несёт атрибуцию: её лиды попадают в CRM со своей кампанией.',
+        ),
+        links: [{ label: T('Open Forms', 'افتح النماذج', 'Открыть Формы'), href: '/freehold-intelligence/lead-machine/forms' }],
+        roles: MGMT_MKT,
+      },
+      {
         q: T('How do I build and reuse audiences?', 'كيف أبني الجماهير وأعيد استخدامها؟', 'Как создавать и переиспользовать аудитории?'),
         a: T(
           'Ads → Audiences. Search Meta’s live vocabulary for real interests and behaviors (each shows its true segment size), narrow with AND-rules, exclude who you don’t want — or upload a lead list CSV to build a lookalike. Every saved audience attaches to a campaign in one click, and the AI can rank the best match for a listing.',

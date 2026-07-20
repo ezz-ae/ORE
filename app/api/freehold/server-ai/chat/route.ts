@@ -5,6 +5,7 @@ import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { getSkill, isRoleAllowed } from '@/lib/freehold/ai-skills'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import type { Role as SessionRole } from '@/lib/freehold/session-types'
+import { BRAND, brandName } from '@/lib/freehold/brand'
 
 type ServerRole = 'owner' | 'admin' | 'marketing' | 'sales_manager' | 'sales_agent' | 'data_manager' | 'viewer'
 type ServerTopic =
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
 Your allowed scope: ${scope.allowedTopics.join(', ')}.
 Topic of this query: ${topic}.
 
-Freehold is a premium Dubai real estate company in UAE. Answer concisely and directly.
+${BRAND.company} is a premium Dubai real estate company in UAE. Answer concisely and directly.
 Be operational — give specific next actions, message drafts, or data insights.
 When drafting messages, write them ready-to-send with no placeholders.
 Keep answers under 200 words unless more detail is requested.

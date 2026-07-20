@@ -142,13 +142,15 @@ export async function POST(req: NextRequest) {
     // A repeat inquiry from a lead that never got a behaviour score (first
     // visit had no session join) is a second chance at the SAME real signal —
     // score the new session and fill the still-empty fields. Never overwrite
-    // an existing score: the first-session read stays the record.
+    // an existing score: the first-session read stays the record. When the new
+    // session DOES score, lp_session_id moves with it — the stored id must
+    // always identify the session the score was derived from.
     if (isRepeatInquiry && toText(body.sessionId)) {
       const late = await scoreLeadSession(toText(body.sessionId))
       if (late.behaviourScore !== null) {
         await query(
           `UPDATE freehold_site_leads SET
-             lp_session_id = COALESCE(lp_session_id, NULLIF($2, '')),
+             lp_session_id = NULLIF($2, ''),
              behaviour_score = COALESCE(behaviour_score, $3),
              buyer_intent = COALESCE(buyer_intent, NULLIF($4, '')),
              purchase_probability = COALESCE(purchase_probability, $5),
