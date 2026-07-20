@@ -6,6 +6,7 @@ const en: Dict = {
   'pcal.subtitle': 'Meetings, bookings, training and follow-ups — the whole company, one timeline.',
   'pcal.newEvent': 'New',
   // Kinds
+  'pcal.kind.viewing': 'Viewing',
   'pcal.kind.roadshow': 'Roadshow',
   'pcal.kind.team_meeting': 'Team meeting',
   'pcal.kind.meeting': 'Meeting',
@@ -99,6 +100,7 @@ const ar: Dict = {
   'pcal.subtitle': 'الاجتماعات والحجوزات والتدريب والمتابعات — الشركة كلها في مسار زمني واحد.',
   'pcal.newEvent': 'جديد',
   // Kinds
+  'pcal.kind.viewing': 'معاينة عقار',
   'pcal.kind.roadshow': 'عرض ترويجي',
   'pcal.kind.team_meeting': 'اجتماع فريق',
   'pcal.kind.meeting': 'اجتماع',
@@ -192,6 +194,7 @@ const ru: Dict = {
   'pcal.subtitle': 'Встречи, брони, обучение и фоллоу-апы — вся компания на одной шкале времени.',
   'pcal.newEvent': 'Создать',
   // Kinds
+  'pcal.kind.viewing': 'Показ объекта',
   'pcal.kind.roadshow': 'Роуд-шоу',
   'pcal.kind.team_meeting': 'Встреча команды',
   'pcal.kind.meeting': 'Встреча',

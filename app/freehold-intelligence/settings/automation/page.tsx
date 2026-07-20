@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
   Workflow, Plus, Trash2, Save, Loader2, GitBranch, Users2,
-  SlidersHorizontal, ShieldCheck, Power,
+  SlidersHorizontal, ShieldCheck, Power, Timer,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
@@ -18,7 +18,7 @@ import {
 } from '@/lib/automation/types'
 
 type Agent = { id: string; name: string; email: string; dbRole?: string }
-type Section = 'rules' | 'distribution' | 'modes' | 'approvals'
+type Section = 'rules' | 'distribution' | 'modes' | 'approvals' | 'sla'
 
 const PRIORITY_OPTIONS = ['hot', 'priority', 'warm', 'cold']
 const STATUS_OPTIONS = ['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed', 'lost']
@@ -68,6 +68,7 @@ export default function AutomationSettingsPage() {
           { id: 'distribution', label: t('pauto.tab.distribution'), Icon: Users2 },
           { id: 'modes', label: t('pauto.tab.modes'), Icon: SlidersHorizontal },
           { id: 'approvals', label: t('pauto.tab.approvals'), Icon: ShieldCheck },
+          { id: 'sla', label: t('pauto.tab.sla'), Icon: Timer },
         ] as const).map(({ id, label, Icon }) => (
           <button key={id} onClick={() => setSection(id)}
             className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition ${
@@ -88,6 +89,8 @@ export default function AutomationSettingsPage() {
         <DistributionSection config={config} setConfig={setConfig} brokers={brokers} />
       ) : section === 'modes' ? (
         <ModesSection config={config} setConfig={setConfig} />
+      ) : section === 'sla' ? (
+        <SlaSection config={config} setConfig={setConfig} />
       ) : (
         <ApprovalsSection config={config} setConfig={setConfig} />
       )}
@@ -527,6 +530,68 @@ function ModesSection({ config, setConfig }: {
         className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.modes.save')}
       </button>
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────── Response SLA
+// One number: the first-response target in minutes. No target set = response
+// times are measured but nothing is flagged as a breach (no-rule-no-enforcement).
+function SlaSection({ config, setConfig }: {
+  config: WorkspaceAutomationConfig; setConfig: (c: WorkspaceAutomationConfig) => void
+}) {
+  const t = useT()
+  const [saving, setSaving] = useState(false)
+  const [draft, setDraft] = useState<string>(config.responseSlaMinutes != null ? String(config.responseSlaMinutes) : '')
+
+  async function persist(value: number | null) {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/freehold/automation/config', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responseSlaMinutes: value }),
+      })
+      if (!res.ok) throw new Error()
+      setConfig({ ...config, responseSlaMinutes: value })
+      setDraft(value != null ? String(value) : '')
+      toast.success(value != null ? t('pauto.sla.saved') : t('pauto.sla.cleared'))
+    } catch { toast.error(t('pauto.toast.saveFailed')) } finally { setSaving(false) }
+  }
+
+  const parsed = Math.round(Number(draft))
+  const valid = Number.isFinite(parsed) && parsed > 0
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[16px] border border-line bg-surface p-5">
+        <div className="mb-1 text-sm font-semibold text-white">{t('pauto.sla.title')}</div>
+        <p className="mb-4 text-xs text-slate-500">{t('pauto.sla.hint')}</p>
+
+        {config.responseSlaMinutes != null ? (
+          <p className="mb-3 text-sm text-slate-300">{t('pauto.sla.current', { n: config.responseSlaMinutes })}</p>
+        ) : (
+          <p className="mb-3 text-sm text-slate-400">{t('pauto.sla.noTarget')}</p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="number" min={1} value={draft} onChange={(e) => setDraft(e.target.value)}
+            placeholder={t('pauto.sla.placeholder')}
+            className="w-32 rounded-[8px] border border-line-strong bg-surface-2 px-2.5 py-2 text-sm text-white outline-none focus:border-gold/40"
+          />
+          <span className="text-sm text-slate-500">{t('pauto.sla.minutes')}</span>
+          <button onClick={() => persist(parsed)} disabled={saving || !valid}
+            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.sla.save')}
+          </button>
+          {config.responseSlaMinutes != null && (
+            <button onClick={() => persist(null)} disabled={saving}
+              className="rounded-full border border-line px-4 py-2 text-sm text-slate-400 transition hover:text-white disabled:opacity-50">
+              {t('pauto.sla.clear')}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

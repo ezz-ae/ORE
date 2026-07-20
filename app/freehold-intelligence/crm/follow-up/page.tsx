@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, BellOff, X } from 'lucide-react'
+import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, BellOff, X, Timer } from 'lucide-react'
 import type { CRMFollowUpItem } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
@@ -65,7 +65,10 @@ const urgencyActiveStyle: Record<Urgency, string> = {
   Low:      'border-line-strong bg-surface-2 text-slate-300',
 }
 
-type QueueItem = CRMFollowUpItem & { snoozeUntil: string | null }
+type QueueItem = CRMFollowUpItem & { snoozeUntil: string | null; slaBreachMinutes: number | null }
+
+// The response-time clock, as served by /api/freehold/crm/response-clock.
+type ResponseClock = { leadId: string; assignedAt: string; firstResponseAt: string | null; responseMinutes: number | null }
 
 export default function FollowUpQueuePage() {
   const t = useT()
@@ -76,6 +79,30 @@ export default function FollowUpQueuePage() {
   // Optimistic snooze overrides keyed by lead id (ISO string or null = cleared)
   const [snoozeOverrides, setSnoozeOverrides] = useState<Record<string, string | null>>({})
   const [flash, setFlash] = useState<string | null>(null)
+  // Response-time clock: SLA target (null = no target set) + per-lead clocks.
+  const [slaMinutes, setSlaMinutes] = useState<number | null>(null)
+  const [clocks, setClocks] = useState<Map<string, ResponseClock>>(new Map())
+
+  useEffect(() => {
+    fetch('/api/freehold/crm/response-clock')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return
+        if (typeof d.slaMinutes === 'number') setSlaMinutes(d.slaMinutes)
+        if (Array.isArray(d.clocks)) setClocks(new Map(d.clocks.map((c: ResponseClock) => [c.leadId, c])))
+      })
+      .catch(() => {})
+  }, [])
+
+  // Minutes past the SLA target with NO first response yet — null when no
+  // target is set, the lead has no clock, or the broker already responded.
+  const breachMinutesOf = (leadId: string): number | null => {
+    if (slaMinutes == null) return null
+    const clock = clocks.get(leadId)
+    if (!clock || clock.firstResponseAt !== null) return null
+    const sinceAssigned = Math.floor((Date.now() - new Date(clock.assignedAt).getTime()) / 60000)
+    return sinceAssigned > slaMinutes ? sinceAssigned - slaMinutes : null
+  }
 
   useEffect(() => {
     if (!flash) return
@@ -87,11 +114,14 @@ export default function FollowUpQueuePage() {
     id in snoozeOverrides ? snoozeOverrides[id] : fallback
   const isSnoozed = (iso: string | null) => !!iso && new Date(iso).getTime() > Date.now()
 
-  // Map live leads in contacted/qualified stages to the follow-up queue shape
+  // Map live leads in contacted/qualified stages to the follow-up queue shape.
+  // Leads breaching the response SLA are pulled in whatever their stage — an
+  // unanswered assigned lead must not hide just because it is still 'new'.
   const followUpQueue = useMemo<QueueItem[]>(() => {
     const NOW_MS = Date.now()
     return leads
-      .filter((l) => l.pipelineStage === 'contacted' || l.pipelineStage === 'qualified')
+      .filter((l) =>
+        l.pipelineStage === 'contacted' || l.pipelineStage === 'qualified' || breachMinutesOf(l.id) !== null)
       .map((l) => {
         const lastMs   = new Date(l.lastContactAt).getTime()
         const dueMs    = lastMs + 72 * 60 * 60 * 1000 // 72h follow-up window
@@ -112,18 +142,21 @@ export default function FollowUpQueuePage() {
           duplicateRisk: l.duplicateRisk,
           wrongNumberRisk: l.wrongNumberRisk,
           snoozeUntil:   effectiveSnooze(l.id, l.snoozeUntil ?? null),
+          slaBreachMinutes: breachMinutesOf(l.id),
         } satisfies QueueItem
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leads, snoozeOverrides])
+  }, [leads, snoozeOverrides, slaMinutes, clocks])
 
   const allAgents = useMemo(
     () => ['All', ...Array.from(new Set(followUpQueue.map((l) => l.assignedAgent)))],
     [followUpQueue],
   )
 
+  // SLA breaches always sort first (worst breach on top), then by overdue hours.
   const sortedQueue = useMemo(
-    () => [...followUpQueue].sort((a, b) => b.overdueHours - a.overdueHours),
+    () => [...followUpQueue].sort((a, b) =>
+      (b.slaBreachMinutes ?? -1) - (a.slaBreachMinutes ?? -1) || b.overdueHours - a.overdueHours),
     [followUpQueue],
   )
 
@@ -160,6 +193,12 @@ export default function FollowUpQueuePage() {
     }, {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedQueue, done])
+
+  const slaBreachCount = useMemo(
+    () => sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil) && l.slaBreachMinutes !== null).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortedQueue, done],
+  )
 
   const riskLeads = useMemo(
     () => sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil) && (l.duplicateRisk || l.wrongNumberRisk)).length,
@@ -275,6 +314,15 @@ export default function FollowUpQueuePage() {
                             {t(tone.labelKey)}
                           </span>
                           <span className="text-sm font-medium text-red-300/70">{overdueLabel(item.overdueHours, t)}</span>
+                          {item.slaBreachMinutes !== null && slaMinutes !== null && (
+                            <span
+                              title={t('crm.sla.breachEvidence', { target: slaMinutes })}
+                              className="inline-flex items-center gap-1 rounded-full border border-red-400/40 bg-red-500/15 px-2.5 py-0.5 text-sm font-semibold text-red-300"
+                            >
+                              <Timer className="h-3 w-3" />
+                              {t('crm.sla.breachChip', { minutes: item.slaBreachMinutes })}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-500">
                           <span>{item.stage}</span>
@@ -352,6 +400,23 @@ export default function FollowUpQueuePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-4">
+
+            {/* Response-time clock — target + live breach count, or an honest
+                "no target set" when the admin hasn't configured one. */}
+            <Panel>
+              <PanelHeader title={t('crm.sla.panelTitle')} />
+              <div className="p-5">
+                {slaMinutes !== null ? (
+                  <>
+                    <div className="text-xs text-slate-400">{t('crm.sla.targetSet', { minutes: slaMinutes })}</div>
+                    <div className={`mt-2 text-[28px] font-semibold ${slaBreachCount > 0 ? 'text-red-300' : 'text-gold'}`}>{slaBreachCount}</div>
+                    <div className="mt-1 text-xs text-slate-400">{t('crm.sla.breachCountDesc')}</div>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400">{t('crm.sla.noTargetDesc')}</p>
+                )}
+              </div>
+            </Panel>
 
             {riskLeads > 0 && (
               <Panel>

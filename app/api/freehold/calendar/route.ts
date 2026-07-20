@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { randomUUID } from "node:crypto"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { query } from "@/lib/db"
+import { ensureLeadActivityTable } from "@/lib/data"
 import {
   listCalendar,
   createEvent,
@@ -93,9 +96,32 @@ export async function POST(req: NextRequest) {
         resource: typeof body.resource === "string" ? body.resource : "",
         externalParty: typeof body.externalParty === "string" ? body.externalParty : "",
         attendees,
+        leadId: typeof body.leadId === "string" ? body.leadId : "",
+        brokerId: typeof body.brokerId === "string" ? body.brokerId : "",
+        projectSlug: typeof body.projectSlug === "string" ? body.projectSlug : "",
       },
       viewerOf(user),
     )
+    // A booked viewing is a lead fact: log it on the lead's activity timeline
+    // in the same request so calendar + CRM never disagree (best-effort write).
+    if (event.kind === "viewing" && event.leadId) {
+      try {
+        await ensureLeadActivityTable()
+        const when = new Date(event.startsAt).toISOString().slice(0, 16).replace("T", " ")
+        await query(
+          `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+           VALUES ($1, $2, 'viewing_scheduled', $3, $4)`,
+          [
+            randomUUID(),
+            event.leadId,
+            `Viewing scheduled for ${when} UTC${event.description ? ` — ${event.description}` : ""}`,
+            user.email,
+          ],
+        )
+      } catch (error) {
+        console.error("[calendar] viewing_scheduled activity failed", error)
+      }
+    }
     return NextResponse.json({ event }, { status: 201 })
   } catch (error) {
     if (error instanceof ConflictError) {

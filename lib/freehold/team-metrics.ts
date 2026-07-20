@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import { gatherAgentResponseStats } from '@/lib/freehold/response-time'
 
 /**
  * Live per-agent performance snapshot used by the (single) Freehold Expert
@@ -21,10 +22,20 @@ export type AgentMetric = {
   calls: number
   messages: number
   notes: number
+  /** median minutes from assignment to first broker response — null when no lead of theirs has a measured response (honest, not zero) */
+  medianResponseMinutes: number | null
+  /** assigned leads with a measured first response (evidence for the median) */
+  respondedLeads: number
+  /** viewings actually held (recorded outcomes, all-time) */
+  viewingsHeld: number
+  /** viewings booked (all-time) */
+  viewingsScheduled: number
+  /** offers made (all-time) */
+  offersMade: number
 }
 
 export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
-  const [agents, activity] = await Promise.all([
+  const [agents, activity, responseStats, viewingOffer] = await Promise.all([
     query<{
       id: string; name: string; email: string; created_at: string | null
       total_leads: string; hot_leads: string; recent_wins: string; overdue_followups: string
@@ -59,12 +70,35 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
        GROUP BY created_by`,
       [],
     ).catch(() => []),
+    // Layer 10 — the response-time clock (median first response per agent).
+    gatherAgentResponseStats().catch(() => []),
+    // Layer 10 — viewings + offers, counted on the agent's assigned leads
+    // (all-time; these activity types only exist once viewings/offers are
+    // logged, so absence means "not tracked yet", never zero-by-default).
+    query<{ broker: string; viewings_held: string; viewings_scheduled: string; offers_made: string }>(
+      `SELECT l.assigned_broker_id AS broker,
+         COUNT(*) FILTER (WHERE a.activity_type = 'viewing_held')::text      AS viewings_held,
+         COUNT(*) FILTER (WHERE a.activity_type = 'viewing_scheduled')::text AS viewings_scheduled,
+         COUNT(*) FILTER (WHERE a.activity_type = 'offer_made')::text        AS offers_made
+       FROM freehold_site_lead_activity a
+       JOIN freehold_site_leads l ON l.id = a.lead_id
+       WHERE l.assigned_broker_id IS NOT NULL
+         AND a.activity_type IN ('viewing_held', 'viewing_scheduled', 'offer_made')
+       GROUP BY l.assigned_broker_id`,
+      [],
+    ).catch(() => []),
   ])
 
   const act = new Map(activity.map((a) => [a.created_by, a]))
+  // Response stats and viewing/offer counts are keyed by leads.assigned_broker_id,
+  // which holds either the user's id or their email depending on the assigner.
+  const resp = new Map(responseStats.map((r) => [r.brokerKey, r]))
+  const vo = new Map(viewingOffer.map((v) => [v.broker, v]))
   const now = Date.now()
   return agents.map((a) => {
     const ax = act.get(a.email)
+    const rx = resp.get(a.id) ?? resp.get(a.email)
+    const vx = vo.get(a.id) ?? vo.get(a.email)
     const tenureDays = a.created_at ? Math.max(0, Math.round((now - new Date(a.created_at).getTime()) / 86400000)) : null
     return {
       id: a.id,
@@ -78,6 +112,11 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
       calls: ax ? parseInt(ax.calls, 10) : 0,
       messages: ax ? parseInt(ax.messages, 10) : 0,
       notes: ax ? parseInt(ax.notes, 10) : 0,
+      medianResponseMinutes: rx?.medianResponseMinutes ?? null,
+      respondedLeads: rx?.respondedLeads ?? 0,
+      viewingsHeld: vx ? parseInt(vx.viewings_held, 10) : 0,
+      viewingsScheduled: vx ? parseInt(vx.viewings_scheduled, 10) : 0,
+      offersMade: vx ? parseInt(vx.offers_made, 10) : 0,
     }
   })
 }

@@ -11,6 +11,8 @@ type AgentMetric = {
   id: string; name: string; tenureDays: number | null
   totalLeads: number; hotLeads: number; wins30d: number; overdueFollowups: number
   activity30d: number; calls: number; messages: number; notes: number
+  medianResponseMinutes: number | null; respondedLeads: number
+  viewingsHeld: number; viewingsScheduled: number; offersMade: number
 }
 
 const MAX_CAP = 12
@@ -21,6 +23,9 @@ function loadColor(u: number) {
   if (u >= 65) return 'bg-amber-500'
   return 'bg-emerald-500'
 }
+
+// Minutes → compact human form (real measured values only; callers dash nulls).
+const fmtMinutes = (n: number) => (n < 60 ? `${n}m` : `${Math.floor(n / 60)}h ${n % 60}m`)
 
 // Computed "math" metrics derived from the raw signals.
 const convRate = (a: AgentMetric) => (a.totalLeads > 0 ? Math.round((a.wins30d / a.totalLeads) * 100) : 0)
@@ -104,6 +109,82 @@ export default function TeamAnalyticsPage() {
 
       {/* Custom comparison — choose metrics + items, save to Notebook */}
       <ComparisonTable items={cmpItems} columns={COLUMNS} presets={PRESETS} loading={!agents} />
+
+      {/* Layer 10 — the response-time clock + viewing/offer rates. Each cell is
+          shown only when its underlying events exist; a dash means "not tracked
+          yet", never a defaulted zero. */}
+      <section>
+        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.responseClock')}</div>
+        <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-line">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.agent')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.medianResponse')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.viewingRate')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.offerRate')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.08]">
+                {agents && agents.length > 0 ? (
+                  agents.map((ag) => {
+                    const viewingRate = ag.viewingsHeld > 0 && ag.totalLeads > 0 ? Math.round((ag.viewingsHeld / ag.totalLeads) * 100) : null
+                    const offerRate = ag.offersMade > 0 && ag.totalLeads > 0 ? Math.round((ag.offersMade / ag.totalLeads) * 100) : null
+                    return (
+                      <tr key={ag.id || ag.name} className="transition hover:bg-white/[0.04]">
+                        <td className="px-4 py-3">
+                          <span className="flex items-center gap-2.5">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold text-slate-200">{initialsOf(ag.name)}</span>
+                            <span className="font-medium text-slate-200">{ag.name}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {ag.medianResponseMinutes !== null ? (
+                            <span title={t('analytics.resp.evidence', { responded: ag.respondedLeads, leads: ag.totalLeads })}>
+                              <span className="tabular-nums text-slate-200">{fmtMinutes(ag.medianResponseMinutes)}</span>
+                              <span className="block text-[10px] text-slate-500">{t('analytics.resp.evidence', { responded: ag.respondedLeads, leads: ag.totalLeads })}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-600" title={t('analytics.resp.noResponses')}>—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {viewingRate !== null ? (
+                            <span title={t('analytics.resp.viewEvidence', { held: ag.viewingsHeld, leads: ag.totalLeads })}>
+                              <span className="tabular-nums text-slate-200">{viewingRate}%</span>
+                              <span className="block text-[10px] text-slate-500">{t('analytics.resp.viewEvidence', { held: ag.viewingsHeld, leads: ag.totalLeads })}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-600" title={t('analytics.resp.noViewings')}>—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {offerRate !== null ? (
+                            <span title={t('analytics.resp.offerEvidence', { offers: ag.offersMade, leads: ag.totalLeads })}>
+                              <span className="tabular-nums text-slate-200">{offerRate}%</span>
+                              <span className="block text-[10px] text-slate-500">{t('analytics.resp.offerEvidence', { offers: ag.offersMade, leads: ag.totalLeads })}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-600" title={t('analytics.resp.noOffers')}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
+                      {agents ? t('analytics.empty.agents') : t('analytics.loading')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">{t('analytics.resp.note')}</p>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Agent leaderboard */}

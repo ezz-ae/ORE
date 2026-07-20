@@ -137,8 +137,8 @@ export function EventDetail({ event, meEmail, onClose, onChanged, onEdit }: Prop
         {/* Actions */}
         {!event.redacted && (
           <div className="space-y-2 border-t border-line px-5 py-3">
-            {/* Virtual source link */}
-            {isVirtual && event.link && (
+            {/* Source link — virtual items and lead-linked viewings deep-link back */}
+            {event.link && (
               <Link href={event.link} className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-medium text-slate-200 hover:border-line-strong">
                 <ExternalLink className="h-3.5 w-3.5" />
                 {event.source === "task" ? t("pcal.openTask") : t("pcal.openLead")}

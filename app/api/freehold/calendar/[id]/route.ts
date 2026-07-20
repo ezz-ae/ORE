@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { randomUUID } from "node:crypto"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { query } from "@/lib/db"
+import { ensureLeadActivityTable } from "@/lib/data"
 import {
   getEvent,
   editEvent,
@@ -8,6 +11,7 @@ import {
   cancelEvent,
   rsvpEvent,
   deleteEvent,
+  recordViewingOutcome,
   ConflictError,
   type EventPatch,
   type RSVP,
@@ -67,6 +71,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       )
     } else if (action === "cancel") {
       event = await cancelEvent(id, viewer)
+    } else if (action === "outcome") {
+      // Record what actually happened at a viewing (held / no-show), then log
+      // it on the lead's activity timeline so CRM history reflects the fact.
+      const outcome = String(body.outcome || "")
+      if (outcome !== "held" && outcome !== "no_show") {
+        return NextResponse.json({ error: "Invalid outcome" }, { status: 400 })
+      }
+      event = await recordViewingOutcome(id, outcome, viewer)
+      if (event?.leadId) {
+        try {
+          await ensureLeadActivityTable()
+          const when = new Date(event.startsAt).toISOString().slice(0, 16).replace("T", " ")
+          await query(
+            `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              randomUUID(),
+              event.leadId,
+              outcome === "held" ? "viewing_held" : "viewing_no_show",
+              outcome === "held"
+                ? `Viewing held (scheduled ${when} UTC)`
+                : `Viewing no-show (scheduled ${when} UTC)`,
+              user.email,
+            ],
+          )
+        } catch (error) {
+          console.error("[calendar] viewing outcome activity failed", error)
+        }
+      }
     } else if (action === "rsvp") {
       const rsvp = String(body.rsvp || "")
       if (!["invited", "accepted", "declined"].includes(rsvp)) {
