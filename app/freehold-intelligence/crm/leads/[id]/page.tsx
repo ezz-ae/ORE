@@ -12,6 +12,7 @@ import { query } from '@/lib/db'
 import { ensureLeadsTable, getLeadActivity } from '@/lib/data'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
 import { getDealByLeadId } from '@/lib/deals'
+import { listLeadViewings } from '@/lib/calendar'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getServerT } from '@/lib/i18n/server'
 import { LeadExpertStrip } from '@/components/freehold/lead-expert-strip'
@@ -68,6 +69,7 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
   } catch { return null }
 }
 import { QuickActions } from './_components/LeadClientActions'
+import { LeadViewingsCard } from './_components/LeadViewingsCard'
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     labelKey: 'crm.urgency.critical' }
@@ -105,6 +107,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // A lead can be converted to a deal only once.
   const existingDeal = await getDealByLeadId(lead.id)
 
+  // Viewings are real calendar events linked to this lead (kind 'viewing').
+  // Access is gated by lead access above — whoever can open the lead sees them.
+  const viewings = await listLeadViewings(lead.id)
+
   // Next best action — a simple, honest heuristic from real lead state.
   const snoozedUntil = lead.snoozeUntil && new Date(lead.snoozeUntil).getTime() > Date.now()
     ? new Date(lead.snoozeUntil) : null
@@ -124,7 +130,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     if (v.includes('whatsapp') || v.includes('message')) return 'whatsapp'
     if (v.includes('stage') || v.includes('status')) return 'stage_change'
     if (v.includes('assign')) return 'assignment'
-    if (v.includes('follow')) return 'follow_up'
+    if (v.includes('follow') || v.includes('viewing')) return 'follow_up'
+    if (v.includes('offer')) return 'note'
     if (v.includes('note')) return 'note'
     return 'system'
   }
@@ -415,6 +422,21 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               }}
             />
           </div>
+
+          {/* Viewings + offers — first-class objects, no new pipeline stage */}
+          <LeadViewingsCard
+            leadId={lead.id}
+            leadName={lead.name}
+            brokerId={lead.assignedAgent}
+            // taggedProjects carries the raw project_slug (set in getLiveLead)
+            // but is not part of the shared CRMLeadIntelligence type.
+            projectSlug={(lead as unknown as { taggedProjects?: string[] }).taggedProjects?.[0] ?? ''}
+            dateLocale={dateLocale}
+            viewings={viewings.map((v) => ({
+              id: v.id, startsAt: v.startsAt, status: v.status, outcome: v.outcome,
+              note: v.note, location: v.location,
+            }))}
+          />
 
           {/* Activity */}
           <div className="rounded-xl border border-line bg-surface p-5">

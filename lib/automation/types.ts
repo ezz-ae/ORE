@@ -250,6 +250,12 @@ export interface WorkspaceAutomationConfig {
   steps: Record<AutomationStep, AutomationMode>
   approvals: ApprovalConfig
   distribution: DistributionConfig
+  /**
+   * First-response SLA target in minutes (the response-time clock).
+   * null = no target set — response times are still measured, but nothing is
+   * flagged as a breach (no-rule-no-enforcement, same as the spend governor).
+   */
+  responseSlaMinutes: number | null
 }
 
 // ── Sensible defaults ────────────────────────────────────────────────────────
@@ -285,5 +291,7 @@ export function defaultConfig(): WorkspaceAutomationConfig {
       sourceMap: {},
       areaMap: {},
     },
+    // Honest default: no SLA target until an admin sets one.
+    responseSlaMinutes: null,
   }
 }

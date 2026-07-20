@@ -18,21 +18,25 @@
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 
-export type CalendarKind = "meeting" | "team_meeting" | "training" | "car" | "report" | "roadshow"
+export type CalendarKind = "meeting" | "team_meeting" | "training" | "car" | "report" | "roadshow" | "viewing"
 export type VirtualKind = "task" | "followup"
 export type AnyKind = CalendarKind | VirtualKind
 
 export type CalendarVisibility = "global" | "private"
 export type CalendarStatus = "confirmed" | "pending" | "approved" | "declined" | "cancelled"
 export type RSVP = "invited" | "accepted" | "declined"
+/** Outcome of a held (or missed) property viewing. Empty = not recorded yet. */
+export type ViewingOutcome = "" | "held" | "no_show"
 
-export const CALENDAR_KINDS: CalendarKind[] = ["meeting", "team_meeting", "training", "car", "report", "roadshow"]
+export const CALENDAR_KINDS: CalendarKind[] = ["meeting", "team_meeting", "training", "car", "report", "roadshow", "viewing"]
 /** Kinds that must be approved by management before they are live. */
 export const APPROVAL_KINDS: CalendarKind[] = ["car", "training"]
 /** Kinds that book a shared, non-shareable resource — overlaps are blocked. */
 export const CONFLICT_KINDS: CalendarKind[] = ["car"]
-/** Kinds that are private to their creator + attendees. */
-const PRIVATE_KINDS: CalendarKind[] = ["meeting"]
+/** Kinds that are private to their creator + attendees. Viewings carry lead
+ *  identity (client name), so on the shared calendar non-participants see only
+ *  a Busy block — full detail lives on the lead's own CRM page. */
+const PRIVATE_KINDS: CalendarKind[] = ["meeting", "viewing"]
 
 export function deriveVisibility(kind: CalendarKind): CalendarVisibility {
   return PRIVATE_KINDS.includes(kind) ? "private" : "global"
@@ -63,6 +67,14 @@ export interface CalendarEvent {
   approvedByName: string
   decisionNote: string
   attendees: Attendee[]
+  /** CRM lead this event belongs to (kind 'viewing') — empty when none. */
+  leadId: string
+  /** Broker responsible for the linked lead at booking time — empty when none. */
+  brokerId: string
+  /** Project the viewing is for, when known — empty otherwise. */
+  projectSlug: string
+  /** Viewing outcome, recorded after the event time passes. Empty = none yet. */
+  outcome: ViewingOutcome
   source: "calendar" | "task" | "followup"
   /** viewer may edit / delete this event */
   editable: boolean
@@ -87,6 +99,9 @@ export interface CalendarEventInput {
   resource?: string
   externalParty?: string
   attendees?: { userKey: string; userName: string }[]
+  leadId?: string
+  brokerId?: string
+  projectSlug?: string
 }
 
 export interface Viewer {
@@ -141,8 +156,16 @@ const ensureSchema = async () => {
       UNIQUE (event_id, user_key)
     )
   `)
+  // Viewings-as-objects (Layer 10): a viewing is a calendar event of kind
+  // 'viewing' carrying its CRM lead + broker (+ project when known) and, once
+  // the time has passed, an honest recorded outcome (held / no_show).
+  await query(`ALTER TABLE freehold_site_calendar_events ADD COLUMN IF NOT EXISTS lead_id text`)
+  await query(`ALTER TABLE freehold_site_calendar_events ADD COLUMN IF NOT EXISTS broker_id text`)
+  await query(`ALTER TABLE freehold_site_calendar_events ADD COLUMN IF NOT EXISTS project_slug text`)
+  await query(`ALTER TABLE freehold_site_calendar_events ADD COLUMN IF NOT EXISTS outcome text`)
   await query(`CREATE INDEX IF NOT EXISTS idx_cal_events_range ON freehold_site_calendar_events (starts_at, ends_at)`)
   await query(`CREATE INDEX IF NOT EXISTS idx_cal_attendees_event ON freehold_site_calendar_attendees (event_id)`)
+  await query(`CREATE INDEX IF NOT EXISTS idx_cal_events_lead ON freehold_site_calendar_events (lead_id) WHERE lead_id IS NOT NULL`)
 }
 const ensureSchemaOnce = async () => {
   if (!ensurePromise) ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
@@ -158,7 +181,10 @@ const iso = (col: string, alias: string) =>
 const EVENT_COLS = `id, title, description, kind, visibility, status,
   ${iso("starts_at", "starts_at")}, ${iso("ends_at", "ends_at")}, all_day, location, resource, external_party,
   created_by, created_by_name, approved_by, approved_by_name, decision_note,
+  lead_id, broker_id, project_slug, outcome,
   ${iso("created_at", "created_at")}, ${iso("updated_at", "updated_at")}`
+
+const outcomeOf = (v: unknown): ViewingOutcome => (v === "held" || v === "no_show" ? v : "")
 
 function mapEvent(r: Record<string, unknown>, attendees: Attendee[], viewer: Viewer): CalendarEvent {
   const kind = str(r.kind) as AnyKind
@@ -191,6 +217,10 @@ function mapEvent(r: Record<string, unknown>, attendees: Attendee[], viewer: Vie
       approvedByName: "",
       decisionNote: "",
       attendees: [],
+      leadId: "",
+      brokerId: "",
+      projectSlug: "",
+      outcome: "",
       source: "calendar",
       editable: false,
       approvable: false,
@@ -220,11 +250,15 @@ function mapEvent(r: Record<string, unknown>, attendees: Attendee[], viewer: Vie
     approvedByName: str(r.approved_by_name),
     decisionNote: str(r.decision_note),
     attendees,
+    leadId: str(r.lead_id),
+    brokerId: str(r.broker_id),
+    projectSlug: str(r.project_slug),
+    outcome: outcomeOf(r.outcome),
     source: "calendar",
     editable,
     approvable,
     redacted: false,
-    link: "",
+    link: kind === "viewing" && r.lead_id ? `/freehold-intelligence/crm/leads/${str(r.lead_id)}` : "",
     createdAt: r.created_at ? str(r.created_at) : null,
     updatedAt: r.updated_at ? str(r.updated_at) : null,
   }
@@ -300,6 +334,10 @@ async function listTaskEvents(viewer: Viewer, fromISO: string, toISO: string): P
         approvedByName: "",
         decisionNote: "",
         attendees: [],
+        leadId: "",
+        brokerId: "",
+        projectSlug: "",
+        outcome: "" as ViewingOutcome,
         source: "task" as const,
         editable: false,
         approvable: false,
@@ -350,6 +388,10 @@ async function listFollowupEvents(viewer: Viewer, fromISO: string, toISO: string
         approvedByName: "",
         decisionNote: "",
         attendees: [],
+        leadId: str(r.id),
+        brokerId: viewer.brokerKey,
+        projectSlug: "",
+        outcome: "" as ViewingOutcome,
         source: "followup" as const,
         editable: false,
         approvable: false,
@@ -441,8 +483,9 @@ export async function createEvent(input: CalendarEventInput, creator: Viewer): P
   await query(
     `INSERT INTO freehold_site_calendar_events
        (id, title, description, kind, visibility, status, starts_at, ends_at, all_day,
-        location, resource, external_party, created_by, created_by_name, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, now(), now())`,
+        location, resource, external_party, created_by, created_by_name,
+        lead_id, broker_id, project_slug, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17, now(), now())`,
     [
       id,
       input.title,
@@ -458,6 +501,9 @@ export async function createEvent(input: CalendarEventInput, creator: Viewer): P
       input.externalParty?.trim() || "",
       creator.key,
       creator.name,
+      input.leadId?.trim() || null,
+      input.brokerId?.trim() || null,
+      input.projectSlug?.trim() || null,
     ],
   )
 
@@ -588,6 +634,77 @@ export async function rsvpEvent(id: string, actor: Viewer, rsvp: RSVP): Promise<
      VALUES ($1,$2,$3,$4,$5, now())
      ON CONFLICT (event_id, user_key) DO UPDATE SET rsvp = $5`,
     [`att_${randomUUID()}`, id, actor.key, actor.name, rsvp],
+  )
+  return getEvent(id, actor)
+}
+
+// ─── Viewings (calendar events of kind 'viewing' linked to a CRM lead) ──────
+
+/** Slim viewing shape for the lead-360 page. Access is NOT redacted here:
+ *  callers must already have gated access to the lead itself (broker owns it,
+ *  or management) — anyone who may open the lead may see its viewings. */
+export interface LeadViewing {
+  id: string
+  title: string
+  startsAt: string
+  endsAt: string
+  status: CalendarStatus
+  outcome: ViewingOutcome
+  note: string
+  location: string
+  createdBy: string
+  createdByName: string
+}
+
+export async function listLeadViewings(leadId: string): Promise<LeadViewing[]> {
+  try {
+    await ensureSchemaOnce()
+    const rows = await query<Record<string, unknown>>(
+      `SELECT id, title, description, status, outcome, location, created_by, created_by_name,
+              ${iso("starts_at", "starts_at")}, ${iso("ends_at", "ends_at")}
+       FROM freehold_site_calendar_events
+       WHERE kind = 'viewing' AND lead_id = $1 AND status <> 'cancelled'
+       ORDER BY starts_at DESC LIMIT 50`,
+      [leadId],
+    )
+    return rows.map((r) => ({
+      id: str(r.id),
+      title: str(r.title),
+      startsAt: str(r.starts_at),
+      endsAt: str(r.ends_at),
+      status: (str(r.status) || "confirmed") as CalendarStatus,
+      outcome: outcomeOf(r.outcome),
+      note: str(r.description),
+      location: str(r.location),
+      createdBy: str(r.created_by),
+      createdByName: str(r.created_by_name),
+    }))
+  } catch (error) {
+    console.error("[calendar] lead viewings failed", error)
+    return []
+  }
+}
+
+/**
+ * Record the real outcome of a viewing once its start time has passed.
+ * Only the creator or management may record it; it can be set exactly once
+ * (the outcome is a fact, not an editable field).
+ */
+export async function recordViewingOutcome(
+  id: string,
+  outcome: "held" | "no_show",
+  actor: Viewer,
+): Promise<CalendarEvent | null> {
+  await ensureSchemaOnce()
+  const row = await rawEvent(id)
+  if (!row) return null
+  if (str(row.kind) !== "viewing") throw new Error("not a viewing")
+  if (str(row.created_by) !== actor.key && !isMgmt(actor.role)) throw new Error("forbidden")
+  if (outcomeOf(row.outcome)) throw new Error("outcome already recorded")
+  if (new Date(str(row.starts_at)).getTime() > Date.now()) throw new Error("viewing has not started yet")
+  await query(
+    `UPDATE freehold_site_calendar_events SET outcome = $2, updated_at = now() WHERE id = $1`,
+    [id, outcome],
   )
   return getEvent(id, actor)
 }

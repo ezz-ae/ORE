@@ -42,6 +42,13 @@ export async function PUT(req: NextRequest) {
       approvals: { ...current.approvals, ...(body.approvals || {}) },
       distribution: { ...current.distribution, ...(body.distribution || {}) },
     }
+    // The response SLA is a single admin-set number of minutes (or null =
+    // no target). Reject junk instead of persisting an invented value.
+    if ('responseSlaMinutes' in body) {
+      const v = body.responseSlaMinutes
+      merged.responseSlaMinutes =
+        typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v) : null
+    }
     await saveWorkspaceConfig(merged)
     return NextResponse.json({ ok: true, config: merged })
   } catch (e) {

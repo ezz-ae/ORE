@@ -1,9 +1,11 @@
 // Client-safe metadata + date helpers for the calendar board.
 // No server imports here — only types from @/lib/calendar (erased at build).
-import { Users, User, GraduationCap, Car, FileBarChart2, CheckSquare, PhoneCall, Megaphone } from "lucide-react"
+import { Users, User, GraduationCap, Car, FileBarChart2, CheckSquare, PhoneCall, Megaphone, Home } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import type { AnyKind, CalendarKind, CalendarStatus } from "@/lib/calendar"
 
+// Kinds creatable from the calendar dialog. 'viewing' is intentionally absent:
+// a viewing needs a lead, so it is booked from the lead's CRM page instead.
 export const CREATE_KINDS: CalendarKind[] = ["roadshow", "team_meeting", "meeting", "training", "car", "report"]
 
 export interface KindMeta {
@@ -15,6 +17,7 @@ export interface KindMeta {
 }
 
 export const KIND_META: Record<AnyKind, KindMeta> = {
+  viewing: { labelKey: "pcal.kind.viewing", Icon: Home, dot: "bg-teal-400", chip: "bg-teal-400/10 text-teal-300 border-teal-400/20", ring: "border-l-teal-400" },
   roadshow: { labelKey: "pcal.kind.roadshow", Icon: Megaphone, dot: "bg-rose-400", chip: "bg-rose-400/10 text-rose-300 border-rose-400/20", ring: "border-l-rose-400" },
   team_meeting: { labelKey: "pcal.kind.team_meeting", Icon: Users, dot: "bg-gold", chip: "bg-gold/10 text-gold border-gold/20", ring: "border-l-gold" },
   meeting: { labelKey: "pcal.kind.meeting", Icon: User, dot: "bg-sky-400", chip: "bg-sky-400/10 text-sky-300 border-sky-400/20", ring: "border-l-sky-400" },

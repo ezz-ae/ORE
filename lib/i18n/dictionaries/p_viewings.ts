@@ -1,0 +1,183 @@
+// Layer 10 — viewings as first-class objects + the response-time clock.
+// Lead-360 viewings/offers card, follow-up SLA breach chips, the admin SLA
+// setting (settings → automation) and the team response-clock analytics.
+type Dict = Record<string, string>
+
+const en: Dict = {
+  // ── Lead-360: viewings & offers card ──
+  'crm.viewings.title': 'Viewings & offers',
+  'crm.viewings.book': 'Book viewing',
+  'crm.viewings.eventTitle': 'Viewing',
+  'crm.viewings.note': 'Note (optional)',
+  'crm.viewings.confirm': 'Book viewing',
+  'crm.viewings.booked': 'Viewing booked — on the calendar and the lead timeline',
+  'crm.viewings.bookFailed': 'Could not book the viewing',
+  'crm.viewings.empty': 'No viewings yet.',
+  'crm.viewings.scheduled': 'Scheduled',
+  'crm.viewings.awaitingOutcome': 'What happened?',
+  'crm.viewings.held': 'Held',
+  'crm.viewings.noShow': 'No-show',
+  'crm.viewings.outcomeSaved': 'Outcome recorded',
+  'crm.viewings.outcomeFailed': 'Could not record the outcome',
+  'crm.viewings.pickTime': 'Pick a date and time first',
+  'crm.offer.button': 'Offer made',
+  'crm.offer.amount': 'Amount (AED, optional)',
+  'crm.offer.note': 'Note (optional)',
+  'crm.offer.log': 'Log offer',
+  'crm.offer.logged': 'Offer logged on the lead timeline',
+  'crm.offer.failed': 'Could not log the offer',
+
+  // ── Follow-up queue: response-time clock ──
+  'crm.sla.panelTitle': 'Response clock',
+  'crm.sla.targetSet': 'Target: first response within {minutes} min of assignment',
+  'crm.sla.breachCountDesc': 'leads past target with no first response',
+  'crm.sla.noTargetDesc': 'No target set — response times are measured but nothing is flagged. Set one in Settings → Automation.',
+  'crm.sla.breachChip': 'SLA breach · {minutes}m over',
+  'crm.sla.breachEvidence': 'No first response from the assigned agent since assignment; the target is {target} min.',
+
+  // ── Settings → Automation: SLA target ──
+  'pauto.tab.sla': 'Response SLA',
+  'pauto.sla.title': 'First-response target',
+  'pauto.sla.hint': 'The clock starts when a lead is assigned and stops at the first activity its assigned agent logs (call, WhatsApp, note, stage move…). One number for the whole workspace.',
+  'pauto.sla.current': 'Current target: {n} minutes.',
+  'pauto.sla.noTarget': 'No target set — response times are measured, but no lead is flagged as a breach until you set one.',
+  'pauto.sla.placeholder': 'e.g. 30',
+  'pauto.sla.minutes': 'minutes',
+  'pauto.sla.save': 'Set target',
+  'pauto.sla.clear': 'Remove target',
+  'pauto.sla.saved': 'Response target saved',
+  'pauto.sla.cleared': 'Response target removed — no SLA is enforced',
+
+  // ── Analytics → Team: response clock & viewing/offer rates ──
+  'analytics.sec.responseClock': 'Response clock & viewings',
+  'analytics.th.medianResponse': 'Median first response',
+  'analytics.th.viewingRate': 'Viewing rate',
+  'analytics.th.offerRate': 'Offer rate',
+  'analytics.resp.evidence': '{responded} of {leads} leads responded',
+  'analytics.resp.viewEvidence': '{held} held / {leads} leads',
+  'analytics.resp.offerEvidence': '{offers} offers / {leads} leads',
+  'analytics.resp.noResponses': 'No measured first responses yet',
+  'analytics.resp.noViewings': 'No viewing outcomes recorded yet',
+  'analytics.resp.noOffers': 'No offers logged yet',
+  'analytics.resp.note': 'A dash means the underlying events have not been recorded yet — not zero.',
+}
+
+const ar: Dict = {
+  // ── Lead-360: viewings & offers card ──
+  'crm.viewings.title': 'المعاينات والعروض',
+  'crm.viewings.book': 'حجز معاينة',
+  'crm.viewings.eventTitle': 'معاينة',
+  'crm.viewings.note': 'ملاحظة (اختياري)',
+  'crm.viewings.confirm': 'حجز المعاينة',
+  'crm.viewings.booked': 'تم حجز المعاينة — على التقويم وسجل العميل',
+  'crm.viewings.bookFailed': 'تعذر حجز المعاينة',
+  'crm.viewings.empty': 'لا توجد معاينات بعد.',
+  'crm.viewings.scheduled': 'مجدولة',
+  'crm.viewings.awaitingOutcome': 'ماذا حدث؟',
+  'crm.viewings.held': 'تمت',
+  'crm.viewings.noShow': 'لم يحضر',
+  'crm.viewings.outcomeSaved': 'تم تسجيل النتيجة',
+  'crm.viewings.outcomeFailed': 'تعذر تسجيل النتيجة',
+  'crm.viewings.pickTime': 'اختر التاريخ والوقت أولاً',
+  'crm.offer.button': 'تم تقديم عرض',
+  'crm.offer.amount': 'المبلغ (درهم، اختياري)',
+  'crm.offer.note': 'ملاحظة (اختياري)',
+  'crm.offer.log': 'تسجيل العرض',
+  'crm.offer.logged': 'تم تسجيل العرض في سجل العميل',
+  'crm.offer.failed': 'تعذر تسجيل العرض',
+
+  // ── Follow-up queue: response-time clock ──
+  'crm.sla.panelTitle': 'ساعة الاستجابة',
+  'crm.sla.targetSet': 'الهدف: أول استجابة خلال {minutes} دقيقة من الإسناد',
+  'crm.sla.breachCountDesc': 'عملاء تجاوزوا الهدف دون أي استجابة أولى',
+  'crm.sla.noTargetDesc': 'لا يوجد هدف محدد — تُقاس أوقات الاستجابة دون تنبيهات. حدده في الإعدادات ← الأتمتة.',
+  'crm.sla.breachChip': 'تجاوز الهدف · {minutes} دقيقة',
+  'crm.sla.breachEvidence': 'لا توجد استجابة أولى من الوسيط المسؤول منذ الإسناد؛ الهدف {target} دقيقة.',
+
+  // ── Settings → Automation: SLA target ──
+  'pauto.tab.sla': 'هدف الاستجابة',
+  'pauto.sla.title': 'هدف الاستجابة الأولى',
+  'pauto.sla.hint': 'تبدأ الساعة عند إسناد العميل وتتوقف عند أول نشاط يسجله الوسيط المسؤول (اتصال، واتساب، ملاحظة، نقل مرحلة…). رقم واحد لكامل مساحة العمل.',
+  'pauto.sla.current': 'الهدف الحالي: {n} دقيقة.',
+  'pauto.sla.noTarget': 'لا يوجد هدف محدد — تُقاس أوقات الاستجابة، لكن لن يُعلَّم أي عميل كتجاوز حتى تحدد هدفاً.',
+  'pauto.sla.placeholder': 'مثال: 30',
+  'pauto.sla.minutes': 'دقيقة',
+  'pauto.sla.save': 'تحديد الهدف',
+  'pauto.sla.clear': 'إزالة الهدف',
+  'pauto.sla.saved': 'تم حفظ هدف الاستجابة',
+  'pauto.sla.cleared': 'تمت إزالة هدف الاستجابة — لا يُطبَّق أي التزام',
+
+  // ── Analytics → Team: response clock & viewing/offer rates ──
+  'analytics.sec.responseClock': 'ساعة الاستجابة والمعاينات',
+  'analytics.th.medianResponse': 'وسيط زمن الاستجابة الأولى',
+  'analytics.th.viewingRate': 'معدل المعاينات',
+  'analytics.th.offerRate': 'معدل العروض',
+  'analytics.resp.evidence': 'استجاب لـ {responded} من {leads} عميلاً',
+  'analytics.resp.viewEvidence': '{held} معاينة تمت / {leads} عميلاً',
+  'analytics.resp.offerEvidence': '{offers} عرضاً / {leads} عميلاً',
+  'analytics.resp.noResponses': 'لا توجد استجابات أولى مقاسة بعد',
+  'analytics.resp.noViewings': 'لم تُسجَّل نتائج معاينات بعد',
+  'analytics.resp.noOffers': 'لم تُسجَّل عروض بعد',
+  'analytics.resp.note': 'الشرطة تعني أن الأحداث الأساسية لم تُسجَّل بعد — وليست صفراً.',
+}
+
+const ru: Dict = {
+  // ── Lead-360: viewings & offers card ──
+  'crm.viewings.title': 'Показы и предложения',
+  'crm.viewings.book': 'Записать на показ',
+  'crm.viewings.eventTitle': 'Показ',
+  'crm.viewings.note': 'Заметка (необязательно)',
+  'crm.viewings.confirm': 'Записать',
+  'crm.viewings.booked': 'Показ записан — в календаре и в истории лида',
+  'crm.viewings.bookFailed': 'Не удалось записать на показ',
+  'crm.viewings.empty': 'Показов пока нет.',
+  'crm.viewings.scheduled': 'Запланирован',
+  'crm.viewings.awaitingOutcome': 'Что произошло?',
+  'crm.viewings.held': 'Состоялся',
+  'crm.viewings.noShow': 'Не пришёл',
+  'crm.viewings.outcomeSaved': 'Итог записан',
+  'crm.viewings.outcomeFailed': 'Не удалось записать итог',
+  'crm.viewings.pickTime': 'Сначала выберите дату и время',
+  'crm.offer.button': 'Сделано предложение',
+  'crm.offer.amount': 'Сумма (AED, необязательно)',
+  'crm.offer.note': 'Заметка (необязательно)',
+  'crm.offer.log': 'Записать предложение',
+  'crm.offer.logged': 'Предложение записано в историю лида',
+  'crm.offer.failed': 'Не удалось записать предложение',
+
+  // ── Follow-up queue: response-time clock ──
+  'crm.sla.panelTitle': 'Часы отклика',
+  'crm.sla.targetSet': 'Цель: первый отклик в течение {minutes} мин после назначения',
+  'crm.sla.breachCountDesc': 'лидов сверх цели без первого отклика',
+  'crm.sla.noTargetDesc': 'Цель не задана — время отклика измеряется, но ничего не помечается. Задайте её в Настройках → Автоматизация.',
+  'crm.sla.breachChip': 'Просрочка SLA · {minutes} мин',
+  'crm.sla.breachEvidence': 'Назначенный агент ещё не дал первого отклика; цель — {target} мин с момента назначения.',
+
+  // ── Settings → Automation: SLA target ──
+  'pauto.tab.sla': 'SLA отклика',
+  'pauto.sla.title': 'Цель первого отклика',
+  'pauto.sla.hint': 'Отсчёт начинается при назначении лида и останавливается на первом действии назначенного агента (звонок, WhatsApp, заметка, смена этапа…). Одно число на всё рабочее пространство.',
+  'pauto.sla.current': 'Текущая цель: {n} мин.',
+  'pauto.sla.noTarget': 'Цель не задана — время отклика измеряется, но ни один лид не помечается как просроченный, пока вы её не зададите.',
+  'pauto.sla.placeholder': 'напр. 30',
+  'pauto.sla.minutes': 'минут',
+  'pauto.sla.save': 'Задать цель',
+  'pauto.sla.clear': 'Убрать цель',
+  'pauto.sla.saved': 'Цель отклика сохранена',
+  'pauto.sla.cleared': 'Цель отклика убрана — SLA не применяется',
+
+  // ── Analytics → Team: response clock & viewing/offer rates ──
+  'analytics.sec.responseClock': 'Часы отклика и показы',
+  'analytics.th.medianResponse': 'Медиана первого отклика',
+  'analytics.th.viewingRate': 'Доля показов',
+  'analytics.th.offerRate': 'Доля предложений',
+  'analytics.resp.evidence': 'отклик по {responded} из {leads} лидов',
+  'analytics.resp.viewEvidence': '{held} показов / {leads} лидов',
+  'analytics.resp.offerEvidence': '{offers} предложений / {leads} лидов',
+  'analytics.resp.noResponses': 'Измеренных первых откликов пока нет',
+  'analytics.resp.noViewings': 'Итоги показов ещё не записывались',
+  'analytics.resp.noOffers': 'Предложения ещё не записывались',
+  'analytics.resp.note': 'Прочерк означает, что события ещё не записывались — это не ноль.',
+}
+
+export const p_viewings = { en, ar, ru }
