@@ -1,15 +1,20 @@
 import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION, vertexConfigured } from '@/lib/google/vertex-auth'
 import { googleAiKey } from '@/lib/creative-studio/providers'
 
-const MODEL = 'gemini-2.5-flash'
-// Gemini API (key-based) model ladder — first available wins. Lets the ONE
-// chat run at full intelligence on deployments that have GEMINI_API_KEY but
-// no Vertex service account (the common white-label setup).
-const API_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
+// Two model tiers. 'flash' is the fast default for bulk surfaces
+// (translations, drafts, briefings). 'pro' is for surfaces that must REASON —
+// the Expert coordinator's multi-step tool loop ran on flash and it showed:
+// wrong-entity answers, asking the user for ids its own tools could fetch.
+// Each transport ladders per tier — first available model wins.
+const MODEL_BY_TIER = { flash: 'gemini-2.5-flash', pro: 'gemini-2.5-pro' } as const
+const API_MODELS_BY_TIER: Record<'flash' | 'pro', string[]> = {
+  flash: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'],
+  pro: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'],
+}
 
-const GEMINI_URL = () =>
+const GEMINI_URL = (model: string) =>
   `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${resolveVertexProject()}` +
-  `/locations/${VERTEX_LOCATION}/publishers/google/models/${MODEL}:generateContent`
+  `/locations/${VERTEX_LOCATION}/publishers/google/models/${model}:generateContent`
 
 const SYSTEM_PROMPT = `You are the private Intelligence Server for Freehold — a premium Dubai real estate company.
 
@@ -106,6 +111,11 @@ export interface ServerQueryOptions {
    * wins — this fallback makes session memory survive restarts and devices.
    */
   history?: Array<{ role: 'user' | 'model'; text: string }>
+  /**
+   * 'pro' = gemini-2.5-pro with a real thinking budget — for surfaces that
+   * reason across tool results (the Expert coordinator). Default 'flash'.
+   */
+  modelTier?: 'pro' | 'flash'
 }
 
 export async function queryServerAgent(
@@ -132,7 +142,7 @@ export async function queryServerAgent(
 /** Shared request assembly for both transports (history, context, config). */
 function buildRequest(
   message: string,
-  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature, history: durableHistory }: ServerQueryOptions,
+  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature, history: durableHistory, modelTier }: ServerQueryOptions,
 ) {
   const sid = sessionId ?? 'server-anon'
   const history = _history.get(sid) ?? durableHistory ?? []
@@ -147,9 +157,12 @@ function buildRequest(
   const generationConfig: Record<string, unknown> = {
     temperature: temperature ?? 0.4,
     maxOutputTokens: maxOutputTokens ?? 1024,
-    // 2.5 Flash thinks by default and can exhaust the token budget → disable it
-    // so the server returns direct answers (and generative-UI JSON) reliably.
-    thinkingConfig: { thinkingBudget: 0 },
+    // flash: thinking disabled — it exhausts the token budget on bulk surfaces
+    // and those callers want direct answers (and generative-UI JSON) reliably.
+    // pro: a bounded REAL thinking budget — reasoning across tool results is
+    // the point of the tier; thinking tokens count toward maxOutputTokens, so
+    // the bound keeps room for the answer itself.
+    thinkingConfig: { thinkingBudget: modelTier === 'pro' ? 2048 : 0 },
   }
   if (responseMimeType) generationConfig.responseMimeType = responseMimeType
   const remember = (text: string) =>
@@ -162,7 +175,7 @@ async function callGeminiApi(message: string, opts: ServerQueryOptions = {}): Pr
   const key = googleAiKey()
   const { contents, generationConfig, system, remember } = buildRequest(message, opts)
   let lastErr = ''
-  for (const model of API_MODELS) {
+  for (const model of API_MODELS_BY_TIER[opts.modelTier === 'pro' ? 'pro' : 'flash']) {
     // thinkingConfig is a 2.5-family knob — older models reject it with 400.
     const config = model.startsWith('gemini-2.5')
       ? generationConfig
@@ -193,7 +206,7 @@ async function callVertex(message: string, opts: ServerQueryOptions = {}): Promi
   const authHeaders = await getVertexAuthHeaders()
   const { contents, generationConfig, system, remember } = buildRequest(message, opts)
 
-  const res = await fetch(GEMINI_URL(), {
+  const res = await fetch(GEMINI_URL(MODEL_BY_TIER[opts.modelTier === 'pro' ? 'pro' : 'flash']), {
     method:  'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({
