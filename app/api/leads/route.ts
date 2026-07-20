@@ -4,6 +4,7 @@ import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
 import { handleNewLead } from "@/lib/automation/engine"
 import { sendLeadConversion } from "@/lib/meta/capi"
+import { parseIntent } from "@/lib/meta/intent"
 import { scoreLeadSession } from "@/lib/freehold/behaviour-score"
 import {
   getLeadershipLeadRecipients,
@@ -65,6 +66,11 @@ export async function POST(req: NextRequest) {
 
     const utm = (body.utm && typeof body.utm === "object" ? body.utm : {}) as Record<string, unknown>
     const device = body.device && typeof body.device === "object" ? body.device : {}
+    // Declared intent from the ad click (?intent=, captured first-touch by the
+    // LP tracker). Validated against the shared vocabulary — junk becomes ''.
+    // Distinct from buyer_intent, which is derived from observed behaviour:
+    // click_intent = what the ad promised, buyer_intent = what the visitor did.
+    const clickIntent = parseIntent(toText(body.clickIntent)) ?? ""
 
     await ensureLeadsTable()
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS budget text`)
@@ -85,6 +91,7 @@ export async function POST(req: NextRequest) {
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS buyer_intent text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS purchase_probability int`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS budget_confidence text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS click_intent text`)
 
     // Repeat inquiry from a known open lead: log it on their timeline
     // instead of creating a duplicate pipeline entry.
@@ -114,9 +121,15 @@ export async function POST(req: NextRequest) {
           inquiryDetail || `New inquiry via ${source || "website"}`,
         ],
       ).catch((error) => console.error("[lp-leads] repeat-inquiry activity failed", error))
-      await query(`UPDATE freehold_site_leads SET updated_at = now() WHERE id = $1`, [leadId]).catch(
-        () => undefined,
-      )
+      // Fill-if-empty only: the first declared ad intent stays the record —
+      // a later click from a different ad never overwrites it.
+      await query(
+        `UPDATE freehold_site_leads
+           SET updated_at = now(),
+               click_intent = COALESCE(click_intent, NULLIF($2, ''))
+         WHERE id = $1`,
+        [leadId, clickIntent],
+      ).catch(() => undefined)
     }
 
     // Layer 8 → Layer 9: score the landing session this lead came from.
@@ -151,6 +164,7 @@ export async function POST(req: NextRequest) {
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
         referrer, device, geo_country, geo_region, geo_city, campaign_id,
         lp_session_id, behaviour_score, buyer_intent, purchase_probability, budget_confidence,
+        click_intent,
         created_at, updated_at
       )
       VALUES (
@@ -158,6 +172,7 @@ export async function POST(req: NextRequest) {
         NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, ''), NULLIF($16, ''),
         NULLIF($17, ''), $18::jsonb, NULLIF($19, ''), NULLIF($20, ''), NULLIF($21, ''), NULLIF($13, ''),
         NULLIF($22, ''), $23, NULLIF($24, ''), $25, NULLIF($26, ''),
+        NULLIF($27, ''),
         now(), now()
       )`,
       [
@@ -187,6 +202,7 @@ export async function POST(req: NextRequest) {
         toText(intel.buyerIntent),
         intel.purchaseProbability,
         toText(intel.budgetConfidence),
+        clickIntent,
       ],
     )
 

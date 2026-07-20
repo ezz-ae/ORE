@@ -38,6 +38,7 @@ import type {
 } from '@/lib/meta/types'
 import type { LaunchGoogleCampaignPayload } from '@/lib/google/types'
 import type { ListingFacts } from '@/lib/meta/form-templates'
+import { withIntent, type BuyerIntent } from '@/lib/meta/intent'
 
 /** Minimum viable daily trial budget (Meta's ad-set floor; the machine holds
  * Google search trials to the same AED 50/day floor). */
@@ -114,6 +115,19 @@ const ANGLE_FOR_SOURCE: Record<MetaTrialSource, CreativeAngle> = {
   'saved-audience': 'yield',
   'lookalike': 'yield',
   'advantage-broad': 'end_user',
+}
+
+/** Layer 4: each Meta trial's landing URL carries the buyer intent its
+ * creative angle speaks to, so the page reorders for the SAME buyer the ad
+ * targeted. Google search trials carry none — a search user typed their own
+ * intent, and pretending to know it would be a guess. */
+const INTENT_FOR_ANGLE: Record<CreativeAngle, BuyerIntent> = {
+  investor: 'investor',
+  yield: 'rental_income',
+  end_user: 'end_user',
+  golden_visa: 'international',
+  urgency: 'end_user',
+  lifestyle: 'luxury',
 }
 
 function variantToCreative(v: GeneratedCreativeVariant, landingUrl: string, imageUrl?: string | null): CampaignCreative {
@@ -441,7 +455,7 @@ export async function buildMachinePlan(
         listingName,
         dailyBudgetAed: perTrial,
         targeting: c.targeting,
-        creative: variantToCreative(variant, landingUrl, heroImage),
+        creative: variantToCreative(variant, withIntent(landingUrl, INTENT_FOR_ANGLE[ANGLE_FOR_SOURCE[c.source]]), heroImage),
         ...(c.savedAudienceId ? { savedAudienceId: c.savedAudienceId, savedAudienceName: c.savedAudienceName } : {}),
         copySource,
         rationale: c.rationale,

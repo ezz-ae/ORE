@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { parseIntent } from '@/lib/meta/intent'
 
 interface TrackerProps {
   slug: string
@@ -35,9 +36,30 @@ export function collectUtm(): Record<string, string> {
   }
 }
 
+/**
+ * Buyer intent declared by the ad click (?intent=), first-touch per session —
+ * the same pattern as _fp_utm above: captured once on arrival, kept in
+ * sessionStorage so lang/theme navigation (which rebuilds the query string)
+ * doesn't lose it. Junk values never stick (parseIntent). Returns '' when the
+ * session has no declared intent.
+ */
+export function collectIntent(): string {
+  try {
+    const fromUrl = parseIntent(new URLSearchParams(window.location.search).get('intent'))
+    if (fromUrl) {
+      sessionStorage.setItem('_fp_intent', fromUrl)
+      return fromUrl
+    }
+    return parseIntent(sessionStorage.getItem('_fp_intent')) ?? ''
+  } catch {
+    return ''
+  }
+}
+
 export function Tracker({ slug, projectSlug, metaPixelId, googleTagId, googleConversionId, tiktokPixelId }: TrackerProps) {
   useEffect(() => {
     const utm = collectUtm()
+    const intent = collectIntent()
     // One sender for every internal event — same endpoint, same shape.
     // keepalive so late events (deep scroll, long dwell) survive navigation.
     const send = (eventName: string, eventValue?: string) =>
@@ -54,6 +76,7 @@ export function Tracker({ slug, projectSlug, metaPixelId, googleTagId, googleCon
           referrer: document.referrer,
           sessionId: getSessionId(),
           utm,
+          intent: intent || null,
           device: {
             ua: navigator.userAgent.slice(0, 200),
             mobile: /Mobi|Android/i.test(navigator.userAgent),
@@ -201,6 +224,7 @@ export function trackConversion(slug: string, pixelIds: { metaPixelId?: string; 
       landingSlug: slug,
       eventName: 'form_submit',
       sessionId: getSessionId(),
+      intent: collectIntent() || null,
     }),
   }).catch(() => null)
 

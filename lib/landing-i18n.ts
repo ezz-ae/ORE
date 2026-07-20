@@ -215,6 +215,30 @@ const EN: Record<string, string> = {
   "form.successPrefix": "Our team will send you the brochure and pricing for",
   "form.successSuffix": "within a few hours.",
   "form.error": "Unable to send your request.",
+
+  // ── Intent-framed hero sublines (Layer 4) ─────────────────────────────────
+  // Rendered ONLY when every interpolated fact is real on the listing
+  // (see app/lp/[slug]/_intent.ts) — otherwise the default subline stays.
+  "intent.investor.subline.priceYield":
+    "From {price} with a projected {yield}% annual rental yield — investment-grade returns in {area}.",
+  "intent.investor.subline.yield":
+    "Projected {yield}% annual rental yield — investment-grade returns in {area}.",
+  "intent.rentalIncome.subline.yield":
+    "Projected {yield}% annual rental yield — built for rental income in {area}.",
+  "intent.endUser.subline.plan":
+    "Own your home in {area} from {price} — with a structured developer payment plan.",
+  "intent.endUser.subline.price": "Own your home in {area} from {price}.",
+  "intent.firstTime.subline.plan":
+    "Your first Dubai home — from {price} in {area}, with a staged developer payment plan.",
+  "intent.firstTime.subline.price": "Your first Dubai home — from {price} in {area}.",
+  "intent.family.subline.price": "Family living in {area} — homes from {price}.",
+  "intent.luxury.subline": "{name} — signature residences in {area}.",
+  "intent.holiday.subline.price": "Your Dubai holiday base in {area} — from {price}.",
+  "intent.holiday.subline": "Your Dubai holiday base in {area}.",
+  "intent.international.subline.visa":
+    "From {price} in {area} — an eligible pathway to the UAE 10-year Golden Visa.",
+  "intent.international.subline.plan":
+    "From {price} in {area} — with a developer payment plan for international buyers.",
 }
 
 const AR: Record<string, string> = {
@@ -396,6 +420,28 @@ const AR: Record<string, string> = {
   "form.successPrefix": "سيرسل لك فريقنا الكتيّب والأسعار الخاصة بـ",
   "form.successSuffix": "خلال ساعات قليلة.",
   "form.error": "تعذّر إرسال طلبك.",
+
+  // ── عناوين فرعية موجهة حسب نية المشتري (الطبقة 4) ────────────────────────
+  "intent.investor.subline.priceYield":
+    "من {price} بعائد إيجاري سنوي متوقع {yield}% — عوائد استثمارية في {area}.",
+  "intent.investor.subline.yield":
+    "عائد إيجاري سنوي متوقع {yield}% — عوائد استثمارية في {area}.",
+  "intent.rentalIncome.subline.yield":
+    "عائد إيجاري سنوي متوقع {yield}% — مصمم لدخل الإيجار في {area}.",
+  "intent.endUser.subline.plan":
+    "امتلك منزلك في {area} من {price} — مع خطة سداد منظمة من المطوّر.",
+  "intent.endUser.subline.price": "امتلك منزلك في {area} من {price}.",
+  "intent.firstTime.subline.plan":
+    "منزلك الأول في دبي — من {price} في {area}، مع خطة سداد مرحلية من المطوّر.",
+  "intent.firstTime.subline.price": "منزلك الأول في دبي — من {price} في {area}.",
+  "intent.family.subline.price": "حياة عائلية في {area} — منازل من {price}.",
+  "intent.luxury.subline": "{name} — مساكن فاخرة مميزة في {area}.",
+  "intent.holiday.subline.price": "وجهتك لقضاء العطلات في دبي في {area} — من {price}.",
+  "intent.holiday.subline": "وجهتك لقضاء العطلات في دبي في {area}.",
+  "intent.international.subline.visa":
+    "من {price} في {area} — مسار مؤهل للحصول على الإقامة الذهبية الإماراتية لمدة 10 سنوات.",
+  "intent.international.subline.plan":
+    "من {price} في {area} — مع خطة سداد من المطوّر للمشترين الدوليين.",
 }
 
 const RU: Record<string, string> = {
@@ -577,6 +623,28 @@ const RU: Record<string, string> = {
   "form.successPrefix": "Наша команда пришлёт вам брошюру и цены по объекту",
   "form.successSuffix": "в течение нескольких часов.",
   "form.error": "Не удалось отправить запрос.",
+
+  // ── Подзаголовки героя по намерению покупателя (слой 4) ───────────────────
+  "intent.investor.subline.priceYield":
+    "От {price} с прогнозируемой арендной доходностью {yield}% годовых — инвестиционная отдача в районе {area}.",
+  "intent.investor.subline.yield":
+    "Прогнозируемая арендная доходность {yield}% годовых — инвестиционная отдача в районе {area}.",
+  "intent.rentalIncome.subline.yield":
+    "Прогнозируемая арендная доходность {yield}% годовых — создано для арендного дохода в районе {area}.",
+  "intent.endUser.subline.plan":
+    "Собственный дом в районе {area} от {price} — с поэтапным планом оплаты от застройщика.",
+  "intent.endUser.subline.price": "Собственный дом в районе {area} от {price}.",
+  "intent.firstTime.subline.plan":
+    "Ваш первый дом в Дубае — от {price} в районе {area}, с поэтапным планом оплаты от застройщика.",
+  "intent.firstTime.subline.price": "Ваш первый дом в Дубае — от {price} в районе {area}.",
+  "intent.family.subline.price": "Семейная жизнь в районе {area} — дома от {price}.",
+  "intent.luxury.subline": "{name} — эксклюзивные резиденции в районе {area}.",
+  "intent.holiday.subline.price": "Ваша база для отдыха в Дубае в районе {area} — от {price}.",
+  "intent.holiday.subline": "Ваша база для отдыха в Дубае в районе {area}.",
+  "intent.international.subline.visa":
+    "От {price} в районе {area} — соответствует условиям 10-летней «золотой визы» ОАЭ.",
+  "intent.international.subline.plan":
+    "От {price} в районе {area} — с планом оплаты от застройщика для международных покупателей.",
 }
 
 export const LP_CHROME: Record<LpLang, Record<string, string>> = { en: EN, ar: AR, ru: RU }
