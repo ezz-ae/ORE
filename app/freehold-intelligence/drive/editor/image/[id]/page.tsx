@@ -7,7 +7,7 @@ import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
   AlignLeft, AlignCenter, AlignRight, Bold, Move, Palette, RotateCcw,
-  Crop, SlidersHorizontal, Sparkles, X,
+  Crop, SlidersHorizontal, Sparkles, X, ZoomIn, ZoomOut, Maximize2,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -451,14 +451,16 @@ export default function DriveImageEditor() {
 
   const toolContent = hasSource ? (
     <div>
-      {/* Tab bar — groups the tools so the panel isn't one long scroll */}
-      <div className="sticky top-0 z-10 -mx-3 mb-4 grid grid-cols-4 gap-1 border-b border-white/[0.06] bg-chrome px-3 pb-3 pt-1">
-        {TABS.map((tb) => (
-          <button key={tb.k} type="button" onClick={() => setTab(tb.k)}
-            className={`flex flex-col items-center gap-1 rounded-lg py-1.5 text-[10px] font-medium transition ${tab === tb.k ? 'bg-gold/15 text-gold' : 'text-slate-400 hover:text-white'}`}>
-            <tb.icon className="h-4 w-4" /> {t(tb.label)}
-          </button>
-        ))}
+      {/* Tab bar — a segmented control so the panel isn't one long scroll */}
+      <div className="sticky top-0 z-10 -mx-3 mb-4 bg-chrome px-3 pb-3 pt-1">
+        <div className="grid grid-cols-4 gap-1 rounded-xl border border-white/[0.06] bg-surface-2/40 p-1">
+          {TABS.map((tb) => (
+            <button key={tb.k} type="button" onClick={() => setTab(tb.k)}
+              className={`flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium transition ${tab === tb.k ? 'bg-gold/15 text-gold shadow-sm shadow-black/20 ring-1 ring-gold/20' : 'text-slate-400 hover:bg-white/[0.04] hover:text-white'}`}>
+              <tb.icon className="h-4 w-4" /> {t(tb.label)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-5">
@@ -721,7 +723,23 @@ export default function DriveImageEditor() {
       )}
 
       {hasSource ? (
-        <div className="flex h-full w-full items-center justify-center bg-[#0d0d0f] p-4">
+        <div
+          className="relative flex h-full w-full items-center justify-center overflow-hidden p-4 sm:p-8"
+          style={{ background: 'radial-gradient(130% 100% at 50% -10%, rgba(212,175,55,0.07), transparent 55%), #0b0b0d' }}
+        >
+          {/* Design-surface grid — makes the stage read as a canvas, not a void */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '22px 22px', maskImage: 'radial-gradient(120% 100% at 50% 40%, #000 40%, transparent 100%)' }}
+          />
+
+          {/* Live format badge — the operator always knows the exact output size */}
+          <div className="pointer-events-none absolute start-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-medium backdrop-blur-sm">
+            <span className="text-gold">{t(PRESETS[preset].key)}</span>
+            <span className="text-slate-500" dir="ltr">{W} × {H}</span>
+          </div>
+
+          {/* The canvas — lifted off the stage with a soft platform shadow */}
           <canvas
             ref={canvasRef}
             width={W}
@@ -731,23 +749,53 @@ export default function DriveImageEditor() {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
-            className="max-h-full max-w-full cursor-grab touch-none rounded-lg shadow-2xl ring-1 ring-white/10 active:cursor-grabbing"
+            className="relative z-[1] max-h-full max-w-full cursor-grab touch-none rounded-xl shadow-[0_40px_90px_-25px_rgba(0,0,0,0.85)] ring-1 ring-white/10 transition-shadow active:cursor-grabbing hover:ring-gold/25"
             style={{ touchAction: 'none' }}
           />
+
+          {/* Floating zoom dock — reposition/zoom without leaving the canvas */}
+          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2 py-1.5 shadow-lg shadow-black/40 backdrop-blur-sm">
+            <button type="button" onClick={() => { setZoom((z) => clamp(Math.round((z - 0.1) * 100) / 100, 1, 3)); mark() }}
+              disabled={zoom <= 1} title={t('ed.image.zoom')} className="grid h-6 w-6 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white disabled:opacity-40">
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <input type="range" min={1} max={3} step={0.01} value={zoom} aria-label={t('ed.image.zoom')}
+              onChange={(e) => { setZoom(Number(e.target.value)); mark() }} className="h-1 w-28 accent-gold" />
+            <button type="button" onClick={() => { setZoom((z) => clamp(Math.round((z + 0.1) * 100) / 100, 1, 3)); mark() }}
+              disabled={zoom >= 3} title={t('ed.image.zoom')} className="grid h-6 w-6 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white disabled:opacity-40">
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+            <span className="ms-0.5 min-w-[2.75rem] text-center text-[11px] font-medium tabular-nums text-slate-400" dir="ltr">{Math.round(zoom * 100)}%</span>
+            {zoom !== 1 && (
+              <button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); mark() }}
+                title={t('ed.image.color.reset')} className="grid h-6 w-6 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white">
+                <Maximize2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="flex h-full w-full items-center justify-center p-6">
+        <div
+          className="relative flex h-full w-full items-center justify-center overflow-hidden p-6"
+          style={{ background: 'radial-gradient(130% 100% at 50% -10%, rgba(212,175,55,0.07), transparent 55%), #0b0b0d' }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '22px 22px', maskImage: 'radial-gradient(120% 100% at 50% 40%, #000 40%, transparent 100%)' }}
+          />
           <div
             onDragOver={(e) => { e.preventDefault(); setDropping(true) }}
             onDragLeave={() => setDropping(false)}
             onDrop={onDrop}
-            className={`flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 text-center transition ${dropping ? 'border-gold bg-gold/5' : 'border-line bg-surface-2/30'}`}
+            className={`relative z-[1] flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 text-center backdrop-blur-sm transition ${dropping ? 'scale-[1.02] border-gold bg-gold/10 shadow-2xl shadow-gold/10' : 'border-white/15 bg-black/30 hover:border-gold/40'}`}
           >
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/10 text-gold"><Upload className="h-7 w-7" /></span>
+            <span className={`grid h-16 w-16 place-items-center rounded-2xl bg-gold/10 text-gold ring-1 ring-gold/20 transition ${dropping ? 'scale-110' : ''}`}>
+              <Upload className="h-8 w-8" />
+            </span>
             {notFound && <p className="text-xs text-slate-500">{t('ed.notFound')}</p>}
-            <p className="text-sm font-semibold text-white">{dropping ? t('ed.image.dropHere') : t('ed.image.uploadTitle')}</p>
-            <p className="text-xs text-slate-500">{t('ed.image.uploadHint')}</p>
-            <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+            <p className="text-base font-semibold text-white">{dropping ? t('ed.image.dropHere') : t('ed.image.uploadTitle')}</p>
+            <p className="text-xs leading-relaxed text-slate-400">{t('ed.image.uploadHint')}</p>
+            <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold text-ink shadow-lg shadow-gold/10 transition hover:bg-[#F8E7AE]">
               <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
             </button>
             <p className="mt-2 text-[10px] leading-snug text-slate-600">{t('ed.image.ai.boundary')}</p>
