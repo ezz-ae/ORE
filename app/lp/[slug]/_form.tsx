@@ -17,18 +17,29 @@ interface LeadFormProps {
     googleConversionId?: string
     tiktokPixelId?: string
   }
+  /** Which fields the page collects, chosen in the landing generator. Absent =
+   *  the default (name + phone + email). */
+  fields?: Record<string, boolean>
 }
 
-export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} }: LeadFormProps) {
+export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {}, fields }: LeadFormProps) {
   const submitLabel = ctaText || L['form.defaultCta']
-  const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', nationality: '', budget: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  // Honor the operator's field choices. Phone is always required (the minimum
+  // usable lead); everything else follows the config, with sensible defaults.
+  const has = (k: string, dflt: boolean) => (fields ? fields[k] === true : dflt)
+  const showName = has('name', true)
+  const showEmail = has('email', true)
+  const showNationality = has('nationality', false)
+  const showBudget = has('budget', false)
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name || !form.phone) return
+    if ((showName && !form.name) || !form.phone) return
     setError('')
     setSubmitting(true)
     // One id for both conversion events (browser pixel + server CAPI) so Meta
@@ -44,11 +55,15 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
           name: form.name,
           phone: form.phone,
           email: form.email,
+          ...(showNationality && form.nationality ? { nationality: form.nationality } : {}),
+          ...(showBudget && form.budget ? { budget: form.budget } : {}),
           interest: `Brochure & pricing — ${propertyName}`,
           source: `lp:${slug}`,
           landingSlug: slug,
           projectSlug: slug,
-          message: `Requested brochure & pricing for ${propertyName} via landing page.`,
+          message: `Requested brochure & pricing for ${propertyName} via landing page.`
+            + (showNationality && form.nationality ? ` Nationality: ${form.nationality}.` : '')
+            + (showBudget && form.budget ? ` Budget: ${form.budget}.` : ''),
           // Campaign attribution — first-touch UTM captured by the tracker,
           // so the CRM lead links back to the ad that produced it.
           utm: collectUtm(),
@@ -96,20 +111,22 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
     <form onSubmit={submit} className="space-y-4">
       {/* Theme-aware placeholder color (inline styles can't target ::placeholder). */}
       <style>{`.lp-input::placeholder{color:${palette.placeholder};}`}</style>
-      <div>
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
-          {L['form.name']} <span className="text-[#D4AF37]">*</span>
-        </label>
-        <input
-          type="text"
-          required
-          placeholder={L['form.namePlaceholder']}
-          value={form.name}
-          onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-          className={inputClass}
-          style={inputStyle}
-        />
-      </div>
+      {showName && (
+        <div>
+          <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
+            {L['form.name']} <span className="text-[#D4AF37]">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            placeholder={L['form.namePlaceholder']}
+            value={form.name}
+            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+            className={inputClass}
+            style={inputStyle}
+          />
+        </div>
+      )}
       <div>
         <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
           {L['form.phone']} <span className="text-[#D4AF37]">*</span>
@@ -124,19 +141,55 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
           style={inputStyle}
         />
       </div>
-      <div>
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
-          {L['form.email']}
-        </label>
-        <input
-          type="email"
-          placeholder="your@email.com"
-          value={form.email}
-          onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-          className={inputClass}
-          style={inputStyle}
-        />
-      </div>
+      {showEmail && (
+        <div>
+          <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
+            {L['form.email']}
+          </label>
+          <input
+            type="email"
+            placeholder="your@email.com"
+            value={form.email}
+            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+            className={inputClass}
+            style={inputStyle}
+          />
+        </div>
+      )}
+      {showNationality && (
+        <div>
+          <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
+            {L['form.nationality']}
+          </label>
+          <input
+            type="text"
+            placeholder={L['form.nationalityPlaceholder']}
+            value={form.nationality}
+            onChange={(e) => setForm((p) => ({ ...p, nationality: e.target.value }))}
+            className={inputClass}
+            style={inputStyle}
+          />
+        </div>
+      )}
+      {showBudget && (
+        <div>
+          <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
+            {L['form.budget']}
+          </label>
+          <select
+            value={form.budget}
+            onChange={(e) => setForm((p) => ({ ...p, budget: e.target.value }))}
+            className={inputClass}
+            style={inputStyle}
+          >
+            <option value="">{L['form.budgetAny']}</option>
+            <option value="< AED 1M">{L['form.budgetR1']}</option>
+            <option value="AED 1M–2M">{L['form.budgetR2']}</option>
+            <option value="AED 2M–5M">{L['form.budgetR3']}</option>
+            <option value="AED 5M+">{L['form.budgetR4']}</option>
+          </select>
+        </div>
+      )}
       {error && <p className="text-[13px] text-red-400">{error}</p>}
       <button
         type="submit"

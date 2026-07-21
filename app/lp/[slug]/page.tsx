@@ -958,7 +958,7 @@ function LeadFormSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
           </div>
           <div>
             <div className="rounded-2xl border border-gold/15 p-8" style={{ background: p.surface }}>
-              <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} L={L} pixels={page.pixels} palette={p} />
+              <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} L={L} pixels={page.pixels} palette={p} fields={d.fields as Record<string, boolean> | undefined} />
             </div>
           </div>
         </div>
