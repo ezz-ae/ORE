@@ -23,6 +23,7 @@ import { FaqAccordion } from './_faq'
 import { StickyLpCta } from './_sticky'
 import { Tracker } from './_tracker'
 import { LpEditBridge } from '@/components/lp/edit-bridge'
+import { COMPANY_WHATSAPP_URL, COMPANY_PHONE_E164 } from '@/lib/site'
 
 type Dict = Record<string, string>
 
@@ -898,7 +899,7 @@ function AiConciergeSection({ d, page, L, p }: { d: Record<string, unknown>; pag
     `What type of buyer is ${name} best suited for?`,
   ]
   const list = prompts.length ? prompts : defaultPrompts
-  const waBase = 'https://wa.me/971504173622?text='
+  const waBase = `${COMPANY_WHATSAPP_URL}?text=`
 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
@@ -1098,7 +1099,7 @@ function ThemeToggle({ lang, theme, intent, p }: { lang: LpLang; theme: LpTheme;
 function Topbar({ page, L, lang, theme, intent, p }: { page: LandingPageData; L: Dict; lang: LpLang; theme: LpTheme; intent?: BuyerIntent | null; p: LpPalette }) {
   const hasPrice = !!page.project?.priceFromAed && page.project.priceFromAed > 0
   const price = fmtAed(page.project?.priceFromAed, L)
-  const waUrl = `https://wa.me/971504173622?text=${encodeURIComponent(`Hi, I'm interested in ${page.title}`)}`
+  const waUrl = `${COMPANY_WHATSAPP_URL}?text=${encodeURIComponent(`Hi, I'm interested in ${page.title}`)}`
   return (
     <div className="fixed left-0 right-0 top-0 z-50 border-b backdrop-blur-md" style={{ borderBottomColor: p.divider, background: p.topbarBg }}>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
@@ -1110,7 +1111,7 @@ function Topbar({ page, L, lang, theme, intent, p }: { page: LandingPageData; L:
           <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-1.5 text-[12px] font-medium text-[#25D366] transition hover:bg-[#25D366]/20">
             <MessageCircle className="h-3.5 w-3.5" /> {L['topbar.whatsapp']}
           </a>
-          <a href="tel:+971504173622" className="hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] transition sm:flex" style={{ borderColor: p.surfaceBorder, color: p.textMuted }}>
+          <a href={`tel:${COMPANY_PHONE_E164}`} className="hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] transition sm:flex" style={{ borderColor: p.surfaceBorder, color: p.textMuted }}>
             <Phone className="h-3 w-3" /> {L['topbar.call']}
           </a>
         </div>

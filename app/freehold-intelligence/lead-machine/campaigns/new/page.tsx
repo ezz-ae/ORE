@@ -542,7 +542,7 @@ export default function NewCampaignPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId: listing.id, listingName: listing.projectName, area: listing.area,
-          developer: 'Freehold', startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
+          developer: BRAND.company, startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
           angle: genAngle, tone: 'direct', cta: form.cta,
           // Ground the copy in the operator's source material (brochure
           // extracts, links) — decisive for new launches with no landing page.
@@ -2473,7 +2473,7 @@ export default function NewCampaignPage() {
                         <div className="bg-[#18181b]">
                           <div className="flex items-center gap-1.5 px-2 py-1.5">
                             <div className="h-5 w-5 rounded-full bg-gold/80" />
-                            <div className="text-[10px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
+                            <div className="text-[10px] leading-tight"><div className="font-semibold text-white">{BRAND.legalName}</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
                           </div>
                           {tilePrimaryText && <div className="px-2 pb-1.5 text-[10px] leading-snug text-slate-200">{tilePrimaryText.slice(0, 90)}</div>}
                           <div className="aspect-square w-full bg-surface-2">
@@ -2771,7 +2771,7 @@ function AdMock({ form, placement, t }: {
         <div className="bg-[#18181b]">
           <div className="flex items-center gap-2 px-3 py-2">
             <div className="h-7 w-7 rounded-full bg-gold/80" />
-            <div className="text-[11px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
+            <div className="text-[11px] leading-tight"><div className="font-semibold text-white">{BRAND.legalName}</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
           </div>
           {form.primaryText && <div className="px-3 pb-2 text-[12px] leading-snug text-slate-200 whitespace-pre-line">{form.primaryText.slice(0, 180)}</div>}
           <div className="aspect-square w-full bg-surface-2">

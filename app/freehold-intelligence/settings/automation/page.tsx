@@ -405,7 +405,7 @@ function DistributionSection({ config, setConfig, brokers }: {
                   const on = d.pool.includes(b.id)
                   return (
                     <button key={b.id} onClick={() => setD({ pool: on ? d.pool.filter((x) => x !== b.id) : [...d.pool, b.id] })}
-                      className={`truncate rounded-[8px] border px-2.5 py-1.5 text-left text-xs transition ${
+                      className={`truncate rounded-[8px] border px-2.5 py-1.5 text-start text-xs transition ${
                         on ? 'border-gold/30 bg-gold/[0.08] text-gold' : 'border-line text-slate-400'
                       }`}>{b.name}</button>
                   )

@@ -371,6 +371,18 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
     return emptyResult(machineId, machine.status, false)
   }
 
+  // Serialize cycles per machine. The combined hard cap is checked fresh
+  // before every launch, but two cycles running at once (cron firing while an
+  // operator clicks Run/Start, or a double-click) would each read the spend
+  // BEFORE either inserts its campaigns — both pass the cap and both launch,
+  // so live spend could exceed the "hard" cap and a trial could launch twice.
+  // A session advisory lock lets only one cycle per machine proceed; a
+  // concurrent caller gets an honest no-op (ran:false) instead.
+  const lockKey = advisoryKey(machineId)
+  const gotLock = await tryAdvisoryLock(lockKey)
+  if (!gotLock) return emptyResult(machineId, machine.status, false)
+
+  try {
   const result = emptyResult(machineId, machine.status, true)
   let campaigns = await listMachineCampaigns(machineId)
 
@@ -545,11 +557,14 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   const ownerCache = new Map<string, string | null>()
 
   // Google metrics come from ONE listCampaigns read (it already carries
-  // cost_micros/clicks/conversions per campaign), indexed by id.
+  // cost_micros/clicks/conversions per campaign), indexed by id. Scoped to
+  // THIS_MONTH so Google spend is like-for-like with the Meta side (which
+  // reads this_month) — otherwise a Google trial's LIFETIME cost would be
+  // compared against a Meta this-month cost in the rotation's spend gate.
   let googleMetricsById: Map<string, GoogleCampaign> | null = null
   if (evalCampaigns.some((c) => c.channel === 'google')) {
     try {
-      googleMetricsById = new Map((await listGoogleCampaigns()).map((c) => [c.id, c]))
+      googleMetricsById = new Map((await listGoogleCampaigns('THIS_MONTH')).map((c) => [c.id, c]))
     } catch (e) {
       await logActivity({ machineId, kind: 'error', detail: `Google metrics read failed: ${errMsg(e)}` })
       result.errors.push('google:metrics')
@@ -891,6 +906,30 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   }
 
   return result
+  } finally {
+    await releaseAdvisoryLock(lockKey)
+  }
+}
+
+// ─── Per-machine cycle serialization (Postgres session advisory locks) ───────
+// A stable 31-bit key from the machine id — advisory locks take a bigint/int.
+function advisoryKey(machineId: string): number {
+  let h = 0
+  for (let i = 0; i < machineId.length; i++) h = (Math.imul(31, h) + machineId.charCodeAt(i)) | 0
+  return h & 0x7fffffff
+}
+async function tryAdvisoryLock(key: number): Promise<boolean> {
+  try {
+    const rows = await query<{ locked: boolean }>('SELECT pg_try_advisory_lock($1) AS locked', [key])
+    return rows[0]?.locked === true
+  } catch {
+    // If the lock call itself fails, don't block the cycle — the fresh cap
+    // check per launch remains the primary safety; the lock is belt-and-braces.
+    return true
+  }
+}
+async function releaseAdvisoryLock(key: number): Promise<void> {
+  try { await query('SELECT pg_advisory_unlock($1)', [key]) } catch { /* best-effort */ }
 }
 
 // ─── Machine-level controls ──────────────────────────────────────────────────

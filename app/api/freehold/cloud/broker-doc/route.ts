@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 import { listCloudFiles, recordCloudFile, cloudConfigured, type CloudFile } from '@/lib/freehold/cloud'
 import { buildDraftOffer, buildFactSheet, type OfferData } from '@/lib/freehold/broker-pdf'
+import { BRAND } from '@/lib/freehold/brand'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -87,7 +88,7 @@ Return ONLY this JSON (no prose):
   }
 
   data.brokerName = auth.user.name || undefined
-  data.brokerCompany = 'Freehold'
+  data.brokerCompany = BRAND.company
 
   let pdfBytes: Uint8Array
   try {

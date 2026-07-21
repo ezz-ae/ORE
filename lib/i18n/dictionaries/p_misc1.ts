@@ -2,6 +2,9 @@
 type Dict = Record<string, string>
 
 const en: Dict = {
+  'nf.title': 'Page not found',
+  'nf.desc': "This page doesn't exist or may have moved. Head back to your workspace home to keep going.",
+  'nf.back': 'Back to home',
   // ── Security page ──────────────────────────────────────────────
   'psec.eyebrow': 'Security',
   'psec.headline.l1': 'Access model',
@@ -132,6 +135,9 @@ const en: Dict = {
 }
 
 const ar: Dict = {
+  'nf.title': 'الصفحة غير موجودة',
+  'nf.desc': 'هذه الصفحة غير موجودة أو ربما نُقلت. عُد إلى الصفحة الرئيسية لمساحة عملك للمتابعة.',
+  'nf.back': 'العودة إلى الرئيسية',
   // ── Security page ──────────────────────────────────────────────
   'psec.eyebrow': 'الأمان',
   'psec.headline.l1': 'نموذج الوصول',
@@ -249,6 +255,9 @@ const ar: Dict = {
 }
 
 const ru: Dict = {
+  'nf.title': 'Страница не найдена',
+  'nf.desc': 'Этой страницы не существует или она была перемещена. Вернитесь на главную рабочего пространства.',
+  'nf.back': 'На главную',
   // ── Security page ──────────────────────────────────────────────
   'psec.eyebrow': 'Безопасность',
   'psec.headline.l1': 'Модель доступа',

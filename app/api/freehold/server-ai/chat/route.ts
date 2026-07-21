@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       // Default path: role + inferred topic scope.
       allowed = isAllowed(role, topic)
       if (allowed) {
-        const roleSystemPrompt = `You are the private Freehold Intelligence Server AI for the ${scope.label} role (${scope.tone}).
+        const roleSystemPrompt = `You are the private ${brandName} Server AI for the ${scope.label} role (${scope.tone}).
 
 Your allowed scope: ${scope.allowedTopics.join(', ')}.
 Topic of this query: ${topic}.

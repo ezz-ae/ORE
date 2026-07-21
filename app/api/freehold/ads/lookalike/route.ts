@@ -7,6 +7,7 @@ import {
   type BuyerContact,
 } from '@/lib/meta/client'
 import { createAudience } from '@/lib/freehold/audiences'
+import { BRAND } from '@/lib/freehold/brand'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
   const country = typeof body.country === 'string' && body.country.trim() ? body.country.trim() : 'AE'
   const ratio = typeof body.ratio === 'number' ? body.ratio : 0.03
-  const label = typeof body.label === 'string' && body.label.trim() ? body.label.trim() : 'Freehold'
+  const label = typeof body.label === 'string' && body.label.trim() ? body.label.trim() : BRAND.company
 
   let contacts: BuyerContact[]
   try {

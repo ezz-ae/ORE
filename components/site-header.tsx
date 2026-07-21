@@ -17,6 +17,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
+import { COMPANY_WHATSAPP_URL } from '@/lib/site'
 
 const LeadFormPopup = dynamic(
   () => import("@/components/lead-form-popup").then((mod) => mod.LeadFormPopup),
@@ -165,7 +166,7 @@ export function SiteHeader() {
             asChild
             className="rounded-full text-[#152E24]/50 hover:bg-[#152E24]/[0.04] h-9 w-9"
           >
-            <a href="https://wa.me/971504173622" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <a href={COMPANY_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
               <MessageCircleIcon />
             </a>
           </Button>

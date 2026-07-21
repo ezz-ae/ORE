@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
+import { BRAND } from '@/lib/freehold/brand'
 
 // ─── Types mirrored from the API ──────────────────────────────────────────────
 
@@ -200,7 +201,7 @@ export default function AudiencesPage() {
     try {
       const res = await fetch('/api/freehold/ads/lookalike', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirm: true, label: buyersName.trim() || 'Freehold', country: buyersCountry, ratio: buyersRatio }),
+        body: JSON.stringify({ confirm: true, label: buyersName.trim() || BRAND.company, country: buyersCountry, ratio: buyersRatio }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed')

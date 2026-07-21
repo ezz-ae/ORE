@@ -172,7 +172,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/crm" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> {t('crm.crmIntelligence')}
+        <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" /> {t('crm.crmIntelligence')}
       </Link>
 
       {/* Header */}
@@ -342,7 +342,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-start justify-between gap-3">
                   <span className="text-xs text-slate-500 shrink-0">{label}</span>
-                  <span className="text-xs text-slate-300 text-right">{value}</span>
+                  <span className="text-xs text-slate-300 text-end">{value}</span>
                 </div>
               ))}
             </div>
@@ -395,7 +395,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <div className="space-y-3 text-xs text-slate-400">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-slate-500">{t('crm.campaign')}</span>
-                  <span className="flex items-center gap-1.5 text-right">
+                  <span className="flex items-center gap-1.5 text-end">
                     {campaignPlatform && realCampaign && (
                       <span className={`shrink-0 rounded-full border px-1.5 py-px text-[10px] font-medium ${
                         campaignPlatform === 'meta'
