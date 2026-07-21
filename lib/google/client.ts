@@ -229,6 +229,43 @@ export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> 
   }))
 }
 
+/**
+ * Real serving state for a campaign — Google's own primary_status (the honest
+ * "is it serving, and if not why") plus its reasons. This is what the plain
+ * ENABLED/PAUSED status can't tell you (eligible / limited / pending / not
+ * eligible / ended). Fail-soft to the plain status if primary_status isn't
+ * available.
+ */
+export interface GoogleCampaignDelivery {
+  status: string
+  primaryStatus: string | null
+  reasons: string[]
+}
+
+export async function getCampaignDelivery(campaignId: string): Promise<GoogleCampaignDelivery> {
+  try {
+    const rows = await gaqlQuery<Record<string, any>>(`
+      SELECT campaign.status, campaign.primary_status, campaign.primary_status_reasons
+      FROM campaign WHERE campaign.id = ${gid(campaignId)} LIMIT 1
+    `)
+    const r = rows[0]
+    const reasons = Array.isArray(r?.campaign?.primary_status_reasons)
+      ? (r.campaign.primary_status_reasons as unknown[]).map(String)
+      : []
+    return {
+      status: String(r?.campaign?.status ?? 'UNKNOWN'),
+      primaryStatus: r?.campaign?.primary_status ? String(r.campaign.primary_status) : null,
+      reasons,
+    }
+  } catch {
+    // Older API surface without primary_status — fall back to the plain status.
+    const rows = await gaqlQuery<Record<string, any>>(`
+      SELECT campaign.status FROM campaign WHERE campaign.id = ${gid(campaignId)} LIMIT 1
+    `)
+    return { status: String(rows[0]?.campaign?.status ?? 'UNKNOWN'), primaryStatus: null, reasons: [] }
+  }
+}
+
 export async function getCampaign(campaignId: string): Promise<GoogleCampaign> {
   const rows = await gaqlQuery<Record<string, any>>(`
     SELECT

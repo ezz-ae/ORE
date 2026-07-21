@@ -23,6 +23,7 @@ import { useI18n } from '@/lib/i18n/provider'
 import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
 import { MachineLaunchReview } from '@/components/freehold/machine-launch-review'
 import type { TrialEdit, ProjectEdit } from '@/lib/freehold/ads-machine-plan-edit'
+import type { DeliveryState, CampaignDelivery } from '@/lib/freehold/campaign-delivery'
 import type {
   ActivityKind, AdsMachine, MachineActivity, MachineCampaign, MachineStatus,
   VerdictAggregates, VerdictQueueItem,
@@ -49,6 +50,24 @@ const TRIAL_STATUS: Record<MachineCampaign['status'], { cls: string; labelKey: s
   paused: { cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300', labelKey: 'lm.machine.trial.status.paused' },
   draft: { cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400', labelKey: 'lm.machine.trial.status.draft' },
   stopped: { cls: 'border-red-400/20 bg-red-400/10 text-red-300', labelKey: 'lm.machine.trial.status.stopped' },
+}
+
+// Honest live delivery state (Meta effective_status + learning phase; Google
+// primary_status). "Active" is our control flag — this is what's REALLY
+// happening once a campaign is created.
+const DELIVERY_META: Record<DeliveryState, { dot: string; cls: string; labelKey: string }> = {
+  delivering:       { dot: 'bg-emerald-400', cls: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', labelKey: 'lm.machine.delivery.delivering' },
+  learning:         { dot: 'bg-sky-400',     cls: 'border-sky-400/20 bg-sky-400/10 text-sky-300',             labelKey: 'lm.machine.delivery.learning' },
+  learning_limited: { dot: 'bg-amber-400',   cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300',       labelKey: 'lm.machine.delivery.learning_limited' },
+  limited:          { dot: 'bg-amber-400',   cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300',       labelKey: 'lm.machine.delivery.limited' },
+  in_review:        { dot: 'bg-violet-400',  cls: 'border-violet-400/20 bg-violet-400/10 text-violet-300',    labelKey: 'lm.machine.delivery.in_review' },
+  rejected:         { dot: 'bg-red-400',     cls: 'border-red-400/20 bg-red-400/10 text-red-300',             labelKey: 'lm.machine.delivery.rejected' },
+  not_delivering:   { dot: 'bg-red-400',     cls: 'border-red-400/20 bg-red-400/10 text-red-300',             labelKey: 'lm.machine.delivery.not_delivering' },
+  paused:           { dot: 'bg-slate-400',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400',       labelKey: 'lm.machine.delivery.paused' },
+  ended:            { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.ended' },
+  local_draft:      { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400',       labelKey: 'lm.machine.delivery.local_draft' },
+  not_connected:    { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.not_connected' },
+  unknown:          { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.unknown' },
 }
 
 // Kind-specific icon + color for the activity feed.
@@ -100,8 +119,23 @@ export default function MachineDashboardPage() {
   const [capEditing, setCapEditing] = useState(false)
   const [capValue, setCapValue] = useState('')
   const [answeringId, setAnsweringId] = useState<string | null>(null)
+  const [delivery, setDelivery] = useState<Record<string, CampaignDelivery>>({})
+  const [deliveryLoading, setDeliveryLoading] = useState(false)
   const dataRef = useRef<Detail | null>(null)
   dataRef.current = data
+
+  // Live delivery/learning state per campaign — a separate call so the main
+  // dashboard stays fast. Fail-soft: a failure just leaves the last honest map.
+  const loadDelivery = useCallback(async () => {
+    setDeliveryLoading(true)
+    try {
+      const res = await fetch(`/api/freehold/ads/machine/${encodeURIComponent(id)}/delivery`, { cache: 'no-store' })
+      const d = await res.json().catch(() => null)
+      if (res.ok && d?.delivery) setDelivery(d.delivery as Record<string, CampaignDelivery>)
+    } catch { /* keep last map */ } finally {
+      setDeliveryLoading(false)
+    }
+  }, [id])
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true)
@@ -120,15 +154,15 @@ export default function MachineDashboardPage() {
     }
   }, [id, t])
 
-  useEffect(() => { if (id) load() }, [id, load])
+  useEffect(() => { if (id) { load(); loadDelivery() } }, [id, load, loadDelivery])
 
   // Auto-refresh while open: the activity feed is "what the machine is doing
-  // now", so the whole GET re-pulls every 60s.
+  // now", so the whole GET re-pulls every 60s; delivery state refreshes with it.
   useEffect(() => {
     if (!id) return
-    const iv = setInterval(() => load({ silent: true }), 60_000)
+    const iv = setInterval(() => { load({ silent: true }); loadDelivery() }, 60_000)
     return () => clearInterval(iv)
-  }, [id, load])
+  }, [id, load, loadDelivery])
 
   async function patch(body: Record<string, unknown>, busyKey: string): Promise<boolean> {
     setActionBusy(busyKey)
@@ -427,12 +461,13 @@ export default function MachineDashboardPage() {
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto rounded-[18px] border border-line bg-surface">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-line text-start text-xs uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.project')}</th>
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.trial')}</th>
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.channel')}</th>
+                  <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.delivery')}</th>
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.status')}</th>
                   <th className="px-4 py-3 text-end font-medium">{t('lm.machine.trials.budget')}</th>
                   <th className="px-4 py-3" />
@@ -441,11 +476,26 @@ export default function MachineDashboardPage() {
               <tbody>
                 {campaigns.map((c) => {
                   const st = TRIAL_STATUS[c.status]
+                  const dl = delivery[c.campaignId]
+                  const dm = dl ? DELIVERY_META[dl.state] : null
                   return (
                     <tr key={c.id} className="border-b border-line/50 last:border-0">
                       <td className="px-4 py-3 text-slate-200">{c.projectSlug}</td>
                       <td className="px-4 py-3 text-white">{c.trialLabel}</td>
                       <td className="px-4 py-3 text-slate-400">{c.channel === 'meta' ? 'Meta' : 'Google'}</td>
+                      <td className="px-4 py-3">
+                        {dm ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${dm.cls}`}
+                            title={dl?.detail || undefined}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${dm.dot}`} />
+                            {t(dm.labelKey)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-600">{deliveryLoading ? '…' : '—'}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.cls}`}>{t(st.labelKey)}</span>
                       </td>
