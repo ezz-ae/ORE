@@ -42,6 +42,9 @@ export const agent: Record<Locale, Dict> = {
     'agent.settings': 'Settings',
     'agent.preferences': 'Preferences',
     'agent.accountPreferences': 'Account preferences',
+    'agent.connectAi': 'Connect AI',
+    'agent.connectAiMetric': 'Claude · GPT · Gemini',
+    'agent.connectAiSub': 'Run your work from your own AI',
 
     // ── agent/layout.tsx ──
     'agent.myWorkspace': 'My Workspace',
@@ -269,6 +272,9 @@ export const agent: Record<Locale, Dict> = {
     'agent.settings': 'الإعدادات',
     'agent.preferences': 'التفضيلات',
     'agent.accountPreferences': 'تفضيلات الحساب',
+    'agent.connectAi': 'ربط الذكاء',
+    'agent.connectAiMetric': 'Claude · GPT · Gemini',
+    'agent.connectAiSub': 'أدر عملك من ذكائك الاصطناعي',
 
     // ── agent/layout.tsx ──
     'agent.myWorkspace': 'مساحة عملي',
@@ -496,6 +502,9 @@ export const agent: Record<Locale, Dict> = {
     'agent.settings': 'Настройки',
     'agent.preferences': 'Предпочтения',
     'agent.accountPreferences': 'Настройки аккаунта',
+    'agent.connectAi': 'Подключить ИИ',
+    'agent.connectAiMetric': 'Claude · GPT · Gemini',
+    'agent.connectAiSub': 'Управляйте работой из своего ИИ',
 
     // ── agent/layout.tsx ──
     'agent.myWorkspace': 'Моё рабочее пространство',
