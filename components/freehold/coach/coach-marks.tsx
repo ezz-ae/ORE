@@ -27,6 +27,7 @@ import {
 } from '@/lib/freehold/coach-tours'
 import { getHowTo } from '@/lib/freehold/howto'
 import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
+import { setCoachActive } from '@/lib/freehold/overlay-arbiter'
 
 interface CoachCtx {
   /** launch the tour for the signed-in role from step 0 */
@@ -222,6 +223,13 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router])
 
   const [resumeTick, setResumeTick] = useState(0)
+
+  // Tell the overlay arbiter whenever a tour is on screen, so the What's New
+  // nudge defers instead of stacking on top of the spotlight.
+  useEffect(() => {
+    setCoachActive(active)
+    return () => setCoachActive(false)
+  }, [active])
 
   // Resume a pending walkthrough whenever we land on the page its next step
   // expects. Shows the contiguous run of steps that belong to this page.
