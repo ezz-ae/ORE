@@ -213,6 +213,35 @@ export async function getCampaignInsights(campaignId: string): Promise<MetaInsig
   return res.data?.[0] ?? null
 }
 
+/**
+ * Real delivery/learning state for a campaign — Meta's own effective_status
+ * plus the ad set's learning phase. This is the honest "what is actually
+ * happening" (in review / delivering / learning / not delivering) that the
+ * generic ACTIVE/PAUSED status hides.
+ */
+export interface MetaCampaignDelivery {
+  effectiveStatus: string
+  adSetEffectiveStatus: string | null
+  learningStage: string | null
+}
+
+export async function getCampaignDelivery(campaignId: string): Promise<MetaCampaignDelivery> {
+  const camp = await apiFetch<{ effective_status?: string; status?: string }>(
+    `/${campaignId}`, undefined, { fields: 'effective_status,status' },
+  )
+  // The learning phase lives on the ad set — read the first one (the machine
+  // launches one ad set per trial campaign).
+  const sets = await apiFetch<{ data: Array<{ effective_status?: string; learning_stage_info?: { learning_stage?: string } }> }>(
+    `/${campaignId}/adsets`, undefined, { fields: 'effective_status,learning_stage_info', limit: '1' },
+  ).catch(() => ({ data: [] as Array<{ effective_status?: string; learning_stage_info?: { learning_stage?: string } }> }))
+  const first = sets.data?.[0]
+  return {
+    effectiveStatus: camp.effective_status ?? camp.status ?? 'UNKNOWN',
+    adSetEffectiveStatus: first?.effective_status ?? null,
+    learningStage: first?.learning_stage_info?.learning_stage ?? null,
+  }
+}
+
 export async function updateCampaignStatus(
   campaignId: string,
   status: MetaCampaignStatus,
