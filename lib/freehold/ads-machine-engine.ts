@@ -1030,6 +1030,48 @@ export async function resumeMachine(machineId: string): Promise<{ resumed: numbe
   return { resumed, capSkipped }
 }
 
+/**
+ * Turn a SINGLE trial campaign on or off — the per-campaign switch behind the
+ * dashboard's on/off toggle. Pausing always works; resuming is refused when it
+ * would push the combined daily budget over the machine's hard cap (the same
+ * rule every launch obeys). Honest: the DB row only flips after the platform
+ * call succeeds, and every toggle is logged.
+ */
+export async function setTrialRunning(
+  machineId: string,
+  campaignId: string,
+  running: boolean,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const machine = await getMachine(machineId)
+  if (!machine) return { ok: false, error: 'Ads machine not found' }
+  const row = (await listMachineCampaigns(machineId)).find((c) => c.campaignId === campaignId)
+  if (!row) return { ok: false, error: 'Trial not found on this machine' }
+
+  if (running) {
+    const committed = await activeSpendAed(machineId)
+    // Only count this trial's budget as "new" if it isn't already active.
+    const additional = row.status === 'active' ? 0 : row.dailyBudgetAed
+    if (committed + additional > machine.dailyCapAed) {
+      return { ok: false, error: `Resuming "${row.trialLabel}" would commit AED ${committed + additional}/day, above the AED ${machine.dailyCapAed}/day cap. Lower another trial or raise the cap.` }
+    }
+  }
+
+  try {
+    await setPlatformStatus(row, running)
+  } catch (e) {
+    return { ok: false, error: errMsg(e) }
+  }
+  await updateMachineCampaign(row.id, { status: running ? 'active' : 'paused' })
+  await logActivity({
+    machineId,
+    kind: running ? 'trial_resumed' : 'trial_paused',
+    detail: `${running ? 'Resumed' : 'Paused'} "${row.trialLabel}" (${row.projectSlug}, ${row.channel}) — turned ${running ? 'on' : 'off'} by an operator.`,
+    campaignId: row.campaignId,
+    data: { trialId: row.id },
+  })
+  return { ok: true }
+}
+
 /** Stop: pause everything on both platforms and mark the machine stopped. */
 export async function stopMachine(machineId: string): Promise<{ paused: number; failed: string[] }> {
   const out = await pauseMachine(machineId)

@@ -242,6 +242,24 @@ export interface GoogleCampaignDelivery {
   reasons: string[]
 }
 
+/**
+ * Today's spend for a campaign in AED (cost_micros / 1e6). Zero when it hasn't
+ * spent today — the honest "delivering but not spending" signal. Fail-soft to 0
+ * (a day with no spend simply returns no rows).
+ */
+export async function getCampaignSpendToday(campaignId: string): Promise<number> {
+  try {
+    const rows = await gaqlQuery<Record<string, any>>(`
+      SELECT metrics.cost_micros FROM campaign
+      WHERE campaign.id = ${gid(campaignId)} AND segments.date DURING TODAY
+    `)
+    const micros = rows.reduce((n, r) => n + Number(r?.metrics?.cost_micros ?? 0), 0)
+    return micros / 1_000_000
+  } catch {
+    return 0
+  }
+}
+
 export async function getCampaignDelivery(campaignId: string): Promise<GoogleCampaignDelivery> {
   try {
     const rows = await gaqlQuery<Record<string, any>>(`

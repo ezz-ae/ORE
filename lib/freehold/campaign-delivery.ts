@@ -9,8 +9,8 @@
  * operator can act on — so the machine explains what's really happening instead
  * of just saying "live".
  */
-import { getCampaignDelivery as metaDelivery, MetaConfigError, type MetaCampaignDelivery } from '@/lib/meta/client'
-import { getCampaignDelivery as googleDelivery, type GoogleCampaignDelivery } from '@/lib/google/client'
+import { getCampaignDelivery as metaDelivery, getCampaignSpendToday as metaSpendToday, MetaConfigError, type MetaCampaignDelivery } from '@/lib/meta/client'
+import { getCampaignDelivery as googleDelivery, getCampaignSpendToday as googleSpendToday, type GoogleCampaignDelivery } from '@/lib/google/client'
 import { GoogleConfigError } from '@/lib/google/types'
 import type { MachineCampaign } from '@/lib/freehold/ads-machine'
 
@@ -32,7 +32,17 @@ export interface CampaignDelivery {
   state: DeliveryState
   /** Honest extra context — the platform's own reason(s), never invented. */
   detail?: string
+  /** Today's real spend in AED (0 = nothing spent yet today). */
+  spendTodayAed?: number
+  /** True when the campaign is in a serving state but has spent AED 0 today —
+   * "delivering on paper, not actually spending". */
+  notSpending?: boolean
 }
+
+/** Delivery states where the campaign is supposed to be serving/spending. */
+const SERVING: ReadonlySet<DeliveryState> = new Set<DeliveryState>([
+  'delivering', 'learning', 'learning_limited', 'limited',
+])
 
 function mapMeta(raw: MetaCampaignDelivery): CampaignDelivery {
   const es = raw.effectiveStatus
@@ -80,11 +90,23 @@ function mapGoogle(raw: GoogleCampaignDelivery): CampaignDelivery {
 export async function getMachineCampaignDelivery(c: MachineCampaign): Promise<CampaignDelivery> {
   // A locally-prepared Google draft was never sent live — say so plainly.
   if (c.channel === 'google' && c.campaignId.startsWith('local-')) {
-    return { state: 'local_draft', detail: 'Prepared locally — Google Ads is not connected' }
+    return { state: 'local_draft', detail: 'Prepared locally — Google Ads is not connected', spendTodayAed: 0 }
   }
   try {
-    if (c.channel === 'google') return mapGoogle(await googleDelivery(c.campaignId))
-    return mapMeta(await metaDelivery(c.campaignId))
+    const [base, spendTodayAed] = await Promise.all([
+      c.channel === 'google'
+        ? googleDelivery(c.campaignId).then(mapGoogle)
+        : metaDelivery(c.campaignId).then(mapMeta),
+      (c.channel === 'google' ? googleSpendToday(c.campaignId) : metaSpendToday(c.campaignId)).catch(() => 0),
+    ])
+    const spend = Math.round((spendTodayAed || 0) * 100) / 100
+    return {
+      ...base,
+      spendTodayAed: spend,
+      // "Delivering" on paper but AED 0 spent today is the honest not-spending
+      // signal the operator needs to see.
+      notSpending: SERVING.has(base.state) && spend === 0,
+    }
   } catch (e) {
     if (e instanceof MetaConfigError || e instanceof GoogleConfigError) return { state: 'not_connected' }
     return { state: 'unknown' }

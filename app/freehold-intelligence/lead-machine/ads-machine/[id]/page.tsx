@@ -55,19 +55,19 @@ const TRIAL_STATUS: Record<MachineCampaign['status'], { cls: string; labelKey: s
 // Honest live delivery state (Meta effective_status + learning phase; Google
 // primary_status). "Active" is our control flag — this is what's REALLY
 // happening once a campaign is created.
-const DELIVERY_META: Record<DeliveryState, { dot: string; cls: string; labelKey: string }> = {
-  delivering:       { dot: 'bg-emerald-400', cls: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', labelKey: 'lm.machine.delivery.delivering' },
-  learning:         { dot: 'bg-sky-400',     cls: 'border-sky-400/20 bg-sky-400/10 text-sky-300',             labelKey: 'lm.machine.delivery.learning' },
-  learning_limited: { dot: 'bg-amber-400',   cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300',       labelKey: 'lm.machine.delivery.learning_limited' },
-  limited:          { dot: 'bg-amber-400',   cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300',       labelKey: 'lm.machine.delivery.limited' },
-  in_review:        { dot: 'bg-violet-400',  cls: 'border-violet-400/20 bg-violet-400/10 text-violet-300',    labelKey: 'lm.machine.delivery.in_review' },
-  rejected:         { dot: 'bg-red-400',     cls: 'border-red-400/20 bg-red-400/10 text-red-300',             labelKey: 'lm.machine.delivery.rejected' },
-  not_delivering:   { dot: 'bg-red-400',     cls: 'border-red-400/20 bg-red-400/10 text-red-300',             labelKey: 'lm.machine.delivery.not_delivering' },
-  paused:           { dot: 'bg-slate-400',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400',       labelKey: 'lm.machine.delivery.paused' },
-  ended:            { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.ended' },
-  local_draft:      { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400',       labelKey: 'lm.machine.delivery.local_draft' },
-  not_connected:    { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.not_connected' },
-  unknown:          { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.unknown' },
+const DELIVERY_META: Record<DeliveryState, { dot: string; cls: string; labelKey: string; descKey: string }> = {
+  delivering:       { dot: 'bg-emerald-400', cls: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', labelKey: 'lm.machine.delivery.delivering',       descKey: 'lm.machine.delivery.desc.delivering' },
+  learning:         { dot: 'bg-sky-400',     cls: 'border-sky-400/20 bg-sky-400/10 text-sky-300',             labelKey: 'lm.machine.delivery.learning',         descKey: 'lm.machine.delivery.desc.learning' },
+  learning_limited: { dot: 'bg-amber-400',   cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300',       labelKey: 'lm.machine.delivery.learning_limited', descKey: 'lm.machine.delivery.desc.learning_limited' },
+  limited:          { dot: 'bg-amber-400',   cls: 'border-amber-400/20 bg-amber-400/10 text-amber-300',       labelKey: 'lm.machine.delivery.limited',          descKey: 'lm.machine.delivery.desc.limited' },
+  in_review:        { dot: 'bg-violet-400',  cls: 'border-violet-400/20 bg-violet-400/10 text-violet-300',    labelKey: 'lm.machine.delivery.in_review',        descKey: 'lm.machine.delivery.desc.in_review' },
+  rejected:         { dot: 'bg-red-400',     cls: 'border-red-400/20 bg-red-400/10 text-red-300',             labelKey: 'lm.machine.delivery.rejected',         descKey: 'lm.machine.delivery.desc.rejected' },
+  not_delivering:   { dot: 'bg-red-400',     cls: 'border-red-400/20 bg-red-400/10 text-red-300',             labelKey: 'lm.machine.delivery.not_delivering',   descKey: 'lm.machine.delivery.desc.not_delivering' },
+  paused:           { dot: 'bg-slate-400',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400',       labelKey: 'lm.machine.delivery.paused',           descKey: 'lm.machine.delivery.desc.paused' },
+  ended:            { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.ended',            descKey: 'lm.machine.delivery.desc.ended' },
+  local_draft:      { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-400',       labelKey: 'lm.machine.delivery.local_draft',      descKey: 'lm.machine.delivery.desc.local_draft' },
+  not_connected:    { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.not_connected',    descKey: 'lm.machine.delivery.desc.not_connected' },
+  unknown:          { dot: 'bg-slate-500',   cls: 'border-slate-500/20 bg-slate-500/10 text-slate-500',       labelKey: 'lm.machine.delivery.unknown',          descKey: 'lm.machine.delivery.desc.unknown' },
 }
 
 // Kind-specific icon + color for the activity feed.
@@ -121,6 +121,7 @@ export default function MachineDashboardPage() {
   const [answeringId, setAnsweringId] = useState<string | null>(null)
   const [delivery, setDelivery] = useState<Record<string, CampaignDelivery>>({})
   const [deliveryLoading, setDeliveryLoading] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
   const dataRef = useRef<Detail | null>(null)
   dataRef.current = data
 
@@ -181,6 +182,29 @@ export default function MachineDashboardPage() {
       return false
     } finally {
       setActionBusy(null)
+    }
+  }
+
+  // Per-campaign on/off — flip one trial and refresh its live state.
+  async function toggleTrial(c: MachineCampaign) {
+    if (togglingId) return
+    const running = c.status !== 'active' // active → turn off; otherwise turn on
+    setTogglingId(c.campaignId)
+    try {
+      const res = await fetch(`/api/freehold/ads/machine/${encodeURIComponent(id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'trial_toggle', campaignId: c.campaignId, running }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) { toast.error(d?.error || t('lm.machine.ctrl.failed')); return }
+      toast.success(running ? t('lm.machine.trial.turnedOn') : t('lm.machine.trial.turnedOff'))
+      await load({ silent: true })
+      loadDelivery()
+    } catch {
+      toast.error(t('lm.machine.ctrl.failed'))
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -461,7 +485,7 @@ export default function MachineDashboardPage() {
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto rounded-[18px] border border-line bg-surface">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-line text-start text-xs uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.project')}</th>
@@ -470,6 +494,7 @@ export default function MachineDashboardPage() {
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.delivery')}</th>
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.status')}</th>
                   <th className="px-4 py-3 text-end font-medium">{t('lm.machine.trials.budget')}</th>
+                  <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.onoff')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -485,13 +510,25 @@ export default function MachineDashboardPage() {
                       <td className="px-4 py-3 text-slate-400">{c.channel === 'meta' ? 'Meta' : 'Google'}</td>
                       <td className="px-4 py-3">
                         {dm ? (
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${dm.cls}`}
-                            title={dl?.detail || undefined}
-                          >
-                            <span className={`h-1.5 w-1.5 rounded-full ${dm.dot}`} />
-                            {t(dm.labelKey)}
-                          </span>
+                          <div className="flex flex-col items-start gap-1">
+                            <span
+                              className={`inline-flex cursor-help items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${dm.cls}`}
+                              title={[t(dm.descKey), dl?.detail].filter(Boolean).join(' — ')}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${dm.dot}`} />
+                              {t(dm.labelKey)}
+                            </span>
+                            {dl?.notSpending ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-300">
+                                <span className="h-1 w-1 rounded-full bg-amber-400" />
+                                {t('lm.machine.delivery.notSpending')}
+                              </span>
+                            ) : (dl?.spendTodayAed ?? 0) > 0 ? (
+                              <span className="text-[11px] text-slate-500">
+                                {t('lm.machine.delivery.spentToday', { n: (dl?.spendTodayAed ?? 0).toLocaleString() })}
+                              </span>
+                            ) : null}
+                          </div>
                         ) : (
                           <span className="text-xs text-slate-600">{deliveryLoading ? '…' : '—'}</span>
                         )}
@@ -500,6 +537,33 @@ export default function MachineDashboardPage() {
                         <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.cls}`}>{t(st.labelKey)}</span>
                       </td>
                       <td className="px-4 py-3 text-end font-medium text-slate-200">AED {c.dailyBudgetAed.toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const canToggle = (c.status === 'active' || c.status === 'paused')
+                            && !(c.channel === 'google' && c.campaignId.startsWith('local-'))
+                          if (!canToggle) return <span className="text-xs text-slate-600">—</span>
+                          const isOn = c.status === 'active'
+                          const busy = togglingId === c.campaignId
+                          return (
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={isOn}
+                              disabled={busy}
+                              onClick={() => toggleTrial(c)}
+                              title={isOn ? t('lm.machine.trial.turnOff') : t('lm.machine.trial.turnOn')}
+                              className="inline-flex items-center gap-2 disabled:opacity-50"
+                            >
+                              <span className={`relative h-4 w-7 shrink-0 rounded-full transition ${isOn ? 'bg-emerald-500/80' : 'bg-slate-600'}`}>
+                                <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${isOn ? 'start-3.5' : 'start-0.5'}`} />
+                              </span>
+                              <span className={`text-xs font-medium ${isOn ? 'text-emerald-300' : 'text-slate-400'}`}>
+                                {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : (isOn ? t('lm.machine.trial.on') : t('lm.machine.trial.off'))}
+                              </span>
+                            </button>
+                          )
+                        })()}
+                      </td>
                       <td className="px-4 py-3 text-end">
                         <Link
                           href={c.channel === 'meta'

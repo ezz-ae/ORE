@@ -225,6 +225,18 @@ export interface MetaCampaignDelivery {
   learningStage: string | null
 }
 
+/**
+ * Today's spend for a campaign in the ad-account currency (AED). Zero when the
+ * campaign hasn't spent yet today — the honest signal for "delivering but not
+ * actually spending". Fail-soft to 0.
+ */
+export async function getCampaignSpendToday(campaignId: string): Promise<number> {
+  const res = await apiFetch<{ data: Array<{ spend?: string }> }>(
+    `/${campaignId}/insights`, undefined, { fields: 'spend', date_preset: 'today' },
+  ).catch(() => ({ data: [] as Array<{ spend?: string }> }))
+  return Number(res.data?.[0]?.spend ?? 0) || 0
+}
+
 export async function getCampaignDelivery(campaignId: string): Promise<MetaCampaignDelivery> {
   const camp = await apiFetch<{ effective_status?: string; status?: string }>(
     `/${campaignId}`, undefined, { fields: 'effective_status,status' },
