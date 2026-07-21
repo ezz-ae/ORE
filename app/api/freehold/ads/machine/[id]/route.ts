@@ -20,6 +20,7 @@ import {
   resumeMachine,
   stopMachine,
   changeMachineCap,
+  setTrialRunning,
 } from '@/lib/freehold/ads-machine-engine'
 
 export const runtime = 'nodejs'
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const machine = await getMachine(id)
   if (!machine) return NextResponse.json({ error: 'Machine not found' }, { status: 404 })
 
-  let body: { action?: unknown; verdictRowId?: unknown; verdict?: unknown; score?: unknown }
+  let body: { action?: unknown; verdictRowId?: unknown; verdict?: unknown; score?: unknown; campaignId?: unknown; running?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const isManagement = MANAGEMENT_ROLES.includes(auth.user.role)
@@ -161,6 +162,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     const cycle = await runMachineCycle(id)
     return NextResponse.json({ cycle })
+  }
+
+  // Per-campaign on/off — the dashboard's trial switch.
+  if (body.action === 'trial_toggle') {
+    if (!isManagement && auth.user.role !== 'marketing') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const campaignId = typeof body.campaignId === 'string' ? body.campaignId : ''
+    if (!campaignId) return NextResponse.json({ error: 'campaignId is required' }, { status: 400 })
+    if (typeof body.running !== 'boolean') return NextResponse.json({ error: 'running (boolean) is required' }, { status: 400 })
+    const result = await setTrialRunning(id, campaignId, body.running)
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+    return NextResponse.json({ ok: true })
   }
 
   if (body.action === 'lead_verdict') {
