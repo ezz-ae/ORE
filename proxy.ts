@@ -46,6 +46,35 @@ const PUBLIC_API_PREFIXES = [
 // Roles allowed to spend ad budget / read lead-form PII (marketing + management).
 const ADS_ROLES = new Set<string>([...MANAGEMENT_ROLES, "marketing"])
 
+// ── Apex short landing slugs (fhp.ae/velencia → /lp/velencia) ─────────────────
+// On the public short domain, a bare single-segment path is served as the real
+// landing page, so ads and QR codes can use the shortest possible URL. Known
+// app routes and files are never touched.
+const RESERVED_SLUGS = new Set([
+  "a", "about", "areas", "blog", "chat", "contact", "developers",
+  "freehold-intelligence", "lp", "map", "privacy", "projects", "properties",
+  "search", "server", "services", "share", "site", "terms", "tools", "l",
+  "api", "crm", "market", "login", "sign-in", "ads-studio", "notebook",
+  "cloud", "agent-network", "reports", "settings",
+])
+
+function shortHosts(): string[] {
+  const hosts = new Set<string>()
+  const add = (raw?: string) => {
+    const v = (raw || "").trim()
+    if (!v) return
+    try {
+      const h = new URL(v.includes("://") ? v : `https://${v}`).host.toLowerCase()
+      hosts.add(h)
+      hosts.add(h.startsWith("www.") ? h.slice(4) : `www.${h}`)
+    } catch { /* ignore malformed host */ }
+  }
+  ;(process.env.NEXT_PUBLIC_SHORT_DOMAIN || "").split(",").forEach(add)
+  add(process.env.NEXT_PUBLIC_SITE_URL)
+  return [...hosts]
+}
+const SHORT_HOSTS = shortHosts()
+
 // ── LLM cost guard ────────────────────────────────────────────────────────────
 // Best-effort sliding-window rate limit for AI-backed endpoints (each request
 // costs real Gemini/Vertex money). Per-instance in-memory — serverless
@@ -166,6 +195,20 @@ export async function proxy(request: NextRequest) {
       homeUrl.pathname = user.home
       homeUrl.search = ''
       return NextResponse.redirect(homeUrl)
+    }
+  }
+
+  // ── Apex short landing slugs on the short domain ───────────────────────────
+  // fhp.ae/velencia → the real landing page at /lp/velencia (URL stays short).
+  if (SHORT_HOSTS.length > 0) {
+    const host = hostname.toLowerCase().split(":")[0]
+    if (SHORT_HOSTS.includes(host)) {
+      const m = pathname.match(/^\/([^/]+)\/?$/)
+      if (m && !m[1].includes(".") && !RESERVED_SLUGS.has(m[1].toLowerCase())) {
+        url.pathname = `/lp/${m[1]}`
+        url.search = request.nextUrl.search
+        return NextResponse.rewrite(url)
+      }
     }
   }
 
