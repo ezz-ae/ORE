@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Users, Wallet, Megaphone, BookOpen, Sparkles,
-  Settings, ChevronRight, Coins, Link2, Bot,
+  ChevronRight, Coins, Link2, Bot,
 } from 'lucide-react'
 import { useSession } from '@/lib/freehold/use-session'
 import { useI18n } from '@/lib/i18n/provider'
@@ -130,16 +130,6 @@ export default function AgentHomePage() {
       badge:   0,
       accent:  'violet',
       sub:     t('agent.connectAiSub'),
-    },
-    {
-      id:      'settings',
-      label:   t('agent.settings'),
-      Icon:    Settings,
-      href:    '/freehold-intelligence/settings',
-      metric:  t('agent.accountPreferences'),
-      badge:   0,
-      accent:  'gray',
-      sub:     t('agent.preferences'),
     },
   ], [displayCritical, displayActive, displayBalance, t])
 

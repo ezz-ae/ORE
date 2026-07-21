@@ -15,6 +15,7 @@ import { verifyApiToken } from '@/lib/freehold/api-tokens'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { mcpTools } from '@/lib/freehold/mcp/registry'
 import { runPlatformAgent } from '@/lib/freehold/mcp/agent-run'
+import type { CoordinatorRole } from '@/lib/freehold/coordinator-tools'
 import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role as McpRole } from '@/types/freehold-mcp'
 
@@ -139,14 +140,13 @@ export async function POST(request: NextRequest) {
         if (name === 'ore_agent') {
           const instruction = String(args.instruction || '').trim()
           if (!instruction) return rpcResult(id, textContent('Provide an instruction.', true))
-          const res = await runPlatformAgent(instruction, role)
+          const res = await runPlatformAgent(instruction, {
+            role: role as CoordinatorRole,
+            email: principal.email,
+            brokerId: principal.brokerId,
+          })
           const parts = [res.answer]
-          if (res.stagedAction) {
-            parts.push(
-              `\n— Staged action: ${res.stagedAction.tool} (${res.stagedAction.status}). ` +
-              `${res.stagedAction.nextActions.join(' ')}`.trim(),
-            )
-          }
+          if (res.toolsUsed.length) parts.push(`\n— Ran: ${res.toolsUsed.join(', ')}`)
           return rpcResult(id, textContent(parts.join('\n')))
         }
 

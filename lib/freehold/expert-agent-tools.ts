@@ -17,10 +17,14 @@ function safeSchema(schema: z.ZodType<Record<string, unknown>>): z.ZodType<Recor
 // Build the role-filtered AI-SDK toolset for one chat turn. Destructive tools
 // are gated: without args.confirm === true the tool returns a needs-confirm
 // signal instead of executing (same guardrail the current chat enforces).
-export function buildExpertTools(ctx: ToolCtx): Record<string, Tool> {
+// `excludeDestructive` drops money/live-mutating tools entirely — used by the
+// external MCP bridge so an outside model gets reads + safe writes only unless
+// management has raised the server autonomy level.
+export function buildExpertTools(ctx: ToolCtx, opts?: { excludeDestructive?: boolean }): Record<string, Tool> {
   const out: Record<string, Tool> = {}
   for (const t of COORDINATOR_TOOLS) {
     if (!t.roles.includes(ctx.role)) continue
+    if (opts?.excludeDestructive && t.destructive) continue
     out[t.name] = tool({
       description: `${t.description}\nArgs: ${t.params}`,
       inputSchema: safeSchema(t.schema),
