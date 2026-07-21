@@ -169,6 +169,14 @@ export function SpacesNav() {
                 {t('nav.settings')}
               </Link>
             )}
+            {/* Connect AI — personal, per-user surface open to every role. */}
+            <Link
+              href="/freehold-intelligence/settings/connect"
+              onClick={() => setMenuOpen(false)}
+              className="block px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+            >
+              {t('nav.connectAi')}
+            </Link>
             {/* Language */}
             <div className="border-t border-white/[0.07] px-4 py-3">
               <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('common.language')}</div>

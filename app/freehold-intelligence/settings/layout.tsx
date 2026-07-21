@@ -1,14 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import {
   ArrowLeft, Settings,
   Settings2, Users, Shield, CreditCard,
   ShieldCheck, Bell, Code, Globe, Workflow, Database, Lock, Bot,
 } from 'lucide-react'
-import { useSessionGuard } from '@/lib/freehold/use-session'
+import { useSession } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
+
+// Full settings is management-only. The Connect AI page is the exception: it is
+// a personal, per-user surface (each user mints a token that acts with THEIR
+// role), so every authenticated role may open it — with a minimal chrome, since
+// they can't use the rest of settings.
+const SETTINGS_ROLES = ['admin', 'director', 'ceo']
+const CONNECT_PATH = '/freehold-intelligence/settings/connect'
 
 const NAV_SECTIONS = [
   {
@@ -46,13 +54,45 @@ const NAV_SECTIONS = [
 ]
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-  const { ready } = useSessionGuard(['admin', 'director', 'ceo'])
+  const { ready, user } = useSession()
+  const router = useRouter()
   const pathname = usePathname()
   const t = useT()
 
-  if (!ready) return (
+  const isConnect = pathname === CONNECT_PATH
+  const canSettings = !!user && SETTINGS_ROLES.includes(user.role)
+  // Any authenticated user may open Connect AI; full settings stays management-only.
+  const allowed = canSettings || (isConnect && !!user)
+
+  useEffect(() => {
+    if (!ready) return
+    if (!user) { router.replace('/server'); return }
+    if (!allowed) router.replace(user.home)
+  }, [ready, user, allowed, router])
+
+  if (!ready || !user || !allowed) return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
+
+  // Non-management user on Connect AI → minimal chrome (no management sidebar).
+  if (!canSettings) return (
+    <div className="flex flex-col min-h-full">
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-chrome/97 px-4 backdrop-blur-xl sm:px-6">
+        <Link href="/freehold-intelligence" className="flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100 shrink-0">
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span className="hidden sm:block">{t('settings.layout.apps')}</span>
+        </Link>
+        <div className="h-4 w-px bg-surface-2 shrink-0" />
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-line-strong bg-surface-2">
+            <Bot className="h-3.5 w-3.5 text-gold" />
+          </div>
+          <span className="text-sm font-semibold text-white">{t('settings.tab.connect')}</span>
+        </div>
+      </header>
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
   )
 
