@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Phone, MessageSquare } from "lucide-react"
+import { COMPANY_PHONE_E164, COMPANY_WHATSAPP_URL } from '@/lib/site'
 
 export function PropertyContactBar() {
   return (
@@ -13,7 +14,7 @@ export function PropertyContactBar() {
           className="rounded-none"
           asChild
         >
-          <a href="tel:+971504173622">
+          <a href={`tel:${COMPANY_PHONE_E164}`}>
             <Phone className="mr-2 h-4 w-4" />
             Call Now
           </a>
@@ -23,7 +24,7 @@ export function PropertyContactBar() {
           className="rounded-none ore-gradient text-black"
           asChild
         >
-          <a href="https://wa.me/971504173622" target="_blank" rel="noopener noreferrer">
+          <a href={COMPANY_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
             <MessageSquare className="mr-2 h-4 w-4" />
             WhatsApp
           </a>
