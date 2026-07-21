@@ -1421,6 +1421,10 @@ export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
 }
 
 export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ id: string }> {
+  // Lead forms are owned by the Page, not the ad account — the create edge is
+  // POST /{page-id}/leadgen_forms. Posting to /act_XXX/leadgen_forms (a
+  // read-only aggregation edge) is what Meta answers with its opaque
+  // "An unknown error has occurred."
   const { pageId } = await creds()
   const questions = payload.questions.map((q) => ({
     type:    q.type,
