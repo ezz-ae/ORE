@@ -727,10 +727,15 @@ export default function DriveImageEditor() {
           className="relative flex h-full w-full items-center justify-center overflow-hidden p-4 sm:p-8"
           style={{ background: 'radial-gradient(130% 100% at 50% -10%, rgba(212,175,55,0.07), transparent 55%), #0b0b0d' }}
         >
-          {/* Design-surface grid — makes the stage read as a canvas, not a void */}
+          {/* Transparency checkerboard — the universal "image workspace" signal */}
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '22px 22px', maskImage: 'radial-gradient(120% 100% at 50% 40%, #000 40%, transparent 100%)' }}
+            style={{
+              backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.045) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.045) 75%), linear-gradient(45deg, rgba(255,255,255,0.045) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.045) 75%)',
+              backgroundSize: '28px 28px',
+              backgroundPosition: '0 0, 14px 14px',
+              maskImage: 'radial-gradient(120% 100% at 50% 40%, #000 25%, transparent 100%)',
+            }}
           />
 
           {/* Live format badge — the operator always knows the exact output size */}
@@ -781,7 +786,12 @@ export default function DriveImageEditor() {
         >
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '22px 22px', maskImage: 'radial-gradient(120% 100% at 50% 40%, #000 40%, transparent 100%)' }}
+            style={{
+              backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.045) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.045) 75%), linear-gradient(45deg, rgba(255,255,255,0.045) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.045) 75%)',
+              backgroundSize: '28px 28px',
+              backgroundPosition: '0 0, 14px 14px',
+              maskImage: 'radial-gradient(120% 100% at 50% 40%, #000 25%, transparent 100%)',
+            }}
           />
           <div
             onDragOver={(e) => { e.preventDefault(); setDropping(true) }}
