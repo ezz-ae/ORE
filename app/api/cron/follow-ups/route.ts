@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
       status: lead.status,
       source: lead.source,
       daysOverdue: daysSince(lead.last_contact_at || lead.created_at),
-      leadUrl: `${baseUrl}/crm/leads/${lead.id}`,
+      leadUrl: `${baseUrl}/freehold-intelligence/crm/leads/${lead.id}`,
     })
 
     const byBroker = new Map<string, OverdueLeadRow[]>()

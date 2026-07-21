@@ -97,6 +97,15 @@ async function getAccessToken(clientId: string, clientSecret: string, refreshTok
 
 // ─── GAQL query helper ────────────────────────────────────────────────────────
 
+// Google campaign ids are numeric. GAQL has no bound parameters, so any id
+// interpolated into a query string is sanitized to digits at the boundary —
+// a non-numeric id can never reach the query.
+function gid(id: string): string {
+  const d = String(id).replace(/\D/g, '')
+  if (!d) throw new GoogleApiError(`Invalid campaign id "${id}"`, 400)
+  return d
+}
+
 async function gaqlQuery<T>(gaql: string): Promise<T[]> {
   const { developerToken, clientId, clientSecret, refreshToken, customerId, loginCustomerId } = await creds()
   const accessToken = await getAccessToken(clientId, clientSecret, refreshToken)
@@ -163,7 +172,14 @@ async function mutate(operations: unknown[]): Promise<unknown> {
 
 // ─── Campaigns ───────────────────────────────────────────────────────────────
 
-export async function listCampaigns(): Promise<GoogleCampaign[]> {
+// `during` scopes the metrics to a Google date range (e.g. 'THIS_MONTH',
+// 'LAST_30_DAYS'). Without it the metrics are LIFETIME — fine for the ads-live
+// overview, but the Ads Machine passes 'THIS_MONTH' so Google spend/leads are
+// like-for-like with the Meta side (which reads this_month), instead of
+// comparing a Google campaign's lifetime cost against a Meta this-month cost.
+const GOOGLE_DATE_RANGES = new Set(['TODAY', 'YESTERDAY', 'LAST_7_DAYS', 'LAST_14_DAYS', 'LAST_30_DAYS', 'THIS_MONTH', 'LAST_MONTH'])
+export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> {
+  const dateFilter = during && GOOGLE_DATE_RANGES.has(during) ? ` AND segments.date DURING ${during}` : ''
   const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       campaign.id,
@@ -185,7 +201,7 @@ export async function listCampaigns(): Promise<GoogleCampaign[]> {
       metrics.ctr,
       metrics.average_cpc
     FROM campaign
-    WHERE campaign.status != 'REMOVED'
+    WHERE campaign.status != 'REMOVED'${dateFilter}
     ORDER BY metrics.cost_micros DESC
     LIMIT 50
   `)
@@ -222,7 +238,7 @@ export async function getCampaign(campaignId: string): Promise<GoogleCampaign> {
       metrics.impressions, metrics.clicks, metrics.cost_micros,
       metrics.conversions, metrics.ctr, metrics.average_cpc
     FROM campaign
-    WHERE campaign.id = ${campaignId}
+    WHERE campaign.id = ${gid(campaignId)}
     LIMIT 1
   `)
   if (!rows[0]) throw new GoogleApiError(`Campaign ${campaignId} not found`, 404)
@@ -280,7 +296,7 @@ export async function updateCampaignBudget(
   const rows = await gaqlQuery<Record<string, any>>(`
     SELECT campaign.id, campaign.campaign_budget
     FROM campaign
-    WHERE campaign.id = ${campaignId}
+    WHERE campaign.id = ${gid(campaignId)}
     LIMIT 1
   `)
   const budgetResourceName = rows[0]?.campaign?.campaign_budget
@@ -339,7 +355,7 @@ export async function removeKeyword(criterionResourceName: string): Promise<void
 
 export async function listAdGroups(campaignId?: string): Promise<GoogleAdGroup[]> {
   const where = campaignId
-    ? `WHERE campaign.id = ${campaignId} AND ad_group.status != 'REMOVED'`
+    ? `WHERE campaign.id = ${gid(campaignId)} AND ad_group.status != 'REMOVED'`
     : `WHERE ad_group.status != 'REMOVED'`
 
   const rows = await gaqlQuery<Record<string, any>>(`
@@ -377,7 +393,7 @@ export async function listAdGroups(campaignId?: string): Promise<GoogleAdGroup[]
 
 export async function listKeywords(campaignId?: string): Promise<GoogleKeyword[]> {
   const where = campaignId
-    ? `WHERE campaign.id = ${campaignId} AND ad_group_criterion.status != 'REMOVED'`
+    ? `WHERE campaign.id = ${gid(campaignId)} AND ad_group_criterion.status != 'REMOVED'`
     : `WHERE ad_group_criterion.status != 'REMOVED' AND ad_group_criterion.type = 'KEYWORD'`
 
   const rows = await gaqlQuery<Record<string, any>>(`
@@ -421,7 +437,7 @@ export async function listKeywords(campaignId?: string): Promise<GoogleKeyword[]
 
 export async function listNegativeKeywords(campaignId?: string): Promise<NegativeKeyword[]> {
   const where = campaignId
-    ? `WHERE campaign.id = ${campaignId}`
+    ? `WHERE campaign.id = ${gid(campaignId)}`
     : 'WHERE campaign.id != 0'
 
   const rows = await gaqlQuery<Record<string, any>>(`
@@ -450,7 +466,7 @@ export async function listNegativeKeywords(campaignId?: string): Promise<Negativ
 
 export async function listResponsiveSearchAds(campaignId?: string): Promise<GoogleResponsiveSearchAd[]> {
   const where = campaignId
-    ? `WHERE campaign.id = ${campaignId} AND ad_group_ad.status != 'REMOVED'`
+    ? `WHERE campaign.id = ${gid(campaignId)} AND ad_group_ad.status != 'REMOVED'`
     : `WHERE ad_group_ad.status != 'REMOVED' AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'`
 
   const rows = await gaqlQuery<Record<string, any>>(`
