@@ -295,6 +295,13 @@ export async function POST(request: NextRequest) {
 SCREEN TRUTH: before presenting any entity (an ad, campaign, lead, form) as "this one", cross-check it against context.pageContent — the names, copy and numbers on screen are ground truth. If your tool result doesn't match what's on the page, you fetched the WRONG entity: re-list, find the one whose details match the screen, and answer with that. If the user says you described the wrong one, that re-listing is YOUR job — never apologize and ask them for an identifier.`
       : ''
 
+    // Language: answer in the user's interface language (they set it in the
+    // app) unless THIS message is clearly written in another language, in which
+    // case mirror the language they just used.
+    const localeName: Record<string, string> = { ar: 'Arabic (العربية)', ru: 'Russian (Русский)', en: 'English' }
+    const uiLocale = String((body.context as Record<string, unknown> | undefined)?.locale ?? 'en')
+    const languageGuidance = ` \n\nLANGUAGE: The user's interface language is ${localeName[uiLocale] ?? 'English'}. Write your entire reply — every block, label and button — in that language, UNLESS the user's latest message is clearly written in a different language, in which case reply in the language they just used. Keep proper nouns, project names, and identifiers as-is. Numbers and currency stay in digits.`
+
     // Supervisor-Worker router: the composer's explicit mode chip wins;
     // otherwise the supervisor detects the lane from the message's intent
     // verbs (sync/nurture/debug/…) and swaps in that worker's prompt.
@@ -336,7 +343,7 @@ Tools marked ⚠destructive change live campaigns/money/content: set "confirm": 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
 
-    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
+    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${languageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
     // Behind EXPERT_USE_AI_SDK: the same guidance, but tools are called
     // natively by the AI SDK (no JSON tool_call protocol). The confirm rule and
@@ -348,7 +355,7 @@ DO THE WORK YOURSELF — never ask the user for an id, a list, or a current valu
 SCREEN TRUTH: before presenting any entity's details as "this ad/campaign/lead", verify they MATCH context.pageContent — the screen is ground truth. A mismatch means you fetched the wrong entity: re-list and pick the one that matches. If the user corrects you, re-resolving is YOUR job — never ask them for an identifier.
 Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
-    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
+    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${languageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
 
     let raw: string | undefined
     const toolsUsed: string[] = []

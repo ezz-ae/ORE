@@ -15,7 +15,7 @@ import {
   getExpertEditor, type ExpertEditorSurface, type ExpertContextRef,
 } from '@/lib/freehold/expert-bus'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
-import { useT } from '@/lib/i18n/provider'
+import { useT, useI18n } from '@/lib/i18n/provider'
 
 /** Serialize assistant blocks into a self-contained HTML fragment for the Notebook. */
 function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
@@ -180,6 +180,7 @@ function actionClass(style?: string) {
 
 export function ExpertChat() {
   const t = useT()
+  const { locale } = useI18n()
   const pathname = usePathname()
   const [open, setOpen] = useState(true)
   const [width, setWidth] = useState(DEFAULT_W)
@@ -401,14 +402,22 @@ export function ExpertChat() {
     if (recording) { recRef.current?.stop(); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const rec = new MediaRecorder(stream)
+      // Prefer a container the transcription model accepts, most-compatible
+      // first. Whatever the browser gives us, we send the BASE mime (no
+      // `;codecs=…`) so the server's data-URL parser doesn't choke.
+      const candidates = ['audio/ogg;codecs=opus', 'audio/ogg', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+      const picked = typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function'
+        ? candidates.find((c) => MediaRecorder.isTypeSupported(c))
+        : undefined
+      const rec = picked ? new MediaRecorder(stream, { mimeType: picked }) : new MediaRecorder(stream)
       recRef.current = rec
       chunksRef.current = []
       rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data) }
       rec.onstop = async () => {
         stream.getTracks().forEach((tr) => tr.stop())
         setRecording(false)
-        const blob = new Blob(chunksRef.current, { type: rec.mimeType || 'audio/webm' })
+        const baseType = (rec.mimeType || 'audio/webm').split(';')[0].trim() || 'audio/webm'
+        const blob = new Blob(chunksRef.current, { type: baseType })
         if (!blob.size) return
         setTranscribing(true)
         try {
@@ -559,6 +568,7 @@ export function ExpertChat() {
         body: JSON.stringify({
           message, sessionId: sessionId.current, page: pathname,
           context: {
+            locale,
             ...(mode !== 'auto' ? { chatMode: mode } : {}),
             ...(att ? { attachment: att } : {}),
             ...(ref ? { ref } : {}),
@@ -584,7 +594,7 @@ export function ExpertChat() {
     } finally {
       setPending(false)
     }
-  }, [value, pending, pathname, t, mode, attachment, editor, editMode])
+  }, [value, pending, pathname, t, mode, attachment, editor, editMode, locale])
 
   // Listen for messages pushed from any on-page AI box → unified conversation.
   useEffect(() => {
@@ -763,7 +773,7 @@ export function ExpertChat() {
                         {t(`expert.ref.${m.ref.kind}`)}: {m.ref.label}
                       </span>
                     )}
-                    <div className="max-w-full break-words rounded-xl rounded-ee-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
+                    <div dir="auto" className="max-w-full break-words rounded-xl rounded-ee-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
                       {m.content}
                     </div>
                   </div>
@@ -990,7 +1000,7 @@ function BlockView({
     case 'text':
       return (
         <div className="min-w-0 max-w-full rounded-xl rounded-bl-md border border-gold/15 bg-gold/[0.05] px-4 py-3 text-sm leading-relaxed text-slate-200">
-          <div className="whitespace-pre-wrap break-words">{block.content}</div>
+          <div dir="auto" className="whitespace-pre-wrap break-words">{block.content}</div>
         </div>
       )
 

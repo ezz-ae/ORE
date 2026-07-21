@@ -16,8 +16,10 @@ export async function runExpertSdk(opts: {
   history?: Array<{ role: 'user' | 'model'; text: string }>
   toolCtx: ToolCtx
   hasTools: boolean
+  /** Drop money/live-mutating tools (external MCP bridge default). */
+  excludeDestructive?: boolean
 }): Promise<{ raw: string; toolsUsed: string[] }> {
-  const tools = opts.hasTools ? buildExpertTools(opts.toolCtx) : undefined
+  const tools = opts.hasTools ? buildExpertTools(opts.toolCtx, { excludeDestructive: opts.excludeDestructive }) : undefined
 
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
     ...(opts.history ?? [])
