@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Zap, TrendingDown, TrendingUp, PlugZap, ArrowUpRight, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Zap, TrendingDown, TrendingUp, PlugZap, ArrowUpRight, Loader2, Pause, History, ShieldCheck } from 'lucide-react'
 import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+
+type MachineAction = { id: string; action: string; platform: string; campaignName: string; detail: string; createdAt: string }
 
 // Campaign optimizer — ranks the REAL campaigns by cost-per-lead and points
 // budget from the least efficient to the most efficient. No seed budgets,
@@ -59,12 +62,49 @@ export default function CampaignOptimizePage() {
     return () => { cancelled = true }
   }, [])
 
+  // The Machine's brain: current autonomy level, whether this user may apply
+  // money-moving actions, and the real log of what it has already done.
+  const [autonomy, setAutonomy] = useState<1 | 2 | 3>(1)
+  const [canApply, setCanApply] = useState(false)
+  const [log, setLog] = useState<MachineAction[]>([])
+  const [pausingId, setPausingId] = useState<string | null>(null)
+  const [pausedIds, setPausedIds] = useState<string[]>([])
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  async function loadMachine() {
+    try {
+      const r = await fetch('/api/freehold/lead-machine/machine', { cache: 'no-store' })
+      if (!r.ok) return
+      const d = await r.json()
+      if (typeof d.autonomy === 'number') setAutonomy(d.autonomy)
+      setCanApply(!!d.canApply)
+      if (Array.isArray(d.actions)) setLog(d.actions)
+    } catch { /* leave defaults */ }
+  }
+  useEffect(() => { loadMachine() }, [])
+
   const ranked = useMemo(
-    () => [...campaigns].filter((c) => c.cpl > 0).sort((a, b) => a.cpl - b.cpl),
-    [campaigns],
+    () => [...campaigns].filter((c) => c.cpl > 0 && !pausedIds.includes(c.id)).sort((a, b) => a.cpl - b.cpl),
+    [campaigns, pausedIds],
   )
   const best = ranked[0]
   const worst = ranked.length > 1 ? ranked[ranked.length - 1] : undefined
+
+  async function pauseWorst(c: LiveCampaign) {
+    setPausingId(c.id); setConfirmId(null)
+    try {
+      const r = await fetch('/api/freehold/lead-machine/machine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pause', platform: c.platform, campaignId: c.id, campaignName: c.name }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { toast.error(d.error || t('lm.machine.pauseFailed')); return }
+      setPausedIds((p) => [...p, c.id])
+      toast.success(t('lm.machine.paused', { name: c.name }))
+      loadMachine()
+    } catch { toast.error(t('lm.machine.pauseFailed')) }
+    finally { setPausingId(null) }
+  }
 
   if (!loading && !connected) {
     return (
@@ -94,7 +134,12 @@ export default function CampaignOptimizePage() {
       <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
         <Zap className="h-3.5 w-3.5" /> {t('lm.optimize.eyebrow')}
       </div>
-      <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">{t('lm.optimize.title')}</h1>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">{t('lm.optimize.title')}</h1>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+          <ShieldCheck className="h-3 w-3 text-emerald-400" /> {t('lm.machine.autonomy')}: {t(`lm.machine.autonomy.${autonomy}`)}
+        </span>
+      </div>
 
       {loading ? (
         <div className="mt-8 flex items-center gap-2 rounded-2xl border border-line bg-surface px-5 py-6 text-sm text-slate-400">
@@ -121,6 +166,28 @@ export default function CampaignOptimizePage() {
                   toCpl: best.cpl.toFixed(0),
                 })}
               </p>
+              {/* The one real, reversible action the Machine applies: pause the
+                  worst spender. Money-moving, so it's role-gated + confirmed. */}
+              <div className="mt-4">
+                {!canApply ? (
+                  <p className="text-xs text-slate-500">{t('lm.machine.notAllowed')}</p>
+                ) : confirmId === worst.id ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-300">{t('lm.machine.confirm')}</span>
+                    <button type="button" onClick={() => pauseWorst(worst)} disabled={pausingId === worst.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-400/90 px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-red-300 disabled:opacity-60">
+                      {pausingId === worst.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />} {t('lm.machine.pauseCta', { name: worst.name })}
+                    </button>
+                    <button type="button" onClick={() => setConfirmId(null)} className="text-xs text-slate-400 hover:text-white">{t('common.cancel')}</button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setConfirmId(worst.id)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-400/20">
+                    <Pause className="h-3.5 w-3.5" /> {t('lm.machine.pauseCta', { name: worst.name })}
+                  </button>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] leading-snug text-slate-500">{t('lm.machine.autopilotNote')}</p>
             </div>
           )}
 
@@ -149,6 +216,29 @@ export default function CampaignOptimizePage() {
               {t('lm.optimize.fullAttribution')} <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
+
+          {/* What the Machine actually did — real, append-only history */}
+          <section className="mt-10">
+            <h2 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <History className="h-3.5 w-3.5" /> {t('lm.machine.history')}
+            </h2>
+            {log.length === 0 ? (
+              <p className="rounded-2xl border border-line bg-surface px-5 py-6 text-sm text-slate-500">{t('lm.machine.noHistory')}</p>
+            ) : (
+              <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+                {log.map((a) => (
+                  <div key={a.id} className="flex items-start gap-3 px-5 py-3.5">
+                    <Pause className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-300" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-slate-200">{a.campaignName} <span className="text-slate-500">· {a.platform}</span></div>
+                      <div className="mt-0.5 text-xs text-slate-500">{a.detail}</div>
+                    </div>
+                    <span className="shrink-0 text-[11px] text-slate-500">{new Date(a.createdAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </>
       )}
     </div>
