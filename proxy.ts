@@ -35,6 +35,7 @@ const PUBLIC_API_EXACT = new Set([
   "/api/server/login",
   "/api/server/logout",
   "/api/whatsapp/webhook",      // Meta HMAC-signature-gated in handler
+  "/api/mcp",                   // remote MCP server — Bearer-token-gated in handler
 ])
 const PUBLIC_API_PREFIXES = [
   "/api/freehold/public/",      // public catalogue (projects, areas, developers, search)
