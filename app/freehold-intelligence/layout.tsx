@@ -46,7 +46,10 @@ function FreeholdShell({ children }: { children: React.ReactNode }) {
       <CoachProvider>
         <SpacesNav />
         <div className="flex min-h-0 flex-1">
-          <main className="fi-content min-w-0 flex-1 overflow-y-auto">
+          {/* overflow-x-hidden is the page-level guard: no matter what a child
+              renders, the app never scrolls sideways on a phone. Intentional
+              wide tables keep their OWN overflow-x-auto scroll region inside. */}
+          <main className="fi-content min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
             {/* A page render crash shows its actual error here instead of
                 blanking the whole app into Next's generic error screen. */}
             <FiErrorBoundary label="page">{children}</FiErrorBoundary>

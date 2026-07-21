@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { BRAND, getBrandSiteUrl } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -16,7 +16,7 @@ import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
   Monitor, Sparkles, ChevronRight, ChevronDown, Sliders, Crosshair, Gauge, MessageCircle, Phone,
-  FolderOpen, Upload, X, Copy,
+  FolderOpen, Upload, X, Copy, RefreshCw, Plus,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -377,20 +377,65 @@ export default function NewCampaignPage() {
   // wizard's placements still apply. ?audience=<id> pre-attaches.
   const [savedAudiences, setSavedAudiences] = useState<SavedAudienceOption[]>([])
   const [attachedAudience, setAttachedAudience] = useState<SavedAudienceOption | null>(null)
-  useEffect(() => {
-    fetch('/api/freehold/ads/audiences')
-      .then((r) => r.json())
-      .then((d) => {
-        const list: SavedAudienceOption[] = Array.isArray(d?.audiences) ? d.audiences : []
-        setSavedAudiences(list)
-        const wanted = new URLSearchParams(window.location.search).get('audience')
-        if (wanted) {
-          const hit = list.find((a) => a.id === wanted)
-          if (hit) setAttachedAudience(hit)
-        }
-      })
-      .catch(() => null)
+  const [audRefreshing, setAudRefreshing] = useState(false)
+
+  // Refreshable + focus-refetching: an audience the user just built in the
+  // Audiences tab (another window/tab) must be usable HERE without reloading
+  // the wizard — the exact "I created it but can't use it" gap.
+  const refreshAudiences = useCallback(async (selectId?: string) => {
+    setAudRefreshing(true)
+    try {
+      const d = await fetch('/api/freehold/ads/audiences', { cache: 'no-store' }).then((r) => r.json())
+      const list: SavedAudienceOption[] = Array.isArray(d?.audiences) ? d.audiences : []
+      setSavedAudiences(list)
+      const wanted = selectId ?? new URLSearchParams(window.location.search).get('audience')
+      if (wanted) {
+        const hit = list.find((a) => a.id === wanted)
+        if (hit) setAttachedAudience(hit)
+      }
+    } catch { /* keep whatever we had — never blank the list on a transient error */ }
+    finally { setAudRefreshing(false) }
   }, [])
+
+  useEffect(() => {
+    refreshAudiences()
+    // Re-pull when the wizard regains focus (returning from the Audiences tab).
+    const onFocus = () => refreshAudiences()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [refreshAudiences])
+
+  // Inline "create new audience": save the current manual targeting fields as a
+  // reusable audience without leaving the wizard, then auto-attach it.
+  const [audCreateOpen, setAudCreateOpen] = useState(false)
+  const [audNewName, setAudNewName] = useState('')
+  const [audCreating, setAudCreating] = useState(false)
+  const [audCreateErr, setAudCreateErr] = useState('')
+  async function createAudienceInline() {
+    const name = audNewName.trim()
+    if (!name || audCreating) return
+    setAudCreating(true); setAudCreateErr('')
+    try {
+      const spec = {
+        countries: form.countries.length ? form.countries : ['AE'],
+        cityKeys:  form.cityKeys,
+        ageMin:    form.ageMin,
+        ageMax:    form.ageMax,
+        genders:   form.genders,
+        interests: UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id)),
+      }
+      const res = await fetch('/api/freehold/ads/audiences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, kind: 'narrow', spec }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d?.audience?.id) throw new Error(d?.error || t('lm.aud.create.failed'))
+      await refreshAudiences(d.audience.id)
+      setAudCreateOpen(false); setAudNewName('')
+    } catch (e) {
+      setAudCreateErr(e instanceof Error ? e.message : t('lm.aud.create.failed'))
+    } finally { setAudCreating(false) }
+  }
 
   // Data Quality Test — verify the listing's info before it becomes an ad/landing.
   type DataQuality = {
@@ -1497,12 +1542,41 @@ export default function NewCampaignPage() {
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
 
-            {/* Saved audiences — attach a definition from the Audiences tab */}
+            {/* Saved audiences — attach a definition, refresh the list, or
+                create a new one inline (all three without leaving the wizard). */}
             <div className="rounded-2xl border border-line bg-surface p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><Users className="h-3.5 w-3.5" /> {t('lm.aud.attach.title')}</span>
-                <Link href="/freehold-intelligence/lead-machine/audiences" className="text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-white hover:underline">{t('lm.aud.attach.open')}</Link>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => refreshAudiences()} disabled={audRefreshing}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 transition hover:text-white disabled:opacity-50">
+                    <RefreshCw className={`h-3 w-3 ${audRefreshing ? 'animate-spin' : ''}`} /> {t('lm.aud.attach.refresh')}
+                  </button>
+                  <button type="button" onClick={() => { setAudCreateOpen((v) => !v); setAudCreateErr('') }}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-gold transition hover:opacity-80">
+                    <Plus className="h-3 w-3" /> {t('lm.aud.create.new')}
+                  </button>
+                  <Link href="/freehold-intelligence/lead-machine/audiences" target="_blank" className="text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-white hover:underline">{t('lm.aud.attach.open')}</Link>
+                </div>
               </div>
+
+              {/* Inline quick-create — saves the manual targeting below as a reusable audience */}
+              {audCreateOpen && (
+                <div className="mt-3 rounded-xl border border-gold/25 bg-gold/[0.04] p-3">
+                  <p className="text-[11px] text-slate-400">{t('lm.aud.create.hint')}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input value={audNewName} onChange={(e) => setAudNewName(e.target.value)}
+                      placeholder={t('lm.aud.create.namePlaceholder')}
+                      className="min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-gold/40" />
+                    <button type="button" onClick={createAudienceInline} disabled={audCreating || !audNewName.trim()}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                      {audCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('lm.aud.create.save')}
+                    </button>
+                  </div>
+                  {audCreateErr && <p className="mt-1.5 text-[11px] text-red-300">{audCreateErr}</p>}
+                </div>
+              )}
+
               {savedAudiences.length === 0 ? (
                 <p className="mt-2 text-xs text-slate-500">{t('lm.aud.attach.none')}</p>
               ) : (

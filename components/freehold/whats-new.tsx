@@ -7,6 +7,7 @@ import { CHANGELOG, CHANGELOG_VERSION, getSeenVersion, hasUnseenChanges, markCha
 import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
+import { isCoachActive, isPhoneViewport, onArbiterChange } from '@/lib/freehold/overlay-arbiter'
 
 const OPEN_EVENT = 'fh:whatsnew:open'
 
@@ -72,11 +73,19 @@ export function WhatsNew() {
       const local = getSeenVersion()
       if (local > acct) saveAccountMemory({ whatsNewSeen: local }) // backfill from this device
       if (hasUnseenChanges()) {
-        // Slide in after the page settles, rather than blocking on first paint.
-        id = setTimeout(() => setToast(true), 1200)
+        // Slide in after the page settles — but never on a phone (too cramped
+        // beside the app chrome), and never while a coach tour owns the screen.
+        // The badge in the account menu still signals there's something new.
+        id = setTimeout(() => {
+          if (isPhoneViewport() || isCoachActive()) return
+          setToast(true)
+        }, 1800)
       }
     })
-    return () => { cancelled = true; if (id) clearTimeout(id); window.removeEventListener(OPEN_EVENT, onOpen) }
+    // If a coach tour starts while the toast is up, yield the screen to it
+    // (defer, don't mark seen — the badge stays and the toast can return).
+    const offArb = onArbiterChange(() => { if (isCoachActive()) setToast(false) })
+    return () => { cancelled = true; if (id) clearTimeout(id); offArb(); window.removeEventListener(OPEN_EVENT, onOpen) }
   }, [])
 
   function markSeenEverywhere() {

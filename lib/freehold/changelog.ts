@@ -19,6 +19,20 @@ export interface ChangeEntry {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    version: 7,
+    date: '2026-07-20',
+    title: 'The Ads Machine, instant forms & smarter leads',
+    items: [
+      { title: 'Ads Machine — ads that run themselves', body: 'Pick your projects, set one daily cap, and the machine builds a cross-channel plan (Meta audience trials + Google search), launches with in-ad qualification forms, watches the real results, and moves budget from the losers to the winners — always inside your cap. It asks your team a quick “how good was this lead?” and learns from the answer. Open Ads → Ads Machine.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+      { title: 'Build a Meta lead form here — every option', body: 'Ads → Lead forms → New form: a five-step builder with everything Ads Manager offers — form type, an intro from the listing’s real facts, the full contact catalog with SMS phone verification, buyer-qualifying questions (budget bands built around the listing’s real price, timeline, purpose) and after-submit buttons. Start from a ready template or duplicate an existing form. No more “go make it on Meta”.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+      { title: 'Which project deserves the next dirham', body: 'Inventory now scores each project’s opportunity from real signals — price vs its area, payment-plan strength, ad readiness, area momentum and proven lead history — with the evidence behind every score. Sort by it, and the Ads Machine weights budget toward it.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+      { title: 'Leads that tell you more', body: 'A lead from a landing page now carries a behaviour score, likely buyer intent and purchase probability read from how they actually browsed — and the intent from the ad they clicked, shown side by side on the lead’s page.' },
+      { title: 'Viewings, offers & a response clock', body: 'Book a viewing from a lead (it lands on the calendar), log the outcome or an offer, and — with an SLA target set in Settings → Automation — the follow-up list flags any lead you haven’t answered in time. Team analytics show median response time, viewing rate and offer rate per agent.' },
+      { title: 'A sharper Expert', body: 'The Expert now reasons with a stronger model, reads what’s on your screen as the source of truth, and does the work itself — it fetches the ad or budget it needs instead of asking you for an ID.' },
+      { title: 'Landing pages that match the buyer', body: 'One project page now adapts to the buyer the ad targeted — an investor sees ROI and payment plan first, a family sees amenities and location — built only from the facts the page really has.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+    ],
+  },
+  {
     version: 6,
     date: '2026-07-12',
     title: 'Audiences, smarter campaign setup & a chat that acts',
