@@ -41,6 +41,27 @@ const ROUTES: { id: Route; labelKey: string; Icon: React.ElementType; descKey: s
   { id: 'frontend',  labelKey: 'agent.routeListings',  Icon: Globe,    descKey: 'agent.routeListingsDesc',  color: 'text-teal-400'    },
 ]
 
+// Each route opens onto the real surfaces the agent operates in — so selecting
+// a route actually changes the workspace it points you into.
+const ROUTE_ACTIONS: Record<Route, { key: string; href: string }[]> = {
+  apps: [
+    { key: 'agent.act.crm',        href: '/freehold-intelligence/crm' },
+    { key: 'agent.act.adsMachine', href: '/freehold-intelligence/lead-machine/ads-machine' },
+    { key: 'agent.act.analytics',  href: '/freehold-intelligence/analytics' },
+    { key: 'agent.act.notebook',   href: '/freehold-intelligence/notebook' },
+  ],
+  inventory: [
+    { key: 'agent.act.browse',      href: '/freehold-intelligence/inventory' },
+    { key: 'agent.act.dataQuality', href: '/freehold-intelligence/inventory/data-quality' },
+    { key: 'agent.act.offPlan',     href: '/freehold-intelligence/inventory/off-plan' },
+  ],
+  frontend: [
+    { key: 'agent.act.landings',   href: '/freehold-intelligence/lead-machine/landings' },
+    { key: 'agent.act.shortLinks', href: '/freehold-intelligence/lead-machine/links' },
+    { key: 'agent.act.catalogue',  href: '/properties' },
+  ],
+}
+
 export default function AgentAIPage() {
   const { user } = useSession()
   const { t } = useI18n()
@@ -135,6 +156,23 @@ export default function AgentAIPage() {
                 <div className={`mt-2 text-xs font-medium ${color}`}>{t('agent.activeDot')}</div>
               )}
             </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Route actions — real deep-links into the selected domain */}
+      <section className="mt-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.routeActionsTitle')}</div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {ROUTE_ACTIONS[activeRoute].map(({ key, href }) => (
+            <Link
+              key={key}
+              href={href}
+              className="flex items-center justify-between gap-2 rounded-[14px] border border-line bg-surface-2 px-4 py-3 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white"
+            >
+              <span>{t(key)}</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500 rtl:rotate-180" />
+            </Link>
           ))}
         </div>
       </section>
