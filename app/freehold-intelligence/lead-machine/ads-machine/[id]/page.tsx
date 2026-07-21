@@ -21,6 +21,8 @@ import {
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
+import { MachineLaunchReview } from '@/components/freehold/machine-launch-review'
+import type { TrialEdit } from '@/lib/freehold/ads-machine-plan-edit'
 import type {
   ActivityKind, AdsMachine, MachineActivity, MachineCampaign, MachineStatus,
   VerdictAggregates, VerdictQueueItem,
@@ -92,7 +94,8 @@ export default function MachineDashboardPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionBusy, setActionBusy] = useState<string | null>(null)
   const [cycleBusy, setCycleBusy] = useState(false)
-  const [confirm, setConfirm] = useState<null | 'stop' | 'start'>(null)
+  const [confirm, setConfirm] = useState<null | 'stop'>(null)
+  const [reviewing, setReviewing] = useState(false)
   const [capEditing, setCapEditing] = useState(false)
   const [capValue, setCapValue] = useState('')
   const [answeringId, setAnsweringId] = useState<string | null>(null)
@@ -166,6 +169,50 @@ export default function MachineDashboardPage() {
       toast.error(t('lm.machine.ctrl.failed'))
     } finally {
       setCycleBusy(false)
+    }
+  }
+
+  // Launch step: persist the operator's review edits (if any) and start. The
+  // server applies the edits to the plan-as-DATA before the first cycle runs,
+  // so what launches is exactly what the preview showed.
+  async function launchWithEdits(edits: TrialEdit[]) {
+    setActionBusy('start')
+    try {
+      const res = await fetch(`/api/freehold/ads/machine/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', edits }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) { toast.error(d?.error || t('lm.machine.ctrl.failed')); return }
+      toast.success(t('lm.machine.review.launched'))
+      setReviewing(false)
+      await load({ silent: true })
+    } catch {
+      toast.error(t('lm.machine.ctrl.failed'))
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
+  // Save the review edits without launching — the machine stays in planning.
+  async function saveEdits(edits: TrialEdit[]) {
+    setActionBusy('planEdit')
+    try {
+      const res = await fetch(`/api/freehold/ads/machine/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'plan_edit', edits }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) { toast.error(d?.error || t('lm.machine.ctrl.failed')); return }
+      toast.success(t('lm.machine.review.saved'))
+      setReviewing(false)
+      await load({ silent: true })
+    } catch {
+      toast.error(t('lm.machine.ctrl.failed'))
+    } finally {
+      setActionBusy(null)
     }
   }
 
@@ -246,10 +293,10 @@ export default function MachineDashboardPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {machine.status === 'planning' && (
-            <button type="button" onClick={() => setConfirm('start')} disabled={!!actionBusy}
+          {machine.status === 'planning' && machine.plan?.viable && (
+            <button type="button" onClick={() => setReviewing(true)} disabled={!!actionBusy}
               className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
-              <Play className="h-3.5 w-3.5" /> {t('lm.machine.plan.start')}
+              <Eye className="h-3.5 w-3.5" /> {t('lm.machine.review.reviewLaunch')}
             </button>
           )}
           {machine.status === 'running' && (
@@ -619,18 +666,24 @@ export default function MachineDashboardPage() {
         )}
       </section>
 
-            {/* ── Confirm dialogs ── */}
-      {confirm && (
+      {/* ── Launch review — the "run step" preview with editing options ── */}
+      {reviewing && machine.plan?.viable && (
+        <MachineLaunchReview
+          plan={machine.plan}
+          capAed={machine.dailyCapAed}
+          busy={actionBusy === 'start' || actionBusy === 'planEdit'}
+          onClose={() => setReviewing(false)}
+          onLaunch={launchWithEdits}
+          onSaveDraft={saveEdits}
+        />
+      )}
+
+      {/* ── Stop confirm dialog ── */}
+      {confirm === 'stop' && (
         <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl border border-line bg-app p-6 shadow-2xl">
-            <div className="text-base font-semibold text-white">
-              {confirm === 'stop' ? t('lm.machine.ctrl.stopConfirmTitle') : t('lm.machine.plan.confirmTitle')}
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              {confirm === 'stop'
-                ? t('lm.machine.ctrl.stopConfirmBody')
-                : t('lm.machine.plan.confirmBody', { n: machine.dailyCapAed.toLocaleString() })}
-            </p>
+            <div className="text-base font-semibold text-white">{t('lm.machine.ctrl.stopConfirmTitle')}</div>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">{t('lm.machine.ctrl.stopConfirmBody')}</p>
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -638,25 +691,19 @@ export default function MachineDashboardPage() {
                 disabled={!!actionBusy}
                 className="rounded-full border border-line px-4 py-2 text-sm font-medium text-slate-400 transition hover:text-white"
               >
-                {confirm === 'stop' ? t('lm.machine.ctrl.stopConfirmNo') : t('lm.machine.plan.confirmNo')}
+                {t('lm.machine.ctrl.stopConfirmNo')}
               </button>
               <button
                 type="button"
                 onClick={async () => {
-                  const action = confirm === 'stop' ? 'stop' : 'start'
-                  const ok = await patch({ action }, action)
+                  const ok = await patch({ action: 'stop' }, 'stop')
                   if (ok) setConfirm(null)
                 }}
                 disabled={!!actionBusy}
-                className={[
-                  'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-50',
-                  confirm === 'stop'
-                    ? 'border border-red-400/40 bg-red-400/15 text-red-300 hover:bg-red-400/25'
-                    : 'bg-gold text-ink hover:bg-[#F8E7AE]',
-                ].join(' ')}
+                className="inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-400/15 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-400/25 disabled:opacity-50"
               >
                 {actionBusy && <Loader2 className="h-4 w-4 animate-spin" />}
-                {confirm === 'stop' ? t('lm.machine.ctrl.stopConfirmYes') : t('lm.machine.plan.confirmYes')}
+                {t('lm.machine.ctrl.stopConfirmYes')}
               </button>
             </div>
           </div>

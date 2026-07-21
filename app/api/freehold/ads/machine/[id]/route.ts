@@ -4,6 +4,7 @@ import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import {
   getMachine,
   setMachineStatus,
+  setMachinePlan,
   listMachineCampaigns,
   listActivity,
   listUnansweredVerdicts,
@@ -12,6 +13,7 @@ import {
   submitVerdictAnswer,
   getVerdictRow,
 } from '@/lib/freehold/ads-machine'
+import { applyPlanEdits, type TrialEdit } from '@/lib/freehold/ads-machine-plan-edit'
 import {
   runMachineCycle,
   pauseMachine,
@@ -63,10 +65,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const machine = await getMachine(id)
   if (!machine) return NextResponse.json({ error: 'Machine not found' }, { status: 404 })
 
-  let body: { action?: unknown; dailyCapAed?: unknown }
+  let body: { action?: unknown; dailyCapAed?: unknown; edits?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const out: Record<string, unknown> = {}
+
+  // Review-step edits: the operator adjusted budgets / copy / included trials in
+  // the launch preview. Editing the plan-as-DATA only makes sense before it has
+  // launched — a running machine's live campaigns aren't retro-changed here.
+  const rawEdits = Array.isArray(body.edits) ? (body.edits as TrialEdit[]) : null
+  async function persistEdits(): Promise<NextResponse | null> {
+    if (!rawEdits) return null
+    if (machine!.status !== 'planning') {
+      return NextResponse.json({ error: 'Plan edits can only be made before the machine starts.' }, { status: 400 })
+    }
+    const edited = applyPlanEdits(machine!.plan, rawEdits, machine!.dailyCapAed)
+    if (!edited.ok) return NextResponse.json({ error: edited.error }, { status: 400 })
+    await setMachinePlan(id, edited.plan)
+    machine!.plan = edited.plan
+    return null
+  }
 
   // Cap change first, so "lower the cap AND pause" enforces against the new cap.
   if (body.dailyCapAed !== undefined) {
@@ -80,10 +98,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const action = typeof body.action === 'string' ? body.action : null
   if (action) {
     switch (action) {
+      case 'plan_edit': {
+        const err = await persistEdits()
+        if (err) return err
+        out.planEdited = true
+        break
+      }
       case 'start': {
         if (!machine.plan || !machine.plan.viable) {
           return NextResponse.json({ error: 'This machine has no viable plan to run' }, { status: 400 })
         }
+        // Apply the review-step edits (if any) BEFORE launching, so the first
+        // cycle executes exactly what the operator confirmed in the preview.
+        const err = await persistEdits()
+        if (err) return err
         await setMachineStatus(id, 'running')
         // Starting runs one cycle immediately — the first launches happen now,
         // under the same fresh server-side cap checks as every later cycle.
