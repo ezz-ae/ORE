@@ -4,10 +4,9 @@ import Link from 'next/link'
 import {
   Megaphone, Facebook, Chrome, Activity, Rocket, FileText,
   ImageIcon, Sparkles, LayoutTemplate, Target, GitBranch,
-  TrendingUp, Inbox, ArrowUpRight, Users2,
+  Inbox, ArrowUpRight, Users2, Zap, PlusCircle,
 } from 'lucide-react'
 import { Section } from '@/components/freehold/ui'
-import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 type SubApp = {
@@ -26,8 +25,35 @@ type SubApp = {
 //   Landing pages   — every project (Inventory) becomes a selling page
 //   Meta Ads        — campaigns, creative (hero image/copy), lead forms, targeting
 //   Google Ads      — its own world: search campaigns + RSA generator
-//   Across platforms— live results, attribution, optimizer, requests
-const LANDING: SubApp[] = [
+//   Launch          — create a campaign, hand it to the Machine, manage campaigns
+//   Across platforms— live results, attribution, requests
+//   Sources         — the projects (Inventory) and their selling pages (Landings), LAST
+const LAUNCH: SubApp[] = [
+  {
+    id: 'create', labelKey: 'lm.ads.create.label', subKey: 'lm.ads.create.sub',
+    href: '/freehold-intelligence/lead-machine/campaigns/new', Icon: PlusCircle,
+    metricKey: 'lm.ads.create.metric',
+    accent: '#D4AF37', card: 'border-gold/25 hover:border-gold/45',
+    icon: 'text-gold bg-gold/10 border-gold/25',
+  },
+  {
+    id: 'machine', labelKey: 'lm.ads.machine.label', subKey: 'lm.ads.machine.sub',
+    href: '/freehold-intelligence/lead-machine/campaigns/optimize', Icon: Zap,
+    metricKey: 'lm.ads.machine.metric',
+    accent: '#34D399', card: 'border-emerald-400/20 hover:border-emerald-400/40',
+    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/25',
+  },
+  {
+    id: 'campaigns', labelKey: 'lm.ads.campaigns.label', subKey: 'lm.ads.campaigns.sub',
+    href: '/freehold-intelligence/lead-machine/campaigns', Icon: Rocket,
+    metricKey: 'lm.ads.campaigns.metric',
+    accent: '#60A5FA', card: 'border-blue-400/15 hover:border-blue-400/35',
+    icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  },
+]
+
+// Sources — where every ad ultimately points. Deliberately LAST.
+const SOURCES: SubApp[] = [
   {
     id: 'landings', labelKey: 'lm.ads.landings.label', subKey: 'lm.ads.landings.sub',
     href: '/freehold-intelligence/lead-machine/landings', Icon: LayoutTemplate,
@@ -58,13 +84,6 @@ const META: SubApp[] = [
     metricKey: 'lm.ads.meta.metric',
     accent: '#60A5FA', card: 'border-blue-400/15 hover:border-blue-400/35',
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  },
-  {
-    id: 'campaigns', labelKey: 'lm.ads.campaigns.label', subKey: 'lm.ads.campaigns.sub',
-    href: '/freehold-intelligence/lead-machine/campaigns', Icon: Rocket,
-    metricKey: 'lm.ads.campaigns.metric',
-    accent: '#D4AF37', card: 'border-gold/15 hover:border-gold/35',
-    icon: 'text-gold bg-gold/10 border-gold/20',
   },
   {
     id: 'creatives', labelKey: 'lm.ads.creatives.label', subKey: 'lm.ads.creatives.sub',
@@ -129,13 +148,6 @@ const ACROSS: SubApp[] = [
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   },
   {
-    id: 'optimizer', labelKey: 'lm.ads.optimizer.label', subKey: 'lm.ads.optimizer.sub',
-    href: '/freehold-intelligence/lead-machine/campaigns/optimize', Icon: TrendingUp,
-    metricKey: 'lm.ads.optimizer.metric',
-    accent: '#A78BFA', card: 'border-violet-400/15 hover:border-violet-400/30',
-    icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
-  },
-  {
     id: 'requests', labelKey: 'lm.ads.requests.label', subKey: 'lm.ads.requests.sub',
     href: '/freehold-intelligence/lead-machine/ad-requests', Icon: Inbox,
     metricKey: 'lm.ads.requests.metric',
@@ -193,14 +205,12 @@ export default function AdsLauncher() {
         </div>
       </section>
 
-      <ExpertDepth prompts={['expert.depth.ads.q1', 'expert.depth.ads.q2', 'expert.depth.ads.q3', 'expert.depth.ads.q4']} className="mb-8" />
-
-      {/* Projects → selling pages */}
-      <Section title={t('lm.ads.section.landing')} className="mb-8">
-        <Grid apps={LANDING} />
+      {/* Launch — create → hand to the Machine → manage campaigns */}
+      <Section title={t('lm.ads.section.launch')} className="mb-8">
+        <Grid apps={LAUNCH} />
       </Section>
 
-      {/* Meta Ads — campaigns + creative + forms + targeting, all Meta */}
+      {/* Meta Ads — the platform surface + creative + forms + targeting */}
       <Section title={t('lm.ads.section.meta')} className="mb-8">
         <Grid apps={META} />
       </Section>
@@ -211,8 +221,13 @@ export default function AdsLauncher() {
       </Section>
 
       {/* Across platforms */}
-      <Section title={t('lm.ads.section.across')}>
+      <Section title={t('lm.ads.section.across')} className="mb-8">
         <Grid apps={ACROSS} />
+      </Section>
+
+      {/* Sources — projects + selling pages, last: they feed the launch above */}
+      <Section title={t('lm.ads.section.sources')}>
+        <Grid apps={SOURCES} />
       </Section>
 
     </div>
