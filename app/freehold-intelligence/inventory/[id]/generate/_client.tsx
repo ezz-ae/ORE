@@ -249,6 +249,9 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
           headline: config.headline,
           subheadline: config.subheadline,
           ctaText: config.ctaText,
+          highlights: config.highlights,
+          leadFields: config.leadFields,
+          showPaymentPlan: config.showPaymentPlan,
           status: 'published',
         }),
       })
@@ -257,17 +260,10 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
 
       setPendingAuth(Boolean(createData.pendingPublish))
       const newSlug: string = createData.slug
-      setPublishStep(t('inv.gen.step.generating'))
-
-      await fetch('/api/crm/landing-pages/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectSlug: prop.slug,
-          audience: config.template,
-          slug: newSlug,
-        }),
-      }).catch(() => null)
+      // NB: we intentionally do NOT run /generate here. This is a manual-edit
+      // wizard — the operator wrote their own headline / subheadline / CTA and
+      // the create route already produced a complete published page. Running
+      // the AI generate pass would overwrite exactly what they just typed.
 
       setPublishedSlug(newSlug)
       setPublishedUrl(`/lp/${newSlug}`)

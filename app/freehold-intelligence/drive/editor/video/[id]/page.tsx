@@ -635,6 +635,10 @@ export default function DriveVideoEditor() {
             <video
               ref={videoRef}
               src={url}
+              // Uploaded clips live on a CORS-enabled Blob URL. Without this the
+              // canvas is tainted, so Capture cover / Export WebM always throw
+              // SecurityError. crossOrigin must be set for the untainted draw.
+              crossOrigin="anonymous"
               controls
               playsInline
               dir="ltr"

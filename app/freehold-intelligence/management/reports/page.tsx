@@ -109,32 +109,100 @@ export default function ReportsPage() {
       .catch(() => {})
   }, [])
 
+  // Which sections a report type includes — so the Report Type selector
+  // actually scopes the output instead of only renaming the file.
+  function sectionsFor(type: string): { monthly: boolean; sources: boolean } {
+    const roiOrTrends = /ROI|Trends/i.test(type)
+    const revenueOrPipeline = /Revenue|Pipeline/i.test(type)
+    return { monthly: !roiOrTrends, sources: !revenueOrPipeline }
+  }
+  // Keep a monthly row only when its month parses within the chosen range;
+  // an unparseable month label is kept (honest — never silently dropped).
+  function monthInRange(month: string): boolean {
+    const d = new Date(/^\d{4}-\d{2}$/.test(month) ? `${month}-01` : month)
+    if (Number.isNaN(d.getTime())) return true
+    return d >= new Date(dateFrom) && d <= new Date(`${dateTo}T23:59:59`)
+  }
+
   function buildReportRows(): (string | number)[][] {
     const a = analytics
-    const rows: (string | number)[][] = [[`${BRAND.legalName} UAE — ` + reportType], ["Generated", new Date().toISOString()], [""]]
+    const { monthly, sources } = sectionsFor(reportType)
+    const rows: (string | number)[][] = [
+      [`${BRAND.legalName} UAE — ` + reportType],
+      ["Period", `${dateFrom} → ${dateTo}`],
+      ["Generated", new Date().toISOString()],
+      [""],
+    ]
     if (a) {
       rows.push(["YTD Summary"], ["Leads", a.ytd.leads], ["Deals closed", a.ytd.deals], ["Sales value (AED)", Math.round(a.ytd.salesAed)], ["Commission (AED)", Math.round(a.ytd.commissionAed)], ["Conversion %", a.conversion.conversionPct], [""])
-      rows.push(["Monthly deals"], ["Month", "Deals", "Sales AED", "Commission AED"])
-      a.monthlyDeals.forEach((m) => rows.push([m.month, m.deals, Math.round(m.sales), Math.round(m.commission)]))
-      rows.push([""], ["Leads by source"], ["Source", "Leads", "Closed", "Conversion %"])
-      a.leadsBySource.forEach((s) => rows.push([s.source, s.leads, s.closed, s.conversionPct]))
+      if (monthly) {
+        rows.push(["Monthly deals"], ["Month", "Deals", "Sales AED", "Commission AED"])
+        const mrows = a.monthlyDeals.filter((m) => monthInRange(m.month))
+        ;(mrows.length ? mrows : a.monthlyDeals).forEach((m) => rows.push([m.month, m.deals, Math.round(m.sales), Math.round(m.commission)]))
+        rows.push([""])
+      }
+      if (sources) {
+        rows.push(["Leads by source"], ["Source", "Leads", "Closed", "Conversion %"])
+        a.leadsBySource.forEach((s) => rows.push([s.source, s.leads, s.closed, s.conversionPct]))
+      }
     } else {
       rows.push(["No data available yet."])
     }
     return rows
   }
 
-  // One place that actually generates a report: builds the CSV from live
-  // analytics, downloads it, and writes a REAL history entry.
-  function runExport(typeValue: string, filename: string) {
-    const csv = csvString(buildReportRows())
-    downloadText(filename, csv)
+  // ── Format writers — CSV / Excel (xlsx) / PDF (pdf-lib), all real files ──
+  function downloadBlob(filename: string, blob: Blob) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = filename
+    document.body.appendChild(a); a.click(); a.remove()
+    URL.revokeObjectURL(url)
+  }
+  async function buildXlsx(rows: (string | number)[][]): Promise<Blob> {
+    const XLSX = await import('xlsx')
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Report')
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
+    return new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  }
+  async function buildPdf(rows: (string | number)[][], title: string): Promise<Blob> {
+    const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib')
+    const doc = await PDFDocument.create()
+    const font = await doc.embedFont(StandardFonts.Helvetica)
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold)
+    // pdf-lib's standard fonts are Latin-1 only — strip anything it can't encode.
+    const latin = (s: string) => s.replace(/[^\x20-\x7E\xA0-\xFF]/g, '')
+    let page = doc.addPage()
+    let y = page.getSize().height - 48
+    doc.setTitle(latin(title))
+    for (const row of rows) {
+      const isHeader = row.length === 1 && String(row[0]).trim() !== ''
+      const line = latin(row.map(String).join('   ')).slice(0, 120)
+      if (y < 48) { page = doc.addPage(); y = page.getSize().height - 48 }
+      if (line) page.drawText(line, { x: 40, y, size: isHeader ? 11 : 9, font: isHeader ? bold : font, color: rgb(0.1, 0.1, 0.12) })
+      y -= isHeader ? 20 : 14
+    }
+    const bytes = await doc.save()
+    return new Blob([bytes as BlobPart], { type: 'application/pdf' })
+  }
+
+  // The one place that generates a report — in the format the user chose
+  // (CSV / Excel / PDF, all real), from live analytics, with a REAL history entry.
+  async function runExport(typeValue: string, baseName: string, fmt: string) {
+    const rows = buildReportRows()
+    let blob: Blob, ext: string
+    if (fmt === 'Excel') { blob = await buildXlsx(rows); ext = 'xlsx' }
+    else if (fmt === 'PDF') { blob = await buildPdf(rows, `${BRAND.legalName} — ${typeValue}`); ext = 'pdf' }
+    else { blob = new Blob([csvString(rows)], { type: 'text/csv' }); ext = 'csv' }
+    downloadBlob(`${baseName}.${ext}`, blob)
     setHistory((prev) => {
       const item: HistItem = {
         id: `RPT-${new Date().getFullYear()}-${String(prev.length + 1).padStart(3, '0')}`,
         typeValue,
         date: new Date().toISOString(),
-        size: fmtSize(new Blob([csv]).size),
+        size: fmtSize(blob.size),
         by: user?.name ?? null,
       }
       const next = [item, ...prev].slice(0, 100)
@@ -154,11 +222,16 @@ export default function ReportsPage() {
     e.preventDefault()
     setGenerating(true)
     setGenerated(false)
-    setTimeout(() => {
-      runExport(reportType, `${reportType.replace(/\s+/g, '-').toLowerCase()}-${dateFrom}_to_${dateTo}.csv`)
-      setGenerating(false)
-      setGenerated(true)
-      toast.success(t('mgmt.reports.generatedToast'))
+    setTimeout(async () => {
+      try {
+        await runExport(reportType, `${reportType.replace(/\s+/g, '-').toLowerCase()}-${dateFrom}_to_${dateTo}`, format)
+        setGenerated(true)
+        toast.success(t('mgmt.reports.generatedToast'))
+      } catch {
+        toast.error(t('ed.saveFailed'))
+      } finally {
+        setGenerating(false)
+      }
     }, 300)
   }
 
@@ -208,7 +281,7 @@ export default function ReportsPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => { runExport(t(report.nameKey), `${t(report.nameKey).replace(/\s+/g, '-').toLowerCase()}.csv`); toast.success(t('mgmt.reports.downloaded', { name: t(report.nameKey) })) }}
+                        onClick={() => { runExport(t(report.nameKey), t(report.nameKey).replace(/\s+/g, '-').toLowerCase(), 'CSV'); toast.success(t('mgmt.reports.downloaded', { name: t(report.nameKey) })) }}
                         className="flex items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
                         CSV

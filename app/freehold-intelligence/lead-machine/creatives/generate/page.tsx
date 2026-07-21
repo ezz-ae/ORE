@@ -288,7 +288,7 @@ export default function GenerateCreativePage() {
           {/* Generate button */}
           <button
             onClick={generate}
-            disabled={loading || !listing}
+            disabled={loading || (!listing && !override)}
             className="w-full rounded-full bg-gold px-5 py-3 text-[14px] font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
           >
             {loading ? (

@@ -10,6 +10,7 @@ const en: Dict = {
   'paim.listings.draft': 'Draft',
   'paim.listings.needsReview': 'Needs Review',
   'paim.listings.newListing': 'New Listing',
+  'paim.listings.edit': 'Open listing',
   // bulk actions
   'paim.listings.bulk.metaIdle': 'Refresh Meta Descriptions',
   'paim.listings.bulk.metaBusy': 'Refreshing…',
@@ -88,6 +89,7 @@ const ar: Dict = {
   'paim.listings.draft': 'مسودة',
   'paim.listings.needsReview': 'بحاجة لمراجعة',
   'paim.listings.newListing': 'عقار جديد',
+  'paim.listings.edit': 'فتح العقار',
   'paim.listings.bulk.metaIdle': 'تحديث أوصاف ميتا',
   'paim.listings.bulk.metaBusy': 'جارٍ التحديث…',
   'paim.listings.bulk.metaLabel': 'أوصاف ميتا',
@@ -158,6 +160,7 @@ const ru: Dict = {
   'paim.listings.draft': 'Черновик',
   'paim.listings.needsReview': 'Требует проверки',
   'paim.listings.newListing': 'Новое объявление',
+  'paim.listings.edit': 'Открыть объявление',
   'paim.listings.bulk.metaIdle': 'Обновить мета-описания',
   'paim.listings.bulk.metaBusy': 'Обновление…',
   'paim.listings.bulk.metaLabel': 'Мета-описания',
