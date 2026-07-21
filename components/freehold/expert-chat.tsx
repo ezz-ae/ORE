@@ -189,6 +189,9 @@ export function ExpertChat() {
   const [pending, setPending] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [savedIdx, setSavedIdx] = useState<number | null>(null)
+  // Screen-aware prompt suggestions — generated from what the user is actually
+  // looking at, replacing the static per-page starters when available.
+  const [dynamicPrompts, setDynamicPrompts] = useState<string[] | null>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   // A paste that contains a newline arrives as a burst of keydown events in
@@ -596,6 +599,29 @@ export function ExpertChat() {
     }
   }, [value, pending, pathname, t, mode, attachment, editor, editMode, locale])
 
+  // Screen-aware prompts: when the panel is open with no conversation yet, read
+  // what's on the user's screen and ask the model for 2–4 tappable prompts that
+  // name what they see. Re-runs on navigation; falls back to static starters.
+  useEffect(() => {
+    if (!open || messages.length > 0) return
+    setDynamicPrompts(null)
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      const pc = capturePageContent()
+      if (!pc || pc.length < 40) return
+      try {
+        const res = await fetch('/api/freehold/expert/suggest', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page: pathname, pageContent: pc, locale }),
+        })
+        if (!res.ok) return
+        const d = await res.json()
+        if (!cancelled && Array.isArray(d.prompts) && d.prompts.length) setDynamicPrompts(d.prompts)
+      } catch { /* keep static starters */ }
+    }, 600)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [open, pathname, locale, messages.length])
+
   // Listen for messages pushed from any on-page AI box → unified conversation.
   useEffect(() => {
     function onSend(e: Event) {
@@ -754,13 +780,25 @@ export function ExpertChat() {
                   {t('expert.intro')}
                 </p>
               </div>
+              {dynamicPrompts && dynamicPrompts.length > 0 && (
+                <div className="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] font-medium uppercase tracking-wider text-gold/70">
+                  <Sparkles className="h-3 w-3" /> {t('expert.forThisScreen')}
+                </div>
+              )}
               <div className="grid gap-2">
-                {startersForPath(pathname).map((k) => (
-                  <button key={k} onClick={() => send(t(k))}
-                    className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white">
-                    {t(k)}
-                  </button>
-                ))}
+                {dynamicPrompts && dynamicPrompts.length > 0
+                  ? dynamicPrompts.map((p, i) => (
+                    <button key={`dyn-${i}`} onClick={() => send(p)} dir="auto"
+                      className="rounded-xl border border-gold/20 bg-gold/[0.05] px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-gold/40 hover:bg-gold/[0.09] hover:text-white">
+                      {p}
+                    </button>
+                  ))
+                  : startersForPath(pathname).map((k) => (
+                    <button key={k} onClick={() => send(t(k))}
+                      className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white">
+                      {t(k)}
+                    </button>
+                  ))}
               </div>
             </div>
           ) : (
