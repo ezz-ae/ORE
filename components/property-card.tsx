@@ -17,17 +17,25 @@ interface PropertyCardProps {
   property: Property
   compact?: boolean
   layout?: "grid" | "list"
+  /** Display-currency preference from the filter toggle (AED default). When USD,
+   *  an AED-priced property is shown converted, so the toggle affects the cards. */
+  displayCurrency?: string
 }
 
-export function PropertyCard({ property, compact = false, layout = "grid" }: PropertyCardProps) {
+export function PropertyCard({ property, compact = false, layout = "grid", displayCurrency }: PropertyCardProps) {
   const formatPrice = (price: number, currency: Property["currency"]) => {
-    const locale = currency === "AED" ? "en-AE" : "en-US"
+    // Honor the display-currency toggle: an AED price shown in USD is converted
+    // at the pegged rate (3.6725) rather than just relabelled.
+    const showUsd = displayCurrency === "USD" && currency === "AED"
+    const outCurrency = showUsd ? "USD" : currency
+    const outPrice = showUsd ? price / 3.6725 : price
+    const locale = outCurrency === "AED" ? "en-AE" : "en-US"
     return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency,
+      currency: outCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(price)
+    }).format(outPrice)
   }
 
   const imageSrc = property.images?.[0] || "/logo.png"

@@ -32,6 +32,14 @@ const defaultDevelopers = [
 
 const sliderFormatter = new Intl.NumberFormat("en-AE", { maximumFractionDigits: 0 })
 
+// The UAE dirham is pegged at 3.6725 to the US dollar. The price filter's
+// canonical value stays in AED (what the catalogue is priced in); only the
+// DISPLAY converts when the USD toggle is on, so the toggle does real work.
+export const AED_PER_USD = 3.6725
+export function toDisplayCurrency(aed: number, currency: string): number {
+  return currency === "USD" ? Math.round(aed / AED_PER_USD) : Math.round(aed)
+}
+
 interface PropertyFiltersProps {
   collapsible?: boolean
   defaultOpen?: boolean
@@ -188,10 +196,10 @@ export function PropertyFilters({
         />
         <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {currency} {sliderFormatter.format(priceRange[0])}
+              {currency} {sliderFormatter.format(toDisplayCurrency(priceRange[0], currency))}
             </span>
             <span className="text-muted-foreground">
-              {currency} {sliderFormatter.format(priceRange[1])}
+              {currency} {sliderFormatter.format(toDisplayCurrency(priceRange[1], currency))}
             </span>
         </div>
       </div>
