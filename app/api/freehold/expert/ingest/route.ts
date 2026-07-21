@@ -31,9 +31,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as { kind?: string; data?: string; note?: string }
   const kind = body.kind === 'audio' || body.kind === 'image' || body.kind === 'pdf' ? body.kind : null
   const dataUrl = typeof body.data === 'string' ? body.data : ''
-  const match = dataUrl.match(/^data:([a-zA-Z0-9/+.-]+);base64,(.+)$/)
-  if (!kind || !match) return NextResponse.json({ error: 'kind and a base64 data URL are required' }, { status: 400 })
-  const [, mimeType, base64] = match
+  // Tolerate media-type PARAMETERS in the header — a MediaRecorder blob is
+  // typically `audio/webm;codecs=opus`, so the old strict regex rejected every
+  // Chrome/Firefox voice note. Capture the full header, require base64, then
+  // forward only the BASE mime (`audio/webm`) which the model accepts.
+  const match = dataUrl.match(/^data:([^,]*),(.+)$/)
+  const header = match?.[1] ?? ''
+  const base64 = match?.[2] ?? ''
+  if (!kind || !match || !/;base64$/i.test(header)) {
+    return NextResponse.json({ error: 'kind and a base64 data URL are required' }, { status: 400 })
+  }
+  const mimeType = header.replace(/;base64$/i, '').split(';')[0].trim() || 'application/octet-stream'
   // ~8 MB base64 cap — enough for a voice note or a screenshot frame.
   if (base64.length > 8_000_000) return NextResponse.json({ error: 'File too large (8MB max).' }, { status: 413 })
 
