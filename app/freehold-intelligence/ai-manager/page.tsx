@@ -20,10 +20,15 @@ export default function AiManagerPage() {
   const t = useT()
   const depth = ['studio.ai.q1', 'studio.ai.q2', 'studio.ai.q3', 'studio.ai.q4']
 
-  // Real content inventory: listing count from live projects, everything else
-  // from the web-content store. Recent activity is the newest content pieces.
+  // Real content inventory. Listings/areas/developers count from the LIVE
+  // catalogue (the exact source each sub-page loads) so the cards never read
+  // "0 items" while their page is full — pages/topics have no catalogue source,
+  // so those honestly count the web-content store. Recent activity is the newest
+  // content pieces.
   const [items, setItems] = useState<WcItem[] | null>(null)
   const [listingCount, setListingCount] = useState<number | null>(null)
+  const [areaCount, setAreaCount] = useState<number | null>(null)
+  const [developerCount, setDeveloperCount] = useState<number | null>(null)
   useEffect(() => {
     fetch('/api/freehold/web-content', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
@@ -33,10 +38,21 @@ export default function AiManagerPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (Array.isArray(d?.properties)) setListingCount(d.properties.length) })
       .catch(() => {})
+    fetch('/api/freehold/public/areas', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.areas)) setAreaCount(d.areas.length) })
+      .catch(() => {})
+    fetch('/api/freehold/public/developers', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.developers)) setDeveloperCount(d.developers.length) })
+      .catch(() => {})
   }, [])
 
   const countFor = (kind: string) =>
-    kind === 'listing' ? listingCount : items ? items.filter((i) => i.kind === kind).length : null
+    kind === 'listing' ? listingCount
+      : kind === 'area' ? areaCount
+      : kind === 'developer' ? developerCount
+      : items ? items.filter((i) => i.kind === kind).length : null
   const draftsFor = (kind: string) =>
     items ? items.filter((i) => i.kind === kind && i.status !== 'published').length : 0
   const recent = (items ?? []).slice(0, 6)

@@ -188,6 +188,33 @@ export function AiEditorRail<S extends Snapshot = Snapshot>({
 
       <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{t('ed.ai.chatHint')}</p>
 
+      {/* One-tap quick edits — the same reversible pipeline as the Expert chat,
+          surfaced right here so the rail is a live tool, not just a pointer. */}
+      {presets && presets.length > 0 && (
+        <div className="mt-2.5">
+          <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <Sparkles className="h-3 w-3 text-gold/70" /> {t('ed.ai.quickEdits')}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p) => {
+              const label = t(p.labelKey)
+              return (
+                <button
+                  key={p.labelKey}
+                  type="button"
+                  disabled={!!pending || !!disabled}
+                  onClick={() => { void run(t(p.instructionKey)) }}
+                  title={t(p.instructionKey)}
+                  className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2/60 px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Wand2 className="h-3 w-3 text-gold/70" /> {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {pending && (
         <p className="mt-2 flex items-center gap-1.5 text-[11px] text-gold/80">
           <Loader2 className="h-3 w-3 animate-spin" /> “{pending}”

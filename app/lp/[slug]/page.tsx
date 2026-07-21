@@ -203,7 +203,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
                 {L['lp.soldOut']}
               </div>
             )}
-            <h1 data-lpe="headline" className="font-bold leading-[1.08] tracking-tight [overflow-wrap:break-word] [hyphens:none]" style={{ color: p.textPrimary, fontSize: 'clamp(26px, 5.2vw, 64px)' }}>
+            <h1 data-lpe="headline" className="font-bold leading-[1.08] tracking-tight [overflow-wrap:break-word] [hyphens:none] [text-wrap:balance]" style={{ color: p.textPrimary, fontSize: 'clamp(23px, 4.7vw, 60px)' }}>
               {title}
             </h1>
             <p data-lpe="subheadline" className="mt-5 max-w-lg text-[17px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle}</p>

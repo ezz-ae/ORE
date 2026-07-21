@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   ArrowLeft, Settings,
   Settings2, Users, Shield, CreditCard,
-  ShieldCheck, Bell, Code, Globe, Workflow, Database, Lock,
+  ShieldCheck, Bell, Code, Globe, Workflow, Database, Lock, Bot,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
@@ -39,6 +39,7 @@ const NAV_SECTIONS = [
   {
     label: 'settings.nav.developer',
     items: [
+      { label: 'settings.tab.connect',       href: '/freehold-intelligence/settings/connect',                         Icon: Bot         },
       { label: 'settings.tab.api',           href: '/freehold-intelligence/settings/api',                             Icon: Code        },
     ],
   },
