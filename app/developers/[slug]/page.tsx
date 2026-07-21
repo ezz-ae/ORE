@@ -203,9 +203,13 @@ export default async function DeveloperDetailPage({
                   <div>
                     <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Website</div>
                     <div className="text-lg font-semibold">
-                      <Link href={developer.website || "#"} className="text-[#C69B3E] hover:text-[#8E6B21]">
-                        {officialWebsite}
-                      </Link>
+                      {developer.website ? (
+                        <Link href={developer.website} target="_blank" rel="noopener noreferrer" className="text-[#C69B3E] hover:text-[#8E6B21]">
+                          {officialWebsite}
+                        </Link>
+                      ) : (
+                        <span className="text-[#152E24]/50">{officialWebsite}</span>
+                      )}
                     </div>
                   </div>
                 </div>

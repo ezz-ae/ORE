@@ -539,7 +539,6 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   {([
                     { label: t('crm.archiveChat'), run: () => patchLead({ archived: true }, t('crm.chatArchived')) },
                     { label: t('crm.muteNotifications'), run: () => patchLead({ muted_until: new Date(Date.now() + 30 * 864e5).toISOString() }, t('crm.mutedDays')) },
-                    { label: t('crm.clearMessages'), run: () => { setMessages([]); toast.success(t('crm.messagesCleared')) } },
                     { label: t('crm.blockContact'), run: () => patchLead({ blocked: true, status: 'lost' }, t('crm.contactBlocked')) },
                   ]).map((opt) => (
                     <button key={opt.label} onClick={() => { setShowOptions(false); opt.run() }}

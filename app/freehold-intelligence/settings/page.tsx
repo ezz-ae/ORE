@@ -89,10 +89,10 @@ const BRAND_ROWS = [
 ]
 
 // Theme options — `value` is the persisted identifier; `labelKey` is the display label.
+// The dashboard is intentionally dark-only, so the previous Darker/Navy options
+// were cosmetic no-ops. Keep the single honest option rather than fake choices.
 const THEME_OPTIONS = [
   { value: 'Dark (current)', labelKey: 'settings.brand.theme.dark',   bg: 'bg-surface'   },
-  { value: 'Darker',         labelKey: 'settings.brand.theme.darker', bg: 'bg-black'     },
-  { value: 'Navy',           labelKey: 'settings.brand.theme.navy',   bg: 'bg-[#0a0f1e]' },
 ]
 
 // ─── Toggle component ────────────────────────────────────────────────────────

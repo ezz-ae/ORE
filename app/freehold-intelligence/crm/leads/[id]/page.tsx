@@ -379,9 +379,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <a href={`/lp/${landingAttribution.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-gold/70 transition hover:text-gold">
                   {t('crm.viewPage')} <ArrowUpRight className="h-2.5 w-2.5" />
                 </a>
-                <Link href={`/lp/${landingAttribution.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-slate-400 transition hover:text-slate-200">
-                  {t('crm.viewPage')} <ArrowUpRight className="h-2.5 w-2.5" />
-                </Link>
               </div>
             </div>
           )}

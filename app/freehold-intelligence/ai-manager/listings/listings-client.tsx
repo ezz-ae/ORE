@@ -75,13 +75,21 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
 
   // Real AI rewrite for one listing — generates fresh copy and SAVES it to the
   // web-content store (published) so the status/word-count survive a reload.
-  async function improveOne(prop: InventoryProperty): Promise<boolean> {
+  // The bulk actions each regenerate the listing body in a DISTINCT style, so
+  // "SEO", "meta" and "summary" produce genuinely different copy (not the same
+  // text) — the operator runs whichever style they want written.
+  function promptFor(prop: InventoryProperty, kind: string): string {
+    const who = `"${prop.name}" in ${prop.area}, Dubai (${prop.developer})`
+    if (kind === 'meta') return `Write ONE SEO meta description (150–160 characters, keyword-rich, no line breaks, no placeholders) for ${who}.`
+    if (kind === 'summary') return `Write a concise 2–3 sentence marketing summary (max 60 words, no placeholders) for ${who}.`
+    return `Write an SEO-optimised property listing description (180–260 words) for ${who}. Specific, publication-ready, no placeholders.`
+  }
+
+  async function improveOne(prop: InventoryProperty, kind = 'seo'): Promise<boolean> {
     const res = await fetch('/api/freehold/ai/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: `Write an SEO-optimised property listing description (180-260 words) for "${prop.name}" in ${prop.area}, Dubai (${prop.developer}). Specific, publication-ready, no placeholders.`,
-      }),
+      body: JSON.stringify({ prompt: promptFor(prop, kind) }),
     }).catch(() => null)
     if (!res || !res.ok) return false
     const data = await res.json().catch(() => null) as { text?: string } | null
@@ -111,7 +119,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
     setProcessing(kind)
     let ok = 0
     for (const { prop } of listings) {
-      if (await improveOne(prop)) ok++
+      if (await improveOne(prop, kind)) ok++
     }
     setProcessing(null)
     if (ok) toast.success(t('paim.listings.toast.bulkOk', { label, n: ok }))
@@ -240,7 +248,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                   <td className="px-4 py-3.5 text-xs text-slate-400">{prop.lastUpdated || '—'}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
-                      <Link href="/freehold-intelligence/ai-manager/listings/new" className="text-xs text-slate-400 hover:text-slate-200 transition">
+                      <Link href={`/freehold-intelligence/inventory/${prop.slug}`} title={t('paim.listings.edit')} className="text-xs text-slate-400 hover:text-slate-200 transition">
                         <Edit2 className="h-3.5 w-3.5" />
                       </Link>
                       <button
