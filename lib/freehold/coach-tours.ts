@@ -31,7 +31,7 @@ export interface CoachStep {
 }
 
 /** Bump when tour content changes enough to re-show it to returning users. */
-export const COACH_VERSION = 'v5'
+export const COACH_VERSION = 'v6'
 
 const COMMON_TAIL: CoachStep[] = [
   { key: 'coach.common.expert', anchor: 'expert-chat', placement: 'left' },
@@ -101,6 +101,8 @@ export const APP_TOURS: Record<string, CoachStep[]> = {
   ],
   'lead-machine': [
     { key: 'coach.app.leadMachine.intro', anchor: 'app-lead-machine', placement: 'bottom' },
+    { key: 'coach.app.leadMachine.machine', placement: 'center' },
+    { key: 'coach.app.leadMachine.forms', placement: 'center' },
     { key: 'coach.app.leadMachine.audiences', anchor: 'lm-audiences', placement: 'right' },
     { key: 'coach.app.leadMachine.sources', anchor: 'wiz-sources', placement: 'bottom' },
     { key: 'coach.app.leadMachine.preview', placement: 'center' },
@@ -109,6 +111,7 @@ export const APP_TOURS: Record<string, CoachStep[]> = {
   ],
   inventory: [
     { key: 'coach.app.inventory.intro', anchor: 'app-inventory', placement: 'bottom' },
+    { key: 'coach.app.inventory.opportunity', placement: 'center' },
     { key: 'coach.app.inventory.tip', placement: 'center' },
   ],
   finance: [
