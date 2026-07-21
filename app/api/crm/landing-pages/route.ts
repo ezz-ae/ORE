@@ -332,7 +332,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const sections = landingTemplate(template).sections.map((type) => ({ type, data: sectionData(type) }))
+    // Honor the generator's config: the operator can hide the payment-plan
+    // section and choose which lead-form fields the public page collects.
+    const showPaymentPlan = (body as { showPaymentPlan?: unknown }).showPaymentPlan !== false
+    const rawLeadFields = (body as { leadFields?: unknown }).leadFields
+    const leadFields = rawLeadFields && typeof rawLeadFields === "object" ? (rawLeadFields as Record<string, boolean>) : null
+    const sections = landingTemplate(template).sections
+      .filter((type) => showPaymentPlan || type !== "payment-plan")
+      .map((type) => {
+        const data = sectionData(type)
+        return type === "lead-form" && leadFields ? { type, data: { ...data, fields: leadFields } } : { type, data }
+      })
 
     await ensureLandingTable()
     const columns = await getLandingColumns()
