@@ -105,6 +105,10 @@ export interface MachineProjectPlan {
    * operator in the launch review. The engine will NOT launch a project's
    * trials without it (real Dubai compliance — no permit, no ad). */
   permitNumber?: string | null
+  /** The project's landing-page slug (published or draft) when one exists —
+   * lets the launch review deep-link into the landing editor. Absent on older
+   * plans; the review then derives it from landingUrl. */
+  landingSlug?: string | null
 }
 
 export type MachinePlan =
@@ -522,6 +526,9 @@ export async function buildMachinePlan(
       // otherwise null (the operator supplies it in the launch review, and the
       // engine blocks launch until it exists).
       permitNumber: listing?.permitNumber ?? null,
+      // The project's landing-page slug (published OR draft) when one exists —
+      // lets the launch review deep-link straight into the landing editor.
+      landingSlug: listing?.landingSlug ?? null,
       facts: {
         name: listingName,
         area,
