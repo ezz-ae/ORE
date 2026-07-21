@@ -13,7 +13,7 @@
  */
 import { useMemo, useState } from 'react'
 import {
-  AlertTriangle, Loader2, Rocket, Save, Search, ShieldCheck, Sparkles, FileText, X,
+  AlertTriangle, ExternalLink, Loader2, Rocket, Save, Search, ShieldCheck, Sparkles, FileText, X,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { MachinePlan, TrialSource } from '@/lib/freehold/ads-machine-planner'
@@ -22,6 +22,17 @@ import { normalizePermit, qrApiPath, permitVerificationUrl } from '@/lib/freehol
 import type { MetaCta } from '@/lib/meta/types'
 
 const META_MIN = 50
+
+const CREATIVE_STUDIO = '/freehold-intelligence/creative-studio'
+const LANDINGS_HUB = '/freehold-intelligence/lead-machine/landings'
+
+/** The landing editor path for a project — its own landing slug when known,
+ * else derived from a `/lp/{slug}` landing URL. Null when it has no landing
+ * page yet (the review then offers "create" instead of "edit"). */
+function landingEditPath(landingSlug: string | null | undefined, landingUrl: string | undefined): string | null {
+  const slug = landingSlug || (landingUrl?.match(/\/lp\/([^/?#]+)/)?.[1] ?? null)
+  return slug ? `${LANDINGS_HUB}/${encodeURIComponent(slug)}/edit` : null
+}
 
 const SOURCE_KEY: Record<TrialSource, string> = {
   'buyer-match': 'lm.machine.plan.source.buyer-match',
@@ -234,6 +245,26 @@ export function MachineLaunchReview({
                   </div>
                 </div>
 
+                {/* Deep-link into the full landing editor for this project. */}
+                {(() => {
+                  const editPath = landingEditPath(p.landingSlug, p.landingUrl)
+                  return (
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      {editPath ? (
+                        <a href={editPath} target="_blank" rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-gold/80 transition hover:text-gold">
+                          <ExternalLink className="h-3 w-3" /> {t('lm.machine.review.editLanding')}
+                        </a>
+                      ) : (
+                        <a href={LANDINGS_HUB} target="_blank" rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 transition hover:text-white">
+                          <ExternalLink className="h-3 w-3" /> {t('lm.machine.review.createLanding')}
+                        </a>
+                      )}
+                    </div>
+                  )
+                })()}
+
                 <div className="mt-3 space-y-3">
                   {p.trials.map((tr) => {
                     const d = drafts[tr.id]
@@ -383,6 +414,12 @@ export function MachineLaunchReview({
                                 </div>
                               </div>
                             )}
+
+                            {/* Deep-link into the full ad designer for richer edits. */}
+                            <a href={CREATIVE_STUDIO} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-gold/80 transition hover:text-gold">
+                              <ExternalLink className="h-3 w-3" /> {t('lm.machine.review.openDesigner')}
+                            </a>
                           </div>
                         )}
                       </div>

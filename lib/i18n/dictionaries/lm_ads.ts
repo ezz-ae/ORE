@@ -422,6 +422,9 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.chip.title': 'The Ads Machine has a question about this lead',
     // ---- Launch review (the "run step" preview with editing) ----
     'lm.machine.review.reviewLaunch': 'Review & launch',
+    'lm.machine.review.openDesigner': 'Open ad designer',
+    'lm.machine.review.editLanding': 'Edit landing page',
+    'lm.machine.review.createLanding': 'Create a landing page',
     'lm.machine.review.permit': 'Trakheesi permit (DLD)',
     'lm.machine.review.permitPlaceholder': 'e.g. 7116... — Dubai advertising permit',
     'lm.machine.review.permitVerify': 'Verify with Dubai Land Department →',
@@ -880,6 +883,9 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.chip.title': 'لدى آلة الإعلانات سؤال عن هذا العميل المحتمل',
     // ---- Launch review (the "run step" preview with editing) ----
     'lm.machine.review.reviewLaunch': 'مراجعة وإطلاق',
+    'lm.machine.review.openDesigner': 'فتح مصمّم الإعلان',
+    'lm.machine.review.editLanding': 'تعديل صفحة الهبوط',
+    'lm.machine.review.createLanding': 'إنشاء صفحة هبوط',
     'lm.machine.review.permit': 'تصريح تراخيص (دائرة الأراضي)',
     'lm.machine.review.permitPlaceholder': 'مثال: 7116... — تصريح إعلان دبي',
     'lm.machine.review.permitVerify': 'التحقق لدى دائرة الأراضي والأملاك بدبي ←',
@@ -1338,6 +1344,9 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.chip.title': 'У Машины рекламы есть вопрос об этом лиде',
     // ---- Launch review (the "run step" preview with editing) ----
     'lm.machine.review.reviewLaunch': 'Проверить и запустить',
+    'lm.machine.review.openDesigner': 'Открыть дизайнер объявления',
+    'lm.machine.review.editLanding': 'Редактировать лендинг',
+    'lm.machine.review.createLanding': 'Создать лендинг',
     'lm.machine.review.permit': 'Разрешение Trakheesi (DLD)',
     'lm.machine.review.permitPlaceholder': 'напр. 7116... — рекламное разрешение Дубая',
     'lm.machine.review.permitVerify': 'Проверить в Земельном департаменте Дубая →',
