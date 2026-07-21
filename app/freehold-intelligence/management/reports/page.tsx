@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
+import { BRAND } from '@/lib/freehold/brand'
 
 function fmtAedShort(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -110,7 +111,7 @@ export default function ReportsPage() {
 
   function buildReportRows(): (string | number)[][] {
     const a = analytics
-    const rows: (string | number)[][] = [["Freehold Property UAE — " + reportType], ["Generated", new Date().toISOString()], [""]]
+    const rows: (string | number)[][] = [[`${BRAND.legalName} UAE — ` + reportType], ["Generated", new Date().toISOString()], [""]]
     if (a) {
       rows.push(["YTD Summary"], ["Leads", a.ytd.leads], ["Deals closed", a.ytd.deals], ["Sales value (AED)", Math.round(a.ytd.salesAed)], ["Commission (AED)", Math.round(a.ytd.commissionAed)], ["Conversion %", a.conversion.conversionPct], [""])
       rows.push(["Monthly deals"], ["Month", "Deals", "Sales AED", "Commission AED"])

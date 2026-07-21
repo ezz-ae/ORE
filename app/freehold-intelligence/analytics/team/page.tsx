@@ -120,10 +120,10 @@ export default function TeamAnalyticsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line">
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.agent')}</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.medianResponse')}</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.viewingRate')}</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.offerRate')}</th>
+                  <th className="px-4 py-3 text-start text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.agent')}</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.medianResponse')}</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.viewingRate')}</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.offerRate')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.08]">
@@ -139,7 +139,7 @@ export default function TeamAnalyticsPage() {
                             <span className="font-medium text-slate-200">{ag.name}</span>
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-end">
                           {ag.medianResponseMinutes !== null ? (
                             <span title={t('analytics.resp.evidence', { responded: ag.respondedLeads, leads: ag.totalLeads })}>
                               <span className="tabular-nums text-slate-200">{fmtMinutes(ag.medianResponseMinutes)}</span>
@@ -149,7 +149,7 @@ export default function TeamAnalyticsPage() {
                             <span className="text-slate-600" title={t('analytics.resp.noResponses')}>—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-end">
                           {viewingRate !== null ? (
                             <span title={t('analytics.resp.viewEvidence', { held: ag.viewingsHeld, leads: ag.totalLeads })}>
                               <span className="tabular-nums text-slate-200">{viewingRate}%</span>
@@ -159,7 +159,7 @@ export default function TeamAnalyticsPage() {
                             <span className="text-slate-600" title={t('analytics.resp.noViewings')}>—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-end">
                           {offerRate !== null ? (
                             <span title={t('analytics.resp.offerEvidence', { offers: ag.offersMade, leads: ag.totalLeads })}>
                               <span className="tabular-nums text-slate-200">{offerRate}%</span>
@@ -195,11 +195,11 @@ export default function TeamAnalyticsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line">
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.agent')}</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.leads')}</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.wins')}</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.overdue')}</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.load')}</th>
+                    <th className="px-4 py-3 text-start text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.agent')}</th>
+                    <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.leads')}</th>
+                    <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.wins')}</th>
+                    <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.overdue')}</th>
+                    <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.load')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.08]">
@@ -214,15 +214,15 @@ export default function TeamAnalyticsPage() {
                               <span className="font-medium text-slate-200 transition-colors group-hover:text-gold">{ag.name}</span>
                             </Link>
                           </td>
-                          <td className="px-4 py-3 text-right tabular-nums text-slate-300">{ag.totalLeads}</td>
-                          <td className="px-4 py-3 text-right tabular-nums text-[#D4AF37]">{ag.wins30d}</td>
-                          <td className="px-4 py-3 text-right tabular-nums text-slate-300">{ag.overdueFollowups}</td>
+                          <td className="px-4 py-3 text-end tabular-nums text-slate-300">{ag.totalLeads}</td>
+                          <td className="px-4 py-3 text-end tabular-nums text-[#D4AF37]">{ag.wins30d}</td>
+                          <td className="px-4 py-3 text-end tabular-nums text-slate-300">{ag.overdueFollowups}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-2">
                               <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/[0.08]">
                                 <div className={`h-full rounded-full ${loadColor(u)}`} style={{ width: `${Math.min(100, u)}%` }} />
                               </div>
-                              <span className="w-9 text-right text-xs tabular-nums text-slate-400">{u}%</span>
+                              <span className="w-9 text-end text-xs tabular-nums text-slate-400">{u}%</span>
                             </div>
                           </td>
                         </tr>

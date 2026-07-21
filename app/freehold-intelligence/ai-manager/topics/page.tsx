@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { BookOpen, Plus, Sparkles, Check, CheckCircle, Loader2 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { BRAND } from '@/lib/freehold/brand'
 
 type TopicStatus = 'published' | 'draft'
 
@@ -78,7 +79,7 @@ export default function TopicsPage() {
     try {
       const res = await fetch('/api/freehold/ai/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `Write a publication-ready blog article (400-600 words) for Freehold Property UAE titled "${topic.title}". Specific to Dubai real estate, no placeholders.` }),
+        body: JSON.stringify({ prompt: `Write a publication-ready blog article (400-600 words) for ${BRAND.legalName} UAE titled "${topic.title}". Specific to Dubai real estate, no placeholders.` }),
       })
       const data = await res.json().catch(() => null) as { text?: string } | null
       if (!res.ok || !data?.text) { toast.error(t('paim.topics.flash.generateFailed')); return }

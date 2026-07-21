@@ -14,6 +14,7 @@ import {
 import { saveAccountMemory, loadAccountMemory } from '@/lib/freehold/account-memory'
 import type { ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { useT, useI18n } from '@/lib/i18n/provider'
+import { brandName } from '@/lib/freehold/brand'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -283,7 +284,7 @@ export default function NotebookPage() {
   const [chatPending, setChatPending] = useState(false)
   const [convQuery, setConvQuery] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
-  const [notebookTitle, setNotebookTitle] = useState('Freehold Intelligence')
+  const [notebookTitle, setNotebookTitle] = useState(brandName)
   const chatBottomRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -787,8 +788,8 @@ export default function NotebookPage() {
                 autoFocus
                 value={notebookTitle}
                 onChange={e => setNotebookTitle(e.target.value)}
-                onBlur={() => { if (!notebookTitle.trim()) setNotebookTitle('Freehold Intelligence'); setEditingTitle(false) }}
-                onKeyDown={e => { if (e.key === 'Enter') { if (!notebookTitle.trim()) setNotebookTitle('Freehold Intelligence'); setEditingTitle(false) } }}
+                onBlur={() => { if (!notebookTitle.trim()) setNotebookTitle(brandName); setEditingTitle(false) }}
+                onKeyDown={e => { if (e.key === 'Enter') { if (!notebookTitle.trim()) setNotebookTitle(brandName); setEditingTitle(false) } }}
                 className="rounded border border-gold/30 bg-transparent px-2 py-0.5 text-sm font-semibold text-white outline-none"
               />
             ) : (

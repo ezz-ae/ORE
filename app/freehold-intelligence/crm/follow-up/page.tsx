@@ -483,7 +483,7 @@ function SnoozeControl({ onPick, label }: { onPick: (hours: number) => void; lab
               <button
                 key={opt.hours}
                 onClick={() => { onPick(opt.hours); setOpen(false) }}
-                className="block w-full px-3 py-2 text-left text-xs text-slate-300 transition hover:bg-surface-2 hover:text-white"
+                className="block w-full px-3 py-2 text-start text-xs text-slate-300 transition hover:bg-surface-2 hover:text-white"
               >
                 {t(opt.labelKey)}
               </button>

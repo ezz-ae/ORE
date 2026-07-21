@@ -8,6 +8,7 @@ import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { CreativeAngle, CreativeTone, GeneratedCreativeVariant } from '@/lib/meta/types'
 import type { MetaCta } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
+import { BRAND } from '@/lib/freehold/brand'
 
 // Labels/descriptions live in i18n (lm.creatives.generate.angle|tone|cta.*) so
 // the option list is fully trilingual; the array carries the stable value keys.
@@ -111,7 +112,7 @@ export default function GenerateCreativePage() {
       : listing
         // The API requires a non-empty developer — '' made EVERY picker-path
         // generation fail with a 400. Fall back to the brand when unknown.
-        ? { id: listing.id, name: listing.name, area: listing.area, developer: 'Freehold', price: listing.priceAED ?? 0, paymentPlan: listing.paymentPlan ?? '' }
+        ? { id: listing.id, name: listing.name, area: listing.area, developer: BRAND.company, price: listing.priceAED ?? 0, paymentPlan: listing.paymentPlan ?? '' }
         : null
     if (!ctx) return
     setLoading(true)
