@@ -76,6 +76,7 @@ import {
   type QuestionKind,
 } from '@/lib/freehold/ads-machine'
 import { META_MIN_TRIAL_BUDGET_AED, type MachinePlan, type MachineProjectPlan, type MachineTrialPlan } from '@/lib/freehold/ads-machine-planner'
+import { normalizePermit, appendPermitToText } from '@/lib/freehold/trakheesi'
 
 /**
  * How many days an attributed lead may sit unmoved in new/contacted before the
@@ -101,6 +102,8 @@ export interface CycleResult {
   ran: boolean
   launched: string[]
   capSkipped: string[]
+  /** Trials not launched because their project has no Trakheesi permit. */
+  permitBlocked: string[]
   googleDraftsPrepared: string[]
   observed: number
   verdictRequestsCreated: number
@@ -146,7 +149,7 @@ async function setPlatformStatus(row: MachineCampaign, running: boolean): Promis
 
 const emptyResult = (machineId: string, status: AdsMachine['status'], ran: boolean): CycleResult => ({
   machineId, status, ran,
-  launched: [], capSkipped: [], googleDraftsPrepared: [],
+  launched: [], capSkipped: [], permitBlocked: [], googleDraftsPrepared: [],
   observed: 0, verdictRequestsCreated: 0,
   paused: [], budgetShifts: [], errors: [],
 })
@@ -389,6 +392,9 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   // ── LAUNCH (running only) ──────────────────────────────────────────────────
   // Google is a LIVE channel: its planned trials launch for real, under the
   // same fresh COMBINED cap check as Meta launches. One cap governs both.
+  // Trakheesi permit per project — the compliance gate below refuses to launch
+  // any project's trials without a valid DLD advertising permit.
+  const permitBySlug = new Map(plan.projects.map((p) => [p.slug, normalizePermit(p.permitNumber)]))
   if (machine.status === 'running') {
     for (const trial of planTrials(plan)) {
       const channel = trialChannel(trial)
@@ -396,6 +402,19 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         (c) => c.channel === channel && c.projectSlug === trial.projectSlug && c.trialLabel === trial.label,
       )
       if (already) continue
+
+      // ── Trakheesi compliance gate — no valid permit, no ad (Dubai law). ──
+      const permit = permitBySlug.get(trial.projectSlug) ?? null
+      if (!permit) {
+        await logActivity({
+          machineId,
+          kind: 'permit_blocked',
+          detail: `Not launched — "${trial.listingName}" has no Trakheesi advertising permit on file, so "${trial.label}" cannot run in Dubai. Add the DLD permit in the launch review (or Inventory), then run a cycle.`,
+          data: { trialId: trial.id, projectSlug: trial.projectSlug },
+        })
+        result.permitBlocked.push(trial.id)
+        continue
+      }
 
       // FRESH cap check immediately before every launch — the cap is the sum
       // of ACTIVE daily budgets across BOTH channels and must never be exceeded.
@@ -417,7 +436,13 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           result.errors.push(`launch:${trial.id}`)
           continue
         }
-        const payload = { ...trial.google, dailyBudgetAED: trial.dailyBudgetAed }
+        // Compliance: the permit must be visible in the ad. Add a dedicated RSA
+        // description carrying it (within Google's 4-description / 90-char cap).
+        const permitDesc = `DLD Permit ${permit}`.slice(0, 90)
+        const gDescriptions = trial.google.descriptions.includes(permitDesc)
+          ? trial.google.descriptions
+          : [...trial.google.descriptions, permitDesc].slice(0, 4)
+        const payload = { ...trial.google, descriptions: gDescriptions, dailyBudgetAED: trial.dailyBudgetAed }
         try {
           // Atomic real create (budget → campaign PAUSED → ad group → RSA →
           // keywords), then ENABLED immediately — Google spend authority is
@@ -507,13 +532,18 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         // landing page is the honest fallback, never a silent no-op.
         const project = plan.projects.find((p) => p.slug === trial.projectSlug)
         const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
+        // Compliance: surface the Trakheesi permit in the ad's own body copy.
+        const creativeWithPermit = {
+          ...trial.creative,
+          primaryText: appendPermitToText(trial.creative.primaryText, permit),
+        }
         const launch = await launchFullCampaign({
           campaignName: trial.campaignName,
           objective: 'LEAD_GENERATION',
           listingName: trial.listingName,
           dailyBudgetAED: trial.dailyBudgetAed,
           targeting: trial.targeting,
-          creative: trial.creative,
+          creative: creativeWithPermit,
           launchStatus: 'ACTIVE',
           destination: leadFormId ? 'form' : 'landing',
           ...(leadFormId ? { leadFormId } : {}),
@@ -794,9 +824,13 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       // before piling more onto an old one. Google-not-connected plans leave a
       // 'draft' row for the google trial, which counts as launched here so the
       // machine doesn't retry it every rotation.
+      // Only reallocate into a trial whose project has a Trakheesi permit —
+      // a permit-less project is never launched, including via reallocation.
       const unlaunched = planTrials(plan).find((t) =>
+        (permitBySlug.get(t.projectSlug) ?? null) !== null &&
         !campaignsNow.some((c) => c.channel === trialChannel(t) && c.projectSlug === t.projectSlug && c.trialLabel === t.label),
       )
+      const reallocPermit = unlaunched ? (permitBySlug.get(unlaunched.projectSlug) ?? '') : ''
       const launchBudget = unlaunched
         ? Math.min(unlaunched.dailyBudgetAed, freed, headroomAfterPause)
         : 0
@@ -806,7 +840,11 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           let newCampaignId: string
           if (trialChannel(unlaunched) === 'google') {
             if (!unlaunched.google) throw new Error('google trial has no launch payload in the plan')
-            const { campaignId } = await launchSearchCampaign({ ...unlaunched.google, dailyBudgetAED: launchBudget })
+            const permitDesc = `DLD Permit ${reallocPermit}`.slice(0, 90)
+            const descriptions = unlaunched.google.descriptions.includes(permitDesc)
+              ? unlaunched.google.descriptions
+              : [...unlaunched.google.descriptions, permitDesc].slice(0, 4)
+            const { campaignId } = await launchSearchCampaign({ ...unlaunched.google, descriptions, dailyBudgetAED: launchBudget })
             await googleUpdateCampaignStatus(campaignId, 'ENABLED')
             newCampaignId = campaignId
           } else {
@@ -819,7 +857,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               listingName: unlaunched.listingName,
               dailyBudgetAED: launchBudget,
               targeting: unlaunched.targeting,
-              creative: unlaunched.creative,
+              creative: { ...unlaunched.creative, primaryText: appendPermitToText(unlaunched.creative.primaryText, reallocPermit) },
               launchStatus: 'ACTIVE',
               destination: leadFormId ? 'form' : 'landing',
               ...(leadFormId ? { leadFormId } : {}),

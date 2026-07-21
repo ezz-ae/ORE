@@ -16,6 +16,7 @@ import {
 import { resolveTheme, lpPalette, type LpTheme, type LpPalette } from '@/lib/landing-theme'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
+import { normalizePermit, qrApiPath, permitVerificationUrl } from '@/lib/freehold/trakheesi'
 import { parseIntent, type BuyerIntent } from '@/lib/meta/intent'
 import { adaptPageForIntent } from './_intent'
 import { LeadForm } from './_form'
@@ -1237,6 +1238,13 @@ export default async function LandingPage({
   const adapted = adaptPageForIntent(localized, intent, L)
   const price = fmtAed(adapted.project?.priceFromAed, L)
 
+  // Trakheesi compliance strip: Dubai law requires the advertising permit + a
+  // scannable verification QR on the ad's destination page. Shown only when the
+  // listing carries a real permit — never invented.
+  const permit = normalizePermit(
+    (await getInventoryPropertyBySlug(adapted.projectSlug || slug).catch(() => null))?.permitNumber,
+  )
+
   return (
     <div className={`min-h-screen${theme === 'day' ? ' lp-day' : ''}`} dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary, ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}>
       {/* Day-theme contrast: the gold accent (#D4AF37) is tuned for dark
@@ -1261,6 +1269,27 @@ export default async function LandingPage({
             <Section section={section} page={adapted} L={L} p={palette} />
           </div>
         ))}
+        {permit && (
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-4 px-6 py-6 text-center"
+            style={{ borderTop: `1px solid ${palette.divider}` }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={qrApiPath(permit)}
+              alt={L['permit.label']}
+              width={72}
+              height={72}
+              className="h-[72px] w-[72px] rounded-md bg-white p-1"
+            />
+            <div className="text-start" dir="ltr">
+              <div className="text-[11px] uppercase tracking-wider" style={{ color: palette.textMuted }}>{L['permit.label']}</div>
+              <div className="font-mono text-sm" style={{ color: palette.textPrimary }}>{permit}</div>
+              <a href={permitVerificationUrl(permit)} target="_blank" rel="noreferrer"
+                className="text-[11px] underline-offset-2 hover:underline" style={{ color: palette.textMuted }}>
+                {L['permit.verify']}
+              </a>
+            </div>
+          </div>
+        )}
         <Footer page={adapted} L={L} p={palette} />
       </div>
       <StickyLpCta price={price} ctaText={adapted.ctaText} slug={adapted.slug} L={L} palette={palette} />

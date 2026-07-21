@@ -100,6 +100,11 @@ export interface MachineProjectPlan {
    * written back by the engine on first launch so every later trial reuses
    * the SAME form (one qualification form per project per machine). */
   leadFormId?: string
+  /** Dubai Trakheesi/DLD advertising-permit number for THIS project's ads.
+   * Seeded from the listing data when it carries one; otherwise entered by the
+   * operator in the launch review. The engine will NOT launch a project's
+   * trials without it (real Dubai compliance — no permit, no ad). */
+  permitNumber?: string | null
 }
 
 export type MachinePlan =
@@ -513,6 +518,10 @@ export async function buildMachinePlan(
       ...(googleSkipped ? { googleSkipped } : {}),
       ...(advisory ? { advisory } : {}),
       ...(budgetRationale ? { budgetRationale } : {}),
+      // Seed the Trakheesi permit from the listing when its data carries one;
+      // otherwise null (the operator supplies it in the launch review, and the
+      // engine blocks launch until it exists).
+      permitNumber: listing?.permitNumber ?? null,
       facts: {
         name: listingName,
         area,

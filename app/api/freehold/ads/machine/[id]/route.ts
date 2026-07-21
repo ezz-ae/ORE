@@ -13,7 +13,7 @@ import {
   submitVerdictAnswer,
   getVerdictRow,
 } from '@/lib/freehold/ads-machine'
-import { applyPlanEdits, type TrialEdit } from '@/lib/freehold/ads-machine-plan-edit'
+import { applyPlanEdits, type TrialEdit, type ProjectEdit } from '@/lib/freehold/ads-machine-plan-edit'
 import {
   runMachineCycle,
   pauseMachine,
@@ -65,21 +65,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const machine = await getMachine(id)
   if (!machine) return NextResponse.json({ error: 'Machine not found' }, { status: 404 })
 
-  let body: { action?: unknown; dailyCapAed?: unknown; edits?: unknown }
+  let body: { action?: unknown; dailyCapAed?: unknown; edits?: unknown; projectEdits?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   const out: Record<string, unknown> = {}
 
-  // Review-step edits: the operator adjusted budgets / copy / included trials in
-  // the launch preview. Editing the plan-as-DATA only makes sense before it has
-  // launched — a running machine's live campaigns aren't retro-changed here.
+  // Review-step edits: the operator adjusted budgets / copy / included trials
+  // and per-project Trakheesi permits in the launch preview. Editing the
+  // plan-as-DATA only makes sense before it has launched — a running machine's
+  // live campaigns aren't retro-changed here.
   const rawEdits = Array.isArray(body.edits) ? (body.edits as TrialEdit[]) : null
+  const rawProjectEdits = Array.isArray(body.projectEdits) ? (body.projectEdits as ProjectEdit[]) : null
   async function persistEdits(): Promise<NextResponse | null> {
-    if (!rawEdits) return null
+    if (!rawEdits && !rawProjectEdits) return null
     if (machine!.status !== 'planning') {
       return NextResponse.json({ error: 'Plan edits can only be made before the machine starts.' }, { status: 400 })
     }
-    const edited = applyPlanEdits(machine!.plan, rawEdits, machine!.dailyCapAed)
+    const edited = applyPlanEdits(machine!.plan, rawEdits ?? [], machine!.dailyCapAed, rawProjectEdits ?? [])
     if (!edited.ok) return NextResponse.json({ error: edited.error }, { status: 400 })
     await setMachinePlan(id, edited.plan)
     machine!.plan = edited.plan

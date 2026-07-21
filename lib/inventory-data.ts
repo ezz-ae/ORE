@@ -1,5 +1,6 @@
 import { query } from "@/lib/db"
 import { normalizePaymentPlan } from "@/lib/payment-plan"
+import { normalizePermit } from "@/lib/freehold/trakheesi"
 import type {
   InventoryProperty,
   LandingStatus,
@@ -94,6 +95,20 @@ function extractBrochureUrl(payload: Record<string, unknown> | null): string | n
   const candidates = [payload.brochureUrl, pfDetail(payload).brochureUrl, media.brochure]
   for (const c of candidates) {
     if (typeof c === 'string' && /^https?:\/\//i.test(c.trim())) return c.trim()
+  }
+  return null
+}
+
+// Real Trakheesi/DLD advertising-permit number when the project data carries
+// one (payload.permitNumber / trakheesiPermit / dldPermit, or the PF snapshot).
+// Normalised — anything that isn't a plausible permit reference is null, never
+// invented. Seeds the Ads Machine's compliance gate.
+function extractPermitNumber(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null
+  const candidates = [payload.permitNumber, payload.trakheesiPermit, payload.dldPermit, pfDetail(payload).permitNumber]
+  for (const c of candidates) {
+    const n = normalizePermit(c)
+    if (n) return n
   }
   return null
 }
@@ -257,6 +272,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     // non-clickable badge instead of a dead "Live ↗" link.
     landingUrl: landing?.published ? `/lp/${landing.slug}` : null,
     brochureUrl: extractBrochureUrl(row.payload),
+    permitNumber: extractPermitNumber(row.payload),
     hasImages,
     imageCount: hasImages ? 1 : 0,
     dataQuality,

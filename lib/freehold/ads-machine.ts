@@ -31,6 +31,7 @@ export type ActivityKind =
   | 'feedback_request'
   | 'feedback_answered'
   | 'cap_enforced'
+  | 'permit_blocked'
   | 'error'
 
 let ensured: Promise<void> | null = null
