@@ -22,7 +22,7 @@ import {
 import { useI18n } from '@/lib/i18n/provider'
 import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
 import { MachineLaunchReview } from '@/components/freehold/machine-launch-review'
-import type { TrialEdit } from '@/lib/freehold/ads-machine-plan-edit'
+import type { TrialEdit, ProjectEdit } from '@/lib/freehold/ads-machine-plan-edit'
 import type {
   ActivityKind, AdsMachine, MachineActivity, MachineCampaign, MachineStatus,
   VerdictAggregates, VerdictQueueItem,
@@ -61,6 +61,7 @@ const KIND_META: Record<ActivityKind, { Icon: typeof Rocket; color: string; bg: 
   feedback_request:      { Icon: Bell,           color: 'text-violet-300', bg: 'bg-violet-400/10', labelKey: 'lm.machine.kind.feedback_request' },
   feedback_answered:     { Icon: Check,          color: 'text-emerald-300', bg: 'bg-emerald-400/10', labelKey: 'lm.machine.kind.feedback_answered' },
   cap_enforced:          { Icon: Shield,         color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.cap_enforced' },
+  permit_blocked:        { Icon: Shield,         color: 'text-orange-300', bg: 'bg-orange-400/10', labelKey: 'lm.machine.kind.permit_blocked' },
   error:                 { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.error' },
   google_draft_prepared: { Icon: FileText,       color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.google_draft_prepared' },
   planned:               { Icon: ListChecks,     color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.planned' },
@@ -175,13 +176,13 @@ export default function MachineDashboardPage() {
   // Launch step: persist the operator's review edits (if any) and start. The
   // server applies the edits to the plan-as-DATA before the first cycle runs,
   // so what launches is exactly what the preview showed.
-  async function launchWithEdits(edits: TrialEdit[]) {
+  async function launchWithEdits(edits: TrialEdit[], projectEdits: ProjectEdit[]) {
     setActionBusy('start')
     try {
       const res = await fetch(`/api/freehold/ads/machine/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start', edits }),
+        body: JSON.stringify({ action: 'start', edits, projectEdits }),
       })
       const d = await res.json().catch(() => null)
       if (!res.ok) { toast.error(d?.error || t('lm.machine.ctrl.failed')); return }
@@ -196,13 +197,13 @@ export default function MachineDashboardPage() {
   }
 
   // Save the review edits without launching — the machine stays in planning.
-  async function saveEdits(edits: TrialEdit[]) {
+  async function saveEdits(edits: TrialEdit[], projectEdits: ProjectEdit[]) {
     setActionBusy('planEdit')
     try {
       const res = await fetch(`/api/freehold/ads/machine/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'plan_edit', edits }),
+        body: JSON.stringify({ action: 'plan_edit', edits, projectEdits }),
       })
       const d = await res.json().catch(() => null)
       if (!res.ok) { toast.error(d?.error || t('lm.machine.ctrl.failed')); return }

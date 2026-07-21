@@ -43,6 +43,10 @@ export interface InventoryProperty {
       mirrored by the refresh pipeline), else null — never invented. Gates the
       lead-form "Download brochure" button. */
   brochureUrl?: string | null
+  /** Real Trakheesi/DLD advertising-permit number when the project data carries
+      one, else null — never invented. Seeds the Ads Machine's permit gate and
+      the permit + QR shown on ads and landing pages. */
+  permitNumber?: string | null
   hasImages: boolean
   imageCount: number
   dataQuality: number

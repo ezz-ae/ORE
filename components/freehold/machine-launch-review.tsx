@@ -13,11 +13,12 @@
  */
 import { useMemo, useState } from 'react'
 import {
-  AlertTriangle, Loader2, Rocket, Save, Search, Sparkles, FileText, X,
+  AlertTriangle, Loader2, Rocket, Save, Search, ShieldCheck, Sparkles, FileText, X,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { MachinePlan, TrialSource } from '@/lib/freehold/ads-machine-planner'
-import type { TrialEdit } from '@/lib/freehold/ads-machine-plan-edit'
+import type { TrialEdit, ProjectEdit } from '@/lib/freehold/ads-machine-plan-edit'
+import { normalizePermit, qrApiPath, permitVerificationUrl } from '@/lib/freehold/trakheesi'
 import type { MetaCta } from '@/lib/meta/types'
 
 const META_MIN = 50
@@ -74,10 +75,18 @@ export function MachineLaunchReview({
   capAed: number
   busy: boolean
   onClose: () => void
-  onLaunch: (edits: TrialEdit[]) => void
-  onSaveDraft: (edits: TrialEdit[]) => void
+  onLaunch: (edits: TrialEdit[], projectEdits: ProjectEdit[]) => void
+  onSaveDraft: (edits: TrialEdit[], projectEdits: ProjectEdit[]) => void
 }) {
   const t = useT()
+
+  // Per-project Trakheesi permit (seeded from the plan). A project with no valid
+  // permit cannot launch — Dubai law requires it on every property ad.
+  const [permits, setPermits] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const p of plan.projects) init[p.slug] = p.permitNumber ?? ''
+    return init
+  })
 
   const [drafts, setDrafts] = useState<Record<string, Draft>>(() => {
     const init: Record<string, Draft> = {}
@@ -102,8 +111,18 @@ export function MachineLaunchReview({
   const set = (id: string, patch: Partial<Draft>) =>
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))
 
-  // Live total of the INCLUDED trials, and per-trial validity.
-  const { total, includedCount, overCap } = useMemo(() => {
+  // Which projects still have an included trial (so we know whose permit matters).
+  const includedSlugByProject = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of plan.projects) {
+      if (p.trials.some((tr) => drafts[tr.id]?.include)) set.add(p.slug)
+    }
+    return set
+  }, [drafts, plan.projects])
+
+  // Live total of the INCLUDED trials, per-trial validity, and the compliance
+  // gate: every project that still has an included trial needs a valid permit.
+  const { total, includedCount, overCap, permitMissing } = useMemo(() => {
     let total = 0
     let includedCount = 0
     for (const d of Object.values(drafts)) {
@@ -112,11 +131,14 @@ export function MachineLaunchReview({
       const b = Math.floor(Number(d.budget))
       if (Number.isFinite(b)) total += b
     }
-    return { total, includedCount, overCap: total > capAed }
-  }, [drafts, capAed])
+    const permitMissing = [...includedSlugByProject].some((slug) => !normalizePermit(permits[slug]))
+    return { total, includedCount, overCap: total > capAed, permitMissing }
+  }, [drafts, capAed, permits, includedSlugByProject])
 
-  // Build the edit payload the server understands.
-  function buildEdits(): TrialEdit[] {
+  const blocked = overCap || includedCount === 0 || permitMissing
+
+  // Build the edit payloads the server understands.
+  function buildEdits(): { edits: TrialEdit[]; projectEdits: ProjectEdit[] } {
     const edits: TrialEdit[] = []
     for (const [trialId, d] of Object.entries(drafts)) {
       if (!d.include) { edits.push({ trialId, include: false }); continue }
@@ -132,7 +154,8 @@ export function MachineLaunchReview({
       }
       edits.push(edit)
     }
-    return edits
+    const projectEdits: ProjectEdit[] = plan.projects.map((p) => ({ projectSlug: p.slug, permitNumber: permits[p.slug] ?? '' }))
+    return { edits, projectEdits }
   }
 
   const inputCls = 'w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-white outline-none transition focus:border-gold/40'
@@ -156,11 +179,59 @@ export function MachineLaunchReview({
         {/* Scrollable trial list */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="space-y-6">
-            {plan.projects.map((p) => (
+            {plan.projects.map((p) => {
+              const permitVal = permits[p.slug] ?? ''
+              const permitOk = normalizePermit(permitVal)
+              const projectActive = includedSlugByProject.has(p.slug)
+              return (
               <div key={p.slug}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="text-sm font-semibold text-white">{p.listingName}</div>
                   <div className="text-xs text-slate-500">{p.area}</div>
+                </div>
+
+                {/* ── Trakheesi permit — Dubai law requires it on every ad ── */}
+                <div className={[
+                  'mt-3 rounded-[14px] border p-3.5',
+                  permitOk ? 'border-emerald-400/20 bg-emerald-400/[0.04]'
+                    : projectActive ? 'border-red-400/30 bg-red-400/[0.05]' : 'border-line bg-surface-2/40',
+                ].join(' ')}>
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
+                        <ShieldCheck className={`h-3.5 w-3.5 ${permitOk ? 'text-emerald-400' : 'text-slate-500'}`} />
+                        {t('lm.machine.review.permit')}
+                      </div>
+                      <input
+                        value={permitVal}
+                        onChange={(e) => setPermits((prev) => ({ ...prev, [p.slug]: e.target.value }))}
+                        placeholder={t('lm.machine.review.permitPlaceholder')}
+                        className={`${inputCls} mt-1.5 font-mono ${!permitOk && projectActive ? 'border-red-400/50' : ''}`}
+                        dir="ltr"
+                      />
+                      {permitOk ? (
+                        <a href={permitVerificationUrl(permitOk)} target="_blank" rel="noreferrer"
+                          className="mt-1.5 inline-block text-[11px] text-emerald-300/80 underline-offset-2 hover:underline">
+                          {t('lm.machine.review.permitVerify')}
+                        </a>
+                      ) : (
+                        <p className={`mt-1.5 text-[11px] ${projectActive ? 'text-red-300' : 'text-slate-500'}`}>
+                          {t('lm.machine.review.permitRequired')}
+                        </p>
+                      )}
+                    </div>
+                    {/* QR — real, server-rendered from the permit's DLD verification URL */}
+                    {permitOk && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={qrApiPath(permitOk)}
+                        alt={t('lm.machine.review.permitQrAlt')}
+                        width={64}
+                        height={64}
+                        className="h-16 w-16 shrink-0 rounded-md border border-line bg-white p-1"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-3 space-y-3">
@@ -319,7 +390,8 @@ export function MachineLaunchReview({
                   })}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -334,17 +406,24 @@ export function MachineLaunchReview({
               <span>{t('lm.machine.review.cap', { n: capAed.toLocaleString() })}</span>
               <span className="ms-2 text-slate-500">{t('lm.machine.review.trialsIncluded', { n: String(includedCount) })}</span>
             </div>
-            {overCap && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-red-300">
-                <AlertTriangle className="h-3.5 w-3.5" /> {t('lm.machine.review.overCap')}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {overCap && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-red-300">
+                  <AlertTriangle className="h-3.5 w-3.5" /> {t('lm.machine.review.overCap')}
+                </span>
+              )}
+              {permitMissing && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-red-300">
+                  <ShieldCheck className="h-3.5 w-3.5" /> {t('lm.machine.review.permitBlocked')}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
-              onClick={() => onSaveDraft(buildEdits())}
+              onClick={() => { const e = buildEdits(); onSaveDraft(e.edits, e.projectEdits) }}
               disabled={busy || overCap || includedCount === 0}
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white disabled:opacity-50"
             >
@@ -353,8 +432,8 @@ export function MachineLaunchReview({
             </button>
             <button
               type="button"
-              onClick={() => onLaunch(buildEdits())}
-              disabled={busy || overCap || includedCount === 0}
+              onClick={() => { const e = buildEdits(); onLaunch(e.edits, e.projectEdits) }}
+              disabled={busy || blocked}
               className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}

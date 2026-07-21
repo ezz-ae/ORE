@@ -18,6 +18,7 @@
  */
 import { META_MIN_TRIAL_BUDGET_AED } from '@/lib/freehold/ads-machine-planner'
 import type { MachinePlan, MachineProjectPlan } from '@/lib/freehold/ads-machine-planner'
+import { normalizePermit } from '@/lib/freehold/trakheesi'
 import type { MetaCta } from '@/lib/meta/types'
 
 const META_CTAS: readonly MetaCta[] = [
@@ -40,6 +41,13 @@ export interface TrialEdit {
   googleDescriptions?: string[]
 }
 
+/** Per-project edit — currently the Trakheesi permit the operator entered in
+ * the launch review. An empty string clears it (back to "no permit"). */
+export interface ProjectEdit {
+  projectSlug: string
+  permitNumber?: string
+}
+
 export type PlanEditResult =
   | { ok: true; plan: Extract<MachinePlan, { viable: true }> }
   | { ok: false; error: string }
@@ -58,6 +66,7 @@ export function applyPlanEdits(
   plan: MachinePlan | null,
   edits: TrialEdit[],
   capAed: number,
+  projectEdits: ProjectEdit[] = [],
 ): PlanEditResult {
   if (!plan || !plan.viable) {
     return { ok: false, error: 'This machine has no viable plan to edit.' }
@@ -70,6 +79,14 @@ export function applyPlanEdits(
   const editById = new Map<string, TrialEdit>()
   for (const e of edits) {
     if (e && typeof e.trialId === 'string') editById.set(e.trialId, e)
+  }
+  // Per-project permit edits: present key + empty string clears; a real value
+  // sets. Absent key leaves the plan's existing permit untouched.
+  const permitBySlug = new Map<string, string | null>()
+  for (const pe of projectEdits) {
+    if (pe && typeof pe.projectSlug === 'string' && pe.permitNumber !== undefined) {
+      permitBySlug.set(pe.projectSlug, normalizePermit(pe.permitNumber))
+    }
   }
 
   const projects: MachineProjectPlan[] = []
@@ -147,6 +164,9 @@ export function applyPlanEdits(
       ...project,
       trials: keptTrials,
       dailyBudgetAed: keptTrials.reduce((n, tr) => n + tr.dailyBudgetAed, 0),
+      permitNumber: permitBySlug.has(project.slug)
+        ? permitBySlug.get(project.slug)!
+        : (project.permitNumber ?? null),
     })
   }
 

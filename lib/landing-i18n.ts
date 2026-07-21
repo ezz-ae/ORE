@@ -59,6 +59,8 @@ const EN: Record<string, string> = {
   "hero.badge.dld": "DLD Registered",
   "hero.badge.rera": "RERA Certified",
   "hero.badge.award": "Award-Winning Agency",
+  "permit.label": "Trakheesi Permit",
+  "permit.verify": "Verify this permit with Dubai Land Department",
   "hero.form.eyebrow": "Free Consultation",
   "hero.form.title": "Request Investment Pack",
   "hero.form.subtitle": "Floor plans, pricing, and ROI analysis — delivered within 24 hours.",
@@ -263,6 +265,8 @@ const AR: Record<string, string> = {
 
   "hero.badge.dld": "مسجّل لدى دائرة الأراضي والأملاك",
   "hero.badge.rera": "معتمد من مؤسسة التنظيم العقاري",
+  "permit.label": "تصريح تراخيص",
+  "permit.verify": "تحقّق من هذا التصريح لدى دائرة الأراضي والأملاك بدبي",
   "hero.badge.award": "وكالة حائزة على جوائز",
   "hero.form.eyebrow": "استشارة مجانية",
   "hero.form.title": "اطلب الحزمة الاستثمارية",
@@ -466,6 +470,8 @@ const RU: Record<string, string> = {
 
   "hero.badge.dld": "Зарегистрировано в DLD",
   "hero.badge.rera": "Сертифицировано RERA",
+  "permit.label": "Разрешение Trakheesi",
+  "permit.verify": "Проверить это разрешение в Земельном департаменте Дубая",
   "hero.badge.award": "Отмеченное наградами агентство",
   "hero.form.eyebrow": "Бесплатная консультация",
   "hero.form.title": "Запросить инвестиционный пакет",
