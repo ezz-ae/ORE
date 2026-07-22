@@ -3,6 +3,7 @@ import { BRAND } from "@/lib/freehold/brand"
 import type { NextRequest } from "next/server"
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
+import { WHITE_LABEL } from '@/lib/whitelabel/config'
 
 // Internal command surfaces — pages that must never render for anonymous visitors.
 const internalPagePrefixes = [
@@ -42,6 +43,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/market-score/",         // public market pulse
   "/api/pdf/",                  // public brochure download + lead capture
   "/api/cron/",                 // CRON_SECRET-gated in handler
+  "/api/wl/",                   // white-label: activate (public), keys (secret-gated), logo (cookie)
 ]
 
 // Roles allowed to spend ad budget / read lead-form PII (marketing + management).
@@ -186,7 +188,9 @@ export async function proxy(request: NextRequest) {
 
     if (!user) {
       const loginUrl = request.nextUrl.clone()
-      loginUrl.pathname = '/server'
+      // White-label demo: unauthenticated visitors go to the activation gate,
+      // not the Freehold team sign-in.
+      loginUrl.pathname = WHITE_LABEL ? '/activate' : '/server'
       loginUrl.search = ''
       return NextResponse.redirect(loginUrl)
     }
