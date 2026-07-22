@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isRtl, normalizeLocale, type Locale } from './config'
 import { DICTIONARIES } from './dictionaries'
+import { useBrand } from '@/components/whitelabel/brand-provider'
 
 interface I18nValue {
   locale: Locale
@@ -43,6 +44,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [])
 
+  // Runtime brand — lets dictionary strings carry {brand} / {brandName} tokens
+  // that re-skin per white-label workspace (static Freehold brand otherwise).
+  const brand = useBrand()
+
   const dir: 'ltr' | 'rtl' = isRtl(locale) ? 'rtl' : 'ltr'
 
   // Reflect language/direction on the document so native widgets + CSS logical
@@ -64,14 +69,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     (key: string, vars?: Record<string, string | number>) => {
       const dict = DICTIONARIES[locale] ?? DICTIONARIES[DEFAULT_LOCALE]
       let str = dict[key] ?? DICTIONARIES[DEFAULT_LOCALE][key] ?? key
-      if (vars) {
-        for (const [k, v] of Object.entries(vars)) {
-          str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
-        }
+      // Brand tokens are always available; explicit vars can still override them.
+      const merged: Record<string, string | number> = { brand: brand.company, brandName: brand.name, ...vars }
+      for (const [k, v] of Object.entries(merged)) {
+        str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
       }
       return str
     },
-    [locale],
+    [locale, brand.company, brand.name],
   )
 
   return (
