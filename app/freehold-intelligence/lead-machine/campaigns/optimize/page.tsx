@@ -22,7 +22,10 @@ interface LiveCampaign {
   spendAED: number
   leads: number
   cpl: number
+  dailyAed: number
 }
+
+type SpendRules = { enabled: boolean; maxDailyAed: number; cplCeilingAed: number } | null
 
 const metaLeads = (insights?: { actions?: Array<{ action_type: string; value: string }> } | null) =>
   metaLeadCount(insights?.actions)
@@ -45,14 +48,15 @@ export default function CampaignOptimizePage() {
         for (const c of meta.campaigns ?? []) {
           const spend = Number(c?.insights?.spend) || 0
           const leads = metaLeads(c?.insights)
-          rows.push({ id: c.id, name: c.name, platform: 'meta', running: c.status === 'ACTIVE', spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0 })
+          rows.push({ id: c.id, name: c.name, platform: 'meta', running: c.status === 'ACTIVE', spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0, dailyAed: 0 })
         }
       }
       if (google && !google.demo) {
         for (const c of google.campaigns ?? []) {
           const spend = Number(c?.metrics?.costAed ?? c?.metrics?.cost) || 0
           const leads = Number(c?.metrics?.conversions ?? c?.metrics?.leads) || 0
-          rows.push({ id: c.id, name: c.name, platform: 'google', running: /enabled|active|running/i.test(String(c.status ?? '')), spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0 })
+          const dailyAed = Number(c?.dailyBudgetAed ?? (c?.dailyBudgetMicros ? Number(c.dailyBudgetMicros) / 1e6 : 0)) || 0
+          rows.push({ id: c.id, name: c.name, platform: 'google', running: /enabled|active|running/i.test(String(c.status ?? '')), spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0, dailyAed })
         }
       }
       setConnected(Boolean((meta && !meta.demo) || (google && !google.demo)))
@@ -70,6 +74,13 @@ export default function CampaignOptimizePage() {
   const [pausingId, setPausingId] = useState<string | null>(null)
   const [pausedIds, setPausedIds] = useState<string[]>([])
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  // Spend Governor — the deterministic rule that gates any budget RAISE.
+  const [rules, setRules] = useState<SpendRules>(null)
+  const [canEditRules, setCanEditRules] = useState(false)
+  const [editRules, setEditRules] = useState(false)
+  const [ruleForm, setRuleForm] = useState({ enabled: false, maxDailyAed: 0, cplCeilingAed: 0 })
+  const [savingRules, setSavingRules] = useState(false)
+  const [raisingId, setRaisingId] = useState<string | null>(null)
 
   async function loadMachine() {
     try {
@@ -79,9 +90,47 @@ export default function CampaignOptimizePage() {
       if (typeof d.autonomy === 'number') setAutonomy(d.autonomy)
       setCanApply(!!d.canApply)
       if (Array.isArray(d.actions)) setLog(d.actions)
+      if (d.rules) { setRules(d.rules); setRuleForm({ enabled: !!d.rules.enabled, maxDailyAed: Number(d.rules.maxDailyAed) || 0, cplCeilingAed: Number(d.rules.cplCeilingAed) || 0 }) }
     } catch { /* leave defaults */ }
   }
   useEffect(() => { loadMachine() }, [])
+  // Whether the current user can EDIT the rule (management) — read from the rules endpoint.
+  useEffect(() => {
+    fetch('/api/freehold/lead-machine/spend-rules', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setCanEditRules(!!d.canEdit) })
+      .catch(() => {})
+  }, [])
+
+  async function saveRules() {
+    setSavingRules(true)
+    try {
+      const r = await fetch('/api/freehold/lead-machine/spend-rules', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ruleForm),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { toast.error(d.error || t('lm.machine.gov.saveFailed')); return }
+      if (d.rules) setRules(d.rules)
+      setEditRules(false)
+      toast.success(t('lm.machine.gov.saved'))
+    } catch { toast.error(t('lm.machine.gov.saveFailed')) }
+    finally { setSavingRules(false) }
+  }
+
+  async function raiseBudget(c: LiveCampaign) {
+    setRaisingId(c.id)
+    try {
+      const r = await fetch('/api/freehold/lead-machine/machine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'raise_budget', platform: c.platform, campaignId: c.id, campaignName: c.name, currentDailyAed: c.dailyAed, currentCpl: c.cpl }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { toast.error(d.error || t('lm.machine.gov.raiseFailed')); loadMachine(); return }
+      toast.success(t('lm.machine.gov.raised', { aed: String(d.newDaily ?? '') }))
+      loadMachine()
+    } catch { toast.error(t('lm.machine.gov.raiseFailed')) }
+    finally { setRaisingId(null) }
+  }
 
   const ranked = useMemo(
     () => [...campaigns].filter((c) => c.cpl > 0 && !pausedIds.includes(c.id)).sort((a, b) => a.cpl - b.cpl),
@@ -141,6 +190,54 @@ export default function CampaignOptimizePage() {
         </span>
       </div>
 
+      {/* Spend Governor — the deterministic rule that gates autonomous budget raises */}
+      <div className="mt-6 rounded-2xl border border-line bg-surface-2/50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <ShieldCheck className="h-3.5 w-3.5 text-gold" /> {t('lm.machine.gov.title')}
+            </div>
+            <p className="mt-1.5 text-sm text-slate-200">
+              {rules?.enabled && rules.maxDailyAed > 0
+                ? t('lm.machine.gov.active', { max: String(rules.maxDailyAed), cpl: rules.cplCeilingAed > 0 ? String(rules.cplCeilingAed) : '∞' })
+                : t('lm.machine.gov.off')}
+            </p>
+          </div>
+          {canEditRules && !editRules && (
+            <button type="button" onClick={() => setEditRules(true)} className="shrink-0 rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-gold/30 hover:text-white">
+              {t('lm.machine.gov.edit')}
+            </button>
+          )}
+        </div>
+        {editRules && (
+          <div className="mt-4 space-y-3 border-t border-line pt-3">
+            <label className="flex items-center gap-2 text-sm text-slate-200">
+              <input type="checkbox" checked={ruleForm.enabled} onChange={(e) => setRuleForm((f) => ({ ...f, enabled: e.target.checked }))} className="accent-gold" />
+              {t('lm.machine.gov.enable')}
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">{t('lm.machine.gov.maxDaily')}</span>
+                <input type="number" min={0} value={ruleForm.maxDailyAed} onChange={(e) => setRuleForm((f) => ({ ...f, maxDailyAed: Number(e.target.value) || 0 }))}
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-white outline-none focus:border-gold/40" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">{t('lm.machine.gov.cplCeiling')}</span>
+                <input type="number" min={0} value={ruleForm.cplCeilingAed} onChange={(e) => setRuleForm((f) => ({ ...f, cplCeilingAed: Number(e.target.value) || 0 }))}
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-white outline-none focus:border-gold/40" />
+              </label>
+            </div>
+            <p className="text-[11px] leading-snug text-slate-500">{t('lm.machine.gov.hint')}</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={saveRules} disabled={savingRules} className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+                {savingRules ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {t('lm.machine.gov.save')}
+              </button>
+              <button type="button" onClick={() => setEditRules(false)} className="text-xs text-slate-400 hover:text-white">{t('common.cancel')}</button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {loading ? (
         <div className="mt-8 flex items-center gap-2 rounded-2xl border border-line bg-surface px-5 py-6 text-sm text-slate-400">
           <Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}
@@ -187,6 +284,17 @@ export default function CampaignOptimizePage() {
                   </button>
                 )}
               </div>
+              {/* Governor-gated spend RAISE on the best performer (Google only).
+                  The deterministic Spend Governor decides if it's allowed. */}
+              {canApply && best.platform === 'google' && (
+                <div className="mt-3 border-t border-gold/15 pt-3">
+                  <button type="button" onClick={() => raiseBudget(best)} disabled={raisingId === best.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-400/20 disabled:opacity-60">
+                    {raisingId === best.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <TrendingUp className="h-3.5 w-3.5" />} {t('lm.machine.gov.raiseCta', { name: best.name })}
+                  </button>
+                  <span className="ms-2 text-[11px] text-slate-500">{t('lm.machine.gov.raiseNote')}</span>
+                </div>
+              )}
               <p className="mt-2 text-[11px] leading-snug text-slate-500">{t('lm.machine.autopilotNote')}</p>
             </div>
           )}
