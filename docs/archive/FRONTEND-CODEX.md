@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 # Freehold — FRONTEND CODEX FIX PACKAGE
 # Generated: 2026-03-22
 # Database: Neon PostgreSQL (freehold_site_projects, freehold_site_developer_profiles, freehold_site_area_profiles, freehold_site_blog_posts, freehold_site_project_landing_pages)

@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 Thought for 4sRead planAdded theme systemUpdated shared componentsUpdated stackUpdated implementation orderAdded theme notesFreehold Property - Full Platform Implementation PlanRejectOverview
 Build a comprehensive high-end real estate investment platform focused on the Dubai, UAE market serving international buyers. Four distinct layers: Public Site, Discovery Layer, Intelligence Layer, and Dashboard. The design will emphasize luxury, credibility, and sophisticated tooling to convert cold traffic into qualified leads.
 Key Focus:

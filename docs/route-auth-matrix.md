@@ -40,7 +40,7 @@ Everything else under `/api/*`, notably:
 | `/api/leads/{activity,assign,ai-message}`, `/api/crm/*`, `/api/admin/*`, `/api/ai-training`, `/api/ai/*` history | legacy CRM tree — self-gates via `getSessionUser` (freehold_site_session); also behind the fail-closed edge check |
 
 ## Residual (tracked, not in this PR)
-- **`crm.` subdomain `/api/*`** short-circuits before the edge auth check (returns `next()`); those legacy routes self-gate via `getSessionUser` in-handler. Consolidate when the two session systems are unified (see `SYSTEM-AUDIT.md` §7).
+- **`crm.` subdomain `/api/*`** short-circuits before the edge auth check (returns `next()`); those legacy routes self-gate via `getSessionUser` in-handler. Consolidate when the two session systems are unified (see `archive/SYSTEM-AUDIT.md` §7).
 
 ## Acceptance
 - Unauthenticated `GET /api/meta/campaigns`, `/api/ai/chat`, `/api/fi/inventory`, `/api/freehold/mcp/call` → `401`.
