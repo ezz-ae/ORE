@@ -8,6 +8,8 @@ import { SiteFooter } from "@/components/site-footer"
 import { WhatsAppFloat } from "@/components/whatsapp-float"
 import { BRAND_OG_IMAGE, getMetadataBase, getSiteUrl } from "@/lib/site"
 import { BRAND } from "@/lib/freehold/brand"
+import { BrandProvider } from "@/components/whitelabel/brand-provider"
+import { getWorkspaceBrand } from "@/lib/whitelabel/server"
 import "./globals.css"
 
 export const dynamic = "force-dynamic"
@@ -123,11 +125,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // White-label: paint the current workspace's brand (null in the Freehold product).
+  const wlBrand = await getWorkspaceBrand()
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
@@ -183,22 +187,28 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          forcedTheme="light"
-          disableTransitionOnChange={false}
-        >
-          <div className="flex min-h-screen flex-col">
-            <SiteHeader />
-            <main className="flex-1 overflow-x-clip">
-              {children}
-            </main>
-            <SiteFooter />
-            <WhatsAppFloat />
-          </div>
-        </ThemeProvider>
+        {/* White-label: override the gold accent token for the whole tree. */}
+        {wlBrand ? (
+          <style dangerouslySetInnerHTML={{ __html: `:root{--color-gold:${wlBrand.accent};}` }} />
+        ) : null}
+        <BrandProvider brand={wlBrand}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            forcedTheme="light"
+            disableTransitionOnChange={false}
+          >
+            <div className="flex min-h-screen flex-col">
+              <SiteHeader />
+              <main className="flex-1 overflow-x-clip">
+                {children}
+              </main>
+              <SiteFooter />
+              <WhatsAppFloat />
+            </div>
+          </ThemeProvider>
+        </BrandProvider>
         <Analytics />
       </body>
     </html>

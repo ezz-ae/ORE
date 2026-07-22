@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, ChevronDown, LogOut, Home } from 'lucide-react'
 import { spineApps } from '@/lib/freehold/apps'
-import { BRAND } from '@/lib/freehold/brand'
+import { useBrand } from '@/components/whitelabel/brand-provider'
 import { useSession } from '@/lib/freehold/use-session'
 import { clearSession } from '@/lib/freehold/session'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
@@ -33,6 +33,7 @@ export function SpacesNav() {
   const router   = useRouter()
   const { user } = useSession()
   const role     = user?.role
+  const brand    = useBrand()
   const t        = useT()
   const coach    = useCoach()
   const theme    = useThemeMode()
@@ -69,10 +70,15 @@ export function SpacesNav() {
         href={HOME_HREF}
         className="flex h-full shrink-0 items-center gap-2.5 border-r border-white/[0.07] px-5 transition hover:bg-white/[0.04]"
       >
-        <Sparkles className="h-4 w-4 text-gold" />
+        {brand.logo === '/api/wl/logo' ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={brand.logo} alt="" className="h-5 w-auto max-w-[120px] object-contain" />
+        ) : (
+          <Sparkles className="h-4 w-4 text-gold" />
+        )}
         <span className="text-sm font-semibold tracking-tight text-white">
-          {BRAND.company}
-          <span className="ml-1 text-gold">{BRAND.product}</span>
+          {brand.company}
+          <span className="ml-1 text-gold">{brand.product}</span>
         </span>
       </Link>
 
