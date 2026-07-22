@@ -349,7 +349,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.tab.connect': 'Connect AI',
-    'settings.connect.title': 'Control ORE from your AI',
+    'settings.connect.title': 'Control Freehold from your AI',
     'settings.connect.subtitle': 'Connect your own Claude, ChatGPT or Gemini and run the platform from your chat. Reading is open across the business; every change goes through the platform agent and is staged for your approval.',
     'settings.connect.endpointLabel': 'MCP endpoint',
     'settings.connect.copyEndpoint': 'Copy',
@@ -781,7 +781,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.tab.connect': 'ربط الذكاء',
-    'settings.connect.title': 'تحكّم في ORE من ذكائك الاصطناعي',
+    'settings.connect.title': 'تحكّم في فريهولد من ذكائك الاصطناعي',
     'settings.connect.subtitle': 'اربط Claude أو ChatGPT أو Gemini الخاص بك وأدر المنصة من محادثتك. القراءة مفتوحة عبر العمل بالكامل؛ وأي تغيير يمر عبر وكيل المنصة ويُجهَّز لموافقتك.',
     'settings.connect.endpointLabel': 'نقطة اتصال MCP',
     'settings.connect.copyEndpoint': 'نسخ',
@@ -1213,7 +1213,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.tab.connect': 'Подключить ИИ',
-    'settings.connect.title': 'Управляйте ORE из своего ИИ',
+    'settings.connect.title': 'Управляйте Freehold из своего ИИ',
     'settings.connect.subtitle': 'Подключите свой Claude, ChatGPT или Gemini и управляйте платформой прямо из чата. Чтение открыто по всему бизнесу; любое изменение проходит через агента платформы и ставится в очередь на ваше подтверждение.',
     'settings.connect.endpointLabel': 'Точка подключения MCP',
     'settings.connect.copyEndpoint': 'Копировать',

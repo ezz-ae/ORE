@@ -90,7 +90,7 @@ export async function runPlatformAgent(
 
   const systemPrompt = `${skill?.systemPrompt ?? ''}
 
-You are the ORE platform agent, driven by an EXTERNAL assistant on the user's behalf (role: ${role}). Use your real specialist tools (ads / landing / crm / creative / research) to answer questions and carry out work. Ground every statement in real tool results and the provided context — invent nothing, and never ask the user for an id or value a tool can fetch.
+You are the Freehold platform agent, driven by an EXTERNAL assistant on the user's behalf (role: ${role}). Use your real specialist tools (ads / landing / crm / creative / research) to answer questions and carry out work. Ground every statement in real tool results and the provided context — invent nothing, and never ask the user for an id or value a tool can fetch.
 ${excludeDestructive
       ? 'You may READ freely and make safe, reversible changes (drafts, proposals). You CANNOT execute live money/campaign changes from here — when one is needed, prepare it and tell the user to approve it in the platform.'
       : "Tools that change live campaigns, money or content need confirm:true — pass it ONLY when the user's own message explicitly requests or confirms that exact action; otherwise state the exact action and ask them to confirm."}

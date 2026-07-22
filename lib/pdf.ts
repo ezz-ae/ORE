@@ -7,7 +7,7 @@ import type { Project } from "@/lib/types/project"
 const GOLD = rgb(0.05, 0.43, 0.43) // Freehold Teal
 
 const loadLogo = () => {
-  const logoPath = path.join(process.cwd(), "public", "logo-light.png")
+  const logoPath = path.join(process.cwd(), "public", "freehold-logo.png")
   return fs.readFileSync(logoPath)
 }
 

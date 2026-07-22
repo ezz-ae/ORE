@@ -4,7 +4,7 @@
 // of the default padded/scrolling content wrapper (mirrors the Notebook).
 //
 // It also ports v0 nodes that read the shadcn design tokens, which default to a
-// light theme. We scope the ORE dark palette here (`cs-dark`) plus `dark` so the
+// light theme. We scope the Freehold dark palette here (`cs-dark`) plus `dark` so the
 // Studio matches the rest of the product. `display:contents` keeps the wrapper
 // invisible to layout while still cascading the CSS variables and enabling the
 // `dark:` utility variants used inside the nodes.
