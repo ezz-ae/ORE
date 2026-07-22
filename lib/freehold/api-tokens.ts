@@ -68,8 +68,8 @@ export async function createApiToken(
   await ensure()
   const id = randomBytes(12).toString('hex')
   const secret = randomBytes(TOKEN_BYTES).toString('base64url')
-  const raw = `ore_${secret}`
-  const prefix = raw.slice(0, 11) // "ore_" + 7 chars — enough to recognise, useless to replay
+  const raw = `fh_${secret}`
+  const prefix = raw.slice(0, 10) // "fh_" + 7 chars — enough to recognise, useless to replay
   const name = (label || '').trim().slice(0, 60) || 'Untitled connection'
   await query(
     `INSERT INTO freehold_api_tokens (id, user_email, user_name, role, broker_id, name, prefix, token_hash)
@@ -85,7 +85,8 @@ export async function createApiToken(
 /** Verify a raw token → the principal it authorizes, or null. Best-effort touches last_used_at. */
 export async function verifyApiToken(raw: string | null | undefined): Promise<ApiTokenPrincipal | null> {
   const value = (raw || '').trim()
-  if (!value.startsWith('ore_')) return null
+  // Accept current `fh_` tokens and legacy `ore_` tokens issued before the rebrand.
+  if (!value.startsWith('fh_') && !value.startsWith('ore_')) return null
   await ensure()
   const rows = await query<{ user_email: string; user_name: string; role: string; broker_id: string | null }>(
     `SELECT user_email, user_name, role, broker_id

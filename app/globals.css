@@ -48,7 +48,7 @@ html {
 
 /* Creative Studio ports v0 nodes that read the shadcn tokens (--card, --muted,
  * --border …). Those default to a light theme, so the Studio looked different
- * from the rest of the dark product. This scoped palette maps them to the ORE
+ * from the rest of the dark product. This scoped palette maps them to the Freehold
  * dark surfaces (chrome/surface/gold). Applied on the Studio wrapper together
  * with `dark` so `dark:` utilities also resolve. */
 .cs-dark {
