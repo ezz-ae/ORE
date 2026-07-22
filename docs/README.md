@@ -12,6 +12,7 @@ docs below.
 | Doc | What it covers |
 | --- | --- |
 | [`../DEPLOYMENT.md`](../DEPLOYMENT.md) | Private white-label deployment playbook — one isolated deployment per client (Vercel + Neon + domain + credentials), no multi-tenancy. (Kept at repo root; code references it.) |
+| [`WHITE-LABEL.md`](WHITE-LABEL.md) | Operator runbook for the **branded demo mode** — extract → deploy (`NEXT_PUBLIC_WHITE_LABEL=1`) → `pnpm seed:demo` → mint keys (`/wl-admin`) → prospect activates at `/activate`. |
 | [`INTEGRATIONS-SETUP.md`](INTEGRATIONS-SETUP.md) | Connecting the external services: Meta Ads, Google Ads, AI/Vertex, tracking, database. |
 | [`OPERATIONS-RUNBOOK.md`](OPERATIONS-RUNBOOK.md) | Day-to-day operational procedures and incident handling. |
 | [`CAMPAIGN-LAUNCH-RUNBOOK.md`](CAMPAIGN-LAUNCH-RUNBOOK.md) | Step-by-step for taking a project from inventory to a live ad campaign. |
