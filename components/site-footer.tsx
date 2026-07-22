@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { COMPANY_PHONE, COMPANY_EMAIL, COMPANY_WHATSAPP_URL } from "@/lib/site"
 import { BRAND } from "@/lib/freehold/brand"
-import Image from "next/image"
+import { useBrand } from "@/components/whitelabel/brand-provider"
+import { BrandLogo } from "@/components/whitelabel/brand-logo"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -72,6 +73,7 @@ const footerLinks = [
 
 export function SiteFooter() {
   const pathname = usePathname()
+  const brand = useBrand()
 
   const commandPaths = ["/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/settings"]
   const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
@@ -84,14 +86,8 @@ export function SiteFooter() {
       <div className="container px-6 max-w-7xl mx-auto">
         <div className="grid gap-14 lg:grid-cols-[1.4fr,2fr]">
           <div className="space-y-8">
-            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85" aria-label={`${BRAND.company} Properties — Home`}>
-              <Image
-                src="/freehold-logo.png"
-                alt={`${BRAND.company} Properties`}
-                width={1042}
-                height={417}
-                className="h-auto w-44"
-              />
+            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85" aria-label={`${brand.company} — Home`}>
+              <BrandLogo className="h-auto w-44" />
             </Link>
 
             <p className="max-w-sm text-[14px] leading-relaxed text-white/58">
