@@ -11,6 +11,7 @@
     "start": "next start",
     "smoke": "tsx scripts/smoke.ts",
     "i18n": "tsx scripts/i18n-audit.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
