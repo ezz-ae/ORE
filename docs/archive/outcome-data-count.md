@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 # Outcome-Data Count (P2.3) — live Neon, 2026-06-30
 
 Measured directly against the production Neon DB (`neondb`, ep-rapid-pine) before making any "outcome-trained targeting" claim.

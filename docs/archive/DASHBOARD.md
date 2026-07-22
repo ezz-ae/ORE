@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 
 
 

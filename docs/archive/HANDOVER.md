@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 # Handover Notes — session close-out (2026-07-12)
 
 **Repo:** `ezz-ae/ORE` · **main:** `c5ca4e9` (PR #183)

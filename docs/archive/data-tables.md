@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 
 Repo: https://github.com/ezz-ae/ORE
 Data: Neon PostgreSQL (already connected via NEON_DATABASE_URL)

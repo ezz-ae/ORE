@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 # Freehold / Entrestate — Full System Audit
 
 **Date:** 2026-06-30 · **Method:** live production DB (Neon) queried directly + three parallel code scans (integrations, product-completeness, security & data-model), each cited to `file:line`. Supersedes the earlier pre-P0 draft.

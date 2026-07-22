@@ -1,3 +1,5 @@
+ARCHIVED — transient scratch list from an earlier session. Not maintained.
+
 ./DASHBOARD.MD
 ./app/crm/(app)/leads/[id]/page.tsx
 ./app/crm/(app)/projects/add/page.tsx

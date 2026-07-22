@@ -1,3 +1,5 @@
+> 📦 **Archived — completed / historical.** Kept for reference; this is **not** the current source of truth. See [`../README.md`](../README.md) for the live docs.
+
 # Freehold Beta — Master Plan & Backlog
 
 **Owner:** Mahmoud (Entrestate) · **Goal:** ship the full Freehold beta and run the client's **first trial campaign**, then harden into the white-label.
