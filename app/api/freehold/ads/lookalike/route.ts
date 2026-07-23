@@ -7,6 +7,7 @@ import {
   type BuyerContact,
 } from '@/lib/meta/client'
 import { createAudience } from '@/lib/freehold/audiences'
+import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { BRAND } from '@/lib/freehold/brand'
 
 export const runtime = 'nodejs'
@@ -19,10 +20,16 @@ const MIN_BUYERS = 100
 // Closed buyers = leads that reached 'closed'. We only pull rows that actually
 // carry a usable email or phone (a lookalike seed needs real identifiers).
 async function closedBuyerContacts(): Promise<BuyerContact[]> {
+  // Never upload a lead quarantined by the training-integrity guard (Layer 10)
+  // as a lookalike seed — a purged/burst lead must not reach Meta either.
+  const untrusted = await getUntrustedLeadIds().catch(() => new Set<string>())
+  const exclude = Array.from(untrusted)
   const rows = await query<{ email: string | null; phone: string | null }>(
     `SELECT email, phone FROM freehold_site_leads
      WHERE status = 'closed'
-       AND (COALESCE(NULLIF(email,''), NULLIF(phone,'')) IS NOT NULL)`,
+       AND (COALESCE(NULLIF(email,''), NULLIF(phone,'')) IS NOT NULL)
+       AND NOT (id = ANY($1::text[]))`,
+    [exclude],
   )
   return rows.map((r) => ({ email: r.email, phone: r.phone }))
 }
