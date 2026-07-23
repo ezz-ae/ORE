@@ -570,6 +570,12 @@ export const crm: Record<Locale, Dict> = {
     'crm.statOldestWaiting': 'Oldest waiting',
     'crm.statRevenue': 'Revenue ({range})',
     'crm.updateFailed': 'Update failed. Please retry.',
+    'crm.lostBurst.title': "You've marked {count} leads lost in a few minutes",
+    'crm.lostBurst.body': 'Not ready to write them off? Drip them into a {days}-day nurture instead — they resurface in your follow-up queue.',
+    'crm.lostBurst.cta': 'Drip {days} days',
+    'crm.lostBurst.dripping': 'Dripping…',
+    'crm.lostBurst.dripped': '{count} leads moved into a {days}-day nurture',
+    'crm.lostBurst.dismiss': 'Dismiss',
   },
 
   ar: {
@@ -1117,6 +1123,12 @@ export const crm: Record<Locale, Dict> = {
     'crm.statOldestWaiting': 'الأقدم انتظارًا',
     'crm.statRevenue': 'الإيرادات ({range})',
     'crm.updateFailed': 'فشل التحديث. حاول مرة أخرى.',
+    'crm.lostBurst.title': 'لقد وسمت {count} عملاء كمفقودين خلال دقائق قليلة',
+    'crm.lostBurst.body': 'ألستَ مستعدًا لشطبهم؟ انقلهم بدلًا من ذلك إلى رعاية لمدة {days} يومًا — ليعودوا إلى قائمة المتابعة لديك.',
+    'crm.lostBurst.cta': 'رعاية {days} يومًا',
+    'crm.lostBurst.dripping': 'جارٍ النقل…',
+    'crm.lostBurst.dripped': 'تم نقل {count} عملاء إلى رعاية لمدة {days} يومًا',
+    'crm.lostBurst.dismiss': 'تجاهل',
   },
 
   ru: {
@@ -1664,5 +1676,11 @@ export const crm: Record<Locale, Dict> = {
     'crm.statOldestWaiting': 'Дольше всех ждёт',
     'crm.statRevenue': 'Выручка ({range})',
     'crm.updateFailed': 'Не удалось обновить. Повторите попытку.',
+    'crm.lostBurst.title': 'Вы отметили {count} лидов как потерянных за несколько минут',
+    'crm.lostBurst.body': 'Не готовы списывать их? Отправьте их в {days}-дневный прогрев — они вернутся в вашу очередь напоминаний.',
+    'crm.lostBurst.cta': 'Прогрев {days} дн.',
+    'crm.lostBurst.dripping': 'Переносим…',
+    'crm.lostBurst.dripped': '{count} лидов перенесены в {days}-дневный прогрев',
+    'crm.lostBurst.dismiss': 'Скрыть',
   },
 }
