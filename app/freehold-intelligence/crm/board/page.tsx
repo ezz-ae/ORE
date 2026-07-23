@@ -9,6 +9,8 @@ import {
   type PipelineStage,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { recordLostMark } from '@/lib/freehold/lost-burst'
+import { LostBurstNudge } from '@/components/freehold/lost-burst-nudge'
 import { useT } from '@/lib/i18n/provider'
 
 // ─── Stage config ──────────────────────────────────────────────────────────────
@@ -88,6 +90,7 @@ export default function CrmBoardPage() {
     const from = fromStage.current
     const movingId = draggingId
     if (!movingId || !from || from === to) { reset(); return }
+    const movingLead = stageMap[from]?.find(l => l.id === movingId)
     setStageMap(prev => {
       const lead = prev[from].find(l => l.id === movingId)
       if (!lead) return prev
@@ -115,9 +118,30 @@ export default function CrmBoardPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: to, last_contact_at: new Date().toISOString() }),
     })
-      .then(res => { if (!res.ok) revert() })
+      .then(res => {
+        if (!res.ok) revert()
+        else if (to === 'lost') recordLostMark({ id: movingId, name: movingLead?.name })
+      })
       .catch(revert)
     reset()
+  }
+
+  // Drip macro succeeded — move the revived leads out of Lost into Contacted
+  // optimistically (useLiveLeads fetches once, so reconcile locally).
+  function onDripped(ids: string[]) {
+    const set = new Set(ids)
+    setStageMap(prev => {
+      const moving = (prev.lost ?? []).filter(l => set.has(l.id))
+      if (moving.length === 0) return prev
+      return {
+        ...prev,
+        lost: prev.lost.filter(l => !set.has(l.id)),
+        contacted: [
+          ...prev.contacted,
+          ...moving.map(l => ({ ...l, pipelineStage: 'contacted' as PipelineStage, stage: 'Contacted' })),
+        ],
+      }
+    })
   }
 
   function reset() {
@@ -226,6 +250,9 @@ export default function CrmBoardPage() {
         <MoveHorizontal className="h-3.5 w-3.5" />
         {t('crm.dragHint')}
       </div>
+
+      {/* Non-blocking nudge when several leads are marked lost in quick succession. */}
+      <LostBurstNudge onDripped={onDripped} />
     </div>
   )
 }
