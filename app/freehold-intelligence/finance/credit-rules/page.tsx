@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Bot, Plus, Loader2, Trash2, Shield, Activity } from 'lucide-react'
+import { Bot, Plus, Loader2, Trash2, Shield, Activity, Sparkles } from 'lucide-react'
 import { PageHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { SPEND_TEMPLATES, getSpendTemplate, recommendSpendTemplate, type SpendTemplateKey } from '@/lib/meta/spend-templates'
 
 type Rule = {
   id: string; enabled: boolean; scope: string
@@ -75,12 +76,63 @@ export default function CreditRulesPage() {
     await fetch(`/api/freehold/ads/spend-rules/${id}`, { method: 'DELETE' }).catch(() => {})
   }
 
+  // Load a logical preset into the builder — the admin reviews and saves it.
+  function applyTemplate(key: SpendTemplateKey) {
+    const v = getSpendTemplate(key).values
+    setForm({
+      scope: '',
+      maxDailyBudgetAED: String(v.maxDailyBudgetAED),
+      maxIncreasePerActionAED: String(v.maxIncreasePerActionAED),
+      requireCplBelowAED: String(v.requireCplBelowAED ?? ''),
+      requireQualityAtLeast: String(v.requireQualityAtLeast ?? ''),
+      requireMinLeads: String(v.requireMinLeads ?? ''),
+    })
+    toast.success(t('cr.tpl.loaded', { name: t(`cr.tpl.${key}.name`) }))
+  }
+  const recommended = recommendSpendTemplate({ hasExistingRules: rules.length > 0 })
+
   const field = 'w-full rounded-lg border border-line bg-surface px-2.5 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-gold/30'
   const lbl = 'mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500'
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-5 sm:px-6">
       <PageHeader eyebrow={t('cr.eyebrow')} Icon={Bot} title={t('cr.title')} subtitle={t('cr.subtitle')} />
+
+      {/* Start from a template — logical presets, not account math */}
+      <div className="mt-6">
+        <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold">
+          <Sparkles className="h-3.5 w-3.5" /> {t('cr.tpl.heading')}
+        </div>
+        <p className="mb-3 text-[11px] leading-snug text-slate-500">{t('cr.tpl.sub')}</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {SPEND_TEMPLATES.map((tpl) => {
+            const rec = tpl.key === recommended
+            return (
+              <button
+                key={tpl.key}
+                type="button"
+                onClick={() => applyTemplate(tpl.key)}
+                className={`rounded-2xl border p-3.5 text-left transition hover:border-gold/40 ${rec ? 'border-gold/40 bg-gold/[0.05]' : 'border-line bg-surface/50'}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white">{t(`cr.tpl.${tpl.key}.name`)}</span>
+                  {rec && (
+                    <span className="rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gold">
+                      {t('cr.tpl.recommended')}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-slate-400">{t(`cr.tpl.${tpl.key}.why`)}</p>
+                <div className="mt-2.5 flex flex-wrap gap-1">
+                  <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] text-slate-400">{t('cr.tpl.upTo', { daily: aed(tpl.values.maxDailyBudgetAED) })}</span>
+                  <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] text-slate-400">{t('cr.tpl.cpl', { v: aed(tpl.values.requireCplBelowAED ?? 0) })}</span>
+                </div>
+                <span className="mt-2.5 inline-block text-[11px] font-semibold text-gold">{t('cr.tpl.use')} →</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Rule builder */}
       <div className="mt-6 rounded-2xl border border-line bg-surface-2/40 p-4">
