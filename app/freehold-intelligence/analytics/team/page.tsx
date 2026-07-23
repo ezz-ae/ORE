@@ -13,6 +13,14 @@ type AgentMetric = {
   activity30d: number; calls: number; messages: number; notes: number
   medianResponseMinutes: number | null; respondedLeads: number
   viewingsHeld: number; viewingsScheduled: number; offersMade: number
+  dataQualityScore: number | null; dataQualityMarks: number
+}
+
+// Data-quality score → colour band. Null (no terminal marks yet) shows a dash.
+function dqColor(score: number) {
+  if (score >= 80) return 'text-emerald-300 border-emerald-400/25 bg-emerald-400/[0.08]'
+  if (score >= 50) return 'text-amber-300 border-amber-400/25 bg-amber-400/[0.08]'
+  return 'text-red-300 border-red-400/25 bg-red-400/[0.08]'
 }
 
 const MAX_CAP = 12
@@ -124,6 +132,7 @@ export default function TeamAnalyticsPage() {
                   <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.medianResponse')}</th>
                   <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.viewingRate')}</th>
                   <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.offerRate')}</th>
+                  <th className="px-4 py-3 text-end text-xs font-medium uppercase tracking-wider text-slate-500" title={t('analytics.dq.help')}>{t('analytics.th.dataQuality')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.08]">
@@ -169,12 +178,24 @@ export default function TeamAnalyticsPage() {
                             <span className="text-slate-600" title={t('analytics.resp.noOffers')}>—</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-end">
+                          {ag.dataQualityScore !== null ? (
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums ${dqColor(ag.dataQualityScore)}`}
+                              title={t('analytics.dq.evidence', { marks: ag.dataQualityMarks })}
+                            >
+                              {ag.dataQualityScore}
+                            </span>
+                          ) : (
+                            <span className="text-slate-600" title={t('analytics.dq.none')}>—</span>
+                          )}
+                        </td>
                       </tr>
                     )
                   })
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">
                       {agents ? t('analytics.empty.agents') : t('analytics.loading')}
                     </td>
                   </tr>
