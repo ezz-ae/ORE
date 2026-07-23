@@ -4,6 +4,7 @@ import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type Targeting
 import { query } from '@/lib/db'
 import { getNetworkBenchmarks, refreshLiveTenantSignals } from '@/lib/entrestate/targeting-base'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 
 // The learning loop's SHARED brain: reads what actually happened (spend, CPL,
 // how each campaign's leads progressed in the CRM), folds in the network's
@@ -26,6 +27,11 @@ interface CampaignPerf {
 async function crmOutcomesByCampaign(): Promise<Map<string, CampaignPerf['crm']>> {
   const map = new Map<string, CampaignPerf['crm']>()
   try {
+    // Layer-10 training integrity: exclude leads quarantined by a mass-purge
+    // burst, so a queue-purge can't poison the learning loop's outcome counts
+    // (and the qualified/closed lookalike seed-pool sizes derived from them).
+    const untrusted = await getUntrustedLeadIds().catch(() => new Set<string>())
+    const exclude = Array.from(untrusted)
     const rows = await query<{ campaign_id: string; total: string; qualified: string; closed: string; lost: string }>(`
       SELECT campaign_id,
         COUNT(*)::text AS total,
@@ -34,8 +40,9 @@ async function crmOutcomesByCampaign(): Promise<Map<string, CampaignPerf['crm']>
         COUNT(*) FILTER (WHERE status = 'lost')::text AS lost
       FROM freehold_site_leads
       WHERE campaign_id IS NOT NULL AND campaign_id <> '' AND campaign_id <> 'organic'
+        AND NOT (id = ANY($1::text[]))
       GROUP BY campaign_id
-    `)
+    `, [exclude])
     for (const r of rows) {
       map.set(r.campaign_id, {
         total: parseInt(r.total, 10),
