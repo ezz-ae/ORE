@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import { gatherDataQualityScores, type AgentDataQuality } from './data-quality-score'
 import { gatherAgentResponseStats } from '@/lib/freehold/response-time'
 
 /**
@@ -32,10 +33,14 @@ export type AgentMetric = {
   viewingsScheduled: number
   /** offers made (all-time) */
   offersMade: number
+  /** data-quality (contribution) score 0–100, or null when no terminal marks yet */
+  dataQualityScore: number | null
+  /** distinct leads this agent marked terminal in the last 90 days (score basis) */
+  dataQualityMarks: number
 }
 
 export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
-  const [agents, activity, responseStats, viewingOffer] = await Promise.all([
+  const [agents, activity, responseStats, viewingOffer, dataQuality] = await Promise.all([
     query<{
       id: string; name: string; email: string; created_at: string | null
       total_leads: string; hot_leads: string; recent_wins: string; overdue_followups: string
@@ -87,6 +92,8 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
        GROUP BY l.assigned_broker_id`,
       [],
     ).catch(() => []),
+    // Data-quality (contribution) score per agent — reuses the Layer-10 detector.
+    gatherDataQualityScores().catch(() => new Map<string, AgentDataQuality>()),
   ])
 
   const act = new Map(activity.map((a) => [a.created_by, a]))
@@ -99,6 +106,7 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
     const ax = act.get(a.email)
     const rx = resp.get(a.id) ?? resp.get(a.email)
     const vx = vo.get(a.id) ?? vo.get(a.email)
+    const dx = dataQuality.get(a.email) ?? dataQuality.get(a.id)
     const tenureDays = a.created_at ? Math.max(0, Math.round((now - new Date(a.created_at).getTime()) / 86400000)) : null
     return {
       id: a.id,
@@ -117,6 +125,8 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
       viewingsHeld: vx ? parseInt(vx.viewings_held, 10) : 0,
       viewingsScheduled: vx ? parseInt(vx.viewings_scheduled, 10) : 0,
       offersMade: vx ? parseInt(vx.offers_made, 10) : 0,
+      dataQualityScore: dx?.score ?? null,
+      dataQualityMarks: dx?.marks ?? 0,
     }
   })
 }
