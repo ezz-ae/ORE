@@ -186,3 +186,11 @@ export const getHowTo = (id: string): HowToFlow | undefined => HOWTOS.find((h) =
 /** Flows visible to a given role (undefined roles ⇒ visible to everyone). */
 export const howtosForRole = (role?: string): HowToFlow[] =>
   HOWTOS.filter((h) => !h.roles || (role ? h.roles.includes(role) : false))
+
+/**
+ * The one shared "do-it-yourself" starter guide — the most important tasks,
+ * IDENTICAL for every role. Order = a sensible path through the product. Only
+ * universal flows (no role restriction) are listed, so the guide is genuinely
+ * the same for everyone, and every step is a real coach walkthrough.
+ */
+export const ESSENTIAL_HOWTOS: string[] = ['personalize', 'add-lead', 'follow-up', 'close-deal', 'meta-ad']

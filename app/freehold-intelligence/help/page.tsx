@@ -1,16 +1,19 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   BookOpen, Compass, Play, Link2, Search, Sparkles, ChevronDown, Loader2,
   ArrowRight, Users, Megaphone, Package, DollarSign, TrendingUp, ShieldCheck,
-  Settings, UserCircle, Rocket,
+  Settings, UserCircle, Rocket, CheckCircle2, Circle,
 } from 'lucide-react'
 import { useCoach } from '@/components/freehold/coach/coach-marks'
-import { howtosForRole, type HowToFlow } from '@/lib/freehold/howto'
+import { howtosForRole, ESSENTIAL_HOWTOS, type HowToFlow } from '@/lib/freehold/howto'
+import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { useSession } from '@/lib/freehold/use-session'
 import { useI18n } from '@/lib/i18n/provider'
+
+const ESSENTIALS_PREF_KEY = 'helpEssentialsDone'
 
 const FI = '/freehold-intelligence'
 
@@ -661,6 +664,16 @@ const UI = {
     'Сгенерировано ИИ по живой карте системы — встроенные ответы выше полностью сопровождаются гидом.',
   ),
   aiError: T('Could not reach the guide', 'تعذّر الوصول إلى المرشد', 'Не удалось связаться с гидом'),
+  essentialsTitle: T('Start here — the essentials', 'ابدأ من هنا — الأساسيات', 'Начните здесь — основное'),
+  essentialsSub: T(
+    'The most important tasks, the same for everyone. Tick them off as you go — your progress follows you to any device.',
+    'أهم المهام، نفسها للجميع. علّمها عند إنجازها — ويتبعك تقدّمك على أي جهاز.',
+    'Самые важные задачи, одинаковые для всех. Отмечайте по мере выполнения — прогресс следует за вами на любом устройстве.',
+  ),
+  essentialsDone: T('done', 'مكتملة', 'готово'),
+  essentialsAllDone: T('All essentials done — nice work.', 'اكتملت كل الأساسيات — عمل رائع.', 'Все основы пройдены — отличная работа.'),
+  markDone: T('Mark done', 'تعليم كمكتمل', 'Отметить'),
+  markNotDone: T('Mark not done', 'إلغاء الإكمال', 'Снять отметку'),
   walkthroughs: T('Guided walkthroughs', 'الجولات الإرشادية', 'Пошаговые гиды'),
   walkthroughsNote: T(
     'Each one moves through the real pages with you — you can act on every step.',
@@ -693,6 +706,32 @@ export default function HelpPage() {
 
   const flows = useMemo(() => howtosForRole(role), [role])
   const flowById = useMemo(() => new Map(flows.map((f) => [f.id, f] as [string, HowToFlow])), [flows])
+
+  // The shared "Start here" essentials — same for everyone, universal flows only.
+  const essentials = useMemo(
+    () => ESSENTIAL_HOWTOS.map((id) => flowById.get(id)).filter((f): f is HowToFlow => !!f),
+    [flowById],
+  )
+  // Completion ticks persist on the ACCOUNT (follow the user to any device).
+  const [done, setDone] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    loadAccountMemory()
+      .then((m) => {
+        const raw = (m as Record<string, unknown>)[ESSENTIALS_PREF_KEY]
+        if (Array.isArray(raw)) setDone(new Set(raw.filter((x): x is string => typeof x === 'string')))
+      })
+      .catch(() => {})
+  }, [])
+  function toggleDone(id: string) {
+    setDone((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      saveAccountMemory({ [ESSENTIALS_PREF_KEY]: [...next] })
+      return next
+    })
+  }
+  const doneCount = essentials.reduce((n, f) => n + (done.has(f.id) ? 1 : 0), 0)
 
   // Role-filtered sections; search filters across question + answer text in
   // the ACTIVE language (plus English as a fallback net).
@@ -818,6 +857,64 @@ export default function HelpPage() {
           )}
           <p className="mt-3 text-[11px] text-slate-500">{L(UI.aiNote)}</p>
         </div>
+      )}
+
+      {/* Start here — the essentials (shared do-it-yourself checklist) */}
+      {!query.trim() && essentials.length > 0 && (
+        <section className="mt-8 rounded-2xl border border-gold/25 bg-gold/[0.04] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold/90">
+              <Rocket className="h-4 w-4" /> {L(UI.essentialsTitle)}
+            </h2>
+            <span className="text-xs font-medium tabular-nums text-slate-400">
+              {doneCount} / {essentials.length} {L(UI.essentialsDone)}
+            </span>
+          </div>
+          <p className="mt-1 max-w-[58ch] text-xs text-slate-400">{L(UI.essentialsSub)}</p>
+          {/* Progress bar */}
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full bg-gold transition-all"
+              style={{ width: `${Math.round((doneCount / essentials.length) * 100)}%` }}
+            />
+          </div>
+          <ol className="mt-4 space-y-2">
+            {essentials.map((flow, i) => {
+              const isDone = done.has(flow.id)
+              return (
+                <li
+                  key={flow.id}
+                  className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-3"
+                >
+                  <button
+                    onClick={() => toggleDone(flow.id)}
+                    aria-label={isDone ? L(UI.markNotDone) : L(UI.markDone)}
+                    className="shrink-0 text-gold transition hover:opacity-80"
+                  >
+                    {isDone ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5 text-slate-500" />}
+                  </button>
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/[0.06] text-xs font-bold text-slate-400">
+                    {i + 1}
+                  </span>
+                  <span className={`min-w-0 flex-1 text-sm font-medium ${isDone ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
+                    {t(flow.titleKey)}
+                  </span>
+                  <button
+                    onClick={() => coach.startHowTo(flow.id)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90"
+                  >
+                    <Play className="h-3 w-3" /> {L(UI.guideMe)}
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+          {doneCount === essentials.length && (
+            <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-gold">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {L(UI.essentialsAllDone)}
+            </p>
+          )}
+        </section>
       )}
 
       {/* Guided walkthroughs strip */}
