@@ -6,9 +6,10 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Download, ExternalLink, FileSearch, BookOpen, ArrowLeft, ScanText, Stamp, QrCode, Upload, Save,
-  Layers, RotateCw, Trash2, FilePlus, ArrowUp, ArrowDown, ImagePlus, Palette, FileImage,
+  Layers, RotateCw, Trash2, FilePlus, ArrowUp, ArrowDown, ImagePlus, Palette, FileImage, Sparkles,
 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
+import { buildExplainerPdf } from '@/lib/freehold/pdf-explainer'
 import QRCode from 'qrcode'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -30,6 +31,8 @@ export default function DrivePdfSurface() {
   const id = String(params?.id || '')
 
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const explainerFileRef = useRef<HTMLInputElement | null>(null)
+  const [explainerBusy, setExplainerBusy] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -115,6 +118,38 @@ export default function DrivePdfSurface() {
       setParsed(d.data as Record<string, unknown>)
       setShowExtract(true)
     } catch { toast.error(t('ed.pdf.extractFailed')) } finally { setExtracting(false) }
+  }
+
+  // AI client explainer: send the current PDF to the explainer endpoint, render
+  // the organised result into a branded client-ready PDF, and save it to Drive.
+  async function runExplainer(bytes: ArrayBuffer) {
+    setExplainerBusy(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', new Blob([bytes], { type: 'application/pdf' }), 'source.pdf')
+      const res = await fetch('/api/freehold/drive/pdf-explainer', { method: 'POST', body: fd })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d?.data) { toast.error(d?.error || t('ed.pdf.explainer.failed')); return }
+      let logo: Uint8Array | null = null
+      try { const lr = await fetch('/icon.png'); if (lr.ok) logo = new Uint8Array(await lr.arrayBuffer()) } catch { /* logo optional */ }
+      const out = await buildExplainerPdf(d.data, logo)
+      const dataUrl = `data:application/pdf;base64,${u8ToBase64(out)}`
+      const title = `${(d.data as { title?: string })?.title || item?.title || 'Project'} — ${t('ed.pdf.explainer.docTitle')}`
+      const sres = await fetch('/api/freehold/drive/save-pdf', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, dataUrl }),
+      })
+      const sd = await sres.json().catch(() => ({}))
+      if (sres.ok && sd.item) { toast.success(t('ed.pdf.explainer.saved')); router.push(`/freehold-intelligence/drive/editor/pdf/${sd.item.id}`) }
+      else toast.error(sd.error || t('ed.pdf.explainer.failed'))
+    } catch { toast.error(t('ed.pdf.explainer.failed')) } finally { setExplainerBusy(false) }
+  }
+  async function startExplainer() {
+    // Prefer the loaded PDF; fall back to an upload if it can't be fetched (CORS).
+    if (item?.url) {
+      try { const r = await fetch(item.url); if (r.ok) return runExplainer(await r.arrayBuffer()) } catch { /* upload fallback */ }
+    }
+    explainerFileRef.current?.click()
   }
 
   // Build a stamped PDF (pdf-lib). Source = an uploaded file, else the loaded
@@ -399,6 +434,16 @@ export default function DrivePdfSurface() {
           </button>
         )}
         <p className="text-[10px] leading-snug text-slate-500">{t('ed.pdf.extractNote')}</p>
+      </section>
+
+      {/* AI client explainer — organise the brochure into a branded, sendable PDF */}
+      <section className="space-y-2 border-t border-white/[0.07] pt-4">
+        <div className={sectionH}><Sparkles className="h-3.5 w-3.5" /> {t('ed.pdf.explainer.title')}</div>
+        <button type="button" onClick={startExplainer} disabled={explainerBusy} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
+          {explainerBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {explainerBusy ? t('ed.pdf.explainer.busy') : t('ed.pdf.explainer.cta')}
+        </button>
+        <input ref={explainerFileRef} type="file" accept="application/pdf" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) runExplainer(await f.arrayBuffer()) }} />
+        <p className="text-[10px] leading-snug text-slate-500">{t('ed.pdf.explainer.note')}</p>
       </section>
 
       {/* Notebook */}
