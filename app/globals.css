@@ -215,6 +215,31 @@ html {
 .theme-light .bg-\[\#06070C\],
 .theme-light .bg-\[\#06080A\]   { background-color: #ffffff; color: #0f172a; }
 
+/* ── Mobile management surfaces: dark screens that stayed dark in light mode ─ *
+ * These were authored with raw dark hexes outside the token system, so they
+ * rendered dark-ink-on-dark-surface (unreadable) under .theme-light. Remap the
+ * backgrounds; text-white/slate children are already flipped above.           */
+
+/* WhatsApp lead conversation → a real LIGHT chat palette (keeps sent vs
+ * received distinct, mirroring WhatsApp's own light theme). #00A884 (the send
+ * button teal) is a brand accent that reads fine on white, so it is left as-is. */
+.theme-light .bg-\[\#111B21\] { background-color: #ece5dd; }                 /* chat wallpaper   */
+.theme-light .bg-\[\#202C33\] { background-color: #ffffff; color: #0f172a; } /* panels + received bubble */
+.theme-light .bg-\[\#2A3942\] { background-color: #f0f2f5; }                 /* input bar / hover */
+.theme-light .bg-\[\#1D2B38\] { background-color: #f0f2f5; }
+.theme-light .bg-\[\#182229\] { background-color: #f0f2f5; }
+.theme-light .bg-\[\#005C4B\] { background-color: #d9fdd3; color: #0f172a; } /* sent bubble → light green */
+
+/* Other dark card/panel hexes on ads / inventory / creative surfaces → white,
+ * plus the one dark slate background utility (no bg-slate background remap
+ * existed — only text-slate). A safety net so unconverted spots degrade to
+ * light, never dark-on-dark. */
+.theme-light .bg-\[\#18181b\],
+.theme-light .bg-\[\#0f0f11\],
+.theme-light .bg-\[\#0c0d12\],
+.theme-light .bg-\[\#0D1321\]  { background-color: #ffffff; color: #0f172a; }
+.theme-light .bg-slate-700     { background-color: #e2e8f0; color: #0f172a; }
+
 /* ── Design-token utilities ────────────────────────────────────────────── *
  * These compiled to STATIC dark hex at build time (e.g. .bg-surface:#181613),
  * so redefining the CSS vars can't reach them — each must be overridden here.
