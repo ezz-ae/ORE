@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { FileUp, Loader2, Sparkles, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
+import { createListingAndLanding } from '@/lib/freehold/brochure-to-listing'
 
 // Confirm-before-save fields, mirroring what parse-brochure extracts and what
 // /api/crm/projects accepts. All strings so the form is trivially editable;
@@ -73,51 +74,21 @@ export function PdfToListing({ onCreated }: { onCreated?: (slug: string) => void
     }
   }
 
-  function normalizedSlug(f: Fields): string {
-    let s = (f.slug || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
-    if (!s) s = (f.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-    if (s && !s.startsWith('freehold-')) s = `freehold-${s}`
-    return s
-  }
-
   async function create() {
     if (!fields) return
-    const slug = normalizedSlug(fields)
-    if (!fields.name.trim() || !slug) { toast.error(t('lm.pdf.needName')); return }
     setCreating(true)
     try {
-      // 1) Upsert the listing from the confirmed facts.
-      const pRes = await fetch('/api/crm/projects', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug, name: fields.name.trim(), area: fields.area, developer: fields.developer,
-          priceFrom: fields.priceFrom, priceTo: fields.priceTo, roi: fields.roi,
-          paymentPlan: fields.paymentPlan, handoverDate: fields.handoverDate, description: fields.description,
-        }),
-      })
-      if (!pRes.ok) {
-        const e = await pRes.json().catch(() => null)
-        throw new Error(e?.error || t('lm.pdf.listingFailed'))
-      }
-      // 2) Create its landing page.
-      const lRes = await fetch('/api/crm/landing-pages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectSlug: slug, template: 'classic' }),
-      })
-      const lData = await lRes.json().catch(() => null) as { slug?: string } | null
-      // 3) Best-effort: enrich the landing copy with AI (never blocks success).
-      if (lRes.ok) {
-        fetch('/api/crm/landing-pages/generate', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectSlug: slug, slug: lData?.slug || slug, audience: 'investor' }),
-        }).catch(() => {})
+      const res = await createListingAndLanding({ ...fields, name: fields.name.trim() })
+      if (!res.ok) {
+        toast.error(res.error === 'name-required' ? t('lm.pdf.needName') : t('lm.pdf.listingFailed'))
+        return
       }
       toast.success(t('lm.pdf.created', { name: fields.name.trim() }))
       setFields(null)
-      onCreated?.(slug)
+      onCreated?.(res.slug || '')
       router.refresh() // re-render the server list so the new project/landing appears
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('lm.pdf.listingFailed'))
+    } catch {
+      toast.error(t('lm.pdf.listingFailed'))
     } finally {
       setCreating(false)
     }

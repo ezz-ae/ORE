@@ -6,10 +6,12 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Download, ExternalLink, FileSearch, BookOpen, ArrowLeft, ScanText, Stamp, QrCode, Upload, Save,
-  Layers, RotateCw, Trash2, FilePlus, ArrowUp, ArrowDown, ImagePlus, Palette, FileImage, Sparkles,
+  Layers, RotateCw, Trash2, FilePlus, ArrowUp, ArrowDown, ImagePlus, Palette, FileImage, Sparkles, Building2,
 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
 import { buildExplainerPdf } from '@/lib/freehold/pdf-explainer'
+import { createListingAndLanding, type BrochureFields } from '@/lib/freehold/brochure-to-listing'
+import { useSession } from '@/lib/freehold/use-session'
 import QRCode from 'qrcode'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -33,6 +35,8 @@ export default function DrivePdfSurface() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const explainerFileRef = useRef<HTMLInputElement | null>(null)
   const [explainerBusy, setExplainerBusy] = useState(false)
+  const { user } = useSession()
+  const [creatingListing, setCreatingListing] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -150,6 +154,20 @@ export default function DrivePdfSurface() {
       try { const r = await fetch(item.url); if (r.ok) return runExplainer(await r.arrayBuffer()) } catch { /* upload fallback */ }
     }
     explainerFileRef.current?.click()
+  }
+
+  // Turn the extracted brochure fields into a live listing + landing page —
+  // same shared flow as the Landing-pages "Create from brochure" action.
+  async function createListingFromExtract() {
+    if (!parsed) return
+    setCreatingListing(true)
+    try {
+      const res = await createListingAndLanding(parsed as BrochureFields)
+      if (res.ok) { toast.success(t('ed.pdf.listing.created')); router.push('/freehold-intelligence/lead-machine/landings') }
+      else if (res.error === 'landing-failed') toast.error(t('ed.pdf.listing.landingFailed'))
+      else if (res.error === 'name-required') toast.error(t('ed.pdf.listing.needName'))
+      else toast.error(t('ed.pdf.listing.failed'))
+    } catch { toast.error(t('ed.pdf.listing.failed')) } finally { setCreatingListing(false) }
   }
 
   // Build a stamped PDF (pdf-lib). Source = an uploaded file, else the loaded
@@ -703,6 +721,18 @@ export default function DrivePdfSurface() {
               )
             })}
           </dl>
+          {user && user.role !== 'broker' && (
+            <button
+              type="button"
+              onClick={createListingFromExtract}
+              disabled={creatingListing}
+              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60"
+            >
+              {creatingListing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+              {creatingListing ? t('ed.pdf.listing.creating') : t('ed.pdf.listing.cta')}
+            </button>
+          )}
+          <p className="mt-2 text-center text-[11px] text-slate-500">{t('ed.pdf.listing.note')}</p>
         </div>
       ) : (workUrl || url) ? (
         <iframe
