@@ -35,6 +35,7 @@ export default function DrivePdfSurface() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const explainerFileRef = useRef<HTMLInputElement | null>(null)
   const [explainerBusy, setExplainerBusy] = useState(false)
+  const [explainerLang, setExplainerLang] = useState<'en' | 'ru'>('en')
   const { user } = useSession()
   const [creatingListing, setCreatingListing] = useState(false)
 
@@ -131,12 +132,13 @@ export default function DrivePdfSurface() {
     try {
       const fd = new FormData()
       fd.append('file', new Blob([bytes], { type: 'application/pdf' }), 'source.pdf')
+      fd.append('lang', explainerLang)
       const res = await fetch('/api/freehold/drive/pdf-explainer', { method: 'POST', body: fd })
       const d = await res.json().catch(() => ({}))
       if (!res.ok || !d?.data) { toast.error(d?.error || t('ed.pdf.explainer.failed')); return }
       let logo: Uint8Array | null = null
       try { const lr = await fetch('/icon.png'); if (lr.ok) logo = new Uint8Array(await lr.arrayBuffer()) } catch { /* logo optional */ }
-      const out = await buildExplainerPdf(d.data, logo)
+      const out = await buildExplainerPdf(d.data, logo, explainerLang)
       const dataUrl = `data:application/pdf;base64,${u8ToBase64(out)}`
       const title = `${(d.data as { title?: string })?.title || item?.title || 'Project'} — ${t('ed.pdf.explainer.docTitle')}`
       const sres = await fetch('/api/freehold/drive/save-pdf', {
@@ -457,6 +459,18 @@ export default function DrivePdfSurface() {
       {/* AI client explainer — organise the brochure into a branded, sendable PDF */}
       <section className="space-y-2 border-t border-white/[0.07] pt-4">
         <div className={sectionH}><Sparkles className="h-3.5 w-3.5" /> {t('ed.pdf.explainer.title')}</div>
+        <div className="flex gap-1.5">
+          {(['en', 'ru'] as const).map((lg) => (
+            <button
+              key={lg}
+              type="button"
+              onClick={() => setExplainerLang(lg)}
+              className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${explainerLang === lg ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}
+            >
+              {t(`ed.pdf.explainer.lang.${lg}`)}
+            </button>
+          ))}
+        </div>
         <button type="button" onClick={startExplainer} disabled={explainerBusy} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
           {explainerBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {explainerBusy ? t('ed.pdf.explainer.busy') : t('ed.pdf.explainer.cta')}
         </button>
