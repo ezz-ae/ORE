@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { randomUUID } from 'node:crypto'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
 import { query } from '@/lib/db'
 import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 
@@ -98,7 +99,7 @@ export async function GET() {
     await ensureLeadsTable()
     await ensureDismissColumn()
     const isBroker = user.role === 'broker'
-    const brokerId = user.brokerId ?? user.email
+    const ownerKeys = brokerOwnerKeys(user)
 
     const params: unknown[] = []
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
@@ -107,9 +108,9 @@ export async function GET() {
                       snooze_until::text, lead_code, duplicate_dismissed_at::text
                FROM freehold_site_leads`
 
-    if (isBroker && brokerId) {
-      sql += ` WHERE assigned_broker_id = $1`
-      params.push(brokerId)
+    if (isBroker && ownerKeys.length) {
+      sql += ` WHERE assigned_broker_id = ANY($1)`
+      params.push(ownerKeys)
     }
     sql += ` ORDER BY created_at DESC LIMIT 200`
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
 import { query } from '@/lib/db'
 import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 
@@ -74,10 +75,10 @@ export async function GET(
 
   // Brokers may only read their own leads.
   const isBroker = user.role === 'broker'
-  const brokerId = user.brokerId ?? user.email
+  const ownerKeys = brokerOwnerKeys(user)
   const queryParams: unknown[] = [id]
   let ownerFilter = ''
-  if (isBroker && brokerId) { queryParams.push(brokerId); ownerFilter = ` AND assigned_broker_id = $2` }
+  if (isBroker && ownerKeys.length) { queryParams.push(ownerKeys); ownerFilter = ` AND assigned_broker_id = ANY($2)` }
 
   try {
     const rows = await query<Record<string, unknown>>(
@@ -110,7 +111,7 @@ export async function PATCH(
 
   // Brokers may only modify their own leads, and may not reassign them away.
   const isBroker = user.role === 'broker'
-  const brokerId = user.brokerId ?? user.email
+  const ownerKeys = brokerOwnerKeys(user)
   if (isBroker) {
     if ('assigned_broker_id' in body) {
       return NextResponse.json({ error: 'Brokers cannot reassign leads' }, { status: 403 })
@@ -122,7 +123,7 @@ export async function PATCH(
         [id]
       )
       if (owner.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-      if (owner[0].assigned_broker_id !== brokerId) {
+      if (!ownerKeys.includes(owner[0].assigned_broker_id ?? '')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } catch {
