@@ -10,6 +10,7 @@ import {
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { PdfToListing } from '@/components/freehold/pdf-to-listing'
 import { LANDING_TEMPLATES, type LandingTemplateKey } from '@/lib/landing-templates'
 
 type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
@@ -152,6 +153,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                 <><Plus className="h-3.5 w-3.5" /> {t('lm.landings.createAll')}</>
               )}
             </button>
+            <PdfToListing />
           </div>
         }
         className="mb-7"
