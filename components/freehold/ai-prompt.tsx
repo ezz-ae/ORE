@@ -45,7 +45,8 @@ export function AiPrompt({
     <div className="grid gap-3">
       <div
         className="cursor-text rounded-2xl border border-white/[0.14] bg-surface-2 p-2 transition-all focus-within:border-gold/60 focus-within:bg-white/[0.07] focus-within:ring-1 focus-within:ring-gold/15"
-        onClick={() => taRef.current?.focus()}
+        style={{ touchAction: 'manipulation' }}
+        onClick={(e) => { if (e.target === e.currentTarget && document.activeElement !== taRef.current) taRef.current?.focus() }}
       >
         <div className="flex items-end gap-3 px-3 py-2">
           <Sparkles className="mt-1.5 h-5 w-5 shrink-0 text-gold" />

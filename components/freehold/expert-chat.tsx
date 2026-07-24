@@ -708,7 +708,7 @@ export function ExpertChat() {
         style={{ width }}
         data-coach="expert-chat"
         data-expert-panel
-        className="fixed inset-y-0 end-0 z-[200] flex h-full w-full flex-col border-s border-line bg-app md:static md:z-auto md:w-auto"
+        className="fixed inset-y-0 end-0 z-[200] flex h-full w-full flex-col border-s border-line bg-chrome md:static md:z-auto md:w-auto md:bg-app"
       >
         {/* Drag handle (desktop) */}
         <div
@@ -896,7 +896,8 @@ export function ExpertChat() {
         <div className="shrink-0 border-t border-line p-3">
           <div
             className="cursor-text rounded-xl border border-white/[0.14] bg-surface-2 p-2 transition-all focus-within:border-gold/60 focus-within:bg-white/[0.07] focus-within:ring-1 focus-within:ring-gold/15"
-            onClick={() => taRef.current?.focus()}
+            style={{ touchAction: 'manipulation' }}
+            onClick={(e) => { if (e.target === e.currentTarget && document.activeElement !== taRef.current) taRef.current?.focus() }}
           >
             <div className="flex items-end gap-2 px-2 py-1">
               <textarea
