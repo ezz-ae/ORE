@@ -14,13 +14,15 @@ import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pa
 import { getDealByLeadId } from '@/lib/deals'
 import { listLeadViewings } from '@/lib/calendar'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
 import { getServerT } from '@/lib/i18n/server'
 import { LeadExpertStrip } from '@/components/freehold/lead-expert-strip'
 import { MachineVerdictLeadChip } from '@/components/freehold/machine-verdict-notifier'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page.
-// Brokers may only read their own leads — pass their brokerId to scope the query.
-async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadIntelligence | null> {
+// Brokers may only read their own leads — pass their ownership keys (id + email)
+// to scope the query. A broker's lead can be stored under either, so we match both.
+async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRMLeadIntelligence | null> {
   try {
     await ensureLeadsTable()
     // click_intent is written by /api/leads on submit; ensure it exists before
@@ -28,7 +30,7 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS click_intent text`).catch(() => undefined)
     const queryParams: unknown[] = [id]
     let ownerFilter = ''
-    if (ownerId) { queryParams.push(ownerId); ownerFilter = ' AND assigned_broker_id = $2' }
+    if (ownerKeys && ownerKeys.length) { queryParams.push(ownerKeys); ownerFilter = ' AND assigned_broker_id = ANY($2)' }
     const rows = await query<{
       id: string; name: string | null; phone: string | null; email: string | null;
       source: string | null; project_slug: string | null; assigned_broker_id: string | null;
@@ -97,9 +99,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Scope to the broker's own leads; management/marketing see any lead.
   const cookieStore = await cookies()
   const sessionUser = await verifySession(cookieStore.get(SESSION_COOKIE)?.value)
-  const ownerId = sessionUser?.role === 'broker' ? (sessionUser.brokerId ?? sessionUser.email) : null
+  const ownerKeys = sessionUser?.role === 'broker' ? brokerOwnerKeys(sessionUser) : null
   // Real DB leads only — no seed/mock fallback.
-  const lead = await getLiveLead(id, ownerId)
+  const lead = await getLiveLead(id, ownerKeys)
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
