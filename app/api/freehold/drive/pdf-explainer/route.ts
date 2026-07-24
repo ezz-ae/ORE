@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "PDF file is required." }, { status: 400 })
     }
 
+    const langRaw = String(formData.get("lang") || "en").toLowerCase()
+    const language = langRaw === "ru" ? "Russian" : "English"
+
     const buffer = Buffer.from(await (file as File).arrayBuffer())
     const parser = new PDFParse({ data: buffer })
     const parsed = await parser.getText()
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unable to extract brochure text." }, { status: 400 })
     }
 
-    const prompt = `You are a senior real-estate advisor at Freehold. From the brochure text below, write a clean, organized, CLIENT-READY explanation of this project that a broker can send directly to a prospective buyer. Professional, warm and factual — no hype, and NEVER invent a fact: if something is not in the brochure, omit it. Write the explanation in clear ENGLISH.
+    const prompt = `You are a senior real-estate advisor at Freehold. From the brochure text below, write a clean, organized, CLIENT-READY explanation of this project that a broker can send directly to a prospective buyer. Professional, warm and factual — no hype, and NEVER invent a fact: if something is not in the brochure, omit it. Write the entire explanation (every value, heading and sentence) in ${language}.
 
 Return ONLY valid JSON, no markdown:
 {

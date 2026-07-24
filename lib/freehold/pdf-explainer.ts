@@ -1,4 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
+
+export type ExplainerLang = 'en' | 'ru'
 
 export interface ExplainerData {
   title?: string
@@ -8,19 +11,28 @@ export interface ExplainerData {
   highlights?: string[]
 }
 
-// pdf-lib's standard fonts are WinAnsi-only and THROW on characters they can't
-// encode. The AI is asked to write English, but we still normalise typography
-// and drop anything outside printable ASCII so a stray glyph never crashes the
-// export. (A full Unicode/Arabic explainer needs an embedded font — a follow-up.)
-function safe(s: string | undefined): string {
-  return (s || '')
-    .replace(/[‘’‚‛]/g, "'")
-    .replace(/[“”„]/g, '"')
-    .replace(/[–—]/g, '-')
-    .replace(/…/g, '...')
-    .replace(/ /g, ' ')
-    .replace(/[^\x20-\x7E\n]/g, '')
-    .trim()
+// The two fixed strings the layout draws itself (everything else is AI copy).
+const LABELS: Record<ExplainerLang, { fallbackTitle: string; highlights: string; footer: string }> = {
+  en: { fallbackTitle: 'Project overview', highlights: 'Highlights', footer: 'Freehold — prepared for you' },
+  ru: { fallbackTitle: 'О проекте', highlights: 'Ключевые преимущества', footer: 'Freehold — подготовлено для вас' },
+}
+
+// Normalise typography, then keep only what the active font can encode: with the
+// embedded Liberation font that's Latin + Latin-ext + Cyrillic; on the WinAnsi
+// fallback it's printable ASCII. Arabic/CJK are dropped (pdf-lib can't shape them).
+function makeSanitizer(unicode: boolean) {
+  return (s: string | undefined): string => {
+    let t = (s || '')
+      .replace(/[‘’‚‛]/g, "'")
+      .replace(/[“”„]/g, '"')
+      .replace(/[–—]/g, '-')
+      .replace(/…/g, '...')
+      .replace(/ /g, ' ')
+    t = unicode
+      ? t.replace(/[^\x20-\x7E -ɏЀ-ӿ\n]/g, '')
+      : t.replace(/[^\x20-\x7E\n]/g, '')
+    return t.trim()
+  }
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxW: number): string[] {
@@ -41,12 +53,32 @@ function wrapText(text: string, font: PDFFont, size: number, maxW: number): stri
 /**
  * Render an AI-organised project explanation into a clean, branded, client-ready
  * PDF (Freehold gold accents + logo, A4, auto-paginated). Pure client-side via
- * pdf-lib. `logo` is optional PNG/JPG bytes (e.g. the brand icon).
+ * pdf-lib. Embeds Liberation Sans (Latin + Cyrillic) so English and Russian both
+ * render; falls back to Helvetica/ASCII if the font can't be fetched. `logo` is
+ * optional PNG/JPG bytes.
  */
-export async function buildExplainerPdf(data: ExplainerData, logo?: Uint8Array | null): Promise<Uint8Array> {
+export async function buildExplainerPdf(data: ExplainerData, logo?: Uint8Array | null, lang: ExplainerLang = 'en'): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
-  const font = await doc.embedFont(StandardFonts.Helvetica)
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
+
+  let font: PDFFont
+  let bold: PDFFont
+  let unicode = false
+  try {
+    doc.registerFontkit(fontkit)
+    const [reg, bld] = await Promise.all([
+      fetch('/fonts/LiberationSans-Regular.ttf').then((r) => { if (!r.ok) throw new Error('font'); return r.arrayBuffer() }),
+      fetch('/fonts/LiberationSans-Bold.ttf').then((r) => { if (!r.ok) throw new Error('font'); return r.arrayBuffer() }),
+    ])
+    font = await doc.embedFont(reg, { subset: true })
+    bold = await doc.embedFont(bld, { subset: true })
+    unicode = true
+  } catch {
+    font = await doc.embedFont(StandardFonts.Helvetica)
+    bold = await doc.embedFont(StandardFonts.HelveticaBold)
+  }
+  const safe = makeSanitizer(unicode)
+  const L = LABELS[lang] ?? LABELS.en
+
   let logoImg: Awaited<ReturnType<typeof doc.embedPng>> | null = null
   if (logo && logo.length) {
     try { logoImg = await doc.embedPng(logo) } catch { try { logoImg = await doc.embedJpg(logo) } catch { logoImg = null } }
@@ -66,14 +98,14 @@ export async function buildExplainerPdf(data: ExplainerData, logo?: Uint8Array |
 
   const footer = (p: PDFPage) => {
     p.drawLine({ start: { x: M, y: 44 }, end: { x: W - M, y: 44 }, thickness: 0.5, color: line })
-    p.drawText('Freehold — prepared for you', { x: M, y: 32, size: 8, font, color: gray })
+    p.drawText(safe(L.footer), { x: M, y: 32, size: 8, font, color: gray })
     const site = 'freeholdproperty.ae'
     p.drawText(site, { x: W - M - font.widthOfTextAtSize(site, 8), y: 32, size: 8, font, color: gray })
   }
   const newPage = () => {
     if (page) footer(page)
     page = doc.addPage([W, H])
-    page.drawRectangle({ x: 0, y: H - 5, width: W, height: 5, color: gold }) // top brand rule
+    page.drawRectangle({ x: 0, y: H - 5, width: W, height: 5, color: gold })
     y = H - M
     if (logoImg) {
       const lw = 42, lh = lw * (logoImg.height / logoImg.width)
@@ -91,18 +123,16 @@ export async function buildExplainerPdf(data: ExplainerData, logo?: Uint8Array |
 
   newPage()
 
-  // Title + subtitle
   ensure(40)
-  page.drawText(safe(data.title || 'Project overview').slice(0, 60), { x: M, y: y - 24, size: 24, font: bold, color: ink })
+  page.drawText(safe(data.title || L.fallbackTitle).slice(0, 70), { x: M, y: y - 24, size: 24, font: bold, color: ink })
   y -= 34
   if (data.subtitle) {
-    page.drawText(safe(data.subtitle).slice(0, 96), { x: M, y: y - 12, size: 11, font, color: gray })
+    page.drawText(safe(data.subtitle).slice(0, 110), { x: M, y: y - 12, size: 11, font, color: gray })
     y -= 22
   }
   page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1, color: gold })
   y -= 24
 
-  // Key facts — two columns
   const facts = (data.keyFacts || []).filter((f) => f && f.value)
   if (facts.length) {
     const colW = contentW / 2
@@ -112,31 +142,29 @@ export async function buildExplainerPdf(data: ExplainerData, logo?: Uint8Array |
         const f = facts[i + c]
         if (!f) continue
         const x = M + c * colW
-        page.drawText(safe(f.label).toUpperCase().slice(0, 30), { x, y: y - 8, size: 7.5, font: bold, color: gray })
-        page.drawText(safe(f.value).slice(0, 42), { x, y: y - 22, size: 11, font: bold, color: dark })
+        page.drawText(safe(f.label).toUpperCase().slice(0, 32), { x, y: y - 8, size: 7.5, font: bold, color: gray })
+        page.drawText(safe(f.value).slice(0, 46), { x, y: y - 22, size: 11, font: bold, color: dark })
       }
       y -= 36
     }
     y -= 8
   }
 
-  // Sections
   for (const s of data.sections || []) {
     if (!s || (!s.body && !s.heading)) continue
     ensure(32)
     if (s.heading) {
-      page.drawText(safe(s.heading).slice(0, 64), { x: M, y: y - 13, size: 13, font: bold, color: gold })
+      page.drawText(safe(s.heading).slice(0, 70), { x: M, y: y - 13, size: 13, font: bold, color: gold })
       y -= 22
     }
     if (s.body) drawWrapped(s.body, font, 10.5, dark, 15)
     y -= 12
   }
 
-  // Highlights
   const highlights = (data.highlights || []).filter(Boolean)
   if (highlights.length) {
     ensure(30)
-    page.drawText('Highlights', { x: M, y: y - 13, size: 13, font: bold, color: gold })
+    page.drawText(safe(L.highlights), { x: M, y: y - 13, size: 13, font: bold, color: gold })
     y -= 22
     for (const h of highlights) {
       const lines = wrapText(safe(h), font, 10.5, contentW - 16)
