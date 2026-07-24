@@ -298,6 +298,14 @@ SCREEN TRUTH: before presenting any entity (an ad, campaign, lead, form) as "thi
     // Language: answer in the user's interface language (they set it in the
     // app) unless THIS message is clearly written in another language, in which
     // case mirror the language they just used.
+    // The user can attach a file (PDF/image/audio) to a turn — it is extracted
+    // to text client-side and rides in context.attachment. Tell the model it is
+    // there so it grounds the answer in the file, not just the page.
+    const attachment = (body.context as { attachment?: { name?: string; content?: string } } | undefined)?.attachment
+    const attachmentGuidance = attachment?.content
+      ? `\n\nThe user has ATTACHED A FILE to this message ("${attachment.name ?? 'file'}") — its extracted text is provided to you. Read it and ground your answer in it: when the user says "this file", "the brochure", "the attachment", "this PDF/image", they mean this. Use it to fill forms, extract project facts, or answer questions about its contents.`
+      : ''
+
     const localeName: Record<string, string> = { ar: 'Arabic (العربية)', ru: 'Russian (Русский)', en: 'English' }
     const uiLocale = String((body.context as Record<string, unknown> | undefined)?.locale ?? 'en')
     const languageGuidance = ` \n\nLANGUAGE: The user's interface language is ${localeName[uiLocale] ?? 'English'}. Write your entire reply — every block, label and button — in that language, UNLESS the user's latest message is clearly written in a different language, in which case reply in the language they just used. Keep proper nouns, project names, and identifiers as-is. Numbers and currency stay in digits.`
@@ -343,7 +351,7 @@ Tools marked ⚠destructive change live campaigns/money/content: set "confirm": 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
 
-    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${languageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
+    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${attachmentGuidance}${languageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
     // Behind EXPERT_USE_AI_SDK: the same guidance, but tools are called
     // natively by the AI SDK (no JSON tool_call protocol). The confirm rule and
@@ -355,7 +363,7 @@ DO THE WORK YOURSELF — never ask the user for an id, a list, or a current valu
 SCREEN TRUTH: before presenting any entity's details as "this ad/campaign/lead", verify they MATCH context.pageContent — the screen is ground truth. A mismatch means you fetched the wrong entity: re-list and pick the one that matches. If the user corrects you, re-resolving is YOUR job — never ask them for an identifier.
 Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
-    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${languageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
+    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${pageGuidance}${attachmentGuidance}${languageGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
 
     let raw: string | undefined
     const toolsUsed: string[] = []

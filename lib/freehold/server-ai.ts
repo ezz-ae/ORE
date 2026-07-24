@@ -147,10 +147,18 @@ function buildRequest(
 ) {
   const sid = sessionId ?? 'server-anon'
   const history = _history.get(sid) ?? durableHistory ?? []
+  // A file the user attached travels in context.attachment and belongs to THIS
+  // turn. On the first turn the whole context (incl. the attachment) is dumped
+  // below; on later turns we must still inject the attachment explicitly, or a
+  // file attached mid-conversation is silently dropped and "the AI can't see it".
+  const attachment = (context as { attachment?: { name?: string; content?: string } } | undefined)?.attachment
+  const attachmentSlice = attachment?.content
+    ? `\n\nAttached file this message — "${attachment.name ?? 'file'}":\n${attachment.content}`
+    : ''
   const inputText =
     context && history.length === 0
       ? `Server context:\n${JSON.stringify(context, null, 2)}\n\nQuestion: ${message}`
-      : message
+      : `${message}${attachmentSlice}`
   const contents = [
     ...history.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
     { role: 'user', parts: [{ text: inputText }] },
