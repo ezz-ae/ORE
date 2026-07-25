@@ -37,6 +37,7 @@ const en: Dict = {
 
   // filters
   'inv.filter.all': 'All',
+    'inv.moreFilters': 'More filters',
   'inv.tagGroup.handover': 'Handover',
   'inv.tagGroup.payment': 'Payment',
   'inv.tagGroup.price': 'Price',
@@ -376,6 +377,7 @@ const ar: Dict = {
   'inv.verdict.hold': 'تأجيل',
 
   'inv.filter.all': 'الكل',
+    'inv.moreFilters': 'مزيد من الفلاتر',
   'inv.tagGroup.handover': 'التسليم',
   'inv.tagGroup.payment': 'الدفع',
   'inv.tagGroup.price': 'السعر',
@@ -704,6 +706,7 @@ const ru: Dict = {
   'inv.verdict.hold': 'Отложить',
 
   'inv.filter.all': 'Все',
+    'inv.moreFilters': 'Ещё фильтры',
   'inv.tagGroup.handover': 'Сдача',
   'inv.tagGroup.payment': 'Оплата',
   'inv.tagGroup.price': 'Цена',
