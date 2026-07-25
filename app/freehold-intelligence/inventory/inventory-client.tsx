@@ -361,8 +361,20 @@ export default function InventoryClient({
         </div>
       )}
 
-      {/* Table */}
-      <div className="mt-5 overflow-x-auto rounded-[20px] border border-line bg-surface-2">
+      {/* Mobile cards — the 9-col table needs a min-w-[840px] side-scroll, so on
+          phones each property degrades to a tappable card (LITE inventory). */}
+      <div className="mt-5 space-y-2.5 md:hidden">
+        {filtered.length === 0 ? (
+          <EmptyState Icon={LayoutGrid} title={t('inv.empty.title')} description={t('inv.empty.description')} />
+        ) : (
+          filtered.map((prop) => (
+            <PropertyCard key={prop.id} prop={prop} opportunity={opportunityBySlug[prop.slug] ?? null} t={t} />
+          ))
+        )}
+      </div>
+
+      {/* Table (md+) */}
+      <div className="mt-5 hidden overflow-x-auto rounded-[20px] border border-line bg-surface-2 md:block">
         <table className="w-full min-w-[840px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line">
@@ -410,6 +422,58 @@ export default function InventoryClient({
       <p className="mt-3 text-sm text-slate-500">
         {t('inv.propertiesSorted', { shown: filtered.length, total: initialProperties.length })}
       </p>
+    </div>
+  )
+}
+
+// Phone card — the same fields as PropertyRow, stacked for one-hand reading.
+function PropertyCard({ prop, opportunity, t }: { prop: InventoryProperty; opportunity: number | null; t: TFn }) {
+  return (
+    <div className="rounded-2xl border border-line bg-surface-2 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link href={`/freehold-intelligence/inventory/${prop.id}`} className="block truncate font-medium text-slate-100 transition hover:text-gold">
+            {prop.name}
+          </Link>
+          <div className="mt-0.5 truncate text-xs text-slate-500"><span className="capitalize">{prop.type}</span> · {prop.area}</div>
+          {prop.developer && <div className="truncate text-xs text-slate-500">{prop.developer}</div>}
+        </div>
+        <span className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge(prop.status)}`}>
+          {statusLabel(prop.status, t)}
+        </span>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('inv.col.startingPrice')}</div>
+          <div className="mt-0.5 tabular-nums text-slate-200">{formatPrice(prop.startingPriceAED)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('inv.col.roi')}</div>
+          <div className={`mt-0.5 tabular-nums ${prop.roi !== null ? 'text-gold' : 'text-slate-500'}`}>{prop.roi !== null ? `${prop.roi.toFixed(1)}%` : '—'}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('inv.col.leads30d')}</div>
+          <div className="mt-0.5 tabular-nums text-slate-300">{prop.leads30d}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${landingBadge(prop.landingStatus)}`}>
+            {landingLabel(prop.landingStatus, t)}
+          </span>
+          {typeof opportunity === 'number' && (
+            <span className="inline-flex items-center rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs font-medium text-gold/90">{opportunity}</span>
+          )}
+        </div>
+        <Link
+          href={`/freehold-intelligence/inventory/${prop.id}/generate`}
+          className="inline-flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-xs text-gold/80 transition hover:border-gold/40 hover:text-gold"
+        >
+          <Sparkles className="h-3 w-3" /> LP
+        </Link>
+      </div>
     </div>
   )
 }

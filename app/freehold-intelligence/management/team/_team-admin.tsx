@@ -49,6 +49,10 @@ export function TeamAdmin() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<Member | null>(null)
+  // Ban / credit / remove now run through an in-app modal (no native prompts).
+  const [action, setAction] = useState<{ kind: 'ban' | 'credit' | 'remove'; member: Member } | null>(null)
+  const [actionValue, setActionValue] = useState('')
+  const [actionBusy, setActionBusy] = useState(false)
 
   function load() {
     fetch('/api/freehold/team', { cache: 'no-store' })
@@ -74,31 +78,48 @@ export function TeamAdmin() {
   }
 
   async function toggleBan(m: Member) {
+    setOpenMenu(null)
     if (m.banned) { await patch(m.id, { banned: false }, t('mgmt.team.admin.banLifted')); return }
-    const reason = window.prompt(t('mgmt.team.admin.banReasonPrompt')) ?? ''
-    await patch(m.id, { banned: true, banReason: reason }, t('mgmt.team.admin.banned'))
+    setActionValue(''); setAction({ kind: 'ban', member: m })
   }
 
-  async function openCredit(m: Member) {
+  function openCredit(m: Member) {
     setOpenMenu(null)
-    const raw = window.prompt(t('mgmt.team.admin.creditPrompt', { name: m.name }))
-    if (raw == null) return
-    const amount = Number(raw)
-    if (!Number.isFinite(amount) || amount <= 0) { toast.error(t('mgmt.team.admin.positiveAmount')); return }
-    const res = await fetch('/api/freehold/credits/admin/allocate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brokerId: m.id, amount, note: 'Opened from Management → Team' }),
-    }).catch(() => null)
-    if (res?.ok) toast.success(t('mgmt.team.admin.creditsAdded', { amount, name: m.name }))
-    else toast.error(t('mgmt.team.admin.creditsFailed'))
+    setActionValue(''); setAction({ kind: 'credit', member: m })
   }
 
-  async function remove(m: Member) {
-    if (!window.confirm(t('mgmt.team.admin.removeConfirm', { name: m.name }))) return
-    setMembers((prev) => prev.filter((x) => x.id !== m.id))
+  function remove(m: Member) {
     setOpenMenu(null)
-    const res = await fetch(`/api/freehold/team/${m.id}`, { method: 'DELETE' }).catch(() => null)
-    if (res?.ok) toast.success(t('mgmt.team.admin.removed')); else { toast.error(t('mgmt.team.admin.removeFailed')); load() }
+    setAction({ kind: 'remove', member: m })
+  }
+
+  // Perform the confirmed ban / credit / remove from the modal.
+  async function runAction() {
+    if (!action) return
+    const m = action.member
+    if (action.kind === 'credit') {
+      const amount = Number(actionValue)
+      if (!Number.isFinite(amount) || amount <= 0) { toast.error(t('mgmt.team.admin.positiveAmount')); return }
+      setActionBusy(true)
+      const res = await fetch('/api/freehold/credits/admin/allocate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brokerId: m.id, amount, note: 'Opened from Management → Team' }),
+      }).catch(() => null)
+      setActionBusy(false)
+      if (res?.ok) { toast.success(t('mgmt.team.admin.creditsAdded', { amount, name: m.name })); setAction(null) }
+      else toast.error(t('mgmt.team.admin.creditsFailed'))
+      return
+    }
+    setActionBusy(true)
+    if (action.kind === 'ban') {
+      await patch(m.id, { banned: true, banReason: actionValue.trim() }, t('mgmt.team.admin.banned'))
+    } else {
+      setMembers((prev) => prev.filter((x) => x.id !== m.id))
+      const res = await fetch(`/api/freehold/team/${m.id}`, { method: 'DELETE' }).catch(() => null)
+      if (res?.ok) toast.success(t('mgmt.team.admin.removed')); else { toast.error(t('mgmt.team.admin.removeFailed')); load() }
+    }
+    setActionBusy(false)
+    setAction(null)
   }
 
   return (
@@ -156,6 +177,41 @@ export function TeamAdmin() {
         </div>
       )}
 
+      {action && (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 sm:items-center sm:p-4" onClick={() => !actionBusy && setAction(null)}>
+          <div className="w-full max-w-sm rounded-t-2xl border border-line bg-surface p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-white">
+              {action.kind === 'ban' ? t('mgmt.team.admin.ban') : action.kind === 'credit' ? t('mgmt.team.admin.openCredit') : t('mgmt.team.admin.remove')}
+            </h3>
+            <p className="mt-1 text-xs text-slate-400">
+              {action.kind === 'remove'
+                ? t('mgmt.team.admin.removeConfirm', { name: action.member.name })
+                : action.kind === 'credit'
+                  ? t('mgmt.team.admin.creditPrompt', { name: action.member.name })
+                  : action.member.name}
+            </p>
+            {action.kind === 'ban' && (
+              <textarea value={actionValue} onChange={(e) => setActionValue(e.target.value)} rows={3}
+                placeholder={t('mgmt.team.admin.banReasonPrompt')} className={`mt-3 resize-none ${inputCls}`} />
+            )}
+            {action.kind === 'credit' && (
+              <input type="number" inputMode="decimal" min="0" value={actionValue} onChange={(e) => setActionValue(e.target.value)}
+                placeholder="0" className={`mt-3 ${inputCls}`} />
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setAction(null)} disabled={actionBusy}
+                className="rounded-full border border-line px-4 py-2 text-sm text-slate-400 transition hover:text-slate-200 disabled:opacity-60">
+                {t('mgmt.team.admin.cancel')}
+              </button>
+              <button onClick={runAction} disabled={actionBusy}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${action.kind === 'credit' ? 'bg-gold text-ink hover:opacity-90' : 'bg-red-500 text-white hover:bg-red-400'}`}>
+                {actionBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {action.kind === 'ban' ? t('mgmt.team.admin.ban') : action.kind === 'credit' ? t('mgmt.team.admin.openCredit') : t('mgmt.team.admin.remove')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showCreate && <CreateMemberModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load() }} />}
       {editing && <EditMemberModal member={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load() }} />}
     </section>
