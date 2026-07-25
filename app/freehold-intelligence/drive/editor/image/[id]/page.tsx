@@ -7,7 +7,7 @@ import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
   AlignLeft, AlignCenter, AlignRight, Bold, Move, Palette, RotateCcw,
-  Crop, SlidersHorizontal, Sparkles, X, ZoomIn, ZoomOut, Maximize2,
+  Crop, SlidersHorizontal, Sparkles, ZoomIn, ZoomOut, Maximize2,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -133,7 +133,6 @@ export default function DriveImageEditor() {
   const [revision, setRevision] = useState(0)
   // Tabbed tool panel + mobile bottom-sheet access (the rail is hidden < lg).
   const [tab, setTab] = useState<'crop' | 'adjust' | 'text' | 'brand'>('crop')
-  const [mobileTools, setMobileTools] = useState(false)
 
   const { w: W, h: H } = PRESETS[preset]
 
@@ -698,29 +697,8 @@ export default function DriveImageEditor() {
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onSourceFile(f); e.target.value = '' }} />
       <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onLogoFile(f); e.target.value = '' }} />
 
-      {/* Mobile tools — the desktop rail is hidden < lg, so the same panel is
-          reachable from a floating button as a bottom sheet. */}
-      {hasSource && (
-        <div className="lg:hidden">
-          {!mobileTools && (
-            <button type="button" onClick={() => setMobileTools(true)}
-              className="fixed bottom-5 left-1/2 z-[95] flex -translate-x-1/2 items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink shadow-2xl shadow-black/40">
-              <SlidersHorizontal className="h-4 w-4" /> {t('ed.image.tools')}
-            </button>
-          )}
-          {mobileTools && (
-            <div className="fixed inset-0 z-[96] bg-black/50" onClick={() => setMobileTools(false)}>
-              <div className="absolute inset-x-0 bottom-0 max-h-[80vh] rounded-t-2xl border-t border-white/10 bg-chrome" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-3 py-2.5">
-                  <span className="text-sm font-semibold text-white">{t('ed.image.tools')}</span>
-                  <button type="button" onClick={() => setMobileTools(false)} className="rounded-full p-1.5 text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>
-                </div>
-                <div className="max-h-[68vh] overflow-y-auto px-3 pb-6">{toolContent}</div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Mobile tools are provided by DriveEditorFrame's shared bottom-sheet
+          (it renders the same toolRail below lg for every editor type). */}
 
       {hasSource ? (
         <div

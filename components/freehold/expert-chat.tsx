@@ -705,10 +705,10 @@ export function ExpertChat() {
       />
 
       <aside
-        style={{ width }}
+        style={{ '--expert-w': `${width}px` } as React.CSSProperties}
         data-coach="expert-chat"
         data-expert-panel
-        className="fixed inset-y-0 end-0 z-[200] flex h-full w-full flex-col border-s border-line bg-chrome md:static md:z-auto md:w-auto md:bg-app"
+        className="fixed inset-y-0 end-0 z-[200] flex h-full w-full flex-col border-s border-line bg-chrome md:static md:z-auto md:w-[var(--expert-w)] md:bg-app"
       >
         {/* Drag handle (desktop) */}
         <div

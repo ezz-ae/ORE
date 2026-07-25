@@ -133,8 +133,8 @@ export function TeamAdmin() {
                   {m.banned && m.banReason && <span className="text-red-400/70">· {m.banReason}</span>}
                 </div>
               </div>
-              <button onClick={() => setOpenMenu(openMenu === m.id ? null : m.id)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-slate-400 hover:text-white">
+              <button onClick={() => setOpenMenu(openMenu === m.id ? null : m.id)} aria-label={t('mgmt.team.admin.title')}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line text-slate-400 transition hover:text-white">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
               {openMenu === m.id && (

@@ -116,7 +116,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
         title={t('lm.landings.title')}
         subtitle={t('lm.landings.subtitle', { n: String(properties.length) })}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-slate-500">
               <span className="text-slate-600">{t('lm.landings.tpl.label')}</span>
               <select
@@ -160,7 +160,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
       />
 
       {/* Summary tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label={t('lm.landings.stat.live')}    value={live}    hint={t('lm.landings.stat.activePages')} Icon={CheckCircle2} />
         <StatCard label={t('lm.landings.stat.pending')} value={pending} hint={t('lm.landings.stat.inReview')}   Icon={Clock}        />
         <StatCard label={t('lm.landings.stat.draft')}   value={draft}   hint={t('lm.landings.stat.unpublished')} Icon={Pencil}       />

@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, SlidersHorizontal, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { EDITOR_STATUS, type EditorType } from '@/lib/freehold/drive'
 
@@ -26,6 +27,7 @@ export function DriveEditorFrame({
   children: React.ReactNode
 }) {
   const t = useT()
+  const [toolsOpen, setToolsOpen] = useState(false)
   const status = EDITOR_STATUS[type]
   const statusColor = status === 'real' ? '#34D399' : status === 'scoped' ? '#FBBF24' : '#94A3B8'
 
@@ -70,6 +72,41 @@ export function DriveEditorFrame({
           <aside className="hidden w-72 shrink-0 overflow-y-auto border-s border-white/[0.07] bg-chrome p-3 xl:block">{aiRail}</aside>
         )}
       </div>
+
+      {/* Mobile tool rail — the desktop aside is hidden < lg, so the SAME tools
+          are reachable from a floating button as a bottom sheet. Lives in the
+          shared frame so every editor (pdf / video / image / doc) gets it. */}
+      {toolRail && (
+        <div className="lg:hidden">
+          {!toolsOpen && (
+            <button
+              type="button"
+              onClick={() => setToolsOpen(true)}
+              className="fixed bottom-5 left-1/2 z-[95] flex -translate-x-1/2 items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink shadow-2xl shadow-black/40"
+            >
+              <SlidersHorizontal className="h-4 w-4" /> {t('ed.tools')}
+            </button>
+          )}
+          {toolsOpen && (
+            <div className="fixed inset-0 z-[96] bg-black/50" onClick={() => setToolsOpen(false)}>
+              <div className="absolute inset-x-0 bottom-0 max-h-[82vh] rounded-t-2xl border-t border-white/10 bg-chrome" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-3 py-2.5">
+                  <span className="text-sm font-semibold text-white">{t('ed.tools')}</span>
+                  <button type="button" onClick={() => setToolsOpen(false)} className="rounded-full p-1.5 text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>
+                </div>
+                {/* Close the sheet when a tool action (button/link) is tapped so the
+                    result panel behind it is revealed; scrolling/inputs are untouched. */}
+                <div
+                  className="max-h-[70vh] overflow-y-auto px-3 pb-6"
+                  onClick={(e) => { if ((e.target as HTMLElement).closest('button,a')) setToolsOpen(false) }}
+                >
+                  {toolRail}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
