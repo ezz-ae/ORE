@@ -154,8 +154,8 @@ export default function ManagementDashboard() {
   return (
     <div className="pb-16">
       {/* Page header */}
-      <div className="border-b border-white/[0.07] px-6 py-5">
-        <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
+      <div className="border-b border-white/[0.07] px-5 py-5 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold text-white">{greeting}</h1>
             <p className="mt-0.5 text-sm text-slate-500">{dateStr}</p>
@@ -174,7 +174,7 @@ export default function ManagementDashboard() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
+      <div className="mx-auto max-w-7xl px-5 pt-6 space-y-6 sm:px-8">
 
         <ExpertDepth prompts={['expert.depth.management.q1', 'expert.depth.management.q2', 'expert.depth.management.q3', 'expert.depth.management.q4']} />
 
