@@ -268,7 +268,40 @@ export default function MetaAdsPage() {
             </Link>
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* LITE: phone cards — name, status, and the daily trio (leads · spend ·
+            CPL). The 9-column grid stays desktop-only. */}
+        <div className="space-y-2 md:hidden">
+          {visibleCampaigns.map((c) => (
+            <Link key={c.id} href={`/freehold-intelligence/ads-live/meta/${c.id}`}
+              className="block rounded-2xl border border-line bg-surface-2 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                  <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
+                </div>
+                <span className="shrink-0 rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
+                  {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('lm.meta.col.leads')}</div>
+                  <div className={`mt-0.5 text-sm font-semibold ${c.leads > 0 ? 'text-gold' : 'text-slate-500'}`}>{c.leads > 0 ? c.leads : '—'}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('lm.meta.col.spend')}</div>
+                  <div className="mt-0.5 text-sm text-slate-200">{c.spend > 0 ? fmtAED(c.spend) : '—'}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('lm.meta.col.cpl')}</div>
+                  <div className="mt-0.5 text-sm text-slate-200">{c.cpl > 0 ? `AED ${c.cpl}` : '—'}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <div className="min-w-[700px] overflow-hidden rounded-2xl border border-line bg-surface-2">
             {/* Table header */}
             <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px_32px] gap-4 border-b border-line px-5 py-3">
@@ -348,6 +381,7 @@ export default function MetaAdsPage() {
             </div>
           </div>
         </div>
+        </>
         )}
       </section>
 
