@@ -149,12 +149,21 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       .then((d) => {
         const rows = d?.activity as Array<{ activity_type: string; description: string | null; created_at: string; lead_name: string | null }> | undefined
         if (!rows?.length) return
-        setActivity(rows.slice(0, 6).map((a) => ({
+        // Humanize for the feed: drop machine ids, prettify slugs, cap length,
+        // and collapse consecutive duplicates — a briefing, not a log file.
+        const clean = (s: string) => s
+          .replace(/\b[A-Za-z0-9_-]{16,}\b/g, '')
+          .replace(/\bfreehold-([a-z0-9-]+)/gi, (_, x: string) => x.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()))
+          .replace(/\s*[·—-]\s*(?=\s*[·—-]|$)/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim()
+        const mapped = rows.slice(0, 12).map((a) => ({
           time: relTime(a.created_at),
           label: humanize(a.activity_type),
-          detail: [a.lead_name, a.description].filter(Boolean).join(' — ') || '—',
+          detail: clean([a.lead_name, a.description].filter(Boolean).join(' — ')).slice(0, 110) || '—',
           type: activityKind(a.activity_type),
-        })))
+        }))
+        setActivity(mapped.filter((r, i) => i === 0 || r.detail !== mapped[i - 1].detail || r.label !== mapped[i - 1].label).slice(0, 6))
       })
       .catch(() => {})
 

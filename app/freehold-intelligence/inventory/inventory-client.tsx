@@ -139,6 +139,9 @@ export default function InventoryClient({
   const [query, setQuery] = useState('')
   const [tagSel, setTagSel] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<SortBy>('adReadiness')
+  // LITE: on phones the facet wall is folded behind one toggle — daily use is
+  // search + status pills + cards, not a control room of chips.
+  const [mobileFilters, setMobileFilters] = useState(false)
 
   // Tag-group facets built ONLY from real property tags (handover · payment ·
   // price · highlights · area). Status tags are excluded — the status pills
@@ -344,9 +347,16 @@ export default function InventoryClient({
         </div>
       </div>
 
-      {/* Tag groups — real-data facets (handover · payment · price · area). */}
+      {/* Tag groups — real-data facets (handover · payment · price · area).
+          Desktop-only by default; phones fold them behind one toggle. */}
       {tagGroups.length > 0 && (
-        <div className="mt-3 space-y-1.5">
+        <button type="button" onClick={() => setMobileFilters((v) => !v)}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-slate-300 md:hidden">
+          {t('inv.moreFilters')}{tagSel.length > 0 ? ` · ${tagSel.length}` : ''}
+        </button>
+      )}
+      {tagGroups.length > 0 && (
+        <div className={`mt-3 space-y-1.5 ${mobileFilters ? '' : 'hidden md:block'}`}>
           {tagGroups.map(({ group, tags }) => (
             <div key={group} className="flex flex-wrap items-center gap-1.5">
               <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{t(`inv.tagGroup.${group}`)}</span>
