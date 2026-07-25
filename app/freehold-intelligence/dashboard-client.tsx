@@ -15,6 +15,8 @@ import { Panel, PanelHeader } from '@/components/freehold/ui'
 import { useI18n } from '@/lib/i18n/provider'
 import { openWhatsNew } from '@/components/freehold/whats-new'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { sendToExpert } from '@/lib/freehold/expert-bus'
 
 // ─── The hub is a briefing, not a menu ───────────────────────────────────────
 // The nav spine already switches apps, and the Expert already answers
@@ -30,6 +32,8 @@ type Signal = {
   sev: 'red' | 'amber' | 'gold'
   text: string
   href: string
+  /** concrete instruction the "Ask AI" affordance sends to the Expert */
+  ai: string
 }
 
 type AdRow = { id: string; name: string; active: boolean; spend: number; leads: number }
@@ -189,14 +193,22 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   // ── "Needs your attention" — real signals only; empty ⇒ the box is gone ───
   const signals: Signal[] = useMemo(() => {
     const s: Signal[] = []
-    if (crm && crm.overdue > 0) s.push({ id: 'overdue', sev: 'red', text: t('hub.sig.overdue', { n: crm.overdue }), href: `${FI}/crm/follow-up` })
-    if (urgentTasks && urgentTasks > 0) s.push({ id: 'tasks', sev: 'red', text: t('hub.sig.tasks', { n: urgentTasks }), href: `${FI}/tasks` })
-    if (crm && crm.fresh > 0) s.push({ id: 'inbox', sev: 'gold', text: t('hub.sig.inbox', { n: crm.fresh }), href: `${FI}/crm/inbox` })
-    if (pendingDeals && pendingDeals > 0) s.push({ id: 'deals', sev: 'amber', text: t('hub.sig.deals', { n: pendingDeals }), href: `${FI}/management/deals` })
-    if (payoutsAed && payoutsAed > 0) s.push({ id: 'payouts', sev: 'amber', text: t('hub.sig.payouts', { amount: Math.round(payoutsAed).toLocaleString() }), href: `${FI}/finance/payments` })
-    if (missingLandings.length > 0) s.push({ id: 'landings', sev: 'amber', text: t('hub.sig.landings', { n: missingLandings.length }), href: `${FI}/lead-machine/landings` })
+    if (crm && crm.overdue > 0) s.push({ id: 'overdue', sev: 'red', text: t('hub.sig.overdue', { n: crm.overdue }), href: `${FI}/crm/follow-up`, ai: t('hub.ai.overdue') })
+    if (urgentTasks && urgentTasks > 0) s.push({ id: 'tasks', sev: 'red', text: t('hub.sig.tasks', { n: urgentTasks }), href: `${FI}/tasks`, ai: t('hub.ai.tasks') })
+    if (crm && crm.fresh > 0) s.push({ id: 'inbox', sev: 'gold', text: t('hub.sig.inbox', { n: crm.fresh }), href: `${FI}/crm/inbox`, ai: t('hub.ai.inbox') })
+    if (pendingDeals && pendingDeals > 0) s.push({ id: 'deals', sev: 'amber', text: t('hub.sig.deals', { n: pendingDeals }), href: `${FI}/management/deals`, ai: t('hub.ai.deals') })
+    if (payoutsAed && payoutsAed > 0) s.push({ id: 'payouts', sev: 'amber', text: t('hub.sig.payouts', { amount: Math.round(payoutsAed).toLocaleString() }), href: `${FI}/finance/payments`, ai: t('hub.ai.payouts') })
+    if (missingLandings.length > 0) s.push({ id: 'landings', sev: 'amber', text: t('hub.sig.landings', { n: missingLandings.length }), href: `${FI}/lead-machine/landings`, ai: t('hub.ai.landings') })
     return s
   }, [crm, urgentTasks, pendingDeals, payoutsAed, missingLandings.length, t])
+
+  // Screen-aware AI suggestions — grounded in the live signals, so tapping one
+  // runs a concrete action loop in the Expert (not a generic prompt).
+  const aiSuggestions = useMemo(() => {
+    const out = signals.slice(0, 3).map((x) => x.ai)
+    out.push(t('hub.ai.focus'))
+    return Array.from(new Set(out)).slice(0, 4)
+  }, [signals, t])
 
   // Inventory fix-list (dismissable) — only rendered when non-empty.
   const priorities = [
@@ -246,6 +258,12 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
         </Link>
       </div>
 
+      {/* ── AI composer — home is the main AI of the day. Type here → the one
+          docked Expert opens and runs the action loop, grounded in live data. ── */}
+      <div className="mb-6" data-coach="hub-ai">
+        <AiPrompt placeholder={t('hub.ai.placeholder')} suggestions={aiSuggestions} />
+      </div>
+
       {/* ── Needs your attention — exists ONLY when something does ──────────── */}
       {signals.length > 0 && (
         <section data-coach="hub-briefing" className="mb-6 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent">
@@ -256,11 +274,23 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
           </div>
           <div className="divide-y divide-white/[0.05]">
             {signals.map((s) => (
-              <Link key={s.id} href={s.href} className="group flex items-center gap-3 px-5 py-3 transition hover:bg-white/[0.03]">
+              <div key={s.id} className="group flex items-center gap-3 px-5 py-3 transition hover:bg-white/[0.03]">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${sevDot[s.sev]}`} />
-                <span className="flex-1 text-sm text-slate-200">{s.text}</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-600 transition group-hover:text-gold rtl:rotate-180" />
-              </Link>
+                <Link href={s.href} className="flex-1 text-sm text-slate-200 transition hover:text-white">{s.text}</Link>
+                {/* Ask AI — hand this signal to the Expert as a concrete task */}
+                <button
+                  type="button"
+                  onClick={() => sendToExpert(s.ai)}
+                  title={t('hub.askAi')}
+                  aria-label={t('hub.askAi')}
+                  className="shrink-0 rounded-full border border-gold/25 bg-gold/[0.06] p-1.5 text-gold/80 transition hover:bg-gold/15 hover:text-gold"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                </button>
+                <Link href={s.href} aria-label={t('hub.w.open')} className="shrink-0 text-slate-600 transition group-hover:text-gold">
+                  <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                </Link>
+              </div>
             ))}
           </div>
         </section>
