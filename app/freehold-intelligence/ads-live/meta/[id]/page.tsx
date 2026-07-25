@@ -87,6 +87,8 @@ export default function CampaignCommandPage() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [analysisText, setAnalysisText] = useState('')
   const [refineBusy, setRefineBusy] = useState(false)
+  // LITE: on phones the AI panel body is folded — daily use is one Analyse tap.
+  const [aiOpen, setAiOpen] = useState(false)
   const [rules, setRules] = useState<CampaignRule[]>([])
   const [matches, setMatches] = useState<RuleMatch[] | null>(null)
   const [checking, setChecking] = useState(false)
@@ -670,12 +672,16 @@ export default function CampaignCommandPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={copyFullInfo} className="inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white">
+            <button type="button" onClick={() => setAiOpen((v) => !v)}
+              className="rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-slate-200 md:hidden">
+              {t('lm.cmd.aiDetails')}
+            </button>
+            <button type="button" onClick={copyFullInfo} className="hidden items-center gap-1.5 text-xs text-slate-400 transition hover:text-white md:inline-flex">
               <Copy className="h-3.5 w-3.5" /> {t('lm.cmd.copyInfo')}
             </button>
-            <button type="button" onClick={openInExpert} className="text-xs text-slate-400 transition hover:text-white">{t('lm.cmd.openInExpert')}</button>
+            <button type="button" onClick={openInExpert} className="hidden text-xs text-slate-400 transition hover:text-white md:inline">{t('lm.cmd.openInExpert')}</button>
             <button type="button" onClick={syncAdvisor} disabled={syncBusy || advisorBusy}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+              className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
               <RefreshCw className={`h-3.5 w-3.5 text-gold ${syncBusy ? 'animate-spin' : ''}`} /> {syncBusy ? t('lm.cmd.advisorSyncing') : t('lm.cmd.advisorSync')}
             </button>
             <button type="button" onClick={analyseAll} disabled={refineBusy || advisorBusy}
@@ -685,6 +691,8 @@ export default function CampaignCommandPage() {
           </div>
         </div>
 
+        {/* Folded on phones until Details or a fresh analysis opens it. */}
+        <div className={aiOpen || analysis || analysisText ? '' : 'hidden md:block'}>
         {/* The REAL computed metrics the advisor's suggestions are grounded in. */}
         {advisor?.metrics && advisorChips(advisor.metrics).length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -768,6 +776,7 @@ export default function CampaignCommandPage() {
             )}
           </div>
         )}
+        </div>
       </section>
 
       {/* Automation rules — watch a metric, act. The headline: rules on the
