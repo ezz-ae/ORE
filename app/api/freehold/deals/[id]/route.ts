@@ -16,6 +16,7 @@ import {
   type Deal,
 } from "@/lib/deals"
 import { earnCreditsForDeal } from "@/lib/freehold/credits-db"
+import { notify } from "@/lib/freehold/notifications"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -102,6 +103,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const deal = await finalApproveDeal(id, { name: user.name }, String(body.notes || ""))
         if (!deal) return NextResponse.json({ error: "Deal is not awaiting final approval" }, { status: 409 })
         await awardDealCredits(deal)
+        // Real notification: deal fully approved (broadcast to management).
+        notify('deal_approved', { id }, { href: '/freehold-intelligence/management/deals' }).catch(() => {})
         return NextResponse.json({ deal })
       }
 

@@ -17,6 +17,7 @@ import { openWhatsNew } from '@/components/freehold/whats-new'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
+import { NotificationsBell } from '@/components/freehold/notifications-bell'
 
 // ─── The hub is a briefing, not a menu ───────────────────────────────────────
 // The nav spine already switches apps, and the Expert already answers
@@ -253,9 +254,12 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
           <h1 className="text-xl font-semibold tracking-tight text-white">{greeting || t('hub.title')}</h1>
           <div className="mt-0.5 text-sm text-slate-400">{dateStr}</div>
         </div>
-        <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-300">
-          <Globe className="h-3.5 w-3.5" /> {BRAND.domain}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-300">
+            <Globe className="h-3.5 w-3.5" /> {BRAND.domain}
+          </Link>
+          <NotificationsBell />
+        </div>
       </div>
 
       {/* ── AI composer — home is the main AI of the day. Type here → the one

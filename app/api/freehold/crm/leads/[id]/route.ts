@@ -4,6 +4,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
 import { query } from '@/lib/db'
 import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
+import { notify } from '@/lib/freehold/notifications'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -32,6 +33,13 @@ async function logPatchActivity(leadId: string, body: Record<string, unknown>, a
       type: 'assignment',
       description: body.assigned_broker_id ? `Assigned to ${body.assigned_broker_id}` : 'Unassigned',
     })
+    // Real notification straight to the assignee (best-effort).
+    if (body.assigned_broker_id) {
+      notify('lead_assigned', { lead: leadId }, {
+        recipient: String(body.assigned_broker_id),
+        href: `/freehold-intelligence/crm/leads/${leadId}`,
+      }).catch(() => {})
+    }
   }
   if (typeof body.priority === 'string' && body.priority) {
     entries.push({ type: 'note', description: `Priority set to ${body.priority}` })

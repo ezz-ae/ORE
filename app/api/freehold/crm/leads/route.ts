@@ -5,6 +5,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
 import { query } from '@/lib/db'
 import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
+import { notify } from '@/lib/freehold/notifications'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -161,6 +162,8 @@ export async function POST(req: Request) {
         (body.interest || '').trim() || null, budget, (body.message || '').trim() || null,
       ],
     )
+    // Real notification: new lead waiting (broadcast to management).
+    notify('lead_new', { name }, { href: '/freehold-intelligence/crm/inbox' }).catch(() => {})
     // Log creation on the lead's real activity timeline (best-effort).
     try {
       await ensureLeadActivityTable()
