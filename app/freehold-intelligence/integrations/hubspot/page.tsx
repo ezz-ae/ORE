@@ -40,31 +40,18 @@ type HsData = {
   dealTotal: number
 }
 
-async function hs<T = any>(path: string, token: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+async function fetchAll(token?: string): Promise<HsData> {
+  // Server proxy — the browser cannot call api.hubapi.com (no CORS, and the
+  // private-app token must stay a server secret).
+  const res = await fetch('/api/freehold/integrations/hubspot/overview', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(token ? { token } : {}),
   })
-  const json = await res.json()
   if (!res.ok) {
-    throw Object.assign(new Error(json.message || `HTTP ${res.status}`), {
-      status: res.status,
-      category: json.category,
-    })
+    const d = await res.json().catch(() => ({}))
+    throw Object.assign(new Error(d?.error || 'HubSpot request failed'), { status: res.status })
   }
-  return json
-}
-
-async function fetchAll(token: string): Promise<HsData> {
-  const [contacts, deals] = await Promise.all([
-    hs('/crm/v3/objects/contacts?limit=10&properties=firstname,lastname,email,phone,lifecyclestage,hs_lead_status,createdate&sorts=-createdate', token),
-    hs('/crm/v3/objects/deals?limit=10&properties=dealname,amount,dealstage,closedate&sorts=-createdate', token),
-  ])
-  return {
-    contacts:     contacts.results  ?? [],
-    deals:        deals.results     ?? [],
-    contactTotal: contacts.total    ?? 0,
-    dealTotal:    deals.total       ?? 0,
-  }
+  return res.json()
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -132,19 +119,19 @@ export default function HubSpotPage() {
   }
 
   useEffect(() => {
-    const saved = localStorage.getItem(TOKEN_KEY)
-    if (saved) { setToken(saved); connect(saved) }
+    // Reconnect from the SERVER-stored credential (never localStorage — the
+    // token is a server secret). 409 = nothing stored yet, stay idle.
+    connect(undefined, true)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function connect(tok = token) {
-    const tk = tok.trim()
-    if (!tk) return
+  async function connect(tok?: string, silent = false) {
+    const tk = (tok ?? token).trim() || undefined
+    if (!tk && !silent) return
     setPhase('connecting')
     setLoading(true)
     setErrMsg('')
     try {
       const d = await fetchAll(tk)
-      localStorage.setItem(TOKEN_KEY, tk)
       setData(d)
       setPhase('connected')
       // Persist server-side so the two-way sync (Integrations → HubSpot → Sync)
@@ -156,6 +143,7 @@ export default function HubSpotPage() {
         body: JSON.stringify({ token: tk }),
       }).then((r) => setServerSynced(r.ok)).catch(() => setServerSynced(false))
     } catch (err: any) {
+      if (silent && err?.status === 409) { setPhase('idle'); setLoading(false); return }
       setErrMsg(
         err.status === 401 ? t('pinthub.errInvalid') :
         err.status === 403 ? t('pinthub.errScopes') :
@@ -179,8 +167,7 @@ export default function HubSpotPage() {
   }
 
   async function refresh() {
-    const saved = localStorage.getItem(TOKEN_KEY)
-    if (saved) await connect(saved)
+    await connect(undefined, true)
   }
 
   return (
