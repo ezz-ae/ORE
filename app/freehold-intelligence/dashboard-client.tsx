@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { useSession } from '@/lib/freehold/use-session'
-import { Panel, PanelHeader } from '@/components/freehold/ui'
+import { Panel, PanelHeader, buttonClass } from '@/components/freehold/ui'
 import { useI18n } from '@/lib/i18n/provider'
 import { openWhatsNew } from '@/components/freehold/whats-new'
 import { metaLeadCount } from '@/lib/meta/lead-count'
@@ -312,7 +312,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       {/* ── Deep entry points — a button group, not the nav again ───────────── */}
       <div className="mb-8 flex flex-wrap gap-2">
         {deepLinks.map((l) => {
-          const cls = "inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-gold/40 hover:text-white"
+          const cls = buttonClass('secondary', 'sm', 'gap-2')
           return l.href ? (
             <Link key={l.key} href={l.href} className={cls}>
               <l.Icon className="h-3.5 w-3.5 text-gold" /> {l.label}

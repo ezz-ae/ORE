@@ -1,19 +1,25 @@
 import type { LucideIcon } from 'lucide-react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold-soft'
-export type ButtonSize = 'sm' | 'md'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold-soft' | 'icon'
+export type ButtonSize = 'sm' | 'md' | 'icon-sm' | 'icon-md'
 
+// The ONE button canon (pill shape — the most-used treatment in the app).
+// primary text uses text-ink (the on-gold token) and hovers to gold-bright;
+// never hard-code #F8E7AE / text-black in surfaces.
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary:     'bg-gold text-ink hover:opacity-90 border border-transparent',
+  primary:     'bg-gold text-ink hover:bg-gold-bright border border-transparent',
   secondary:   'border border-line-strong bg-surface-2 text-slate-200 hover:bg-surface-3 hover:text-white',
   ghost:       'border border-transparent text-slate-300 hover:bg-surface-2 hover:text-white',
   danger:      'border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20',
-  'gold-soft': 'border border-gold/25 bg-gold/[0.08] text-gold hover:bg-gold/15',
+  'gold-soft': 'border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20',
+  icon:        'border border-transparent text-slate-400 hover:bg-surface-2 hover:text-white',
 }
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 gap-1.5 px-3 text-sm',
-  md: 'h-10 gap-2 px-4 text-sm',
+  sm: 'h-8 gap-1.5 px-3.5 text-xs',
+  md: 'h-10 gap-2 px-5 text-sm',
+  'icon-sm': 'h-8 w-8',
+  'icon-md': 'h-10 w-10',
 }
 
 /** Shared class string for buttons — also usable on <Link>/<a> for consistency. */
@@ -22,7 +28,7 @@ export function buttonClass(
   size: ButtonSize = 'md',
   className = '',
 ) {
-  return `inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`
+  return `inline-flex items-center justify-center rounded-full font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${SIZES[size]} ${className}`
 }
 
 export function Button({
