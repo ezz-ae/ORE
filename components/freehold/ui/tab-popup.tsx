@@ -42,7 +42,7 @@ export function TabPopup({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
       <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
       <div className={`relative flex max-h-[92vh] w-full ${maxWidth} flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-2xl sm:rounded-2xl`}>
         <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
@@ -60,3 +60,6 @@ export function TabPopup({
     </div>
   )
 }
+
+/** Canonical modal — same shell (ESC, scroll-lock, aria, bottom-sheet on mobile). */
+export const Modal = TabPopup

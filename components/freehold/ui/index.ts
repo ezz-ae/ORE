@@ -15,3 +15,4 @@ export { Button, buttonClass, type ButtonVariant, type ButtonSize } from './butt
 export { SegmentPill } from './segment-pill'
 export { tabLinkClass } from './tab-row'
 export { fieldClass, type FieldSize } from './field'
+export { TabPopup, Modal } from './tab-popup'
