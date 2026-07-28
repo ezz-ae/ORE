@@ -68,7 +68,7 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
   const activePillClass = (key: StatusFilter) => {
     if (statusFilter !== key) return 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
     switch (key) {
-      case 'ACTIVE':  return 'border-emerald-400/40 bg-gold/10 text-gold'
+      case 'ACTIVE':  return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
       case 'PAUSED':  return 'border-gold/40 bg-gold/10 text-gold'
       case 'DELETED': return 'border-red-400/40 bg-red-400/10 text-red-300'
       default:        return 'border-gold/40 bg-gold/10 text-gold'

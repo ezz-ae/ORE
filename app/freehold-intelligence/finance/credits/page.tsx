@@ -260,7 +260,7 @@ export default function AgentCreditsPage() {
                   {adj !== 0 && (
                     <button
                       onClick={() => applyAdjustment(agent.id)}
-                      className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-gold/90"
+                      className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright"
                     >
                       {t('finance.credits.apply')}
                     </button>

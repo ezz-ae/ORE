@@ -160,7 +160,7 @@ export default function LanguagesSettingsPage() {
           </div>
 
           <button onClick={save} disabled={saving}
-            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('settings.lang.save')}
           </button>
         </div>

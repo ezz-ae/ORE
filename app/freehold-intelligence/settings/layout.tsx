@@ -176,7 +176,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                     href={tab.href}
                     className={[
                       'inline-flex items-center px-3 py-3.5 text-sm font-medium border-b-2 transition whitespace-nowrap',
-                      active ? 'border-slate-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-100',
+                      active ? 'border-gold text-white' : 'border-transparent text-slate-400 hover:text-slate-100',
                     ].join(' ')}
                   >
                     {t(tab.label)}

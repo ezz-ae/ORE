@@ -107,7 +107,7 @@ export function CalendarBoard() {
           </h1>
           <p className="mt-0.5 text-sm text-slate-400">{t("pcal.subtitle")}</p>
         </div>
-        <button onClick={() => openCreate()} className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90">
+        <button onClick={() => openCreate()} className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright">
           <Plus className="h-4 w-4" />{t("pcal.newEvent")}
         </button>
       </div>

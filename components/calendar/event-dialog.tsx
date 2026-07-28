@@ -295,7 +295,7 @@ export function EventDialog({ open, editing, defaultDate, meEmail, onClose, onSa
         <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-line bg-chrome px-5 py-3">
           <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-medium text-slate-400 hover:text-white">{t("pcal.cancel")}</button>
           <button onClick={save} disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-60">
+            className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {editing ? t("pcal.save") : isApproval ? t("pcal.request") : t("pcal.create")}
           </button>

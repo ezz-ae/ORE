@@ -217,7 +217,7 @@ export default function SecurityPage() {
             </div>
             <div className="flex gap-2">
               <button onClick={createKey}
-                className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
+                className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
                 <Key className="h-3.5 w-3.5" /> {t('settings.security.generateKey')}
               </button>
               <button onClick={() => setShowNew(false)}

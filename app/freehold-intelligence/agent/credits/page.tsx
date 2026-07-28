@@ -195,7 +195,7 @@ export default function AgentCreditsPage() {
                 ) : (
                   <Link
                     href="/freehold-intelligence/agent/campaigns"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     {t('agent.createAd')}

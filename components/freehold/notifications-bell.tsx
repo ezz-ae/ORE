@@ -48,7 +48,7 @@ export function NotificationsBell() {
     <>
       <button type="button" onClick={openFeed} aria-label={t('notif.title')}
         className="relative grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-slate-300 transition hover:text-white">
-        <Bell className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+        <Bell className="h-4 w-4" />
         {unread > 0 && (
           <span className="absolute -end-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-gold px-1 py-0.5 text-[10px] font-bold leading-none text-ink">
             {unread > 9 ? '9+' : unread}
