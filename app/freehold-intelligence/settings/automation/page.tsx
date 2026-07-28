@@ -340,7 +340,7 @@ function RuleEditor({ rule, setRule, onSave, onCancel, brokers, saving }: {
 
       <div className="flex gap-2">
         <button onClick={() => onSave(rule)} disabled={saving}
-          className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+          className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.editor.saveRule')}
         </button>
         <button onClick={onCancel} className="rounded-full border border-line px-4 py-2 text-sm text-slate-400 hover:text-white">{t('pauto.editor.cancel')}</button>
@@ -442,7 +442,7 @@ function DistributionSection({ config, setConfig, brokers }: {
       )}
 
       <button onClick={save} disabled={saving}
-        className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+        className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.dist.save')}
       </button>
     </div>
@@ -527,7 +527,7 @@ function ModesSection({ config, setConfig }: {
       </div>
 
       <button onClick={save} disabled={saving}
-        className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+        className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.modes.save')}
       </button>
     </div>
@@ -581,7 +581,7 @@ function SlaSection({ config, setConfig }: {
           />
           <span className="text-sm text-slate-500">{t('pauto.sla.minutes')}</span>
           <button onClick={() => persist(parsed)} disabled={saving || !valid}
-            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.sla.save')}
           </button>
           {config.responseSlaMinutes != null && (
@@ -650,7 +650,7 @@ function ApprovalsSection({ config, setConfig }: {
       </div>
 
       <button onClick={save} disabled={saving}
-        className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+        className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('pauto.appr.save')}
       </button>
     </div>

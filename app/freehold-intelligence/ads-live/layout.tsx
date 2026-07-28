@@ -125,7 +125,7 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
                     href={tab.href}
                     className={[
                       'inline-flex items-center px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-                      active ? 'border-pink-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
+                      active ? 'border-gold text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
                     {t(tab.labelKey)}

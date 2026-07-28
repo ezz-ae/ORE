@@ -274,7 +274,7 @@ function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCrea
       </div>
       <p className="text-xs text-slate-500">{t('mgmt.team.admin.passwordHint')}</p>
       <button onClick={create} disabled={saving}
-        className="flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+        className="flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} {t('mgmt.team.admin.createMember')}
       </button>
     </Modal>
@@ -323,7 +323,7 @@ function EditMemberModal({ member, onClose, onSaved }: { member: Member; onClose
         <input className={inputCls} placeholder={t('mgmt.team.admin.commissionPct')} type="number" value={commission} onChange={(e) => setCommission(e.target.value)} />
       </div>
       <button onClick={save} disabled={saving}
-        className="flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
+        className="flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />} {t('mgmt.team.admin.saveChanges')}
       </button>
     </Modal>

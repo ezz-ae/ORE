@@ -404,7 +404,7 @@ export default function MetaIntegrationPage() {
           <button
             onClick={() => connect(token)}
             disabled={!token.trim()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-gold py-3 text-[14px] font-semibold text-black transition hover:bg-gold/90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-gold py-3 text-[14px] font-semibold text-ink transition hover:bg-gold-bright disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t('pintmeta.connectBtn')}
           </button>
@@ -540,7 +540,7 @@ export default function MetaIntegrationPage() {
                   ))}
                 </select>
                 <button onClick={activateLaunch} disabled={!selAccount || !selPage || activating}
-                  className="flex items-center justify-center gap-2 rounded-[10px] bg-gold px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:cursor-not-allowed disabled:opacity-40">
+                  className="flex items-center justify-center gap-2 rounded-[10px] bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:cursor-not-allowed disabled:opacity-40">
                   {activating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                   {t('pintmeta.activateBtn')}
                 </button>
