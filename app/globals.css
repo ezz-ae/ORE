@@ -350,6 +350,22 @@ html {
   border-color: color-mix(in srgb, var(--color-gold) 65%, transparent) !important;
 }
 
+/* One select treatment app-wide: kill the native OS arrow and draw our own
+ * slate chevron (the #1 "looks unfinished" tell was 69 raw native selects).
+ * RTL flips the chevron to the start edge automatically. */
+.fi-root select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  padding-inline-end: 2rem;
+}
+.fi-root [dir='rtl'] select,
+[dir='rtl'] .fi-root select {
+  background-position: left 0.65rem center;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
