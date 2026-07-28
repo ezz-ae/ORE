@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { tabLinkClass } from '@/components/freehold/ui'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Activity, Users, Briefcase,
@@ -92,10 +93,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={[
-                      'inline-flex items-center px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-                      active ? 'border-gold text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
-                    ].join(' ')}
+                    className={tabLinkClass(active)}
                   >
                     {t(item.labelKey)}
                   </Link>

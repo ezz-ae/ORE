@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { tabLinkClass } from '@/components/freehold/ui'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, Megaphone } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
@@ -123,10 +124,7 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
                   <Link
                     key={tab.href}
                     href={tab.href}
-                    className={[
-                      'inline-flex items-center px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-                      active ? 'border-gold text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
-                    ].join(' ')}
+                    className={tabLinkClass(active)}
                   >
                     {t(tab.labelKey)}
                   </Link>
