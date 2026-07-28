@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, UserPlus } from 'lucide-react'
+import { Modal, fieldClass, buttonClass } from '@/components/freehold/ui'
 import { toast } from 'sonner'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
@@ -61,27 +61,26 @@ export function AddLeadModal({ open, onClose }: { open: boolean; onClose: () => 
     }
   }
 
-  const field = 'w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/40'
+  const field = fieldClass('lg')
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl">
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
-              <UserPlus className="h-4 w-4 text-gold" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-white">{t('crm.addLeadForm.title')}</h2>
-              <p className="text-xs text-slate-500">
-                {isManagement ? t('crm.addLeadForm.subtitleMgmt') : t('crm.addLeadForm.subtitleSelf')}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-slate-500 transition hover:text-white"><X className="h-4 w-4" /></button>
-        </div>
-
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t('crm.addLeadForm.title')}
+      subtitle={isManagement ? t('crm.addLeadForm.subtitleMgmt') : t('crm.addLeadForm.subtitleSelf')}
+      maxWidth="max-w-lg"
+      footer={
+        <>
+          <button onClick={onClose} className={buttonClass('ghost', 'sm')}>
+            {t('crm.addLeadForm.cancel')}
+          </button>
+          <button onClick={submit} disabled={busy} className={buttonClass('primary', 'sm')}>
+            {busy ? t('crm.addLeadForm.creating') : t('crm.addLeadForm.create')}
+          </button>
+        </>
+      }
+    >
         <div className="space-y-3">
           <input className={field} placeholder={t('crm.addLeadForm.namePlaceholder')} value={form.name} onChange={(e) => set('name', e.target.value)} autoFocus />
           <div className="grid grid-cols-2 gap-3">
@@ -102,16 +101,6 @@ export function AddLeadModal({ open, onClose }: { open: boolean; onClose: () => 
             </select>
           )}
         </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-[10px] border border-line-strong px-4 py-2 text-sm text-slate-300 transition hover:text-white">
-            {t('crm.addLeadForm.cancel')}
-          </button>
-          <button onClick={submit} disabled={busy} className="inline-flex items-center gap-2 rounded-[10px] border border-gold/35 bg-gold/15 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/25 disabled:opacity-50">
-            {busy ? t('crm.addLeadForm.creating') : t('crm.addLeadForm.create')}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
