@@ -263,19 +263,19 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
       {/* Folder rail — the user's own folders + an Unfiled bucket */}
       {(folders.length > 0 || items.some((i) => !i.folder)) && (
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          <button type="button" onClick={() => setActiveFolder(null)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${activeFolder === null ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+          <button type="button" onClick={() => setActiveFolder(null)} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${activeFolder === null ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'}`}>
             <FolderOpen className="h-3 w-3" /> {t('drive.allFolders')}
           </button>
           {folders.map((f) => {
             const n = items.filter((i) => i.folder === f).length
             return (
-              <button key={f} type="button" onClick={() => setActiveFolder(activeFolder === f ? null : f)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${activeFolder === f ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+              <button key={f} type="button" onClick={() => setActiveFolder(activeFolder === f ? null : f)} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${activeFolder === f ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'}`}>
                 <Folder className="h-3 w-3" /> {f}<span className="text-[10px] text-slate-500">{n}</span>
               </button>
             )
           })}
           {items.some((i) => !i.folder) && (
-            <button type="button" onClick={() => setActiveFolder(activeFolder === '' ? null : '')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${activeFolder === '' ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+            <button type="button" onClick={() => setActiveFolder(activeFolder === '' ? null : '')} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${activeFolder === '' ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'}`}>
               {t('drive.unfiled')}<span className="text-[10px] text-slate-500">{items.filter((i) => !i.folder).length}</span>
             </button>
           )}
@@ -297,16 +297,16 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
 
       {/* Kind filter */}
       <div className="mb-6 flex flex-wrap gap-1.5">
-        <button type="button" onClick={() => setFilter('all')} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${filter === 'all' ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>{t('nb.lib.all')}</button>
+        <button type="button" onClick={() => setFilter('all')} className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${filter === 'all' ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'}`}>{t('nb.lib.all')}</button>
         {landings.length > 0 && (
-          <button type="button" onClick={() => setFilter(filter === 'landing' ? 'all' : 'landing')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${filter === 'landing' ? 'border-teal-400/40 bg-teal-400/15 text-teal-300' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+          <button type="button" onClick={() => setFilter(filter === 'landing' ? 'all' : 'landing')} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${filter === 'landing' ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'}`}>
             <Monitor className="h-3 w-3" /> {t('drive.landings')}<span className="text-[10px] text-slate-500">{landings.length}</span>
           </button>
         )}
         {KINDS.map((k) => {
           const n = items.filter((i) => i.kind === k).length
           return (
-            <button key={k} type="button" onClick={() => setFilter(filter === k ? 'all' : k)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${filter === k ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+            <button key={k} type="button" onClick={() => setFilter(filter === k ? 'all' : k)} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${filter === k ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'}`}>
               <KindIcon kind={k} className="h-3 w-3" /> {t(KIND_META[k].i18nKey)}{n > 0 && <span className="text-[10px] text-slate-500">{n}</span>}
             </button>
           )

@@ -89,6 +89,8 @@ html {
  * variable (e.g. on the workspace root) to re-skin the whole product. */
 @theme {
   --color-gold: #D4AF37;
+  /* Hover/highlight step of the brand colour — white-label overrides both. */
+  --color-gold-bright: #F8E7AE;
 }
 
 @theme inline {
