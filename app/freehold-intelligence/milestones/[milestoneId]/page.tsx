@@ -18,7 +18,7 @@ function healthTone(health?: string | null) {
   switch (health) {
     case 'complete':
     case 'on_track': return { dot: 'bg-gold', text: 'text-gold', bar: 'bg-gold' }
-    case 'at_risk':  return { dot: 'bg-gold',  text: 'text-[#F8E7AE]',  bar: 'bg-gold'  }
+    case 'at_risk':  return { dot: 'bg-gold',  text: 'text-gold-bright',  bar: 'bg-gold'  }
     case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
     default:         return { dot: 'bg-slate-500',  text: 'text-slate-400',  bar: 'bg-slate-500'  }
   }

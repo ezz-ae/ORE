@@ -13,7 +13,7 @@ import { ExpertDepth } from '@/components/freehold/expert-depth'
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
   sky:    { icon: 'text-teal-400',      card: 'border-teal-400/15 hover:border-teal-400/30',     badge: 'bg-teal-500'       },
-  gold:   { icon: 'text-[#D4AF37]',   card: 'border-[#D4AF37]/20 hover:border-[#D4AF37]/35', badge: 'bg-[#D4AF37]'     },
+  gold:   { icon: 'text-gold',   card: 'border-gold/20 hover:border-gold/35', badge: 'bg-gold'     },
   blue:   { icon: 'text-fuchsia-400',     card: 'border-fuchsia-400/15 hover:border-fuchsia-400/30',   badge: 'bg-fuchsia-500'      },
   violet: { icon: 'text-violet-400',   card: 'border-violet-400/15 hover:border-violet-400/30',badge: 'bg-violet-500'   },
   gray:   { icon: 'text-slate-400',    card: 'border-line-strong hover:border-slate-500',        badge: 'bg-slate-500'     },

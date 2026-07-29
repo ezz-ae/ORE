@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 const tones: Record<string, string> = {
   live:        "border-emerald-400/25 bg-emerald-400/10 text-emerald-300",
   done:        "border-emerald-400/25 bg-emerald-400/10 text-emerald-300",
-  in_progress: "border-[#D4AF37]/25  bg-[#D4AF37]/10  text-[#F8E7AE]",
+  in_progress: "border-gold/25  bg-gold/10  text-gold-bright",
   planned:     "border-white/10      bg-white/[0.04]  text-white/55",
   pending:     "border-white/10      bg-white/[0.04]  text-white/55",
   blocked:     "border-red-400/25    bg-red-400/10    text-red-300",

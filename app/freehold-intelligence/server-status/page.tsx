@@ -5,7 +5,7 @@ import { getIntegrationStatusSummary } from '@/lib/freehold/integration-status'
 
 function statusTone(s: string, t: (key: string, vars?: Record<string, string | number>) => string) {
   if (s === 'live') return { dot: 'bg-gold', label: t('pss.status.live'),     text: 'text-gold' }
-  if (s === 'pending') return { dot: 'bg-gold', label: t('pss.status.pending'), text: 'text-[#F8E7AE]' }
+  if (s === 'pending') return { dot: 'bg-gold', label: t('pss.status.pending'), text: 'text-gold-bright' }
   return { dot: 'bg-red-400', label: t('pss.status.down'), text: 'text-red-300' }
 }
 

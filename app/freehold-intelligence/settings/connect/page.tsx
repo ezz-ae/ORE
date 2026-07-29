@@ -120,7 +120,7 @@ export default function ConnectAiPage() {
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('settings.connect.newPlaceholder')}
             onKeyDown={(e) => { if (e.key === 'Enter') create() }}
             className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-gold/40" />
-          <button type="button" onClick={create} disabled={creating} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+          <button type="button" onClick={create} disabled={creating} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t('settings.connect.create')}
           </button>
         </div>

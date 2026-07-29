@@ -73,7 +73,7 @@ const STATUS_PILLS: { key: StatusFilter; label: string }[] = [
 function statusCfg(status: string) {
   switch (status) {
     case 'connected':       return { label: 'Connected',     dot: 'bg-gold', text: 'text-gold' }
-    case 'partial':         return { label: 'Partial',       dot: 'bg-gold',   text: 'text-[#F8E7AE]'   }
+    case 'partial':         return { label: 'Partial',       dot: 'bg-gold',   text: 'text-gold-bright'   }
     case 'needs_access':    return { label: 'Needs access',  dot: 'bg-orange-400',  text: 'text-orange-200' }
     case 'blocked':
     case 'disconnected':

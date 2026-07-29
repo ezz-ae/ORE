@@ -21,7 +21,7 @@ type Task = {
 
 function priorityTone(p: string) {
   if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', labelKey: 'ptasks.priority.critical' }
-  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold', labelKey: 'ptasks.priority.high' }
+  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-gold-bright', dot: 'bg-gold', labelKey: 'ptasks.priority.high' }
   if (p === 'medium')   return { ring: 'border-teal-400/20', bg: 'bg-teal-400/[0.04]', text: 'text-teal-200', dot: 'bg-teal-400', labelKey: 'ptasks.priority.medium' }
   return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500', labelKey: 'ptasks.priority.low' }
 }
@@ -29,7 +29,7 @@ function priorityTone(p: string) {
 function statusChip(status: string) {
   if (status === 'done')        return { text: 'text-gold', icon: <CheckCircle2 className="h-3.5 w-3.5 text-gold" />, labelKey: 'ptasks.status.done' }
   if (status === 'blocked')     return { text: 'text-red-300', icon: <AlertCircle className="h-3.5 w-3.5 text-red-400" />, labelKey: 'ptasks.status.blocked' }
-  if (status === 'in_progress') return { text: 'text-[#F8E7AE]', icon: <Clock className="h-3.5 w-3.5 text-gold" />, labelKey: 'ptasks.status.inProgress' }
+  if (status === 'in_progress') return { text: 'text-gold-bright', icon: <Clock className="h-3.5 w-3.5 text-gold" />, labelKey: 'ptasks.status.inProgress' }
   return                               { text: 'text-slate-400', icon: <Clock className="h-3.5 w-3.5 text-slate-500" />, labelKey: 'ptasks.status.open' }
 }
 
@@ -227,7 +227,7 @@ export default function TasksPage() {
           <p className="text-xs text-orange-400/60 mt-1">{t('ptasks.stat.blocked')}</p>
         </div>
         <div className="rounded-[18px] border border-gold/20 bg-gold/[0.05] p-4 text-center">
-          <p className="text-[26px] font-semibold text-[#F8E7AE]">{stats.dueToday}</p>
+          <p className="text-[26px] font-semibold text-gold-bright">{stats.dueToday}</p>
           <p className="text-xs text-gold/60 mt-1">{t('ptasks.stat.dueToday')}</p>
         </div>
       </section>

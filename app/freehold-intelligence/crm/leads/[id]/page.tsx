@@ -80,7 +80,7 @@ import { LeadViewingsCard } from './_components/LeadViewingsCard'
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     labelKey: 'crm.urgency.critical' }
-  if (u === 'high')     return { ring: 'ring-gold/35',  bg: 'bg-gold/10',  text: 'text-[#F8E7AE]',  dot: 'bg-gold',  labelKey: 'crm.urgency.high' }
+  if (u === 'high')     return { ring: 'ring-gold/35',  bg: 'bg-gold/10',  text: 'text-gold-bright',  dot: 'bg-gold',  labelKey: 'crm.urgency.high' }
   if (u === 'medium')   return { ring: 'ring-teal-400/30',    bg: 'bg-teal-400/10',    text: 'text-teal-200',    dot: 'bg-teal-400',    labelKey: 'crm.urgency.medium' }
   return                       { ring: 'ring-line-strong',     bg: 'bg-surface-2',  text: 'text-slate-400',  dot: 'bg-slate-500',  labelKey: 'crm.urgency.low' }
 }

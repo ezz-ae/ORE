@@ -633,7 +633,7 @@ export default function DriveImageEditor() {
         <button type="button" onClick={download} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
           <Download className="h-3.5 w-3.5" /> {t('ed.download')}
         </button>
-        <button type="button" onClick={save} disabled={saving} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-2.5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+        <button type="button" onClick={save} disabled={saving} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-2.5 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('ed.image.saveToLibrary')}
         </button>
         <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
@@ -783,7 +783,7 @@ export default function DriveImageEditor() {
             {notFound && <p className="text-xs text-slate-500">{t('ed.notFound')}</p>}
             <p className="text-base font-semibold text-white">{dropping ? t('ed.image.dropHere') : t('ed.image.uploadTitle')}</p>
             <p className="text-xs leading-relaxed text-slate-400">{t('ed.image.uploadHint')}</p>
-            <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold text-ink shadow-lg shadow-gold/10 transition hover:bg-[#F8E7AE]">
+            <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold text-ink shadow-lg shadow-gold/10 transition hover:bg-gold-bright">
               <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
             </button>
             <p className="mt-2 text-[10px] leading-snug text-slate-600">{t('ed.image.ai.boundary')}</p>

@@ -10,7 +10,7 @@ import { loadCrmView, saveCrmView } from '../_lib/view-prefs'
 
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',   badge: 'border-red-400/20 bg-red-400/10 text-red-300',    label: 'Critical' }
-  if (u === 'high')     return { dot: 'bg-gold',       badge: 'border-gold/20 bg-gold/10 text-[#F8E7AE]',        label: 'High'     }
+  if (u === 'high')     return { dot: 'bg-gold',       badge: 'border-gold/20 bg-gold/10 text-gold-bright',        label: 'High'     }
   if (u === 'medium')   return { dot: 'bg-teal-400',   badge: 'border-teal-400/20 bg-teal-400/10 text-teal-200',    label: 'Medium'   }
   return                       { dot: 'bg-slate-500', badge: 'border-line-strong bg-surface-2 text-slate-400', label: 'Low'      }
 }

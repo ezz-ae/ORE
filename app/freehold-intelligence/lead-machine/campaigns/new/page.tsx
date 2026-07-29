@@ -1975,7 +1975,7 @@ export default function NewCampaignPage() {
                       {!c.present && (
                         <label className="mt-1.5 flex cursor-pointer items-center gap-2 ps-[26px] text-xs text-slate-400">
                           <input type="checkbox" checked={acknowledged} onChange={() => toggleDqVerified(c.key)}
-                            className="h-3.5 w-3.5 rounded border-line bg-surface accent-[#D4AF37]" />
+                            className="h-3.5 w-3.5 rounded border-line bg-surface accent-gold" />
                           {t('dq.manualVerify')}
                         </label>
                       )}
