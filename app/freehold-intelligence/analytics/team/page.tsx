@@ -123,7 +123,49 @@ export default function TeamAnalyticsPage() {
           yet", never a defaulted zero. */}
       <section>
         <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.responseClock')}</div>
-        <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
+        {/* LITE: stacked agent cards on phones — the 5-column clock stays md+ */}
+        <div className="divide-y divide-white/[0.08] overflow-hidden rounded-xl border border-line bg-white/[0.05] md:hidden">
+          {agents && agents.length > 0 ? (
+            agents.map((ag) => {
+              const viewingRate = ag.viewingsHeld > 0 && ag.totalLeads > 0 ? Math.round((ag.viewingsHeld / ag.totalLeads) * 100) : null
+              const offerRate = ag.offersMade > 0 && ag.totalLeads > 0 ? Math.round((ag.offersMade / ag.totalLeads) * 100) : null
+              return (
+                <div key={ag.id || ag.name} className="px-4 py-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold text-slate-200">{initialsOf(ag.name)}</span>
+                      <span className="truncate font-medium text-slate-200">{ag.name}</span>
+                    </span>
+                    {ag.dataQualityScore !== null ? (
+                      <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums ${dqColor(ag.dataQualityScore)}`}>
+                        {ag.dataQualityScore}
+                      </span>
+                    ) : (
+                      <span className="text-slate-600">—</span>
+                    )}
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.th.medianResponse')}</div>
+                      <div className="mt-0.5 text-sm tabular-nums text-slate-200">{ag.medianResponseMinutes !== null ? fmtMinutes(ag.medianResponseMinutes) : '—'}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.th.viewingRate')}</div>
+                      <div className="mt-0.5 text-sm tabular-nums text-slate-200">{viewingRate !== null ? `${viewingRate}%` : '—'}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.th.offerRate')}</div>
+                      <div className="mt-0.5 text-sm tabular-nums text-slate-200">{offerRate !== null ? `${offerRate}%` : '—'}</div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">{agents ? t('analytics.empty.agents') : t('analytics.loading')}</div>
+          )}
+        </div>
+        <div className="hidden overflow-hidden rounded-xl border border-line bg-white/[0.05] md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
