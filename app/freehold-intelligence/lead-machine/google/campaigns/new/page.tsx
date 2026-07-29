@@ -10,18 +10,18 @@ import { useT } from '@/lib/i18n/provider'
 
 type WizardStep = 1 | 2 | 3 | 4 | 5
 
-const CAMPAIGN_TYPES: { value: GoogleCampaignType; label: string; desc: string; color: string }[] = [
-  { value: 'SEARCH',          label: 'Search',           desc: 'Text ads on Google Search — highest intent buyers',       color: '#4285F4' },
-  { value: 'PERFORMANCE_MAX', label: 'Performance Max',  desc: 'Automated across all Google channels — leads + awareness', color: '#FBBC04' },
-  { value: 'DISPLAY',         label: 'Display',          desc: 'Image ads across the Google Display Network',              color: '#34A853' },
-  { value: 'VIDEO',           label: 'Video',            desc: 'YouTube and video partner placements',                     color: '#EA4335' },
+const CAMPAIGN_TYPES: { value: GoogleCampaignType; labelKey: string; descKey: string; color: string }[] = [
+  { value: 'SEARCH',          labelKey: 'lm.google.campaignNew.type.search',  descKey: 'lm.google.campaignNew.type.searchDesc',  color: '#4285F4' },
+  { value: 'PERFORMANCE_MAX', labelKey: 'lm.google.campaignNew.type.pmax',    descKey: 'lm.google.campaignNew.type.pmaxDesc',    color: '#FBBC04' },
+  { value: 'DISPLAY',         labelKey: 'lm.google.campaignNew.type.display', descKey: 'lm.google.campaignNew.type.displayDesc', color: '#34A853' },
+  { value: 'VIDEO',           labelKey: 'lm.google.campaignNew.type.video',   descKey: 'lm.google.campaignNew.type.videoDesc',   color: '#EA4335' },
 ]
 
-const BIDDING_STRATEGIES: { value: GoogleBiddingStrategy; label: string; desc: string; requiresCpa?: boolean }[] = [
-  { value: 'MAXIMIZE_CONVERSIONS', label: 'Maximise Conversions',      desc: 'Automatically gets the most conversions within budget' },
-  { value: 'TARGET_CPA',           label: 'Target CPA',                desc: 'Targets a specific cost-per-lead', requiresCpa: true },
-  { value: 'TARGET_ROAS',          label: 'Target ROAS',               desc: 'Maximises conversion value at a target return on ad spend' },
-  { value: 'MANUAL_CPC',           label: 'Manual CPC',                desc: 'Set max bids manually — full control, requires optimisation' },
+const BIDDING_STRATEGIES: { value: GoogleBiddingStrategy; labelKey: string; descKey: string; requiresCpa?: boolean }[] = [
+  { value: 'MAXIMIZE_CONVERSIONS', labelKey: 'lm.google.campaignNew.bid.maxConv',   descKey: 'lm.google.campaignNew.bid.maxConvDesc' },
+  { value: 'TARGET_CPA',           labelKey: 'lm.google.campaignNew.bid.tcpa',      descKey: 'lm.google.campaignNew.bid.tcpaDesc', requiresCpa: true },
+  { value: 'TARGET_ROAS',          labelKey: 'lm.google.campaignNew.bid.troas',     descKey: 'lm.google.campaignNew.bid.troasDesc' },
+  { value: 'MANUAL_CPC',           labelKey: 'lm.google.campaignNew.bid.manualCpc', descKey: 'lm.google.campaignNew.bid.manualCpcDesc' },
 ]
 
 interface FormState {
@@ -198,9 +198,9 @@ export default function GoogleCampaignNewPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#4285F4]/10 border border-[#4285F4]/25">
           <Check className="h-7 w-7 text-[#4285F4]" />
         </div>
-        <h2 className="mt-5 text-[28px] font-semibold text-white">Campaign created</h2>
+        <h2 className="mt-5 text-[28px] font-semibold text-white">{t('lm.google.campaignNew.done.title')}</h2>
         <p className="mt-2 text-[14px] text-slate-400">
-          Created in PAUSED state — review before activating in Google Ads Manager.
+          {t('lm.google.campaignNew.done.note')}
         </p>
         {success && (
           <p className="mt-1 font-mono text-xs text-slate-600">ID: {success}</p>
@@ -318,27 +318,27 @@ export default function GoogleCampaignNewPage() {
               {t('lm.google.campaignNew.label.type')}
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {CAMPAIGN_TYPES.map((t) => (
+              {CAMPAIGN_TYPES.map((ct) => (
                 <button
-                  key={t.value}
+                  key={ct.value}
                   onClick={() => {
                     patch({
-                      type: t.value,
-                      campaignName: listing ? `${listing.name} — ${t.value === 'PERFORMANCE_MAX' ? 'PMax' : t.label}` : form.campaignName,
+                      type: ct.value,
+                      campaignName: listing ? `${listing.name} — ${ct.value === 'PERFORMANCE_MAX' ? 'PMax' : t(ct.labelKey)}` : form.campaignName,
                     })
                   }}
                   className={[
                     'rounded-[14px] border p-4 text-left transition',
-                    form.type === t.value
+                    form.type === ct.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
                       : 'border-line bg-surface hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full`} style={{ backgroundColor: t.color }} />
-                    <span className={`text-sm font-semibold ${form.type === t.value ? 'text-white' : 'text-slate-400'}`}>{t.label}</span>
+                    <span className={`h-2.5 w-2.5 rounded-full`} style={{ backgroundColor: ct.color }} />
+                    <span className={`text-sm font-semibold ${form.type === ct.value ? 'text-white' : 'text-slate-400'}`}>{t(ct.labelKey)}</span>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500 leading-snug">{t.desc}</p>
+                  <p className="mt-1 text-sm text-slate-500 leading-snug">{t(ct.descKey)}</p>
                 </button>
               ))}
             </div>
@@ -409,13 +409,13 @@ export default function GoogleCampaignNewPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className={`text-sm font-semibold ${form.biddingStrategy === s.value ? 'text-white' : 'text-slate-400'}`}>
-                      {s.label}
+                      {t(s.labelKey)}
                     </span>
                     {form.biddingStrategy === s.value && (
                       <Check className="h-4 w-4 text-[#4285F4]" />
                     )}
                   </div>
-                  <p className="mt-0.5 text-sm text-slate-500">{s.desc}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">{t(s.descKey)}</p>
                 </button>
               ))}
             </div>
@@ -433,7 +433,7 @@ export default function GoogleCampaignNewPage() {
                 onChange={(e) => patch({ targetCpaAED: Number(e.target.value) })}
                 className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               />
-              <p className="mt-1 text-sm text-slate-500">Target cost per lead acquisition in AED</p>
+              <p className="mt-1 text-sm text-slate-500">{t('lm.google.campaignNew.hint.tcpa')}</p>
             </div>
           )}
 
@@ -447,7 +447,7 @@ export default function GoogleCampaignNewPage() {
               onChange={(e) => patch({ startDate: e.target.value })}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
             />
-            <p className="mt-1 text-sm text-slate-500">Leave blank to start from today</p>
+            <p className="mt-1 text-sm text-slate-500">{t('lm.google.campaignNew.hint.startDate')}</p>
           </div>
         </section>
       )}
@@ -603,15 +603,15 @@ export default function GoogleCampaignNewPage() {
       {step === 5 && (
         <section className="mt-10 space-y-4">
           {[
-            { label: 'Listing',          value: listing?.name ?? '—' },
-            { label: 'Campaign name',    value: form.campaignName            },
-            { label: 'Type',             value: form.type.replace('_', ' ')  },
-            { label: 'Bidding',          value: form.biddingStrategy.replace(/_/g, ' ') + (form.biddingStrategy === 'TARGET_CPA' ? ` · AED ${form.targetCpaAED} target` : '') },
-            { label: 'Daily budget',     value: `AED ${form.dailyBudgetAED}` },
-            { label: 'Keywords',         value: `${selectedThemeKwCount} from themes + ${form.customKeywords.split('\n').filter(Boolean).length} custom` },
-            { label: 'Headlines',        value: `${form.headlines.filter(Boolean).length} headlines` },
-            { label: 'Descriptions',     value: `${form.descriptions.filter(Boolean).length} descriptions` },
-            { label: 'Landing URL',      value: form.finalUrl || '(none set)' },
+            { label: t('lm.google.campaignNew.review.listing'),      value: listing?.name ?? '—' },
+            { label: t('lm.google.campaignNew.review.name'),         value: form.campaignName            },
+            { label: t('lm.google.campaignNew.review.type'),         value: form.type.replace('_', ' ')  },
+            { label: t('lm.google.campaignNew.review.bidding'),      value: form.biddingStrategy.replace(/_/g, ' ') + (form.biddingStrategy === 'TARGET_CPA' ? ` · AED ${form.targetCpaAED}` : '') },
+            { label: t('lm.google.campaignNew.review.dailyBudget'),  value: `AED ${form.dailyBudgetAED}` },
+            { label: t('lm.google.campaignNew.review.keywords'),     value: t('lm.google.campaignNew.review.keywordsValue', { themes: selectedThemeKwCount, custom: form.customKeywords.split('\n').filter(Boolean).length }) },
+            { label: t('lm.google.campaignNew.review.headlines'),    value: String(form.headlines.filter(Boolean).length) },
+            { label: t('lm.google.campaignNew.review.descriptions'), value: String(form.descriptions.filter(Boolean).length) },
+            { label: t('lm.google.campaignNew.review.landingUrl'),   value: form.finalUrl || t('lm.google.campaignNew.review.noneSet') },
           ].map((row) => (
             <div key={row.label} className="flex items-start gap-4 rounded-[14px] border border-line bg-surface px-4 py-3">
               <span className="w-28 shrink-0 text-sm text-slate-500">{row.label}</span>
@@ -620,7 +620,7 @@ export default function GoogleCampaignNewPage() {
           ))}
 
           <div className="rounded-[14px] border border-[#FBBC04]/15 bg-[#FBBC04]/[0.04] px-4 py-3 text-xs text-slate-400">
-            Campaign will be created in <strong className="text-white">PAUSED</strong> state. Review in Google Ads Manager before activating to avoid unexpected spend.
+            {t('lm.google.campaignNew.pausedWarn')}
           </div>
 
           {error && (
