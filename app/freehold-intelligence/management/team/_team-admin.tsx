@@ -7,6 +7,7 @@ import {
   Coins, Trash2, Loader2, ShieldAlert, X,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
+import { fieldClass } from '@/components/freehold/ui'
 
 type Role = 'ceo' | 'director' | 'admin' | 'sales_manager' | 'marketing' | 'broker'
 type Status = 'active' | 'suspended' | 'banned'
@@ -40,7 +41,7 @@ const STATUS_STYLE: Record<Status, string> = {
   banned:    'border-red-400/25 bg-red-400/10 text-red-300',
 }
 
-const inputCls = 'w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40'
+const inputCls = fieldClass('lg')
 
 export function TeamAdmin() {
   const { t } = useI18n()

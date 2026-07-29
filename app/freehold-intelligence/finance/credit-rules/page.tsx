@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Bot, Plus, Loader2, Trash2, Shield, Activity, Sparkles } from 'lucide-react'
-import { PageHeader } from '@/components/freehold/ui'
+import { PageHeader, fieldClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { SPEND_TEMPLATES, getSpendTemplate, recommendSpendTemplate, type SpendTemplateKey } from '@/lib/meta/spend-templates'
 
@@ -91,7 +91,7 @@ export default function CreditRulesPage() {
   }
   const recommended = recommendSpendTemplate({ hasExistingRules: rules.length > 0 })
 
-  const field = 'w-full rounded-lg border border-line bg-surface px-2.5 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-gold/30'
+  const field = fieldClass('md')
   const lbl = 'mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500'
 
   return (

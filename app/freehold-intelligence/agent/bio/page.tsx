@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Copy, CheckCircle2, ExternalLink, Search, Link2 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
+import { fieldClass } from '@/components/freehold/ui'
 
 interface Profile {
   handle: string; displayName: string; title: string; phone: string
@@ -70,7 +71,7 @@ export default function AgentBioEditorPage() {
     return list.slice(0, 60)
   }, [inv, invQuery])
 
-  const input = 'w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40'
+  const input = fieldClass('lg')
   const label = 'mb-1 block text-xs font-medium text-slate-400'
 
   if (loading) return <div className="flex h-64 items-center justify-center text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
