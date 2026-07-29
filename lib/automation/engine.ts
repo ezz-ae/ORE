@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { query } from '@/lib/db'
 import { ensureLeadActivityTable } from '@/lib/data'
 import { notifyBrokerOfAssignedLead } from '@/lib/transactional-email'
+import { hubspotConfiguredAsync, upsertContact } from '@/lib/hubspot/client'
 import { listEnabledRulesForTrigger, markRuleRan, getWorkspaceConfig } from './db'
 import { pickAgentForLead, type LeadForDistribution } from './distribution'
 import {
@@ -228,7 +229,22 @@ export async function handleNewLead(leadId: string, workspaceId = DEFAULT_WORKSP
       }
     }
 
-    // 2) lead.created rules.
+    // 2) Mirror the new lead into HubSpot when connected — fire-and-forget so
+    //    a slow/failed HubSpot call never delays lead handling. Before this,
+    //    HubSpot only ever received leads when someone clicked Sync manually.
+    void (async () => {
+      try {
+        if (!(await hubspotConfiguredAsync())) return
+        const [contact] = await query<{ name: string | null; email: string | null; phone: string | null; source: string | null }>(
+          `SELECT name, email, phone, source FROM freehold_site_leads WHERE id = $1`, [leadId],
+        )
+        if (contact?.email) await upsertContact(contact)
+      } catch (e) {
+        console.error('[automation] hubspot mirror failed for lead', leadId, e)
+      }
+    })()
+
+    // 3) lead.created rules.
     const ruleResult = await runRules('lead.created', ctx, workspaceId)
     return ruleResult
   } catch (e) {

@@ -1564,12 +1564,17 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
 }
 
 export async function getFormLeads(formId: string): Promise<MetaFormLead[]> {
-  // Follows pagination (capped at 1000 leads) — the old single 200-lead page
-  // undercounted any form that had converted more than 200 leads.
-  return apiFetchAllPages<MetaFormLead>(`/${formId}/leads`, {
+  // Follows pagination up to 5000 leads per form (25 pages) — and says so
+  // when the cap is hit, so a monster form can't silently under-sync.
+  const CAP = 5000
+  const leads = await apiFetchAllPages<MetaFormLead>(`/${formId}/leads`, {
     fields: 'id,created_time,field_data,ad_id,adset_id,campaign_id',
     limit:  '200',
-  }, 1000)
+  }, CAP)
+  if (leads.length >= CAP) {
+    console.warn(`[meta-leads] form ${formId} returned ${CAP}+ leads — pagination capped, oldest leads beyond the cap were not fetched this pass`)
+  }
+  return leads
 }
 
 // ─── Ad Set Updates ───────────────────────────────────────────────────────────
