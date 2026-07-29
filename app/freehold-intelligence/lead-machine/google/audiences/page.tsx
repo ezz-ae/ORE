@@ -34,7 +34,7 @@ function fmtSize(n: number): string {
 // ─── Badge colour maps ────────────────────────────────────────────────────────
 
 const TYPE_BADGE: Record<GoogleAudienceType, string> = {
-  CUSTOMER_MATCH:   'bg-gold/10 text-[#F8E7AE] border-gold/20',
+  CUSTOMER_MATCH:   'bg-gold/10 text-gold-bright border-gold/20',
   IN_MARKET:        'bg-teal-400/10 text-slate-400 border-teal-400/20',
   AFFINITY:         'bg-violet-400/10 text-slate-400 border-violet-400/20',
   REMARKETING:      'bg-gold/10 text-gold border-gold/20',
@@ -415,7 +415,7 @@ export default function GoogleAudiencesPage() {
               </p>
               <Link
                 href="/freehold-intelligence/integrations/hubspot"
-                className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-5 py-2.5 text-sm font-medium text-[#F8E7AE] transition hover:bg-gold/15"
+                className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-5 py-2.5 text-sm font-medium text-gold-bright transition hover:bg-gold/15"
               >
                 <Upload className="h-4 w-4" /> Upload CRM data
               </Link>

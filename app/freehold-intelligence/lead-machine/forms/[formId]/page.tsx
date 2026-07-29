@@ -257,7 +257,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold text-white">{name}</span>
                           {budget !== '—' && (
-                            <span className="rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs text-[#F8E7AE]">{budget}</span>
+                            <span className="rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs text-gold-bright">{budget}</span>
                           )}
                         </div>
                         <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-slate-400">

@@ -314,7 +314,7 @@ export default function AdsMachinePage() {
           <button
             type="button"
             onClick={() => setShowNew(true)}
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] sm:mt-10"
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright sm:mt-10"
           >
             <Plus className="h-4 w-4" /> {t('lm.machine.new')}
           </button>
@@ -387,7 +387,7 @@ export default function AdsMachinePage() {
                   type="button"
                   onClick={createNow}
                   disabled={!canCreate || creating}
-                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
                 >
                   {creating && <Loader2 className="h-4 w-4 animate-spin" />}
                   {creating ? t('lm.machine.form.building') : t('lm.machine.form.next')}
@@ -430,7 +430,7 @@ export default function AdsMachinePage() {
                   type="button"
                   onClick={() => setConfirmStart(true)}
                   disabled={starting}
-                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
                 >
                   {starting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {starting ? t('lm.machine.plan.starting') : t('lm.machine.plan.start')}
@@ -469,7 +469,7 @@ export default function AdsMachinePage() {
                 type="button"
                 onClick={startNow}
                 disabled={starting}
-                className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
               >
                 {starting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t('lm.machine.plan.confirmYes')}
@@ -528,7 +528,7 @@ export default function AdsMachinePage() {
           <button
             type="button"
             onClick={() => setShowNew(true)}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
           >
             <Plus className="h-4 w-4" /> {t('lm.machine.new')}
           </button>

@@ -111,7 +111,7 @@ export default function ShortLinksPage() {
           </div>
         </div>
         <button type="button" onClick={create} disabled={creating || !target.trim()}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
           {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('lm.links.create')}
         </button>
         <p className="mt-2 text-[11px] text-slate-500">{t('lm.links.hint')}</p>
