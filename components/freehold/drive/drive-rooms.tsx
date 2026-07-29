@@ -26,7 +26,7 @@ export function DriveRooms() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ROOMS.map(({ key, href, Icon, icon, glow, ring }) => (
           <Link key={key} href={href}
-            className="group relative min-h-[168px] overflow-hidden rounded-3xl border border-line bg-surface-2/40 p-6 transition hover:border-line-strong hover:bg-surface-2">
+            className="group relative min-h-[168px] overflow-hidden rounded-2xl border border-line bg-surface-2/40 p-6 transition hover:border-line-strong hover:bg-surface-2">
             <div className={`pointer-events-none absolute -end-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br ${glow} to-transparent blur-2xl opacity-70 transition group-hover:opacity-100`} />
             <span className={`relative grid h-14 w-14 place-items-center rounded-2xl bg-surface-3/80 ring-1 ${ring} ${icon}`}>
               <Icon className="h-7 w-7" />
