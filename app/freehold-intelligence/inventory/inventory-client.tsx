@@ -28,7 +28,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':
-      return 'bg-gold/10 text-gold border-gold/20'
+      return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
     case 'off_plan':
       return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
     case 'under_construction':
@@ -49,11 +49,11 @@ function statusLabel(status: PropertyStatus, t: TFn): string {
 function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':
-      return 'bg-gold/10 text-gold border-gold/20'
+      return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':
-      return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
+      return 'bg-amber-400/10 text-amber-300 border-amber-400/30'
     case 'missing':
       return 'bg-rose-400/10 text-slate-400 border-rose-400/20'
   }
@@ -81,7 +81,7 @@ const FILTERS: { value: FilterStatus; labelKey: string }[] = [
 
 const VERDICT_META: Record<AdVerdict, { labelKey: string; cls: string; Icon: typeof Rocket }> = {
   scale:     { labelKey: 'inv.verdict.scale',     cls: 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300', Icon: TrendingUp },
-  launch:    { labelKey: 'inv.verdict.launch',    cls: 'border-gold/25 bg-gold/[0.07] text-[#F8E7AE]',       Icon: Rocket },
+  launch:    { labelKey: 'inv.verdict.launch',    cls: 'border-gold/25 bg-gold/[0.07] text-gold-bright',       Icon: Rocket },
   fix_first: { labelKey: 'inv.verdict.fix_first', cls: 'border-amber-400/25 bg-amber-400/[0.06] text-amber-300',        Icon: Wrench },
   hold:      { labelKey: 'inv.verdict.hold',      cls: 'border-white/[0.1] bg-surface-2 text-slate-400',             Icon: AlertTriangle },
 }
@@ -241,7 +241,7 @@ export default function InventoryClient({
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-500">
             <span className="text-emerald-300">{t('inv.count.scale', { count: analysis.counts.scale })}</span>
-            <span className="text-[#F8E7AE]">{t('inv.count.launch', { count: analysis.counts.launch })}</span>
+            <span className="text-gold-bright">{t('inv.count.launch', { count: analysis.counts.launch })}</span>
             <span className="text-amber-300">{t('inv.count.fixFirst', { count: analysis.counts.fixFirst })}</span>
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function InventoryClient({
               className={[
                 'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                 filter === f.value
-                  ? 'border-gold/40 bg-gold/[0.1] text-[#F8E7AE]'
+                  ? 'border-gold/40 bg-gold/[0.1] text-gold-bright'
                   : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
               ].join(' ')}
             >
@@ -325,7 +325,7 @@ export default function InventoryClient({
               className={[
                 'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                 sortBy === s.value
-                  ? 'border-gold/40 bg-gold/[0.1] text-[#F8E7AE]'
+                  ? 'border-gold/40 bg-gold/[0.1] text-gold-bright'
                   : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
               ].join(' ')}
             >
@@ -362,7 +362,7 @@ export default function InventoryClient({
               <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{t(`inv.tagGroup.${group}`)}</span>
               {tags.map((tag) => (
                 <button key={tag} onClick={() => toggleTag(tag)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${tagSel.includes(tag) ? 'border-gold/40 bg-gold/[0.12] text-[#F8E7AE]' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${tagSel.includes(tag) ? 'border-gold/40 bg-gold/[0.12] text-gold-bright' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
                   {tag} <span className={tagSel.includes(tag) ? 'text-gold/60' : 'text-slate-600'}>{tagCounts[tag]}</span>
                 </button>
               ))}

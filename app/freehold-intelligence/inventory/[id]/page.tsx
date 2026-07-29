@@ -40,7 +40,7 @@ function formatPrice(n: number | null): string {
 function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
-    case 'ready':      return 'bg-gold/10 text-gold border-gold/20'
+    case 'ready':      return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
     case 'off_plan':   return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
     case 'under_construction': return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'sold_out':   return 'bg-red-400/10 text-red-300 border-red-400/20'
@@ -153,14 +153,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                   href={prop.landingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
                 >
                   <Globe className="h-4 w-4" /> {t('inv.detail.viewLanding')}
                 </a>
               )}
               <Link
                 href={`/freehold-intelligence/lead-machine/landings/${prop.landingSlug}/edit`}
-                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${prop.landingUrl ? 'border border-gold/30 bg-gold/[0.07] text-gold hover:bg-gold/[0.14]' : 'bg-gold text-ink hover:bg-[#F8E7AE]'}`}
+                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${prop.landingUrl ? 'border border-gold/30 bg-gold/[0.07] text-gold hover:bg-gold/[0.14]' : 'bg-gold text-ink hover:bg-gold-bright'}`}
               >
                 <Sparkles className="h-4 w-4" /> {t('inv.detail.editLanding')}
               </Link>
@@ -168,7 +168,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           ) : (
             <Link
               href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-              className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+              className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
             >
               <Sparkles className="h-4 w-4" /> {t('inv.detail.generateLandingPage')}
             </Link>
