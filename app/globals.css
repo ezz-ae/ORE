@@ -158,19 +158,20 @@ html {
  * text-slate-* utilities the app was built with dark-first.
  * ─────────────────────────────────────────────────────────────────────────── */
 .theme-light {
-  --color-app:          #eef4fb;                 /* soft sky (behind the body gradient) */
+  --color-app:          #ecf0f6;                 /* cool gray ground (behind the body gradient) */
   --color-chrome:       #ffffff;                 /* nav / headers */
   --color-surface:      #ffffff;                 /* cards & panels */
   --color-ink:          #0f172a;                 /* headings / deepest ink */
-  --color-surface-2:    #f4f7fb;                 /* inputs / raised */
-  --color-surface-3:    #e6ecf3;                 /* hover / tracks / chips */
-  --color-line:         #e3e9f0;                 /* hairline dividers */
-  --color-line-strong:  #cbd5e1;                 /* control borders */
+  --color-surface-2:    #eef2f8;                 /* inputs / raised */
+  --color-surface-3:    #dfe6ef;                 /* hover / tracks / chips */
+  --color-line:         #d9e0e9;                 /* hairline dividers */
+  --color-line-strong:  #b9c4d2;                 /* control borders */
 }
-/* A calm sky wash that resolves to clean white where the content sits, so
-   cards and charts read crisply instead of floating on flat pale blue. */
+/* A cool gray wash that never resolves to pure white, so white cards keep a
+   visible edge everywhere on the page instead of melting into the ground.
+   (Owner feedback: "pages look so white without lines between content parts".) */
 .theme-light body {
-  background: linear-gradient(180deg, #e8f1fc 0%, #f2f7fd 42%, #ffffff 100%);
+  background: linear-gradient(180deg, #e5ebf3 0%, #ecf1f7 42%, #f4f6f9 100%);
   background-attachment: fixed;
   color: #0f172a;
 }
@@ -179,10 +180,10 @@ html {
 .theme-light .text-white        { color: #0f172a; }
 .theme-light .text-slate-100    { color: #1e293b; }
 .theme-light .text-slate-200    { color: #1e293b; }
-.theme-light .text-slate-300    { color: #334155; }
-.theme-light .text-slate-400    { color: #5b6b7f; }
-.theme-light .text-slate-500    { color: #64748b; }
-.theme-light .text-slate-600    { color: #94a3b8; }
+.theme-light .text-slate-300    { color: #2f4156; }
+.theme-light .text-slate-400    { color: #4d5e73; }
+.theme-light .text-slate-500    { color: #596b80; }
+.theme-light .text-slate-600    { color: #8494a8; }
 .theme-light .text-slate-700    { color: #b6c0cd; }
 .theme-light .text-slate-800    { color: #0f172a; }
 .theme-light .text-slate-900    { color: #0b1220; }
@@ -246,15 +247,40 @@ html {
  * These compiled to STATIC dark hex at build time (e.g. .bg-surface:#181613),
  * so redefining the CSS vars can't reach them — each must be overridden here.
  * They are the primary card / nav / panel colors across the whole app.       */
-.theme-light .bg-app          { background-color: transparent; }   /* reveal the body sky gradient */
+.theme-light .bg-app          { background-color: transparent; }   /* reveal the body gray gradient */
 .theme-light .bg-chrome       { background-color: #ffffff; }       /* nav + headers */
 .theme-light .bg-surface      { background-color: #ffffff; }       /* cards + panels */
-.theme-light .bg-surface-2    { background-color: #f4f7fb; }       /* inputs + raised */
-.theme-light .bg-surface-3    { background-color: #e6ecf3; }       /* chips + tracks */
-.theme-light .hover\:bg-surface-3:hover { background-color: #e6ecf3; }
-.theme-light .border-line     { border-color: #e3e9f0; }
-.theme-light .border-line-strong { border-color: #cbd5e1; }
-.theme-light .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: #e3e9f0; }
+.theme-light .bg-surface-2    { background-color: #eef2f8; }       /* inputs + raised */
+.theme-light .bg-surface-3    { background-color: #dfe6ef; }       /* chips + tracks */
+.theme-light .hover\:bg-surface-3:hover { background-color: #dfe6ef; }
+.theme-light .border-line     { border-color: #d9e0e9; }
+.theme-light .border-line-strong { border-color: #b9c4d2; }
+.theme-light .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: #d9e0e9; }
+
+/* ── Token ALPHA variants — the black-bar bug ──────────────────────────── *
+ * bg-chrome/97, bg-app/80 etc. compile to their own classes with the DARK
+ * hex baked in, so the plain .bg-chrome override above never reached them:
+ * every app header and sticky tab row stayed near-BLACK in light mode while
+ * its text flipped dark (the unreadable black bars in the owner's
+ * screenshot). Remap every alpha variant in use to translucent white so the
+ * backdrop-blur chrome effect survives.                                     */
+.theme-light .bg-chrome\/60,
+.theme-light .bg-chrome\/95,
+.theme-light .bg-chrome\/97   { background-color: rgba(255, 255, 255, 0.94); }
+.theme-light .bg-app\/80,
+.theme-light .bg-app\/90      { background-color: rgba(255, 255, 255, 0.88); }
+.theme-light .bg-ink\/10      { background-color: rgba(15, 23, 42, 0.05); }
+.theme-light .bg-surface\/40,
+.theme-light .bg-surface\/50,
+.theme-light .bg-surface\/60  { background-color: rgba(255, 255, 255, 0.65); }
+.theme-light .bg-surface\/70,
+.theme-light .bg-surface\/80,
+.theme-light .bg-surface\/95  { background-color: rgba(255, 255, 255, 0.92); }
+.theme-light .bg-surface-2\/30,
+.theme-light .bg-surface-2\/40,
+.theme-light .bg-surface-2\/50,
+.theme-light .bg-surface-2\/60 { background-color: rgba(238, 242, 248, 0.7); }
+.theme-light .bg-surface-3\/80 { background-color: rgba(223, 230, 239, 0.85); }
 
 /* ── Borders: white-alpha hairlines → visible light dividers ───────────── */
 .theme-light .border-white\/\[0\.05\],
@@ -265,11 +291,11 @@ html {
 .theme-light .border-white\/\[0\.10\],
 .theme-light .border-white\/\[0\.12\],
 .theme-light .border-white\/5,
-.theme-light .border-white\/10      { border-color: #e3e9f0; }
+.theme-light .border-white\/10      { border-color: #d9e0e9; }
 .theme-light .border-white\/\[0\.15\],
 .theme-light .border-white\/15,
 .theme-light .border-white\/20,
-.theme-light .border-white\/25      { border-color: #cbd5e1; }
+.theme-light .border-white\/25      { border-color: #b9c4d2; }
 
 /* ── Hovers ────────────────────────────────────────────────────────────── */
 .theme-light .hover\:bg-white\/\[0\.03\]:hover,
