@@ -33,7 +33,7 @@ function relTime(iso: string): string {
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const TEMP_STYLE: Record<string, { labelKey: string; badge: string }> = {
-  priority: { labelKey: 'crm.temp.priority', badge: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25' },
+  priority: { labelKey: 'crm.temp.priority', badge: 'bg-gold/10 text-gold border-gold/25' },
   hot:      { labelKey: 'crm.temp.hot',      badge: 'bg-red-400/10 text-red-400 border-red-400/20'         },
   warm:     { labelKey: 'crm.temp.warm',     badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'   },
   cold:     { labelKey: 'crm.temp.cold',     badge: 'bg-surface-2 text-slate-500 border-line-strong'      },
@@ -142,7 +142,7 @@ export default function FreeholdCrmPage() {
   const TILES = [
     { label: t('crm.tile.newLeads'),   value: String(newCount),                           sub: t('crm.tile.newLeadsSub'), color: 'text-emerald-400',     border: 'border-emerald-400/15',     bg: 'bg-emerald-400/[0.06]'     },
     { label: t('crm.tile.followUps'),  value: String(followUpsCount),                     sub: t('crm.tile.followUpsSub'),  color: 'text-red-400',     border: 'border-red-400/15',     bg: 'bg-red-400/[0.06]'     },
-    { label: t('crm.tile.hot'),         value: String(hotCount),                           sub: t('crm.tile.hotSub'),      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
+    { label: t('crm.tile.hot'),         value: String(hotCount),                           sub: t('crm.tile.hotSub'),      color: 'text-gold',   border: 'border-gold/20',   bg: 'bg-gold/[0.06]'   },
     { label: t('crm.tile.qualified'),   value: String(qualifiedCount),                     sub: t('crm.tile.qualifiedSub'),    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },
     { label: t('crm.tile.pipeline'),    value: openDealValue == null ? '—' : fmtAedShort(openDealValue), sub: t('crm.tile.pipelineSub'), color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
     { label: t('crm.tile.closedMtd'),  value: String(closedCount),                        sub: t('crm.tile.closedMtdSub'),          color: 'text-slate-400',   border: 'border-line-strong',      bg: 'bg-surface-2'       },
@@ -181,7 +181,7 @@ export default function FreeholdCrmPage() {
               description={t('crm.empty.desc')}
               className="mb-5"
               action={(
-                <Link href="/freehold-intelligence/crm/leads" className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+                <Link href="/freehold-intelligence/crm/leads" className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
                   <Plus className="h-3.5 w-3.5" /> {t('crm.empty.cta')}
                 </Link>
               )}
@@ -336,7 +336,7 @@ export default function FreeholdCrmPage() {
                   {/* Project + budget */}
                   <div className="hidden min-w-0 lg:block">
                     <div className="truncate text-xs text-slate-400">{lead.projectInterest}</div>
-                    <div className="text-xs font-medium text-[#D4AF37]/65">{lead.budgetAED}</div>
+                    <div className="text-xs font-medium text-gold/65">{lead.budgetAED}</div>
                   </div>
 
                   {/* Agent */}

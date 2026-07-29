@@ -88,7 +88,7 @@ export default function MarketingAnalyticsPage() {
                       <span className="ml-3 shrink-0 text-xs tabular-nums text-slate-400">{c.count.toLocaleString('en-US')}</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
-                      <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${(c.count / maxChannel) * 100}%` }} />
+                      <div className="h-full rounded-full bg-gold" style={{ width: `${(c.count / maxChannel) * 100}%` }} />
                     </div>
                   </div>
                 ))}
@@ -116,7 +116,7 @@ export default function MarketingAnalyticsPage() {
             </div>
             <div className="rounded-xl border border-line bg-white/[0.05] p-5">
               <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.spend30d')}</div>
-              <div className="mt-3 text-2xl font-semibold tabular-nums text-[#D4AF37]">{spend ? fmtAed(spend.last30) : '—'}</div>
+              <div className="mt-3 text-2xl font-semibold tabular-nums text-gold">{spend ? fmtAed(spend.last30) : '—'}</div>
               <div className="mt-1 text-xs text-slate-500">{t('analytics.last30')}</div>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function MarketingAnalyticsPage() {
             <div className="flex items-center gap-1">
               {DIMS.map((d) => (
                 <button key={d.id} onClick={() => setDim(d.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${dim === d.id ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border border-line-strong bg-white/[0.05] text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${dim === d.id ? 'border border-gold/35 bg-gold/10 text-gold' : 'border border-line-strong bg-white/[0.05] text-slate-400 hover:text-slate-200'}`}>
                   {t(d.labelKey)}
                 </button>
               ))}
@@ -173,7 +173,7 @@ export default function MarketingAnalyticsPage() {
                     <tr key={r.key} className="transition hover:bg-white/[0.04]">
                       <td className="px-4 py-3 font-medium text-slate-200">{dim === 'source' ? prettySource(r.label) : r.label}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.leads.toLocaleString('en-US')}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[#D4AF37]">{r.closed.toLocaleString('en-US')}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-gold">{r.closed.toLocaleString('en-US')}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.convRate}%</td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.hotShare}%</td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.score}</td>
@@ -207,7 +207,7 @@ export default function MarketingAnalyticsPage() {
           <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-slate-500">{t('analytics.traffic.connectBody')}</p>
           <Link
             href="/freehold-intelligence/integrations"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-4 py-2 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.14]"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.08] px-4 py-2 text-xs font-medium text-gold transition hover:bg-gold/[0.14]"
           >
             {t('analytics.traffic.connectCta')} <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>

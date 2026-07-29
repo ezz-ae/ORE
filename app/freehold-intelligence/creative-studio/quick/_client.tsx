@@ -227,7 +227,7 @@ export default function QuickClient({ properties }: { properties: InventoryPrope
 
         {/* Generate */}
         <button type="button" onClick={generate} disabled={generating}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-3 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50 sm:w-auto sm:min-w-[240px]">
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-3 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50 sm:w-auto sm:min-w-[240px]">
           {generating ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('cs.quick.generating')}</> : <><Wand2 className="h-4 w-4" /> {t('cs.quick.generate')}</>}
         </button>
 
@@ -245,7 +245,7 @@ export default function QuickClient({ properties }: { properties: InventoryPrope
             )}
             <div className="mt-3 flex flex-wrap gap-2.5">
               <button type="button" onClick={saveToDrive} disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {t('cs.quick.save')}
               </button>
               <button type="button" onClick={generate} disabled={generating}

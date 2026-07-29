@@ -289,7 +289,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
           <select value={aKind} onChange={(e) => setAKind(e.target.value as DriveKind)} className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-white outline-none">
             {(['image', 'video', 'pdf'] as DriveKind[]).map((k) => <option key={k} value={k}>{t(KIND_META[k].i18nKey)}</option>)}
           </select>
-          <button type="button" onClick={addByUrl} disabled={saving} className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+          <button type="button" onClick={addByUrl} disabled={saving} className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t('drive.save')}
           </button>
         </div>

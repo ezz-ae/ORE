@@ -138,7 +138,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
         <button
           onClick={markHot}
           disabled={applied.has('hot')}
-          className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('hot') ? 'cursor-default border-emerald-400/15 text-gold/60' : 'text-slate-400 hover:border-gold/30 hover:text-[#F8E7AE]'}`}
+          className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('hot') ? 'cursor-default border-emerald-400/15 text-gold/60' : 'text-slate-400 hover:border-gold/30 hover:text-gold-bright'}`}
         >
           {applied.has('hot') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Zap className="h-3.5 w-3.5" />}
           {applied.has('hot') ? t('crm.markedAsHot') : t('crm.moveToHot')}

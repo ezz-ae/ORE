@@ -601,7 +601,7 @@ export default function DrivePdfSurface() {
                 ))}
               </div>
             </div>
-            <button type="button" onClick={applyBrand} disabled={brandBusy || pageBusy} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+            <button type="button" onClick={applyBrand} disabled={brandBusy || pageBusy} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
               {brandBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Palette className="h-4 w-4" />} {t('ed.pdf.applyBrand')}
             </button>
             <div className="flex gap-2">
@@ -659,7 +659,7 @@ export default function DrivePdfSurface() {
               <FilePlus className="h-4 w-4" /> {t('ed.pdf.mergeCta')}
             </button>
             <div className="flex gap-2 pt-1">
-              <button type="button" onClick={saveWork} disabled={pageBusy || !work} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+              <button type="button" onClick={saveWork} disabled={pageBusy || !work} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                 {pageBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('ed.pdf.pagesSave')}
               </button>
               <button type="button" onClick={downloadWork} disabled={!work} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-slate-200 transition hover:text-white disabled:opacity-50">
@@ -704,7 +704,7 @@ export default function DrivePdfSurface() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="button" onClick={stampSave} disabled={stamping} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+              <button type="button" onClick={stampSave} disabled={stamping} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                 {stamping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('ed.pdf.stampSave')}
               </button>
               <button type="button" onClick={stampDownload} disabled={stamping} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-slate-200 transition hover:text-white disabled:opacity-50">
@@ -740,7 +740,7 @@ export default function DrivePdfSurface() {
               type="button"
               onClick={createListingFromExtract}
               disabled={creatingListing}
-              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60"
+              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60"
             >
               {creatingListing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
               {creatingListing ? t('ed.pdf.listing.creating') : t('ed.pdf.listing.cta')}
@@ -760,7 +760,7 @@ export default function DrivePdfSurface() {
           <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/10 text-gold"><FileSearch className="h-7 w-7" /></span>
           <p className="text-sm text-slate-400">{t('ed.pdf.noSource')}</p>
           <p className="max-w-sm text-xs text-slate-500">{t('ed.pdf.emptyHint')}</p>
-          <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+          <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
             <ScanText className="h-3.5 w-3.5" /> {t('ed.pdf.extractCta')}
           </button>
         </div>

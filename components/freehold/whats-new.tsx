@@ -176,7 +176,7 @@ export function WhatsNew() {
             </div>
 
             <div className="border-t border-line px-5 py-3">
-              <button onClick={closePanel} className="w-full rounded-xl bg-gold py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]">
+              <button onClick={closePanel} className="w-full rounded-xl bg-gold py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright">
                 {t('whatsnew.gotIt')}
               </button>
             </div>

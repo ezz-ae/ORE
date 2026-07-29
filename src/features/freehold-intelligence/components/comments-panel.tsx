@@ -18,13 +18,13 @@ export function CommentsPanel({ pageRef, items }: { pageRef: string; items: Revi
           <input
             name="author"
             placeholder="Your name"
-            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-gold/30 transition"
           />
           <textarea
             name="body"
             placeholder="Add a review comment or decision request…"
             rows={3}
-            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition resize-none"
+            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-gold/30 transition resize-none"
           />
           <button
             type="submit"
@@ -62,11 +62,11 @@ export function CommentsPanel({ pageRef, items }: { pageRef: string; items: Revi
                   <input
                     name="assignee"
                     placeholder="Assign to…"
-                    className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+                    className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-gold/30 transition"
                   />
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#F8E7AE] transition hover:border-[#D4AF37]/35 hover:bg-[#D4AF37]/10"
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-gold/20 bg-gold/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-gold-bright transition hover:border-gold/35 hover:bg-gold/10"
                   >
                     Convert to task
                   </button>

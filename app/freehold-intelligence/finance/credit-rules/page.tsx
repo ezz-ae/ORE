@@ -145,7 +145,7 @@ export default function CreditRulesPage() {
           <div><label className={lbl}>{t('cr.f.qualityAtLeast')}</label><input className={field} inputMode="numeric" value={form.requireQualityAtLeast} onChange={(e) => setForm({ ...form, requireQualityAtLeast: e.target.value })} placeholder="60" /></div>
           <div><label className={lbl}>{t('cr.f.minLeads')}</label><input className={field} inputMode="numeric" value={form.requireMinLeads} onChange={(e) => setForm({ ...form, requireMinLeads: e.target.value })} placeholder="5" /></div>
         </div>
-        <button type="button" onClick={addRule} disabled={saving} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+        <button type="button" onClick={addRule} disabled={saving} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('cr.builder.add')}
         </button>
         <p className="mt-2 text-[11px] leading-snug text-slate-500">{t('cr.builder.hint')}</p>

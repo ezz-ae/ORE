@@ -471,7 +471,7 @@ export function MachineLaunchReview({
               type="button"
               onClick={() => { const e = buildEdits(); onLaunch(e.edits, e.projectEdits) }}
               disabled={busy || blocked}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
               {t('lm.machine.review.launch')}

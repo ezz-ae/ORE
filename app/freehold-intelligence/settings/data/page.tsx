@@ -31,7 +31,7 @@ const FIELD_LABEL_KEY: Record<string, string> = {
   priceBand: 'sd.field.priceBand', ageBand: 'sd.field.ageBand', city: 'sd.field.city', interest: 'sd.field.interest',
 }
 const OUTCOME_COLOR: Record<string, string> = {
-  lead: '#94A3B8', qualified: '#D4AF37', closed: '#34D399', lost: '#F87171',
+  lead: '#94A3B8', qualified: '#a78bfa', closed: '#34D399', lost: '#F87171',
 }
 
 const FIELD_ALIASES: Record<string, string> = {

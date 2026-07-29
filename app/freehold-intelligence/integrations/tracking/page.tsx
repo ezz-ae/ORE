@@ -74,7 +74,7 @@ export default function TrackingIntegrationPage() {
           <p className="text-[11px] leading-relaxed text-slate-500">{t('track.hint')}</p>
           <div className="flex justify-end pt-1">
             <button type="button" onClick={save} disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('track.save')}
             </button>
           </div>

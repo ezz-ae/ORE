@@ -88,7 +88,7 @@ export default function MarketAnalyticsPage() {
                       <td className="px-5 py-4 text-right tabular-nums text-slate-300">
                         {area.pricePerSqft != null ? `AED ${area.pricePerSqft.toLocaleString('en-US')}` : '—'}
                       </td>
-                      <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">
+                      <td className="px-5 py-4 text-right tabular-nums text-gold">
                         {area.rentalYield != null ? `${area.rentalYield}%` : '—'}
                       </td>
                     </tr>

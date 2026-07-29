@@ -196,7 +196,7 @@ export default function CompanyAnalyticsPage() {
                       <span className="ml-3 shrink-0 text-xs tabular-nums text-slate-400">{src.count.toLocaleString('en-US')}</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
-                      <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${(src.count / maxSource) * 100}%` }} />
+                      <div className="h-full rounded-full bg-gold" style={{ width: `${(src.count / maxSource) * 100}%` }} />
                     </div>
                   </Link>
                 ))}
@@ -225,7 +225,7 @@ export default function CompanyAnalyticsPage() {
                     <span className="text-xs font-semibold tabular-nums text-slate-100">{step.count.toLocaleString('en-US')}</span>
                   </div>
                   <div className="h-6 w-full overflow-hidden rounded-lg bg-white/[0.05]">
-                    <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-[#D4AF37]/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
+                    <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-gold/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
                   </div>
                 </Link>
               ))

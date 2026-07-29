@@ -55,7 +55,7 @@ export function DriveEditorFrame({
           {actions}
           {onSave && (
             <button type="button" onClick={onSave} disabled={saving || dirty === false}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('ed.save')}
             </button>
           )}

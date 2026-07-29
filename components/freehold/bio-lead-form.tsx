@@ -62,7 +62,7 @@ export function BioLeadForm({ handle, agentName }: { handle: string; agentName: 
       <button
         onClick={submit}
         disabled={busy}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         Request a callback

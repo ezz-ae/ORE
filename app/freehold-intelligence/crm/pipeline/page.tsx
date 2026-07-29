@@ -202,14 +202,14 @@ export default function CrmPipelinePage() {
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group rounded-xl border border-line bg-surface p-5 transition hover:border-[#D4AF37]/25"
+                    className="group rounded-xl border border-line bg-surface p-5 transition hover:border-gold/25"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-white group-hover:text-white">{lead.name}</div>
                         <div className="mt-0.5 truncate text-xs text-slate-400">{lead.source}</div>
                       </div>
-                      <span className="shrink-0 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-xs font-medium text-[#D4AF37]">
+                      <span className="shrink-0 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-0.5 text-xs font-medium text-gold">
                         {lead.intentScore}
                       </span>
                     </div>
