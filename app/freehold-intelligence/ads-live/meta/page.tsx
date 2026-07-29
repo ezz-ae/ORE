@@ -67,6 +67,28 @@ export default function MetaAdsPage() {
   const [connected, setConnected] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
   const [account, setAccount] = useState<{ adAccountId: string; pageId: string } | null>(null)
+  const [statusBusy, setStatusBusy] = useState<string | null>(null)
+
+  // LITE: pause/activate straight from the phone card — the same PATCH the
+  // command page uses, optimistic with revert on failure.
+  async function toggleActive(r: Row, e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation()
+    if (statusBusy) return
+    const next = r.active ? 'PAUSED' : 'ACTIVE'
+    setStatusBusy(r.id)
+    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, active: !r.active } : x)))
+    try {
+      const res = await fetch(`/api/meta/campaigns/${encodeURIComponent(r.id)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: next }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || d.error) throw new Error(d.error || 'failed')
+      toast.success(t('lm.cmd.statusUpdated'))
+    } catch {
+      setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, active: r.active } : x)))
+      toast.error(t('lm.cmd.statusFailed'))
+    } finally { setStatusBusy(null) }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -218,19 +240,28 @@ export default function MetaAdsPage() {
         </div>
       )}
 
-      {/* KPI row — computed from the live campaign insights */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* LITE: quick creation is the phone's primary action */}
+      <Link
+        href="/freehold-intelligence/lead-machine/campaigns/new"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-3 text-sm font-semibold text-ink transition hover:bg-gold-bright md:hidden"
+      >
+        <Plus className="h-4 w-4" /> {t('lm.meta.createCampaign')}
+      </Link>
+
+      {/* KPI row — live insights. Phones keep the daily trio (spend · leads ·
+          CPL); the diagnostic columns stay desktop-only. */}
+      <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
         {[
           { label: t('lm.meta.kpi.spend'),       value: totals.spend > 0 ? fmtAED(totals.spend) : '—' },
-          { label: t('lm.meta.col.clicks'),       value: totals.clicks > 0 ? totals.clicks.toLocaleString() : '—' },
-          { label: t('lm.meta.kpi.impressions'),  value: totals.impressions > 0 ? totals.impressions.toLocaleString() : '—' },
+          { label: t('lm.meta.col.clicks'),       value: totals.clicks > 0 ? totals.clicks.toLocaleString() : '—', lite: false },
+          { label: t('lm.meta.kpi.impressions'),  value: totals.impressions > 0 ? totals.impressions.toLocaleString() : '—', lite: false },
           { label: t('lm.meta.kpi.leads'),        value: totals.leads > 0 ? String(totals.leads) : '—', color: totals.leads > 0 ? 'text-gold' : undefined },
           { label: t('lm.meta.kpi.cpl'),          value: totals.cpl > 0 ? fmtAED(totals.cpl) : '—' },
-          { label: t('lm.meta.kpi.ctr'),          value: totals.ctr > 0 ? `${totals.ctr}%` : '—' },
+          { label: t('lm.meta.kpi.ctr'),          value: totals.ctr > 0 ? `${totals.ctr}%` : '—', lite: false },
         ].map((k) => (
-          <div key={k.label} className="rounded-2xl border border-line bg-surface-2 p-4">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{k.label}</div>
-            <div className={`mt-2 text-xl font-semibold leading-none ${k.color ?? 'text-white'}`}>{k.value}</div>
+          <div key={k.label} className={`rounded-2xl border border-line bg-surface-2 p-3 sm:p-4 ${k.lite === false ? 'max-md:hidden' : ''}`}>
+            <div className="truncate text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{k.label}</div>
+            <div className={`mt-2 truncate text-lg font-semibold leading-none sm:text-xl ${k.color ?? 'text-white'}`}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -280,9 +311,23 @@ export default function MetaAdsPage() {
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
                   <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                 </div>
-                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${c.active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
-                  {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
-                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className={`text-xs font-medium ${c.active ? 'text-emerald-300' : 'text-slate-500'}`}>
+                    {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
+                  </span>
+                  {/* LITE: the switch IS the daily control — pause/activate without leaving the list */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={c.active}
+                    aria-label={c.active ? t('lm.cmd.pauseAction') : t('lm.cmd.resumeAction')}
+                    onClick={(e) => toggleActive(c, e)}
+                    disabled={statusBusy === c.id}
+                    className={`relative h-6 w-11 rounded-full transition ${c.active ? 'bg-emerald-400/90' : 'bg-surface-3'} disabled:opacity-60`}
+                  >
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${c.active ? 'start-[22px]' : 'start-0.5'}`} />
+                  </button>
+                </div>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <div>
@@ -385,8 +430,8 @@ export default function MetaAdsPage() {
         )}
       </section>
 
-      {/* Quick actions */}
-      <div className="mt-10 flex flex-wrap gap-3">
+      {/* Quick actions — desktop only; the phone has its primary create button up top */}
+      <div className="mt-10 hidden flex-wrap gap-3 md:flex">
         <Link
           href="/freehold-intelligence/lead-machine/campaigns/new"
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white"
