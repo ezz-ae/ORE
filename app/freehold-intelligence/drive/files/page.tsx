@@ -166,14 +166,14 @@ export default function FilesManagerPage() {
     }`
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-5 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/drive" className="mb-4 inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5 rtl:-scale-x-100" /> {t('drive.rooms.title')}
       </Link>
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <div>
-          <h1 className="text-lg font-semibold text-white">{t('drive.room.files.title')}</h1>
-          {!loading && <p className="mt-0.5 text-xs text-slate-500">{shown.length} {t('fm.count')}</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('drive.room.files.title')}</h1>
+          {!loading && <p className="mt-1 text-sm text-slate-400">{shown.length} {t('fm.count')}</p>}
         </div>
         <div className="relative ms-auto min-w-[180px] flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />

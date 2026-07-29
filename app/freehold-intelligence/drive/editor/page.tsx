@@ -44,8 +44,9 @@ export default function DriveEditorLauncher() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-5 sm:px-6">
-      <h1 className="text-lg font-semibold text-white">{t('drive.nav.editor')}</h1>
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+      <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('drive.nav.editor')}</h1>
+      <p className="mt-1 text-sm text-slate-400">{t('drive.room.editor.desc')}</p>
       <p className="mt-0.5 text-xs text-slate-500">{t('drive.editor.tag')}</p>
 
       {/* New */}
