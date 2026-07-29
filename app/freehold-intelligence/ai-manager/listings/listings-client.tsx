@@ -156,7 +156,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
         </div>
         <Link
           href="/freehold-intelligence/ai-manager/listings/new"
-          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20"
+          className="flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20"
         >
           <Plus className="h-4 w-4" />
           {t('paim.listings.newListing')}
@@ -170,7 +170,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
             key={a.kind}
             disabled={!!processing}
             onClick={() => runBulk(a.kind, a.label)}
-            className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-gold/30 hover:text-slate-300 disabled:opacity-60"
           >
             {processing === a.kind ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             {processing === a.kind ? a.busy : a.idle}
@@ -186,7 +186,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
             onClick={() => setActiveFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
-                ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
+                ? 'border-gold/40 bg-gold/10 text-gold'
                 : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
@@ -254,7 +254,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                       <button
                         disabled={improving.includes(prop.id) || !!processing}
                         onClick={() => handleImprove(prop)}
-                        className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-50"
+                        className="flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/10 px-2.5 py-1 text-sm font-medium text-gold transition hover:bg-gold/20 disabled:opacity-50"
                       >
                         {improving.includes(prop.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                         {improving.includes(prop.id) ? t('paim.listings.improveBusy') : t('paim.listings.improveIdle')}

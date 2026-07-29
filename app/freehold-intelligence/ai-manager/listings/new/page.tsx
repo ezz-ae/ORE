@@ -96,7 +96,7 @@ export default function NewListingPage() {
       {/* Step 1 */}
       <section className="mt-10">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-sm font-bold text-slate-400">1</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">1</span>
           <h2 className="text-sm font-semibold text-slate-100">{t('plistnew.step1.title')}</h2>
         </div>
         <div className="rounded-2xl border border-line bg-surface-2 p-6 space-y-4">
@@ -109,7 +109,7 @@ export default function NewListingPage() {
                   value={form[field]}
                   onChange={(e) => set(field, e.target.value)}
                   placeholder={t(`plistnew.field.${field}.ph`)}
-                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
                 />
               </div>
             ))}
@@ -117,14 +117,14 @@ export default function NewListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.type.label')}</label>
-              <select value={form.type} onChange={(e) => set('type', e.target.value)} className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
+              <select value={form.type} onChange={(e) => set('type', e.target.value)} className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-gold/40 focus:outline-none">
                 <option value="">{t('plistnew.field.type.ph')}</option>
                 {PROPERTY_TYPES.map((pt) => <option key={pt} value={t(`plistnew.type.${pt}`)}>{t(`plistnew.type.${pt}`)}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.status.label')}</label>
-              <select value={form.status} onChange={(e) => set('status', e.target.value)} className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
+              <select value={form.status} onChange={(e) => set('status', e.target.value)} className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-gold/40 focus:outline-none">
                 <option value="">{t('plistnew.field.status.ph')}</option>
                 {STATUSES.map((s) => <option key={s} value={t(`plistnew.statusOpt.${s}`)}>{t(`plistnew.statusOpt.${s}`)}</option>)}
               </select>
@@ -136,7 +136,7 @@ export default function NewListingPage() {
                 value={form.bedrooms}
                 onChange={(e) => set('bedrooms', e.target.value)}
                 placeholder={t('plistnew.field.bedrooms.ph')}
-                className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
               />
             </div>
           </div>
@@ -146,14 +146,14 @@ export default function NewListingPage() {
       {/* Step 2 */}
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-sm font-bold text-slate-400">2</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">2</span>
           <h2 className="text-sm font-semibold text-slate-100">{t('plistnew.step2.title')}</h2>
         </div>
         <div className="rounded-2xl border border-line bg-surface-2 p-6 space-y-5">
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-5 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60"
           >
             {generating ? (
               <>
@@ -181,7 +181,7 @@ export default function NewListingPage() {
                   rows={5}
                   value={content.description}
                   onChange={(e) => setContent((p) => ({ ...p, description: e.target.value }))}
-                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-gold/40 focus:outline-none resize-none"
                 />
               </div>
 
@@ -191,7 +191,7 @@ export default function NewListingPage() {
                   rows={4}
                   value={content.features}
                   onChange={(e) => setContent((p) => ({ ...p, features: e.target.value }))}
-                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-gold/40 focus:outline-none resize-none"
                 />
               </div>
 
@@ -205,7 +205,7 @@ export default function NewListingPage() {
                   maxLength={160}
                   value={content.seo}
                   onChange={(e) => setContent((p) => ({ ...p, seo: e.target.value }))}
-                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-gold/40 focus:outline-none resize-none"
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export default function NewListingPage() {
         <button
           onClick={() => save('published')}
           disabled={saving}
-          className="flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-rose-500/80 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60"
         >
           <Check className="h-4 w-4" />
           {t('plistnew.publish')}

@@ -127,7 +127,7 @@ export default function TopicsPage() {
         <button
           disabled={generating}
           onClick={handleGenerateTopic}
-          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60"
         >
           {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           {generating ? t('paim.topics.generating') : t('paim.topics.generateTopic')}
@@ -142,7 +142,7 @@ export default function TopicsPage() {
             onClick={() => setActiveFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
-                ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
+                ? 'border-gold/40 bg-gold/10 text-gold'
                 : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -206,7 +206,7 @@ export default function TopicsPage() {
                       <button
                         disabled={busyId === topic.id}
                         onClick={() => (topic.body ? handlePublish(topic) : handleWrite(topic))}
-                        className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+                        className="flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/10 px-2.5 py-1 text-sm font-medium text-gold transition hover:bg-gold/20 disabled:opacity-60"
                       >
                         {busyId === topic.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                         {busyId === topic.id ? t('paim.topics.generating') : topic.body ? t('paim.topics.publish') : t('paim.topics.generate')}
