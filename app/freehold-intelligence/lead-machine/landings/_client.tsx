@@ -18,7 +18,7 @@ type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
 const STATUS_CONFIG: Record<string, { labelKey: string; dot: string; badge: string; icon: React.ElementType }> = {
   live:           { labelKey: 'lm.landings.status.live',          dot: 'bg-emerald-400', badge: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/[0.08]', icon: CheckCircle2 },
   draft:          { labelKey: 'lm.landings.status.draft',         dot: 'bg-amber-400',   badge: 'text-amber-400 border-amber-400/25 bg-amber-400/[0.08]',       icon: Pencil       },
-  pending_review: { labelKey: 'lm.landings.status.pendingReview', dot: 'bg-gold',        badge: 'text-gold border-gold/25 bg-gold/[0.08]',                      icon: Clock        },
+  pending_review: { labelKey: 'lm.landings.status.pendingReview', dot: 'bg-violet-400',  badge: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.08]',    icon: Clock        },
   missing:        { labelKey: 'lm.landings.status.missing',       dot: 'bg-red-400',     badge: 'text-red-400 border-red-400/25 bg-red-400/[0.08]',             icon: AlertTriangle },
 }
 
@@ -145,7 +145,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
               data-coach="lm-landing-create"
               onClick={bulkCreate}
               disabled={bulkCreating || missing === 0}
-              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-gold-bright disabled:opacity-60"
             >
               {bulkCreating ? (
                 <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.landings.creatingAll')}</>

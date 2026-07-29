@@ -53,8 +53,8 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
 
   function statusConfig(status: string) {
     switch (status) {
-      case 'ACTIVE':  return { dot: 'bg-gold',        text: 'text-gold',       badge: 'border-gold/25 bg-gold/10 text-gold',                            labelKey: 'lm.campaignList.status.active'  }
-      case 'PAUSED':  return { dot: 'bg-white/35',    text: 'text-slate-400',  badge: 'border-white/[0.10] bg-surface-2 text-slate-400',                 labelKey: 'lm.campaignList.status.paused'  }
+      case 'ACTIVE':  return { dot: 'bg-emerald-400', text: 'text-emerald-300', badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',        labelKey: 'lm.campaignList.status.active'  }
+      case 'PAUSED':  return { dot: 'bg-amber-400/70', text: 'text-amber-300', badge: 'border-amber-400/25 bg-amber-400/10 text-amber-300',              labelKey: 'lm.campaignList.status.paused'  }
       case 'DELETED': return { dot: 'bg-red-400/70',  text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10 text-red-300',                    labelKey: 'lm.campaignList.status.deleted' }
       default:        return { dot: 'bg-white/30',    text: 'text-slate-500',  badge: 'border-white/10 bg-surface-2 text-slate-500',                     labelKey: ''                               }
     }
@@ -69,9 +69,9 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
     if (statusFilter !== key) return 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
     switch (key) {
       case 'ACTIVE':  return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-      case 'PAUSED':  return 'border-gold/40 bg-gold/10 text-gold'
+      case 'PAUSED':  return 'border-amber-400/40 bg-amber-400/10 text-amber-300'
       case 'DELETED': return 'border-red-400/40 bg-red-400/10 text-red-300'
-      default:        return 'border-gold/40 bg-gold/10 text-gold'
+      default:        return 'border-line-strong bg-surface-2 text-slate-200'
     }
   }
 

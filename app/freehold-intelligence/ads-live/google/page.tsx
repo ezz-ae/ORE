@@ -396,7 +396,7 @@ export default function GoogleAdsPage() {
                           href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
                           className="flex items-center gap-2 min-w-0 hover:text-white transition"
                         >
-                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-gold' : 'bg-surface-3'}`} />
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-surface-3'}`} />
                           <span className="truncate text-sm font-medium text-slate-300">{c.name}</span>
                         </Link>
                         <span

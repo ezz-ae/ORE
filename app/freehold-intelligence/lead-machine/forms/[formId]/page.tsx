@@ -153,7 +153,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   // Same vocabulary as the forms list. Only DELETED reads as deleted —
   // DRAFT/PAUSED are amber "goes live when attached", and an unknown status
   // shows Meta's raw text in neutral gray rather than being mislabeled.
-  const statusColor = form.status === 'ACTIVE' ? 'text-gold'
+  const statusColor = form.status === 'ACTIVE' ? 'text-emerald-300'
     : form.status === 'DRAFT' || form.status === 'PAUSED' ? 'text-amber-300'
     : form.status === 'DELETED' ? 'text-red-300'
     : 'text-slate-500'

@@ -143,7 +143,7 @@ export default function LanguagesSettingsPage() {
                 <div className="mt-0.5 text-xs text-slate-500">{t('settings.lang.translateTeamHint')}</div>
               </div>
               <button onClick={() => setPrefs((p) => ({ ...p, translateTeamInputs: !p.translateTeamInputs }))}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition ${prefs.translateTeamInputs ? 'bg-gold' : 'bg-surface-3'}`}>
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${prefs.translateTeamInputs ? 'bg-emerald-400/90' : 'bg-surface-3'}`}>
                 <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${prefs.translateTeamInputs ? 'left-[22px]' : 'left-0.5'}`} />
               </button>
             </label>
@@ -153,7 +153,7 @@ export default function LanguagesSettingsPage() {
                 <div className="mt-0.5 text-xs text-slate-500">{t('settings.lang.inlineHint')}</div>
               </div>
               <button onClick={() => setPrefs((p) => ({ ...p, inlineTranslate: !p.inlineTranslate }))}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition ${prefs.inlineTranslate ? 'bg-gold' : 'bg-surface-3'}`}>
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${prefs.inlineTranslate ? 'bg-emerald-400/90' : 'bg-surface-3'}`}>
                 <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${prefs.inlineTranslate ? 'left-[22px]' : 'left-0.5'}`} />
               </button>
             </label>

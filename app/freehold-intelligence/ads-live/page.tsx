@@ -135,8 +135,8 @@ export default function AdsLivePage() {
       actions={connected ? (
         <span className="flex items-center gap-1.5 text-xs text-slate-400">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           </span>
           {t('lm.live.status', { time: now })}
         </span>
@@ -207,10 +207,10 @@ export default function AdsLivePage() {
             className="mt-10"
             title={t('lm.live.section.campaigns')}
             action={
-              <span className="flex items-center gap-1.5 text-xs text-gold/70">
+              <span className="flex items-center gap-1.5 text-xs text-emerald-300/80">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-gold" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 </span>
                 {t('lm.live.liveData')}
               </span>

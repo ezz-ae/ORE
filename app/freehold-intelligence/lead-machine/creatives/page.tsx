@@ -177,7 +177,7 @@ export default function CreativesPage() {
                       <h3 className="text-[14px] font-semibold text-white leading-snug">{truncate(headline, 60)}</h3>
                       {creative.status && (
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-medium ${
-                          creative.status === 'ACTIVE' ? 'bg-gold/10 text-gold' : 'bg-surface-2 text-slate-500'
+                          creative.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-surface-2 text-slate-500'
                         }`}>
                           {creative.status}
                         </span>

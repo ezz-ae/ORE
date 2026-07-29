@@ -173,7 +173,7 @@ export default function GoogleAdsLibraryPage() {
                       <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${cfg.color}`}>
                         {cfg.label}
                       </span>
-                      <span className={`h-1.5 w-1.5 rounded-full ${ad.status === 'ENABLED' ? 'bg-gold' : 'bg-white/20'}`} />
+                      <span className={`h-1.5 w-1.5 rounded-full ${ad.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
                       <span className="text-sm text-slate-500">{ad.status}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm text-slate-500">

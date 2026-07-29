@@ -33,10 +33,10 @@ async function getForms(): Promise<FormsResponse> {
 // recognize renders neutral with Meta's raw text (labelKey null) — never
 // defaulting to "deleted".
 function statusConfig(s: string): { dot: string; text: string; badge: string; labelKey: string | null } {
-  if (s === 'ACTIVE')   return { dot: 'bg-gold', text: 'text-gold', badge: 'border-gold/20 bg-gold/10', labelKey: 'lm.forms.status.active'   }
+  if (s === 'ACTIVE')   return { dot: 'bg-emerald-400', text: 'text-emerald-300', badge: 'border-emerald-500/25 bg-emerald-500/10', labelKey: 'lm.forms.status.active'   }
   if (s === 'DRAFT' || s === 'PAUSED')
     return                     { dot: 'bg-amber-400',   text: 'text-amber-300',  badge: 'border-amber-400/20 bg-amber-400/10',   labelKey: 'lm.forms.status.draft'    }
-  if (s === 'ARCHIVED') return { dot: 'bg-gold',   text: 'text-gold-bright',  badge: 'border-gold/20 bg-gold/10',   labelKey: 'lm.forms.status.archived' }
+  if (s === 'ARCHIVED') return { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-500/20 bg-slate-500/10',   labelKey: 'lm.forms.status.archived' }
   if (s === 'DELETED')  return { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       labelKey: 'lm.forms.status.deleted'  }
   return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-500/20 bg-slate-500/10',   labelKey: null                       }
 }
@@ -116,7 +116,7 @@ export default async function FormsPage() {
       {!isConfigError && (
         <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[
-            { labelKey: 'lm.forms.stat.activeForms', value: active,      color: 'text-gold' },
+            { labelKey: 'lm.forms.stat.activeForms', value: active,      color: 'text-emerald-300' },
             { labelKey: 'lm.forms.stat.totalForms',  value: forms.length, color: 'text-white'       },
             { labelKey: 'lm.forms.stat.totalLeads',  value: totalLeads,  color: totalLeads > 0 ? 'text-gold' : 'text-white' },
           ].map((s) => (

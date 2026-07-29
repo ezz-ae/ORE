@@ -217,7 +217,7 @@ export default function InsightsPage() {
               {contentRows.map((row, i) => {
                 const complete = row.items > 0 && row.published === row.items
                 const badge = complete
-                  ? 'bg-gold/10 border border-gold/20 text-gold'
+                  ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-300'
                   : row.items > 0 ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
                   : 'bg-surface-2 border border-line-strong text-slate-400'
                 const statusLabel = row.items === 0 ? t('pins.status.empty') : complete ? t('pins.status.good') : t('pins.status.inProgress')

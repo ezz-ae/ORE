@@ -377,7 +377,7 @@ export default function GoogleKeywordsPage() {
                     <div className="flex min-w-0 items-center gap-2">
                       <span
                         className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                          kw.status === 'ENABLED' ? 'bg-gold' : 'bg-white/20'
+                          kw.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'
                         }`}
                       />
                       <span className="truncate font-medium text-white">{kw.text}</span>
