@@ -21,10 +21,10 @@ const STAGES: StageConfig[] = [
   { id: 'new',         labelKey: 'crm.stage.new',         dot: 'bg-teal-400',     color: 'text-teal-400'     },
   { id: 'contacted',   labelKey: 'crm.stage.contacted',   dot: 'bg-amber-400',   color: 'text-amber-400'   },
   { id: 'qualified',   labelKey: 'crm.stage.qualified',   dot: 'bg-violet-400',  color: 'text-violet-400'  },
-  { id: 'viewing',     labelKey: 'crm.stage.viewing',     dot: 'bg-fuchsia-400',    color: 'text-fuchsia-400'    },
-  { id: 'negotiation', labelKey: 'crm.stage.negotiation', dot: 'bg-orange-400',  color: 'text-orange-400'  },
+  { id: 'viewing',     labelKey: 'crm.stage.viewing',     dot: 'bg-violet-400',  color: 'text-violet-400'  },
+  { id: 'negotiation', labelKey: 'crm.stage.negotiation', dot: 'bg-violet-400',  color: 'text-violet-400'  },
   { id: 'closed',      labelKey: 'crm.stage.closed',      dot: 'bg-emerald-400', color: 'text-emerald-400' },
-  { id: 'lost',        labelKey: 'crm.stage.lost',        dot: 'bg-red-400/50',  color: 'text-red-400/50'  },
+  { id: 'lost',        labelKey: 'crm.stage.lost',        dot: 'bg-slate-500',   color: 'text-slate-500'   },
 ]
 
 // ─── Temperature config ────────────────────────────────────────────────────────

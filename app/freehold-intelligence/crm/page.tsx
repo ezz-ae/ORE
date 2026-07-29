@@ -44,9 +44,9 @@ const STAGE_CONFIG: Record<PipelineStage, { labelKey: string; dot: string; badge
   contacted:   { labelKey: 'crm.stage.contacted',   dot: 'bg-amber-400',   badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'       },
   qualified:   { labelKey: 'crm.stage.qualified',   dot: 'bg-violet-400',  badge: 'bg-violet-400/10 text-violet-400 border-violet-400/20'    },
   viewing:     { labelKey: 'crm.stage.viewing',     dot: 'bg-violet-400', badge: 'bg-violet-400/10 text-violet-300 border-violet-400/30' },
-  negotiation: { labelKey: 'crm.stage.negotiation', dot: 'bg-orange-400',  badge: 'bg-orange-400/10 text-orange-400 border-orange-400/20'    },
+  negotiation: { labelKey: 'crm.stage.negotiation', dot: 'bg-violet-400',  badge: 'bg-violet-400/10 text-violet-300 border-violet-400/30'    },
   closed:      { labelKey: 'crm.stage.closed',      dot: 'bg-emerald-400', badge: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' },
-  lost:        { labelKey: 'crm.stage.lost',        dot: 'bg-red-400/50',  badge: 'bg-red-400/[0.06] text-red-400/55 border-red-400/[0.12]' },
+  lost:        { labelKey: 'crm.stage.lost',        dot: 'bg-slate-500',   badge: 'bg-surface-2 text-slate-500 border-line-strong' },
 }
 
 const STAGES: PipelineStage[] = ['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed', 'lost']
@@ -151,7 +151,7 @@ export default function FreeholdCrmPage() {
 
   return (
     <div className="px-4 pb-16 pt-5 sm:px-6">
-      <div className="mx-auto max-w-[1280px]">
+      <div className="mx-auto max-w-7xl">
 
         {/* ══ Main ══ */}
         <div className="min-w-0">

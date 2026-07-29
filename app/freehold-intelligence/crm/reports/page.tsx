@@ -347,7 +347,7 @@ export default function CrmReportsPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
                           <div
-                            className={`h-full rounded-full ${lead.intentScore >= 70 ? 'bg-gold' : 'bg-orange-400'}`}
+                            className={`h-full rounded-full ${lead.intentScore >= 70 ? 'bg-gold' : 'bg-amber-400'}`}
                             style={{ width: `${lead.intentScore}%` }}
                           />
                         </div>

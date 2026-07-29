@@ -414,7 +414,7 @@ export default function CrmActivityPage() {
 
   return (
     <div className="min-h-screen bg-surface px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
 
         <PageHeader
           eyebrow={t('crm.crm')}

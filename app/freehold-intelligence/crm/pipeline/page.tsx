@@ -42,9 +42,9 @@ const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string }>
   'New':         { tone: 'text-teal-300',    dot: 'bg-teal-400',     dotBg: 'bg-teal-400/20'    },
   'Contacted':   { tone: 'text-amber-300',  dot: 'bg-amber-400',   dotBg: 'bg-amber-400/20'  },
   'Qualified':   { tone: 'text-violet-300', dot: 'bg-violet-400',  dotBg: 'bg-violet-400/20' },
-  'Viewing':     { tone: 'text-fuchsia-300',   dot: 'bg-fuchsia-400',    dotBg: 'bg-fuchsia-400/20'   },
-  'Negotiation': { tone: 'text-orange-300', dot: 'bg-orange-400',  dotBg: 'bg-orange-400/20' },
-  'Closed':      { tone: 'text-[#D4AF37]',  dot: 'bg-[#D4AF37]',   dotBg: 'bg-[#D4AF37]/20'  },
+  'Viewing':     { tone: 'text-violet-300', dot: 'bg-violet-400',  dotBg: 'bg-violet-400/20' },
+  'Negotiation': { tone: 'text-violet-300', dot: 'bg-violet-400',  dotBg: 'bg-violet-400/20' },
+  'Closed':      { tone: 'text-emerald-300', dot: 'bg-emerald-400', dotBg: 'bg-emerald-400/20' },
 }
 
 function parseBudget(s: string): number {
@@ -117,7 +117,7 @@ export default function CrmPipelinePage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
             <Users className="h-3.5 w-3.5" /> {t('crm.pipeline')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
@@ -161,7 +161,7 @@ export default function CrmPipelinePage() {
                   className={[
                     'rounded-xl border p-5 text-left transition',
                     isSelected
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
+                      ? 'border-gold/40 bg-gold/[0.06]'
                       : 'border-line bg-surface hover:border-line-strong',
                   ].join(' ')}
                 >
@@ -180,7 +180,7 @@ export default function CrmPipelinePage() {
           {activeStage && (
             <div className="mt-4 flex items-center gap-2">
               <span className="text-xs text-slate-400">{t('crm.showing')}</span>
-              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-sm font-medium text-[#D4AF37]">{t(STAGE_NAME_KEY[activeStage] ?? '') || activeStage}</span>
+              <span className="rounded-full border border-gold/30 bg-gold/[0.08] px-3 py-1 text-sm font-medium text-gold">{t(STAGE_NAME_KEY[activeStage] ?? '') || activeStage}</span>
               <button
                 onClick={() => setActiveStage(null)}
                 className="text-xs text-slate-500 transition hover:text-slate-300"
