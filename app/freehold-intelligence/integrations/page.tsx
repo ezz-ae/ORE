@@ -258,28 +258,37 @@ export default function IntegrationsPage() {
                   const meta = META[integration.id]
                   const Icon = meta?.icon ?? Server
                   const st = statusCfg(integration.status)
-                  return (
-                    <div
-                      key={integration.id}
-                      className="flex items-center gap-5 rounded-xl border border-line bg-surface p-5 transition hover:border-gold/20"
-                    >
+                  // The whole card navigates — on phones the "View" pill used
+                  // to be the ONLY affordance and it was sm:+, leaving cards
+                  // untappable on mobile.
+                  const cardClass = 'flex items-center gap-4 rounded-xl border border-line bg-surface p-4 transition hover:border-gold/20 sm:gap-5 sm:p-5'
+                  const inner = (
+                    <>
                       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line bg-surface-2">
                         <Icon className="h-5 w-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-white">{integration.name}</div>
-                        <div className="mt-0.5 text-sm leading-snug text-slate-400">{meta?.copy || integration.description}</div>
+                        <div className="mt-0.5 text-sm leading-snug text-slate-400 max-sm:line-clamp-2">{meta?.copy || integration.description}</div>
                       </div>
                       <div className={`flex shrink-0 items-center gap-1.5 text-xs ${st.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                        {t(STATE_KEY[integration.status] ?? 'integrations.state.pending')}
+                        <span className="max-sm:hidden">{t(STATE_KEY[integration.status] ?? 'integrations.state.pending')}</span>
                       </div>
                       {meta?.href ? (
-                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
-                          {t('integrations.view')} <ArrowUpRight className="h-3 w-3" />
-                        </Link>
+                        <>
+                          <span className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition sm:inline-flex">
+                            {t('integrations.view')} <ArrowUpRight className="h-3 w-3" />
+                          </span>
+                          <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-500 sm:hidden" />
+                        </>
                       ) : null}
-                    </div>
+                    </>
+                  )
+                  return meta?.href ? (
+                    <Link key={integration.id} href={meta.href} className={cardClass}>{inner}</Link>
+                  ) : (
+                    <div key={integration.id} className={cardClass}>{inner}</div>
                   )
                 })}
               </div>
