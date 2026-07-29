@@ -216,6 +216,10 @@ export default function NotebookPage() {
   // left panel
   const [sourceQuery, setSourceQuery] = useState('')
   const [showAddSource, setShowAddSource] = useState(false)
+  // LITE: below lg the Sources/Studio rails are bottom sheets — without this
+  // they were `hidden lg:flex`, making uploads, source selection and all the
+  // generators unreachable on phones.
+  const [mobilePanel, setMobilePanel] = useState<null | 'sources' | 'studio'>(null)
   const [addSourceInput, setAddSourceInput] = useState('')
   // Data sources default ON — a fresh notebook must answer from the live
   // workspace, not open as an ungrounded chat that refuses questions.
@@ -536,17 +540,31 @@ export default function NotebookPage() {
   }
 
   return (
-    <div className="flex overflow-hidden bg-ink" style={{ height: 'calc(100dvh - 56px)' }}>
+    <div className="relative flex overflow-hidden bg-ink" style={{ height: 'calc(100dvh - 56px)' }}>
+
+      {/* Backdrop for the mobile panel sheets */}
+      {mobilePanel && (
+        <button
+          aria-label={t('common.close')}
+          onClick={() => setMobilePanel(null)}
+          className="absolute inset-0 z-[125] bg-black/60 lg:hidden"
+        />
+      )}
 
       {/* ── LEFT PANEL — Sources ─────────────────────────────────────────── */}
-      <aside className="hidden w-[280px] shrink-0 flex-col border-r border-line bg-app overflow-hidden lg:flex">
+      <aside className={`${mobilePanel === 'sources' ? 'absolute inset-x-0 bottom-0 top-16 z-[130] flex rounded-t-2xl border-t' : 'hidden'} w-auto flex-col overflow-hidden border-line bg-app lg:static lg:flex lg:w-[280px] lg:shrink-0 lg:rounded-none lg:border-t-0 lg:border-r`}>
 
         {/* header */}
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
           <span className="text-sm font-semibold text-white">{t('nb.sources')}</span>
-          <button onClick={() => setShowAddSource((v) => !v)} className="flex items-center gap-1 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-gold">
-            <Plus className="h-3 w-3" /> {showAddSource ? t('common.cancel') : t('nb.addSource')}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setShowAddSource((v) => !v)} className="flex items-center gap-1 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-gold">
+              <Plus className="h-3 w-3" /> {showAddSource ? t('common.cancel') : t('nb.addSource')}
+            </button>
+            <button onClick={() => setMobilePanel(null)} className="grid h-6 w-6 place-items-center rounded-lg text-slate-400 hover:text-white lg:hidden">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* search */}
@@ -1227,11 +1245,14 @@ export default function NotebookPage() {
       </main>
 
       {/* ── RIGHT PANEL — Studio ─────────────────────────────────────────── */}
-      <aside className="hidden w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-surface lg:flex">
+      <aside className={`${mobilePanel === 'studio' ? 'absolute inset-x-0 bottom-0 top-16 z-[130] flex rounded-t-2xl border-t' : 'hidden'} w-auto flex-col overflow-hidden border-line bg-surface lg:static lg:flex lg:w-[320px] lg:shrink-0 lg:rounded-none lg:border-t-0 lg:border-l`}>
 
         {/* header */}
-        <div className="border-b border-line px-4 py-3.5">
+        <div className="flex items-center justify-between border-b border-line px-4 py-3.5">
           <span className="text-sm font-semibold text-white">{t('nb.studio')}</span>
+          <button onClick={() => setMobilePanel(null)} className="grid h-6 w-6 place-items-center rounded-lg text-slate-400 hover:text-white lg:hidden">
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -1412,6 +1433,24 @@ export default function NotebookPage() {
 
         </div>
       </aside>
+
+      {/* Mobile rails — Sources & Studio open as bottom sheets below lg */}
+      {!mobilePanel && (
+        <div className="absolute inset-x-0 bottom-4 z-[120] flex justify-center gap-2 lg:hidden">
+          <button
+            onClick={() => setMobilePanel('sources')}
+            className="flex items-center gap-1.5 rounded-full border border-line-strong bg-chrome/95 px-4 py-2 text-xs font-semibold text-slate-200 shadow-xl shadow-black/40 backdrop-blur-xl"
+          >
+            <Search className="h-3.5 w-3.5 text-gold" /> {t('nb.sources')}
+          </button>
+          <button
+            onClick={() => setMobilePanel('studio')}
+            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink shadow-xl shadow-black/40"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> {t('nb.studio')}
+          </button>
+        </div>
+      )}
 
     </div>
   )
