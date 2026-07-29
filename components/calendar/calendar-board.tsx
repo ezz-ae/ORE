@@ -10,6 +10,7 @@ import {
 } from "./meta"
 import { EventDialog } from "./event-dialog"
 import { EventDetail } from "./event-detail"
+import { ExpertDepth } from "@/components/freehold/expert-depth"
 
 interface Me { email: string; name: string; role: string; isMgmt: boolean }
 type View = "month" | "agenda"
@@ -183,6 +184,9 @@ export function CalendarBoard() {
       ) : (
         <AgendaView events={visible} locale={locale} t={t} onEvent={(e) => setSelected(e)} />
       )}
+
+      {/* The calendar's AI entry — plan the week with the docked Expert */}
+      <ExpertDepth className="mt-6" prompts={['expert.depth.calendar.q1', 'expert.depth.calendar.q2', 'expert.depth.calendar.q3']} />
 
       {dialogOpen && (
         <EventDialog open={dialogOpen} editing={editing} defaultDate={dialogDate} meEmail={me.email}
