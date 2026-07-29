@@ -72,14 +72,24 @@ function fmtSize(bytes: number): string {
   return bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
+const ymd = (d: Date) => {
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
 export default function ReportsPage() {
   const t = useT()
   const [reportType, setReportType] = useState(REPORT_TYPES[0].value)
-  const [dateFrom,   setDateFrom]   = useState('2026-06-01')
-  const [dateTo,     setDateTo]     = useState('2026-06-06')
+  // Default range: first of the current month → today. The old hardcoded
+  // '2026-06-01'..'2026-06-06' literals silently aged into the past.
+  const [dateFrom,   setDateFrom]   = useState(() => ymd(new Date(new Date().getFullYear(), new Date().getMonth(), 1)))
+  const [dateTo,     setDateTo]     = useState(() => ymd(new Date()))
   const [generating, setGenerating] = useState(false)
   const [generated,  setGenerated]  = useState(false)
   const [format,     setFormat]     = useState('CSV')
+  // LITE: the generate panel folds on phones.
+  const [genOpen,    setGenOpen]    = useState(false)
   const [analytics,  setAnalytics]  = useState<Analytics | null>(null)
   const [summary,    setSummary]    = useState(ZERO_SUMMARY)
   const { user } = useSession()
@@ -293,16 +303,21 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Generate New Report */}
+          {/* Generate New Report — the control panel folds on phones */}
           <div className="rounded-xl border border-line bg-surface">
-            <div className="border-b border-line px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setGenOpen((v) => !v)}
+              className="w-full border-b border-line px-5 py-4 text-start md:pointer-events-none"
+            >
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-gold" />
                 <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.generateNew')}</h2>
+                <ChevronDown className={`ms-auto h-4 w-4 text-slate-500 transition md:hidden ${genOpen ? 'rotate-180' : ''}`} />
               </div>
               <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.generateHint')}</p>
-            </div>
-            <form onSubmit={handleGenerate} className="p-5 space-y-4">
+            </button>
+            <form onSubmit={handleGenerate} className={`p-5 space-y-4 ${genOpen ? '' : 'max-md:hidden'}`}>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                   {t('mgmt.reports.reportType')}
@@ -419,7 +434,27 @@ export default function ReportsPage() {
           {history.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-slate-500">{t('mgmt.reports.historyEmpty')}</div>
           ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* LITE: stacked report cards on phones — the 7-column table stays md+ */}
+          <div className="divide-y divide-line md:hidden">
+            {history.map((report) => (
+              <div key={report.id} className="px-4 py-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate text-sm font-medium text-slate-100">{typeLabel(report.typeValue)}</span>
+                  <span className="shrink-0 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400">{t('mgmt.reports.status.ready')}</span>
+                </div>
+                <div className="mt-0.5 truncate text-xs text-slate-400">
+                  {fmtDate(report.date)} · {report.by ?? t('mgmt.reports.automatedBy')} · {report.size}
+                </div>
+                <button
+                  onClick={() => { downloadText(`${report.id}.csv`, csvString(buildReportRows())); toast.success(t('mgmt.reports.idDownloaded', { id: report.id })) }}
+                  className="mt-2 flex items-center gap-1 text-xs font-medium text-gold transition-opacity hover:opacity-80">
+                  <Download className="h-3.5 w-3.5" /> CSV
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface-2">
@@ -454,6 +489,7 @@ export default function ReportsPage() {
               </tbody>
             </table>
           </div>
+          </>
           )}
         </div>
 
