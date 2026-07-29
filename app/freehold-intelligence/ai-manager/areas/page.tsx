@@ -214,7 +214,8 @@ export default function AreaGuidesPage() {
       </div>
 
       <div className="rounded-xl border border-line bg-surface divide-y divide-line overflow-hidden">
-        <div className="grid grid-cols-[1fr,auto,auto,auto] gap-4 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        {/* Column header is desktop-only — the rows stack on phones. */}
+        <div className="hidden grid-cols-[1fr,auto,auto,auto] gap-4 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500 sm:grid">
           <div>{t('paim.areas.colArea')}</div>
           <div className="text-center">{t('paim.areas.colStatus')}</div>
           <div className="text-center">{t('paim.areas.colSeo')}</div>
@@ -232,7 +233,7 @@ export default function AreaGuidesPage() {
           const isWriting = writing === a.name
           const isWritten = written.includes(a.name)
           return (
-            <div key={a.slug} className="grid grid-cols-[1fr,auto,auto,auto] items-center gap-4 px-5 py-3.5">
+            <div key={a.slug} className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:grid-cols-[1fr,auto,auto,auto] sm:px-5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-teal-400/50" />
@@ -242,11 +243,11 @@ export default function AreaGuidesPage() {
                   <span>{t('paim.areas.propsSuffix', { n: a.properties })}</span>
                 </div>
               </div>
-              <div className="flex justify-center">
+              <div className="flex justify-end sm:justify-center">
                 <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[a.status]}`}>{STATUS_LABEL[a.status]}</span>
               </div>
-              <div className="flex justify-center">{seoBar(a.seo)}</div>
-              <div className="flex items-center gap-1.5 justify-center">
+              <div className="flex justify-start sm:justify-center">{seoBar(a.seo)}</div>
+              <div className="flex items-center gap-1.5 justify-end sm:justify-center">
                 <button onClick={() => aiWrite(a.name, a.slug)} disabled={isWriting}
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                     isWritten ? 'border-emerald-400/20 text-emerald-400' : 'border-teal-400/20 bg-teal-400/[0.06] text-teal-400/80 hover:bg-teal-400/15'
