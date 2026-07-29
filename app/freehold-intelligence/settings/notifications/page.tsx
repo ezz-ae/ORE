@@ -108,8 +108,8 @@ export default function NotificationsPage() {
         <div key={category} className="mb-6">
           <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t(CATEGORY_LABEL_KEY[category])}</div>
           <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-5 gap-0 px-5 py-2.5 text-xs text-slate-600">
+            {/* Header — desktop only; on phones every toggle carries its own label */}
+            <div className="hidden grid-cols-5 gap-0 px-5 py-2.5 text-xs text-slate-600 sm:grid">
               <div className="col-span-2">{t('settings.notif.event')}</div>
               {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => {
                 const cm = CHANNEL_META[ch]
@@ -122,21 +122,31 @@ export default function NotificationsPage() {
               })}
             </div>
             {rules.filter((r) => r.category === category).map((rule) => (
-              <div key={rule.id} className="grid grid-cols-5 items-center gap-0 px-5 py-3.5">
-                <div className="col-span-2 min-w-0 pr-4">
+              <div key={rule.id} className="px-4 py-3.5 sm:grid sm:grid-cols-5 sm:items-center sm:gap-0 sm:px-5">
+                <div className="min-w-0 sm:col-span-2 sm:pr-4">
                   <div className="text-sm font-medium text-slate-100">{t(rule.labelKey)}</div>
                   <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{t(rule.descKey)}</div>
                 </div>
-                {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => (
-                  <div key={ch} className="flex items-center justify-center">
-                    <button
-                      onClick={() => toggle(rule.id, ch)}
-                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-emerald-400/90' : 'bg-surface-2'}`}
-                    >
-                      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${rule.channels[ch] ? 'left-[18px]' : 'left-0.5'}`} />
-                    </button>
-                  </div>
-                ))}
+                {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => {
+                  const cm = CHANNEL_META[ch]
+                  return (
+                    <div key={ch} className="mt-2.5 flex items-center justify-between gap-2 sm:mt-0 sm:justify-center">
+                      {/* Phone label — the matrix header is desktop-only */}
+                      <span className={`flex items-center gap-1.5 text-xs font-medium ${cm.color} sm:hidden`}>
+                        <cm.Icon className="h-3 w-3" /> {t(cm.labelKey)}
+                      </span>
+                      <button
+                        onClick={() => toggle(rule.id, ch)}
+                        role="switch"
+                        aria-checked={rule.channels[ch]}
+                        aria-label={t(cm.labelKey)}
+                        className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-emerald-400/90' : 'bg-surface-2'}`}
+                      >
+                        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${rule.channels[ch] ? 'left-[18px]' : 'left-0.5'}`} />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </div>

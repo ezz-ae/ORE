@@ -112,22 +112,30 @@ export default function RolesPage() {
               </button>
               {isOpen && (
                 <div className="border-t border-line">
-                  {/* Header row */}
-                  <div className="grid grid-cols-5 gap-0 border-b border-line px-5 py-2">
+                  {/* Header row — desktop only; phone rows label each role inline */}
+                  <div className="hidden grid-cols-5 gap-0 border-b border-line px-5 py-2 sm:grid">
                     <div className="text-xs text-slate-600 col-span-2">{t('settings.roles.permission')}</div>
                     {ROLES.map(({ id, Icon, color, labelKey }) => (
                       <div key={id} className={`flex items-center justify-center gap-1 text-xs font-medium ${color}`}>
                         <Icon className="h-3 w-3" />
-                        <span className="hidden sm:block">{t(labelKey)}</span>
+                        <span>{t(labelKey)}</span>
                       </div>
                     ))}
                   </div>
                   {/* Permission rows */}
                   {group.items.map((item) => (
-                    <div key={item.id} className="grid grid-cols-5 items-center gap-0 border-b border-line px-5 py-3 last:border-0">
-                      <div className="col-span-2 text-sm text-slate-400">{t(item.labelKey)}</div>
+                    <div key={item.id} className="border-b border-line px-4 py-3 last:border-0 sm:grid sm:grid-cols-5 sm:items-center sm:gap-0 sm:px-5">
+                      <div className="text-sm text-slate-400 sm:col-span-2">{t(item.labelKey)}</div>
+                      <div className="mt-2 flex flex-wrap gap-2 sm:hidden">
+                        {ROLES.map(({ id, color, labelKey }) => (
+                          <span key={id} className={`inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] ${item[id] ? color : 'text-slate-600'}`}>
+                            {item[id] ? <Check className="h-3 w-3 text-emerald-400/70" /> : <Lock className="h-2.5 w-2.5 text-slate-700" />}
+                            {t(labelKey)}
+                          </span>
+                        ))}
+                      </div>
                       {ROLES.map(({ id }) => (
-                        <div key={id} className="flex items-center justify-center">
+                        <div key={id} className="hidden items-center justify-center sm:flex">
                           {item[id] ? (
                             <Check className="h-3.5 w-3.5 text-emerald-400/70" />
                           ) : (
