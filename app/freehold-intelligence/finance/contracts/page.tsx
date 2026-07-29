@@ -166,26 +166,26 @@ export default function ContractsPage() {
               placeholder={t('finance.contracts.namePlaceholder')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="col-span-2 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400/40"
+              className="col-span-2 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <input
               placeholder={t('finance.contracts.partyPlaceholder')}
               value={newParty}
               onChange={(e) => setNewParty(e.target.value)}
-              className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400/40"
+              className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <input
               placeholder={t('finance.contracts.valuePlaceholder')}
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
-              className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400/40"
+              className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-slate-500">
               {t('finance.contracts.typeLabel')}
               <select
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as ContractType)}
-                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-emerald-400/40"
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-gold/40"
               >
                 {(Object.keys(TYPE_KEY) as ContractType[]).map((k) => (
                   <option key={k} value={k} className="bg-surface">{t(TYPE_KEY[k])}</option>
@@ -198,7 +198,7 @@ export default function ContractsPage() {
                 type="date"
                 value={newStart}
                 onChange={(e) => setNewStart(e.target.value)}
-                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-emerald-400/40"
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-gold/40"
               />
             </label>
             <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-slate-500">
@@ -207,7 +207,7 @@ export default function ContractsPage() {
                 type="date"
                 value={newEnd}
                 onChange={(e) => setNewEnd(e.target.value)}
-                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-emerald-400/40"
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-gold/40"
               />
             </label>
             <label className="col-span-2 flex items-center gap-2 text-xs text-slate-300">

@@ -9,6 +9,7 @@ import {
   Plus, Trash2, CheckSquare, Square, Copy, Globe, Phone, Download, Sparkles,
 } from 'lucide-react'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
+import { fieldClass } from '@/components/freehold/ui'
 import type { MetaFormQuestion, MetaFormQuestionType, CreateLeadFormPayload, ThankYouButtonType } from '@/lib/meta/types'
 import {
   CONTACT_GROUPS, CONTACT_TYPES, DEFAULT_CONTACT, FORM_TEMPLATES, PRESET_DEFS,
@@ -77,7 +78,7 @@ function makeDefault(t: (key: string) => string): FormState {
   }
 }
 
-const inputCls = 'w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition'
+const inputCls = fieldClass('lg')
 const labelCls = 'mb-2 block text-xs font-medium text-slate-400'
 
 let localSeq = 0
