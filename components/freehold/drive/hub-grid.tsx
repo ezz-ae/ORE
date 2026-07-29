@@ -24,12 +24,12 @@ export function HubGrid({ nsPrefix, apps, backHref = '/freehold-intelligence/dri
 }) {
   const t = useT()
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-16 pt-5 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href={backHref} className="mb-4 inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5 rtl:-scale-x-100" /> {t('drive.rooms.title')}
       </Link>
-      <h1 className="text-lg font-semibold text-white">{t(`${nsPrefix}.title`)}</h1>
-      <p className="mb-5 mt-0.5 text-xs text-slate-500">{t(`${nsPrefix}.subtitle`)}</p>
+      <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t(`${nsPrefix}.title`)}</h1>
+      <p className="mb-6 mt-1 text-sm text-slate-400">{t(`${nsPrefix}.subtitle`)}</p>
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {apps.map(({ key, href, Icon, accent }) => (
           <Link key={key} href={href}

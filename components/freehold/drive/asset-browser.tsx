@@ -222,11 +222,11 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   )
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-5 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       {/* Toolbar: search · sort · add */}
       <div className="mb-5 flex flex-wrap items-center gap-2.5">
         <div>
-          <h1 className="text-lg font-semibold text-white">{t(scope === 'library' ? 'drive.libraryTitle' : 'drive.homeTitle')}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t(scope === 'library' ? 'drive.libraryTitle' : 'drive.homeTitle')}</h1>
           {!loading && <p className="mt-0.5 text-xs text-slate-500">{total} {t('drive.count')}</p>}
         </div>
         <div className="relative ms-auto min-w-[180px] flex-1 sm:max-w-xs">
