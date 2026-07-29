@@ -4,6 +4,13 @@
 type Dict = Record<string, string>
 
 const en: Dict = {
+    'cs.home.eyebrow': 'Creative Studio',
+    'cs.home.title': 'Create marketing content',
+    'cs.home.subtitle': 'Pick a presenter, property and format — the AI does the rest.',
+    'cs.home.canvas.title': 'Advanced canvas',
+    'cs.home.canvas.desc': 'Node-based workflows for video and multi-step creatives',
+    'cs.home.drive.title': 'Generative Studio in Drive',
+    'cs.home.drive.desc': 'Presenters, media and every asset you have generated',
   'cs.quick.title': 'Quick Creative',
   'cs.quick.subtitle': 'Pick a presenter, a property and a format — generate a marketing image in one screen.',
   'cs.quick.link': 'Quick Creative',
@@ -30,6 +37,13 @@ const en: Dict = {
 }
 
 const ar: Dict = {
+    'cs.home.eyebrow': 'استوديو الإبداع',
+    'cs.home.title': 'أنشئ محتوى تسويقياً',
+    'cs.home.subtitle': 'اختر مقدّماً وعقاراً وصيغة — والذكاء الاصطناعي يتكفّل بالباقي.',
+    'cs.home.canvas.title': 'اللوحة المتقدمة',
+    'cs.home.canvas.desc': 'مسارات عمل عقدية للفيديو والإبداعات متعددة الخطوات',
+    'cs.home.drive.title': 'الاستوديو التوليدي في درايف',
+    'cs.home.drive.desc': 'المقدّمون والوسائط وكل أصل قمت بإنشائه',
   'cs.quick.title': 'إبداع سريع',
   'cs.quick.subtitle': 'اختر مقدّمًا وعقارًا وصيغة — وأنشئ صورة تسويقية في شاشة واحدة.',
   'cs.quick.link': 'إبداع سريع',
@@ -56,6 +70,13 @@ const ar: Dict = {
 }
 
 const ru: Dict = {
+    'cs.home.eyebrow': 'Творческая студия',
+    'cs.home.title': 'Создавайте маркетинговый контент',
+    'cs.home.subtitle': 'Выберите ведущего, объект и формат — ИИ сделает остальное.',
+    'cs.home.canvas.title': 'Продвинутый холст',
+    'cs.home.canvas.desc': 'Узловые сценарии для видео и многошаговых креативов',
+    'cs.home.drive.title': 'Генеративная студия в Drive',
+    'cs.home.drive.desc': 'Ведущие, медиа и все созданные вами материалы',
   'cs.quick.title': 'Быстрый креатив',
   'cs.quick.subtitle': 'Выберите ведущего, объект и формат — и создайте маркетинговое изображение на одном экране.',
   'cs.quick.link': 'Быстрый креатив',
