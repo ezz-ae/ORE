@@ -131,7 +131,7 @@ export default function NotificationsPage() {
                   <div key={ch} className="flex items-center justify-center">
                     <button
                       onClick={() => toggle(rule.id, ch)}
-                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-gold/80' : 'bg-surface-2'}`}
+                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-emerald-400/90' : 'bg-surface-2'}`}
                     >
                       <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${rule.channels[ch] ? 'left-[18px]' : 'left-0.5'}`} />
                     </button>

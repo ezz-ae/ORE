@@ -190,7 +190,7 @@ export default function TopicsPage() {
                   <span className="text-sm font-medium leading-snug text-slate-300">{topic.title}</span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${topic.status === 'published' ? 'text-gold bg-gold/10 border-gold/20' : 'text-slate-400 bg-surface-2 border-line-strong'}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${topic.status === 'published' ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25' : 'text-slate-400 bg-surface-2 border-line-strong'}`}>
                     {topic.status === 'published' && <Check className="h-3 w-3" />}
                     {t(statusKey[topic.status])}
                   </span>
@@ -201,7 +201,7 @@ export default function TopicsPage() {
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
                     {topic.status === 'published' ? (
-                      <span className="flex items-center gap-1 text-sm text-gold"><CheckCircle className="h-3 w-3" /> {t('paim.topics.live')}</span>
+                      <span className="flex items-center gap-1 text-sm text-emerald-300"><CheckCircle className="h-3 w-3" /> {t('paim.topics.live')}</span>
                     ) : (
                       <button
                         disabled={busyId === topic.id}

@@ -228,9 +228,10 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
   const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
   const { leads } = useLiveLeads()
   const lead = leads.find((l) => l.id === id)
-  if (!lead) return null
-
-  const phone = lead.phone.replace(/\D/g, '')
+  // No early return before the hooks below — bailing here changed the hook
+  // order between the "leads still loading" and "lead found" renders and
+  // crashed the page. The null-guard lives just before the render instead.
+  const phone = (lead?.phone ?? '').replace(/\D/g, '')
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [waStatus, setWaStatus] = useState<WAStatus>({
@@ -260,7 +261,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
   }, [])
   const invMatches = inventory
     .filter((p) => {
-      const budget = lead.budgetAED ?? ''
+      const budget = lead?.budgetAED ?? ''
       const nums = budget.match(/[\d.]+/g)?.map(Number) ?? []
       const max = nums[1] ? nums[1] * 1_000_000 : nums[0] ? nums[0] * 1_000_000 : Infinity
       return p.startingPriceAED ? p.startingPriceAED <= max * 1.2 : true
@@ -392,6 +393,8 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
 
   const grouped = groupByDate(messages, t, dateLocale)
   const isConnected = waStatus.status === 'connected'
+
+  if (!lead) return null
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (

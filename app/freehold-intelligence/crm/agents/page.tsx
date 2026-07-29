@@ -8,8 +8,8 @@ import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehol
 import { useT } from '@/lib/i18n/provider'
 
 const STATUS_CONFIG = {
-  available:    { labelKey: 'crm.status.available',  classes: 'bg-gold/10 text-gold border-gold/20' },
-  at_capacity:  { labelKey: 'crm.status.atCapacity', classes: 'bg-gold/10 text-gold border-gold/25'       },
+  available:    { labelKey: 'crm.status.available',  classes: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25' },
+  at_capacity:  { labelKey: 'crm.status.atCapacity', classes: 'bg-amber-400/10 text-amber-300 border-amber-400/25'       },
   overloaded:   { labelKey: 'crm.status.overloaded', classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
 }
 
@@ -210,13 +210,13 @@ export default function CrmAgentsPage() {
                     <div className="mt-5 border-t border-line pt-4">
                       <div className="flex items-center justify-between text-sm text-slate-400">
                         <span>{t('crm.utilization')}</span>
-                        <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-gold' : 'text-gold'}>
+                        <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-amber-300' : 'text-emerald-300'}>
                           {agent.utilization}%
                         </span>
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
                         <div
-                          className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-gold' : 'bg-gold'}`}
+                          className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                           style={{ width: `${agent.utilization}%` }}
                         />
                       </div>

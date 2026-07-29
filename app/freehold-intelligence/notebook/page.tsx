@@ -587,7 +587,7 @@ export default function NotebookPage() {
               placeholder={t('nb.pasteUrl')}
               className="flex-1 min-w-0 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
-            <button type="submit" className="shrink-0 rounded-lg bg-gold/80 px-2.5 py-1.5 text-xs font-semibold text-black">{t('common.add')}</button>
+            <button type="submit" className="shrink-0 rounded-lg bg-gold/80 px-2.5 py-1.5 text-xs font-semibold text-ink">{t('common.add')}</button>
           </form>
         )}
 
@@ -892,7 +892,7 @@ export default function NotebookPage() {
                 <button
                   onClick={() => sendChat()}
                   disabled={!chatInput.trim() || chatPending}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-30"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-gold-bright disabled:opacity-30"
                 >
                   {chatPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
                 </button>
@@ -1273,7 +1273,7 @@ export default function NotebookPage() {
                   <button
                     onClick={runGenerate}
                     disabled={genLoading}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-50"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold text-ink transition hover:bg-gold-bright disabled:opacity-50"
                   >
                     {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
                   </button>
@@ -1401,7 +1401,7 @@ export default function NotebookPage() {
                     toast.success(t('nb.sentTo', { label: destLabel }))
                     setActiveSendDest(null); setActiveSendOutput(null)
                   }}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#E8C657]"
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright"
                 >
                   <Send className="h-3.5 w-3.5" />
                   {t('nb.sendToLabel', { label: (() => { const lk = SEND_DESTINATIONS.find(d => d.key === activeSendDest)?.labelKey; return lk ? t(lk) : '' })() })}

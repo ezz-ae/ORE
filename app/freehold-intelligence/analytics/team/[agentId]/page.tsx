@@ -196,7 +196,7 @@ export default function AgentProfilePage() {
               className="w-16 rounded-md border border-line-strong bg-surface-2 px-2 py-1 text-sm text-white outline-none focus:border-gold/40"
             />
             <button onClick={addCredits} disabled={creditBusy}
-              className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F0CB67] disabled:opacity-60">
+              className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
               {creditBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Coins className="h-3 w-3" />} {t('analytics.agent.act.addCredits')}
             </button>
           </div>
@@ -231,7 +231,7 @@ export default function AgentProfilePage() {
                         <span className="text-slate-500"> · {d.projectName || '—'} · {d.agentName}</span>
                       </div>
                       <button onClick={() => toggleDeal(d)} disabled={dealBusy === d.id}
-                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition disabled:opacity-50 ${isCo ? 'border border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/15' : 'bg-gold text-ink hover:bg-[#F0CB67]'}`}>
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition disabled:opacity-50 ${isCo ? 'border border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/15' : 'bg-gold text-ink hover:bg-gold-bright'}`}>
                         {dealBusy === d.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                         {isCo ? t('analytics.agent.act.removeFromDeal') : t('analytics.agent.act.addToDeal')}
                       </button>
@@ -250,7 +250,7 @@ export default function AgentProfilePage() {
             <input value={nlPhone} onChange={(e) => setNlPhone(e.target.value)} placeholder={t('analytics.agent.act.phonePh')}
               className="rounded-md border border-line-strong bg-surface-2 px-3 py-1.5 text-sm text-white outline-none focus:border-gold/40" />
             <button onClick={addLead} disabled={addBusy || !nlName.trim()}
-              className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F0CB67] disabled:opacity-60">
+              className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
               {addBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3" />} {t('analytics.agent.act.addLead')}
             </button>
           </div>

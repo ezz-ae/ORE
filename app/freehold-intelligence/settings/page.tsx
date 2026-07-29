@@ -104,13 +104,13 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
       aria-pressed={on}
       className={[
         'relative h-6 w-11 rounded-full border transition-all duration-200',
-        on ? 'border-gold/40 bg-gold/20' : 'border-line-strong bg-surface-2',
+        on ? 'border-emerald-500/40 bg-emerald-500/20' : 'border-line-strong bg-surface-2',
       ].join(' ')}
     >
       <span
         className={[
           'absolute top-0.5 h-5 w-5 rounded-full border transition-all duration-200',
-          on ? 'left-5 border-gold/60 bg-gold' : 'left-0.5 border-line-strong bg-slate-400',
+          on ? 'left-5 border-emerald-400/60 bg-emerald-400' : 'left-0.5 border-line-strong bg-slate-400',
         ].join(' ')}
       />
     </button>
@@ -295,7 +295,7 @@ export default function SettingsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${a.enabled ? 'text-gold' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-medium ${a.enabled ? 'text-emerald-300' : 'text-slate-500'}`}>
                       {a.enabled ? t('settings.ai.enabled') : t('settings.ai.off')}
                     </span>
                     <Toggle on={a.enabled} onChange={() => toggleAiAction(a.id)} />
@@ -337,7 +337,7 @@ export default function SettingsPage() {
                     <p className="truncate text-sm font-medium text-slate-100">{t(`settings.crm.tgt.${f.tgtKey}`)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${f.mapped ? 'text-gold' : 'text-amber-400'}`}>
+                    <span className={`text-xs font-medium ${f.mapped ? 'text-emerald-300' : 'text-amber-400'}`}>
                       {f.mapped ? t('settings.crm.mapped') : t('settings.crm.unmapped')}
                     </span>
                     <Toggle on={f.mapped} onChange={() => toggleCrmField(idx)} />
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium text-slate-100">{t(`settings.gnotif.${n.id}`)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${n.enabled ? 'text-gold' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-medium ${n.enabled ? 'text-emerald-300' : 'text-slate-500'}`}>
                       {n.enabled ? t('settings.gnotif.on') : t('settings.gnotif.off')}
                     </span>
                     <Toggle on={n.enabled} onChange={() => toggleNotif(n.id)} />

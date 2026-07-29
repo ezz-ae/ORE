@@ -218,7 +218,7 @@ function MonthView({
           return (
             <div key={i} className={`min-h-[92px] border-b border-e border-line p-1.5 sm:min-h-[116px] ${inMonth ? "" : "bg-black/20"}`}>
               <button onClick={() => onDay(k)} className="group flex w-full items-center justify-between">
-                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${today ? "bg-gold text-black" : inMonth ? "text-slate-300" : "text-slate-600"}`}>{day.getDate()}</span>
+                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${today ? "bg-gold text-ink" : inMonth ? "text-slate-300" : "text-slate-600"}`}>{day.getDate()}</span>
                 <Plus className="h-3 w-3 text-slate-700 opacity-0 transition group-hover:opacity-100" />
               </button>
               <div className="mt-1 space-y-0.5">

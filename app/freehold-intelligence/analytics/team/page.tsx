@@ -236,7 +236,7 @@ export default function TeamAnalyticsPage() {
                             </Link>
                           </td>
                           <td className="px-4 py-3 text-end tabular-nums text-slate-300">{ag.totalLeads}</td>
-                          <td className="px-4 py-3 text-end tabular-nums text-gold">{ag.wins30d}</td>
+                          <td className="px-4 py-3 text-end tabular-nums text-emerald-300">{ag.wins30d}</td>
                           <td className="px-4 py-3 text-end tabular-nums text-slate-300">{ag.overdueFollowups}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-2">
@@ -274,7 +274,7 @@ export default function TeamAnalyticsPage() {
                     <span className="text-xs font-semibold tabular-nums text-slate-100">{step.count.toLocaleString('en-US')}</span>
                   </div>
                   <div className="h-6 w-full overflow-hidden rounded-lg bg-white/[0.05]">
-                    <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-gold/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
+                    <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-emerald-400/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
                   </div>
                 </div>
               ))

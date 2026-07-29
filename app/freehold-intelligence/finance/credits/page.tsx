@@ -210,7 +210,7 @@ export default function AgentCreditsPage() {
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <div
-                    className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
+                    className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>

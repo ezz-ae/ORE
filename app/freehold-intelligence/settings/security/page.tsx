@@ -237,7 +237,7 @@ export default function SecurityPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Key className={`h-3.5 w-3.5 shrink-0 ${k.active ? 'text-gold' : 'text-slate-600'}`} />
+                    <Key className={`h-3.5 w-3.5 shrink-0 ${k.active ? 'text-emerald-300' : 'text-slate-600'}`} />
                     <span className="text-sm font-semibold text-white">{k.name}</span>
                     {!k.active && <span className="text-xs text-red-400/70">{t('settings.security.revoked')}</span>}
                   </div>

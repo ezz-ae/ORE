@@ -29,7 +29,7 @@ const STATUS_KEY: Record<ListingStatus, string> = {
 }
 
 function statusBadge(status: ListingStatus) {
-  if (status === 'Published') return 'text-gold bg-gold/10 border-gold/20'
+  if (status === 'Published') return 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25'
   return 'text-slate-400 bg-surface-2 border-line-strong'
 }
 

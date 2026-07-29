@@ -263,7 +263,7 @@ export default function GoogleOverviewPage() {
                         <span className="text-slate-400">{t('lm.google.row.clicks', { n: c.metrics?.clicks.toLocaleString() ?? 0 })}</span>
                         <span className="text-slate-400">{t('lm.google.row.conv', { n: Math.round(c.metrics?.conversions ?? 0) })}</span>
                         <span className="font-medium text-white">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-gold' : 'bg-white/20'}`} />
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
                       </div>
                     </Link>
                   ))
