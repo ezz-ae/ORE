@@ -189,6 +189,8 @@ export default function LandingEditorPage() {
   const [notFound, setNotFound] = useState(false)
   const [testing, setTesting] = useState(false)
   const [test, setTest] = useState<TestReport | null>(null)
+  // All-green reports collapse to one line; issues auto-expand the list.
+  const [testOpen, setTestOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(true)
   const [aiInstruction, setAiInstruction] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
@@ -806,11 +808,14 @@ export default function LandingEditorPage() {
         </div>
       )}
 
-      {test && (
-        <div className="mb-5 rounded-2xl border border-line bg-surface-2/60 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
+      {test && (() => {
+        const allGreen = (test.failed ?? 0) === 0 && (test.warned ?? 0) === 0
+        const expanded = testOpen || !allGreen
+        return (
+        <div className={`mb-5 rounded-2xl border p-4 ${allGreen ? 'border-emerald-500/25 bg-emerald-500/[0.04]' : 'border-line bg-surface-2/60'}`}>
+          <div className={`flex items-center justify-between gap-2 ${expanded ? 'mb-3' : ''}`}>
             <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <FlaskConical className="h-4 w-4 text-gold" /> {t('lpe.test.title')}
+              {allGreen ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <FlaskConical className="h-4 w-4 text-gold" />} {t('lpe.test.title')}
               <span className="text-xs font-normal text-slate-500">
                 {t('lpe.test.summary')
                   .replace('{pass}', String(test.passed ?? 0))
@@ -818,8 +823,16 @@ export default function LandingEditorPage() {
                   .replace('{fail}', String(test.failed ?? 0))}
               </span>
             </div>
-            <button type="button" onClick={() => setTest(null)} className="text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>
+            <div className="flex items-center gap-2">
+              {allGreen && (
+                <button type="button" onClick={() => setTestOpen((v) => !v)} className="text-xs text-slate-400 transition hover:text-white">
+                  {expanded ? t('lpe.test.hide') : t('lpe.test.details')}
+                </button>
+              )}
+              <button type="button" onClick={() => { setTest(null); setTestOpen(false) }} className="text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>
+            </div>
           </div>
+          {expanded && (
           <ul className="grid gap-2 sm:grid-cols-2">
             {test.checks.map((c) => (
               <li key={c.id} className="flex items-start gap-2 rounded-lg bg-surface/60 px-3 py-2">
@@ -833,8 +846,10 @@ export default function LandingEditorPage() {
               </li>
             ))}
           </ul>
+          )}
         </div>
-      )}
+        )
+      })()}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
         {/* Editor */}
