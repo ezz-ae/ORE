@@ -91,10 +91,10 @@ export function DealsClient() {
 
   return (
     <div className="min-h-screen bg-ink pb-16">
-      <div className="sticky top-0 z-30 border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl">
+      <div className="sticky top-0 z-30 border-b border-line bg-app/80 px-4 py-5 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-white">{t('mgmt.deals.title')}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('mgmt.deals.title')}</h1>
             <p className="mt-0.5 text-sm text-slate-500">
               {loading ? t('mgmt.deals.loading') : t('mgmt.deals.summary', { count: deals.length, pending: pending.length })}
             </p>
@@ -108,7 +108,7 @@ export function DealsClient() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl space-y-6 px-6 pt-6">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 pt-6 sm:px-6">
         {showNew && (
           <Panel>
             <PanelHeader title={t('mgmt.deals.newDealTitle')} action={<span className="text-xs text-slate-500">{t('mgmt.deals.autofillHint')}</span>} />
@@ -151,7 +151,37 @@ export function DealsClient() {
         {/* Active deals */}
         <Panel>
           <PanelHeader title={t('mgmt.deals.activeClosed')} action={<span className="text-xs text-slate-500">{t('mgmt.deals.dealsCount', { count: active.length })}</span>} />
-          <div className="overflow-x-auto">
+          {/* LITE: phones get stacked deal cards — the 8-column grid is desktop depth. */}
+          <div className="divide-y divide-line md:hidden">
+            {active.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm text-slate-500">{t('mgmt.deals.noApproved')}</div>
+            ) : active.map((deal) => (
+              <div key={deal.id} className="px-4 py-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate text-sm font-semibold text-slate-100">{deal.leadName}</span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[deal.status].cls}`}>{t(STATUS_BADGE[deal.status].labelKey)}</span>
+                </div>
+                <div className="mt-0.5 truncate text-xs text-slate-400">
+                  {deal.projectName || '—'}{deal.developerName ? ` · ${deal.developerName}` : ''}{deal.agentName ? ` · ${deal.agentName}` : ''}
+                </div>
+                <div className="mt-2.5 grid grid-cols-3 gap-2">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('mgmt.deals.col.value')}</div>
+                    <div className="mt-0.5 truncate text-sm font-semibold tabular-nums text-white">{fmtAED(deal.propertyValueAed)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('mgmt.deals.col.commission')}</div>
+                    <div className="mt-0.5 truncate text-sm tabular-nums text-gold">{fmtAED(deal.agencyCommissionAed)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('mgmt.deals.col.paid')}</div>
+                    <div className="mt-0.5 truncate text-sm tabular-nums text-slate-300">{fmtAED(deal.commissionReceivedAed)}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface-2">
