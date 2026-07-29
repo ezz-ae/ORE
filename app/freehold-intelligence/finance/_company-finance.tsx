@@ -197,7 +197,29 @@ export function CompanyFinance() {
       {/* Expense ledger */}
       <Panel>
         <PanelHeader title={t('finance.company.expenseLedger')} action={<span className="text-xs text-slate-500">{t('finance.company.entries', { count: entries.length })}</span>} />
-        <div className="overflow-x-auto">
+        {/* LITE: stacked ledger cards on phones — the 6-column table stays md+.
+            The status toggle and delete keep the exact same handlers. */}
+        <div className="divide-y divide-line md:hidden">
+          {entries.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">{t('finance.company.noEntries')}</div>
+          ) : entries.map((e) => (
+            <div key={e.id} className="px-4 py-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate text-sm text-slate-300">{e.description || '—'}</span>
+                <span className="shrink-0 text-sm font-semibold tabular-nums text-white">{fmt(e.amountAed)}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-line-strong bg-surface px-2 py-0.5 text-xs text-slate-300">{t(CAT_KEY[e.category])}</span>
+                {e.payee && <span className="text-xs text-slate-400">{e.payee}</span>}
+                <button onClick={() => toggleStatus(e)} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${e.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                  {e.status === 'paid' ? <Check className="h-3 w-3" /> : null}{e.status === 'paid' ? t('finance.status.paid') : t('finance.status.pending')}
+                </button>
+                <button onClick={() => remove(e.id)} className="ms-auto text-slate-500 transition hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line bg-surface-2">

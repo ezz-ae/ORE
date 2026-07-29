@@ -153,7 +153,27 @@ export default function ROIPage() {
           {/* Monthly deal performance */}
           <Panel>
             <PanelHeader title={t('mgmt.roi.monthlyPerf')} action={<span className="text-xs text-slate-500">{t('mgmt.roi.monthlyPerfHint')}</span>} />
-            <div className="overflow-x-auto">
+            {/* LITE: stacked month cards on phones — the table stays md+ */}
+            <div className="divide-y divide-line md:hidden">
+              {a.monthlyDeals.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-slate-500">{t('mgmt.roi.noClosed6mo')}</div>
+              ) : a.monthlyDeals.map((m) => (
+                <div key={m.month} className="px-4 py-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-slate-200">{m.month}</span>
+                    <span className="text-xs text-slate-500">{t('mgmt.roi.col.deals')}: <span className="tabular-nums text-slate-300">{m.deals}</span></span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold tabular-nums text-white">{fmtAED(m.sales)}</span>
+                    <span className="text-sm tabular-nums text-gold">{fmtAED(m.commission)}</span>
+                  </div>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                    <div className="h-full rounded-full bg-emerald-500/70" style={{ width: `${(m.commission / maxMonthly) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line bg-surface-2">
