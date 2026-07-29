@@ -836,7 +836,7 @@ export default function LandingEditorPage() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.05fr]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
         {/* Editor */}
         <div className="space-y-5">
           {/* AI chat-to-edit — hidden in broker proposal mode (admin-only route) */}
@@ -1038,7 +1038,7 @@ export default function LandingEditorPage() {
               <a href={`/lp/${slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gold/70 hover:text-gold">{t('lpe.openTab')} <ExternalLink className="h-3 w-3" /></a>
             </div>
           </div>
-          <iframe ref={previewRef} key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
+          <iframe ref={previewRef} key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-2xl border-4 border-surface-3 bg-white shadow-2xl lg:h-[calc(100%-2rem)]" />
           <p className="mt-2 text-[11px] text-slate-600">{t('lpe.previewNote')} · <span className="text-gold/70">{t('lpe.canvasHint')}</span></p>
         </div>
       </div>
