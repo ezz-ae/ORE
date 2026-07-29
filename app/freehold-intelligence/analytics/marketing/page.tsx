@@ -153,7 +153,40 @@ export default function MarketingAnalyticsPage() {
             </div>
           </div>
         </div>
-        <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
+        {/* LITE: stacked dimension cards on phones — the 7-column table stays md+ */}
+        <div className="divide-y divide-white/[0.08] overflow-hidden rounded-xl border border-line bg-white/[0.05] md:hidden">
+          {rows && rows.length > 0 ? (
+            rows.map((r) => (
+              <div key={r.key} className="px-4 py-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate text-sm font-medium text-slate-200">{dim === 'source' ? prettySource(r.label) : r.label}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{t('analytics.th.leads')}: <span className="tabular-nums text-slate-200">{r.leads.toLocaleString('en-US')}</span></span>
+                </div>
+                <div className="mt-2 grid grid-cols-4 gap-2">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.th.conversions')}</div>
+                    <div className="mt-0.5 text-sm tabular-nums text-gold">{r.closed.toLocaleString('en-US')}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.th.convRate')}</div>
+                    <div className="mt-0.5 text-sm tabular-nums text-slate-300">{r.convRate}%</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.mk.score')}</div>
+                    <div className="mt-0.5 text-sm tabular-nums text-slate-300">{r.score}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{t('analytics.mk.avgBudget')}</div>
+                    <div className="mt-0.5 truncate text-sm tabular-nums text-slate-400">{r.avgBudget > 0 ? fmtAed(r.avgBudget) : '—'}</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">{rows ? t('analytics.empty.leads') : t('analytics.loading')}</div>
+          )}
+        </div>
+        <div className="hidden overflow-hidden rounded-xl border border-line bg-white/[0.05] md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
