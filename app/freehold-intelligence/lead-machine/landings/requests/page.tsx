@@ -104,7 +104,7 @@ export default function LandingEditRequestsPage() {
                 {canApprove && r.status === 'pending' && (
                   <>
                     <button type="button" disabled={busy === r.id} onClick={() => act(r.id, 'approve')}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-[11px] font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-[11px] font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
                       {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('lper.publish')}
                     </button>
                     <button type="button" disabled={busy === r.id}

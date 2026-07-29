@@ -36,7 +36,7 @@ function statusConfig(s: string): { dot: string; text: string; badge: string; la
   if (s === 'ACTIVE')   return { dot: 'bg-gold', text: 'text-gold', badge: 'border-gold/20 bg-gold/10', labelKey: 'lm.forms.status.active'   }
   if (s === 'DRAFT' || s === 'PAUSED')
     return                     { dot: 'bg-amber-400',   text: 'text-amber-300',  badge: 'border-amber-400/20 bg-amber-400/10',   labelKey: 'lm.forms.status.draft'    }
-  if (s === 'ARCHIVED') return { dot: 'bg-gold',   text: 'text-[#F8E7AE]',  badge: 'border-gold/20 bg-gold/10',   labelKey: 'lm.forms.status.archived' }
+  if (s === 'ARCHIVED') return { dot: 'bg-gold',   text: 'text-gold-bright',  badge: 'border-gold/20 bg-gold/10',   labelKey: 'lm.forms.status.archived' }
   if (s === 'DELETED')  return { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       labelKey: 'lm.forms.status.deleted'  }
   return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-500/20 bg-slate-500/10',   labelKey: null                       }
 }
@@ -73,7 +73,7 @@ export default async function FormsPage() {
 
         <Link
           href="/freehold-intelligence/lead-machine/forms/new"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] sm:mt-10"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright sm:mt-10"
         >
           <Plus className="h-4 w-4" /> {t('lm.forms.newForm')}
         </Link>
@@ -183,7 +183,7 @@ export default async function FormsPage() {
           <p className="mt-2 text-[14px] text-slate-500">{t('lm.forms.emptyDesc')}</p>
           <Link
             href="/freehold-intelligence/lead-machine/forms/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
           >
             <Plus className="h-4 w-4" /> {t('lm.forms.createFirst')}
           </Link>

@@ -174,7 +174,7 @@ export default async function CampaignsPage() {
           </p>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
           >
             <Plus className="h-4 w-4" /> {t('lm.campaigns.launchFirst')}
           </Link>

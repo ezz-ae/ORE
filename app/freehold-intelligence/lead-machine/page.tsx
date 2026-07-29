@@ -10,7 +10,7 @@ import { getServerT } from '@/lib/i18n/server'
 
 function scoreText(score: number) {
   if (score >= 80) return 'text-gold'
-  if (score >= 50) return 'text-[#F8E7AE]'
+  if (score >= 50) return 'text-gold-bright'
   return 'text-red-300'
 }
 function scoreBg(score: number) {

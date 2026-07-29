@@ -289,7 +289,7 @@ export default function GenerateCreativePage() {
           <button
             onClick={generate}
             disabled={loading || (!listing && !override)}
-            className="w-full rounded-full bg-gold px-5 py-3 text-[14px] font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+            className="w-full rounded-full bg-gold px-5 py-3 text-[14px] font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -343,7 +343,7 @@ export default function GenerateCreativePage() {
                 </div>
                 <Link
                   href={campaignNewUrl}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright"
                 >
                   {t('lm.creatives.generate.useInCampaign')}
                 </Link>

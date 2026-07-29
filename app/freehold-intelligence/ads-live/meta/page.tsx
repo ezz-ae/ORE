@@ -280,7 +280,7 @@ export default function MetaAdsPage() {
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
                   <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                 </div>
-                <span className="shrink-0 rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${c.active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
                   {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
                 </span>
               </div>
@@ -345,7 +345,7 @@ export default function MetaAdsPage() {
                     <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                   </div>
                   <div>
-                    <span className="rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${c.active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
                       {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
                     </span>
                   </div>

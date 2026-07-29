@@ -347,7 +347,7 @@ export default function NewFormPage() {
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/forms/${created.id}`}
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
           >
             {t('pforms.created.viewForm')}
           </Link>
@@ -1022,7 +1022,7 @@ export default function NewFormPage() {
           <button
             onClick={() => setStep((s) => (s + 1) as WizardStep)}
             disabled={step === 1 && (!form.formName || !form.landingUrl)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('pforms.nav.next')} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
           </button>
@@ -1030,7 +1030,7 @@ export default function NewFormPage() {
           <button
             onClick={handleCreate}
             disabled={submitting || questionCount === 0 || callNeedsPhone}
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50"
           >
             {submitting ? t('pforms.nav.creating') : t('pforms.nav.create')}
             {!submitting && <Check className="h-4 w-4" />}

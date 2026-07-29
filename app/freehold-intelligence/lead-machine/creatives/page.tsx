@@ -85,7 +85,7 @@ export default function CreativesPage() {
 
         <Link
           href="/freehold-intelligence/lead-machine/creatives/generate"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] sm:mt-10"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright sm:mt-10"
         >
           <Wand2 className="h-4 w-4" /> {t('lm.creatives.generateCopy')}
         </Link>
@@ -231,7 +231,7 @@ export default function CreativesPage() {
           <p className="mt-2 text-[14px] text-slate-500">{t('lm.creatives.emptyDesc')}</p>
           <Link
             href="/freehold-intelligence/lead-machine/creatives/generate"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
           >
             <Wand2 className="h-4 w-4" /> {t('lm.creatives.generateFirst')}
           </Link>

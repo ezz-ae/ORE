@@ -44,7 +44,7 @@ const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
 }
 
 const INTENT_BADGE: Record<string, string> = {
-  high:   'bg-gold/10 text-[#F8E7AE] border-gold/20',
+  high:   'bg-gold/10 text-gold-bright border-gold/20',
   medium: 'bg-teal-400/10 text-slate-400 border-teal-400/20',
   brand:  'bg-violet-400/10 text-slate-400 border-violet-400/20',
 }

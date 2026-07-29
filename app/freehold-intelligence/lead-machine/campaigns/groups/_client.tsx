@@ -80,7 +80,7 @@ export default function GroupsClient() {
           <p className="mt-0.5 max-w-xl text-xs text-slate-500">{t('cg.subtitle')}</p>
         </div>
         <button type="button" onClick={() => setShowForm((s) => !s)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+          className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
           <Plus className="h-3.5 w-3.5" /> {t('cg.new')}
         </button>
       </div>
@@ -114,7 +114,7 @@ export default function GroupsClient() {
           )}
           <div className="mt-4 flex items-center gap-2">
             <button type="button" onClick={create} disabled={creating}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
               {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('cg.form.create')}
             </button>
             <button type="button" onClick={() => { setShowForm(false); setPicked(new Set()); setName('') }} className="text-xs text-slate-400 hover:text-white">{t('cg.form.cancel')}</button>

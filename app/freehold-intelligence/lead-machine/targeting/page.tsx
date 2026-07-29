@@ -9,7 +9,7 @@ import type { TargetingUseCase } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
 
 const USE_CASE_BADGE: Record<TargetingUseCase, { color: string; badge: string }> = {
-  investor:       { color: 'text-gold',        badge: 'border-gold/25 bg-gold/10 text-[#F8E7AE]'   },
+  investor:       { color: 'text-gold',        badge: 'border-gold/25 bg-gold/10 text-gold-bright'   },
   end_user:       { color: 'text-gold',        badge: 'border-gold/20 bg-gold/10 text-gold'         },
   golden_visa:    { color: 'text-slate-400',   badge: 'border-teal-400/20 bg-teal-400/10 text-teal-200' },
   secondary:      { color: 'text-slate-400',   badge: 'border-violet-400/20 bg-violet-400/10 text-slate-400' },
@@ -323,7 +323,7 @@ export default function TargetingPage() {
                     </div>
                     <Link
                       href={campaignUrl}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] shrink-0"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright shrink-0"
                     >
                       {t('lm.targeting.useTemplate')} <ArrowUpRight className="h-3 w-3" />
                     </Link>

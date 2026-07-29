@@ -354,7 +354,7 @@ export default function MachineDashboardPage() {
         <div className="flex flex-wrap items-center gap-2">
           {machine.status === 'planning' && machine.plan?.viable && (
             <button type="button" onClick={() => setReviewing(true)} disabled={!!actionBusy}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
               <Eye className="h-3.5 w-3.5" /> {t('lm.machine.review.reviewLaunch')}
             </button>
           )}

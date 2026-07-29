@@ -716,7 +716,7 @@ export default function LandingEditorPage() {
               <button type="button" onClick={() => saveProposal(false)} disabled={saving || sending} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
                 {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.proposal.saveDraft')}
               </button>
-              <button type="button" onClick={() => saveProposal(true)} disabled={saving || sending} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+              <button type="button" onClick={() => saveProposal(true)} disabled={saving || sending} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
                 {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {t('lpe.proposal.send')}
               </button>
             </>
@@ -747,7 +747,7 @@ export default function LandingEditorPage() {
               )}
               <button type="button" onClick={() => save()} disabled={saving || !edited}
                 className={edited
-                  ? 'inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60'
+                  ? 'inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60'
                   : 'inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-500'}>
                 {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.saveEdits')}
               </button>
@@ -755,7 +755,7 @@ export default function LandingEditorPage() {
                 <button type="button" onClick={() => setMoreOpen((o) => !o)} disabled={saving}
                   className={edited
                     ? 'inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60'
-                    : 'inline-flex items-center gap-1 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60'}>
+                    : 'inline-flex items-center gap-1 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60'}>
                   {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')} <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {moreOpen && (
@@ -854,7 +854,7 @@ export default function LandingEditorPage() {
                 <button
                   type="button"
                   onClick={() => openExpert()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-3.5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-3.5 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright"
                 >
                   <Sparkles className="h-3.5 w-3.5" /> {t('lpe.ai.openChat')}
                 </button>
@@ -1058,7 +1058,7 @@ export default function LandingEditorPage() {
             </p>
             <div className="mt-4 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setScheduleOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
-              <button type="button" onClick={() => { setScheduleOpen(false); void save() }} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lpe.schedule.apply')}</button>
+              <button type="button" onClick={() => { setScheduleOpen(false); void save() }} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">{t('lpe.schedule.apply')}</button>
             </div>
           </div>
         </div>
@@ -1105,7 +1105,7 @@ export default function LandingEditorPage() {
                   refuses their deletion with a 409). */}
               {form.status !== 'archived' && (
                 <button type="button" onClick={() => { setDeleteOpen(false); void save('archived') }}
-                  className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+                  className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
                   {t('lpe.del.archiveInstead')}
                 </button>
               )}

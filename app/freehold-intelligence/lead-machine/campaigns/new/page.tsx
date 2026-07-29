@@ -1279,7 +1279,7 @@ export default function NewCampaignPage() {
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/ads-live/meta/${launched.campaignId}`}
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
           >
             {t('lm.newCampaign.success.openDashboard')}
           </Link>
@@ -1569,7 +1569,7 @@ export default function NewCampaignPage() {
                       placeholder={t('lm.aud.create.namePlaceholder')}
                       className="min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-gold/40" />
                     <button type="button" onClick={createAudienceInline} disabled={audCreating || !audNewName.trim()}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                       {audCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('lm.aud.create.save')}
                     </button>
                   </div>
@@ -1670,7 +1670,7 @@ export default function NewCampaignPage() {
                         <span key={n} className="ms-1 rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-gold">{n}</span>
                       ))}
                     </div>
-                    <button type="button" onClick={applyBuyerMatch} className="shrink-0 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('bm.apply')}</button>
+                    <button type="button" onClick={applyBuyerMatch} className="shrink-0 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright">{t('bm.apply')}</button>
                   </div>
 
                   <p className="text-[10px] leading-relaxed text-slate-600">{t('bm.provenance')}</p>
@@ -1758,7 +1758,7 @@ export default function NewCampaignPage() {
           onClose={() => setAudienceOpen(false)}
           title={t('lm.newCampaign.s2.audienceBuilder')}
           subtitle={t('lm.newCampaign.s2.audienceBuilderSub')}
-          footer={<button type="button" onClick={() => setAudienceOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lm.newCampaign.s2.useAudience')}</button>}
+          footer={<button type="button" onClick={() => setAudienceOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright">{t('lm.newCampaign.s2.useAudience')}</button>}
         >
           <div className="space-y-5">
             <div>
@@ -1941,7 +1941,7 @@ export default function NewCampaignPage() {
           footer={dqData ? (
             <>
               <Link href={dqData.listing.editUrl} className="rounded-full border border-line px-4 py-2 text-sm text-slate-300 transition hover:text-white">{t('dq.editListing')}</Link>
-              <button type="button" onClick={() => setDqOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('dq.close')}</button>
+              <button type="button" onClick={() => setDqOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright">{t('dq.close')}</button>
             </>
           ) : undefined}
         >
@@ -2029,7 +2029,7 @@ export default function NewCampaignPage() {
                   ))}
                 </div>
                 <button type="button" onClick={generateCopy} disabled={genLoading || !form.listingId}
-                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                   {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                   {genLoading ? t('lm.newCampaign.s3.generating') : t('lm.newCampaign.s3.generate')}
                 </button>
@@ -2400,7 +2400,7 @@ export default function NewCampaignPage() {
                 ))}
               </select>
               <button type="button" onClick={createInlineForm} disabled={formBusy || !newFormName.trim()}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                 {formBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('lm.newCampaign.leadForm.createAttach')}
               </button>
               {/* Intro cards, custom questions, phone verification etc. live in
@@ -2681,7 +2681,7 @@ export default function NewCampaignPage() {
               (step === 2 && form.dailyBudgetAED < 50) ||
               (step === 3 && (!form.primaryText || !form.headlines[0] || (!form.landingUrl && !form.listingId)))
             }
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('lm.newCampaign.nav.continue')} <ArrowRight className="h-3.5 w-3.5" />
           </button>
@@ -2691,7 +2691,7 @@ export default function NewCampaignPage() {
             data-coach="wiz-launch"
             onClick={handleLaunch}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60"
           >
             {loading
               ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('lm.newCampaign.nav.launching')}</>
