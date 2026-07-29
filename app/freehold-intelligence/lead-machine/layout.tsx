@@ -12,6 +12,7 @@ import {
   FileText, FileCheck, Shield,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
+import { useT } from '@/lib/i18n/provider'
 
 // One clear mental model, no platform mixing:
 //   Inventory (app)  = the projects on the front-end site
@@ -21,43 +22,43 @@ import { useSessionGuard } from '@/lib/freehold/use-session'
 //   Across platforms = live results, attribution, optimizer, ops
 const MANAGER_NAV_SECTIONS = [
   {
-    label: 'Pipeline',
+    key: 'lm.nav.sec.pipeline',
     items: [
-      { label: 'Pipeline',      href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
+      { key: 'lm.nav.pipeline',    href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
     ],
   },
   {
-    label: 'Landing pages',
+    key: 'lm.nav.sec.landings',
     items: [
-      { label: 'Landing pages', href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
+      { key: 'lm.nav.landings',    href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
     ],
   },
   {
-    label: 'Meta Ads',
+    key: 'lm.nav.sec.meta',
     items: [
-      { label: 'Campaigns',     href: '/freehold-intelligence/lead-machine/campaigns',      exact: true, Icon: Megaphone   },
-      { label: 'Creative',      href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
-      { label: 'Lead forms',    href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
-      { label: 'Targeting',     href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
-      { label: 'Audiences',     href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users,       coach: 'lm-audiences' },
+      { key: 'lm.nav.campaigns',   href: '/freehold-intelligence/lead-machine/campaigns',      exact: true, Icon: Megaphone   },
+      { key: 'lm.nav.creative',    href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
+      { key: 'lm.nav.forms',       href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
+      { key: 'lm.nav.targeting',   href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
+      { key: 'lm.nav.audiences',   href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users,       coach: 'lm-audiences' },
     ],
   },
   {
-    label: 'Google Ads',
+    key: 'lm.nav.sec.google',
     items: [
-      { label: 'Google Ads',    href: '/freehold-intelligence/lead-machine/google',                      Icon: Search      },
+      { key: 'lm.nav.google',      href: '/freehold-intelligence/lead-machine/google',                      Icon: Search      },
     ],
   },
   {
-    label: 'Across platforms',
+    key: 'lm.nav.sec.across',
     items: [
-      { label: 'Ads Machine',   href: '/freehold-intelligence/lead-machine/ads-machine',                 Icon: Bot         },
-      { label: 'Live',          href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
-      { label: 'Attribution',   href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
-      { label: 'Optimizer',     href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
-      { label: 'Ad Requests',   href: '/freehold-intelligence/lead-machine/ad-requests',                 Icon: FileText    },
-      { label: 'Requirements',  href: '/freehold-intelligence/lead-machine/requirements',                Icon: FileCheck   },
-      { label: 'Permissions',   href: '/freehold-intelligence/lead-machine/permissions',                 Icon: Shield      },
+      { key: 'lm.nav.adsMachine',  href: '/freehold-intelligence/lead-machine/ads-machine',                 Icon: Bot         },
+      { key: 'lm.nav.live',        href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
+      { key: 'lm.nav.attribution', href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
+      { key: 'lm.nav.optimizer',   href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
+      { key: 'lm.nav.adRequests',  href: '/freehold-intelligence/lead-machine/ad-requests',                 Icon: FileText    },
+      { key: 'lm.nav.requirements', href: '/freehold-intelligence/lead-machine/requirements',               Icon: FileCheck   },
+      { key: 'lm.nav.permissions', href: '/freehold-intelligence/lead-machine/permissions',                 Icon: Shield      },
     ],
   },
 ]
@@ -65,9 +66,9 @@ const MANAGER_NAV_SECTIONS = [
 // Brokers only see their own campaigns
 const BROKER_NAV_SECTIONS = [
   {
-    label: 'My Campaigns',
+    key: 'lm.nav.sec.myCampaigns',
     items: [
-      { label: 'Campaigns',   href: '/freehold-intelligence/lead-machine/campaigns', exact: true, Icon: Megaphone },
+      { key: 'lm.nav.campaigns',   href: '/freehold-intelligence/lead-machine/campaigns', exact: true, Icon: Megaphone },
     ],
   },
 ]
@@ -77,6 +78,7 @@ const ALLOWED_ROLES = ['admin', 'sales_manager', 'director', 'ceo', 'marketing',
 export default function LeadMachineLayout({ children }: { children: React.ReactNode }) {
   const { ready, user } = useSessionGuard([...ALLOWED_ROLES])
   const pathname        = usePathname()
+  const t               = useT()
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -106,7 +108,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
 
   // Brokers return home to their workspace; managers go to the ads hub
   const backHref  = isBroker ? '/freehold-intelligence/agent' : '/freehold-intelligence/ads'
-  const backLabel = isBroker ? 'My Workspace' : 'All ad tools'
+  const backLabel = isBroker ? t('lm.nav.backBroker') : t('lm.nav.backManager')
 
   return (
     <div className="flex flex-col min-h-full">
@@ -125,7 +127,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
             <Megaphone className="h-3.5 w-3.5 text-gold" />
           </div>
-          <span className="text-sm font-semibold text-white">{isBroker ? 'My Campaigns' : 'Ads'}</span>
+          <span className="text-sm font-semibold text-white">{isBroker ? t('lm.nav.appTitleBroker') : t('lm.nav.appTitle')}</span>
         </div>
       </header>
 
@@ -136,10 +138,10 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
         <aside className="group/nav hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-[52px] hover:w-56 shrink-0 transition-[width] duration-200 overflow-hidden border-r border-white/[0.07] bg-chrome">
           <nav className="flex-1 px-2 py-4 space-y-5 overflow-y-auto">
             {navSections.map((section) => (
-              <div key={section.label}>
+              <div key={section.key}>
                 <div className="mb-1.5 h-4 px-2.5">
                   <span className="block whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150">
-                    {section.label}
+                    {t(section.key)}
                   </span>
                 </div>
                 <div className="space-y-0.5">
@@ -160,7 +162,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
                       >
                         <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
                         <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
-                          {item.label}
+                          {t(item.key)}
                         </span>
                       </Link>
                     )
@@ -184,7 +186,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
                     href={tab.href}
                     className={tabLinkClass(active)}
                   >
-                    {tab.label}
+                    {t(tab.key)}
                   </Link>
                 )
               })}

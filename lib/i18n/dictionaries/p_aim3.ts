@@ -3,6 +3,16 @@
 type Dict = Record<string, string>
 
 const en: Dict = {
+  // --- App nav (layout) ---
+  'paim.nav.appTitle': 'Web Studio',
+  'paim.nav.overview': 'Overview',
+  'paim.nav.listings': 'Listings',
+  'paim.nav.areas': 'Areas',
+  'paim.nav.developers': 'Developers',
+  'paim.nav.pages': 'Pages',
+  'paim.nav.microsites': 'Microsites',
+  'paim.nav.topics': 'Topics',
+  'paim.nav.insights': 'Insights',
   // --- Listings ---
   'paim.listings.breadcrumb': 'AI Manager · Listings',
   'paim.listings.title': 'Listings',
@@ -82,6 +92,16 @@ const en: Dict = {
 }
 
 const ar: Dict = {
+  // --- App nav (layout) ---
+  'paim.nav.appTitle': 'استوديو الويب',
+  'paim.nav.overview': 'نظرة عامة',
+  'paim.nav.listings': 'العقارات',
+  'paim.nav.areas': 'المناطق',
+  'paim.nav.developers': 'المطوّرون',
+  'paim.nav.pages': 'الصفحات',
+  'paim.nav.microsites': 'المواقع المصغّرة',
+  'paim.nav.topics': 'المواضيع',
+  'paim.nav.insights': 'الرؤى',
   // --- Listings ---
   'paim.listings.breadcrumb': 'مدير الذكاء الاصطناعي · العقارات',
   'paim.listings.title': 'العقارات',
@@ -153,6 +173,16 @@ const ar: Dict = {
 }
 
 const ru: Dict = {
+  // --- App nav (layout) ---
+  'paim.nav.appTitle': 'Веб-студия',
+  'paim.nav.overview': 'Обзор',
+  'paim.nav.listings': 'Объявления',
+  'paim.nav.areas': 'Районы',
+  'paim.nav.developers': 'Застройщики',
+  'paim.nav.pages': 'Страницы',
+  'paim.nav.microsites': 'Микросайты',
+  'paim.nav.topics': 'Темы',
+  'paim.nav.insights': 'Инсайты',
   // --- Listings ---
   'paim.listings.breadcrumb': 'AI-менеджер · Объявления',
   'paim.listings.title': 'Объявления',

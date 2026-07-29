@@ -8,21 +8,23 @@ import {
   LayoutDashboard, Building2, MapPin, HardHat, Globe, Hash, Lightbulb, MonitorSmartphone,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
+import { useT } from '@/lib/i18n/provider'
 
 const tabs = [
-  { label: 'Overview',   href: '/freehold-intelligence/ai-manager',             exact: true, Icon: LayoutDashboard },
-  { label: 'Listings',   href: '/freehold-intelligence/ai-manager/listings',                 Icon: Building2       },
-  { label: 'Areas',      href: '/freehold-intelligence/ai-manager/areas',                    Icon: MapPin          },
-  { label: 'Developers', href: '/freehold-intelligence/ai-manager/developers',               Icon: HardHat         },
-  { label: 'Pages',      href: '/freehold-intelligence/ai-manager/pages',                    Icon: Globe           },
-  { label: 'Microsites', href: '/freehold-intelligence/ai-manager/microsites',               Icon: MonitorSmartphone },
-  { label: 'Topics',     href: '/freehold-intelligence/ai-manager/topics',                   Icon: Hash            },
-  { label: 'Insights',   href: '/freehold-intelligence/ai-manager/insights',                 Icon: Lightbulb       },
+  { key: 'paim.nav.overview',   href: '/freehold-intelligence/ai-manager',             exact: true, Icon: LayoutDashboard },
+  { key: 'paim.nav.listings',   href: '/freehold-intelligence/ai-manager/listings',                 Icon: Building2       },
+  { key: 'paim.nav.areas',      href: '/freehold-intelligence/ai-manager/areas',                    Icon: MapPin          },
+  { key: 'paim.nav.developers', href: '/freehold-intelligence/ai-manager/developers',               Icon: HardHat         },
+  { key: 'paim.nav.pages',      href: '/freehold-intelligence/ai-manager/pages',                    Icon: Globe           },
+  { key: 'paim.nav.microsites', href: '/freehold-intelligence/ai-manager/microsites',               Icon: MonitorSmartphone },
+  { key: 'paim.nav.topics',     href: '/freehold-intelligence/ai-manager/topics',                   Icon: Hash            },
+  { key: 'paim.nav.insights',   href: '/freehold-intelligence/ai-manager/insights',                 Icon: Lightbulb       },
 ]
 
 export default function AiManagerLayout({ children }: { children: React.ReactNode }) {
   const { ready } = useSessionGuard(['admin', 'director', 'ceo', 'marketing'])
   const pathname = usePathname()
+  const t = useT()
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -45,14 +47,17 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Apps</span>
+          <span className="hidden sm:block">{t('common.apps')}</span>
         </Link>
         <div className="h-5 w-px bg-surface-3 shrink-0" />
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-teal-400/25 bg-teal-400/10">
             <Bot className="h-3.5 w-3.5 text-teal-400" />
           </div>
-          <span className="text-sm font-semibold text-white">AI Manager</span>
+          {/* Same name the app registry advertises (lib/freehold/apps.ts) —
+              the header used to say "AI Manager" while the launcher said
+              "Web Studio". */}
+          <span className="text-sm font-semibold text-white">{t('paim.nav.appTitle')}</span>
         </div>
       </header>
 
@@ -78,7 +83,7 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
                 >
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
                   <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
-                    {tab.label}
+                    {t(tab.key)}
                   </span>
                 </Link>
               )
@@ -99,7 +104,7 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
                     href={tab.href}
                     className={tabLinkClass(active)}
                   >
-                    {tab.label}
+                    {t(tab.key)}
                   </Link>
                 )
               })}
