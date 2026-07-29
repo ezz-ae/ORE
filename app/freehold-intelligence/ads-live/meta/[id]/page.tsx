@@ -89,6 +89,9 @@ export default function CampaignCommandPage() {
   const [refineBusy, setRefineBusy] = useState(false)
   // LITE: on phones the AI panel body is folded — daily use is one Analyse tap.
   const [aiOpen, setAiOpen] = useState(false)
+  // LITE: phones show only the daily essentials (switch · results · AI); ad-set
+  // budgets, previews, overlap and rules fold behind one disclosure.
+  const [moreOpen, setMoreOpen] = useState(false)
   const [rules, setRules] = useState<CampaignRule[]>([])
   const [matches, setMatches] = useState<RuleMatch[] | null>(null)
   const [checking, setChecking] = useState(false)
@@ -507,23 +510,34 @@ export default function CampaignCommandPage() {
         </div>
       )}
 
-      {/* Live KPIs */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Live KPIs — phones keep the daily trio (spend · leads · CPL) */}
+      <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
         {[
           { label: t('lm.meta.kpi.spend'),       value: kpis.spend > 0 ? fmtAED(kpis.spend) : '—' },
-          { label: t('lm.meta.col.clicks'),      value: kpis.clicks > 0 ? kpis.clicks.toLocaleString() : '—' },
-          { label: t('lm.meta.kpi.impressions'), value: kpis.impressions > 0 ? kpis.impressions.toLocaleString() : '—' },
+          { label: t('lm.meta.col.clicks'),      value: kpis.clicks > 0 ? kpis.clicks.toLocaleString() : '—', lite: false },
+          { label: t('lm.meta.kpi.impressions'), value: kpis.impressions > 0 ? kpis.impressions.toLocaleString() : '—', lite: false },
           { label: t('lm.meta.kpi.leads'),       value: kpis.leads > 0 ? String(kpis.leads) : '—', gold: kpis.leads > 0 },
           { label: t('lm.meta.kpi.cpl'),         value: kpis.cpl > 0 ? fmtAED(kpis.cpl) : '—' },
-          { label: t('lm.meta.kpi.ctr'),         value: kpis.ctr > 0 ? `${kpis.ctr}%` : '—' },
+          { label: t('lm.meta.kpi.ctr'),         value: kpis.ctr > 0 ? `${kpis.ctr}%` : '—', lite: false },
         ].map((k) => (
-          <div key={k.label} className="rounded-2xl border border-line bg-surface-2 p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">{k.label}</div>
-            <div className={`mt-2 text-lg font-semibold leading-none ${k.gold ? 'text-gold' : 'text-white'}`}>{k.value}</div>
+          <div key={k.label} className={`rounded-2xl border border-line bg-surface-2 p-3 sm:p-4 ${k.lite === false ? 'max-md:hidden' : ''}`}>
+            <div className="truncate text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">{k.label}</div>
+            <div className={`mt-2 truncate text-lg font-semibold leading-none ${k.gold ? 'text-gold' : 'text-white'}`}>{k.value}</div>
           </div>
         ))}
       </div>
 
+      {/* LITE: one disclosure for everything beyond the daily essentials */}
+      <button
+        type="button"
+        onClick={() => setMoreOpen((v) => !v)}
+        className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:text-white md:hidden"
+      >
+        {moreOpen ? t('lm.cmd.moreControlsHide') : t('lm.cmd.moreControls')}
+        <ChevronDown className={`h-3.5 w-3.5 transition ${moreOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <div className={moreOpen ? '' : 'max-md:hidden'}>
       {/* Ad sets + budget steppers */}
       <section className="mt-8">
         <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.cmd.adSets')}</div>
@@ -617,6 +631,7 @@ export default function CampaignCommandPage() {
           )}
         </section>
       )}
+      </div>
 
       {/* Live lead-quality — computed from OUR CRM funnel, not Meta */}
       <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
@@ -780,8 +795,9 @@ export default function CampaignCommandPage() {
       </section>
 
       {/* Automation rules — watch a metric, act. The headline: rules on the
-          lead-QUALITY score, which no ad platform can offer. */}
-      <section className="mt-6 rounded-2xl border border-line bg-surface-2 p-5">
+          lead-QUALITY score, which no ad platform can offer. Part of the
+          folded "more controls" group on phones. */}
+      <section className={`mt-6 rounded-2xl border border-line bg-surface-2 p-5 ${moreOpen ? '' : 'max-md:hidden'}`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><Zap className="h-4 w-4 text-gold" /></div>
