@@ -385,6 +385,11 @@ html {
 
   body {
     @apply bg-background text-foreground;
+    /* One stray wide element must never make the whole page pannable
+       sideways on phones — wide tables/rails scroll inside their own
+       overflow-x containers instead. `clip` (not `hidden`) so body doesn't
+       become a scroll container and position:sticky keeps working. */
+    overflow-x: clip;
   }
 }
 

@@ -43,6 +43,10 @@ const publicName = `${BRAND.legalName} UAE`
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Stops iOS Safari's automatic zoom-in when focusing sub-16px inputs (the
+  // page then STAYS zoomed, clipping fixed overlays like the Apps sheet).
+  // Safari still honors user-initiated pinch zoom despite this cap.
+  maximumScale: 1,
   viewportFit: "cover",
   themeColor: "#0a1628",
 }
