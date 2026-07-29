@@ -54,6 +54,17 @@ export function TeamAdmin() {
   const [actionValue, setActionValue] = useState('')
   const [actionBusy, setActionBusy] = useState(false)
 
+  // Dialog chrome for the ban/credit/remove confirm: ESC + scroll-lock —
+  // a destructive flow shouldn't trap the keyboard user.
+  useEffect(() => {
+    if (!action) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !actionBusy) setAction(null) }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [action, actionBusy])
+
   function load() {
     fetch('/api/freehold/team', { cache: 'no-store' })
       .then((r) => r.json())
@@ -178,7 +189,7 @@ export function TeamAdmin() {
       )}
 
       {action && (
-        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 sm:items-center sm:p-4" onClick={() => !actionBusy && setAction(null)}>
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 sm:items-center sm:p-4" role="dialog" aria-modal="true" onClick={() => !actionBusy && setAction(null)}>
           <div className="w-full max-w-sm rounded-t-2xl border border-line bg-surface p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-white">
               {action.kind === 'ban' ? t('mgmt.team.admin.ban') : action.kind === 'credit' ? t('mgmt.team.admin.openCredit') : t('mgmt.team.admin.remove')}
@@ -331,9 +342,18 @@ function EditMemberModal({ member, onClose, onSaved }: { member: Member; onClose
 }
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  // Dialog chrome the ad-hoc overlay was missing: ESC to close, body
+  // scroll-lock while open, and real dialog semantics. Bottom-sheet on phones.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [onClose])
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-[18px] border border-line-strong bg-surface p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title} onClick={onClose}>
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-line-strong bg-surface p-5 shadow-2xl sm:rounded-[18px]" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-white">{title}</h3>
           <button onClick={onClose} className="text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>

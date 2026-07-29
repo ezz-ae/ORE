@@ -108,6 +108,17 @@ export function EventDialog({ open, editing, defaultDate, meEmail, onClose, onSa
     setAttendees((prev) => (prev.some((a) => a.key === p.key) ? prev.filter((a) => a.key !== p.key) : [...prev, p]))
   }
 
+  // Dialog chrome: ESC to close + body scroll-lock while open. Must sit
+  // ABOVE the early return so the hook order never changes.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
+  }, [open, onClose])
+
   if (!open) return null
 
   const isApproval = kind === "car" || kind === "training"
@@ -158,7 +169,7 @@ export function EventDialog({ open, editing, defaultDate, meEmail, onClose, onSa
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center" dir={dir}>
+    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" dir={dir}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-line bg-chrome shadow-2xl">
         <div className="sticky top-0 flex items-center justify-between border-b border-line bg-chrome px-5 py-4">
