@@ -311,8 +311,9 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
 
       {/* ── Deep entry points — a button group, not the nav again ───────────── */}
       <div className="mb-8 flex flex-wrap gap-2">
-        {deepLinks.map((l) => {
-          const cls = buttonClass('secondary', 'sm', 'gap-2')
+        {deepLinks.map((l, i) => {
+          // LITE: phones show the 4 essentials; the rest are desktop depth.
+          const cls = buttonClass('secondary', 'sm', `gap-2${i >= 4 ? ' max-sm:hidden' : ''}`)
           return l.href ? (
             <Link key={l.key} href={l.href} className={cls}>
               <l.Icon className="h-3.5 w-3.5 text-gold" /> {l.label}
@@ -325,8 +326,9 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
         })}
       </div>
 
-      {/* ── Live widgets — each renders only when it has something real ─────── */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* ── Live widgets — desktop depth; phones keep only what needs you.
+          (The bottom tabs are the phone's way into Leads / Ads / Inventory.) ── */}
+      <div className="grid gap-4 max-md:hidden lg:grid-cols-2">
 
         {/* Leads */}
         {crm && crm.total > 0 && (
