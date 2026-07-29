@@ -216,11 +216,6 @@ export default function InventoryClient({
         subtitle={t('inv.pageSubtitle')}
       />
 
-      <ExpertDepth
-        className="mt-6"
-        prompts={['expert.depth.inventory.q1', 'expert.depth.inventory.q2', 'expert.depth.inventory.q3', 'expert.depth.inventory.q4']}
-      />
-
       {/* Stats row — hidden on an empty inventory so a fresh instance never
           shows 0/0/0/0 above the empty state. */}
       {initialProperties.length > 0 && (
@@ -293,7 +288,7 @@ export default function InventoryClient({
       )}
 
       {/* Controls */}
-      <div className="mt-10 flex flex-wrap items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         {/* Filter pills */}
         <div className="flex flex-wrap gap-1.5">
           {visibleFilters.map((f) => (
@@ -351,12 +346,12 @@ export default function InventoryClient({
           Desktop-only by default; phones fold them behind one toggle. */}
       {tagGroups.length > 0 && (
         <button type="button" onClick={() => setMobileFilters((v) => !v)}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-slate-300 md:hidden">
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white">
           {t('inv.moreFilters')}{tagSel.length > 0 ? ` · ${tagSel.length}` : ''}
         </button>
       )}
       {tagGroups.length > 0 && (
-        <div className={`mt-3 space-y-1.5 ${mobileFilters ? '' : 'hidden md:block'}`}>
+        <div className={`mt-3 space-y-1.5 ${mobileFilters ? '' : 'hidden'}`}>
           {tagGroups.map(({ group, tags }) => (
             <div key={group} className="flex flex-wrap items-center gap-1.5">
               <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{t(`inv.tagGroup.${group}`)}</span>
@@ -432,6 +427,12 @@ export default function InventoryClient({
       <p className="mt-3 text-sm text-slate-500">
         {t('inv.propertiesSorted', { shown: filtered.length, total: initialProperties.length })}
       </p>
+
+      {/* Go deeper with the Expert — an assistant, not the headline. */}
+      <ExpertDepth
+        className="mt-8"
+        prompts={['expert.depth.inventory.q1', 'expert.depth.inventory.q2', 'expert.depth.inventory.q3', 'expert.depth.inventory.q4']}
+      />
     </div>
   )
 }
