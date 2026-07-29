@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import {
   RULE_TRIGGERS, CONDITION_FIELDS, NUMERIC_FIELDS,
   NUMERIC_OPERATORS, TEXT_OPERATORS,
@@ -56,10 +57,14 @@ export default function AutomationSettingsPage() {
           <Workflow className="h-5 w-5 text-gold" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-white">{t('pauto.title')}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('pauto.title')}</h1>
           <p className="mt-0.5 text-sm text-slate-400">{t('pauto.subtitle')}</p>
         </div>
       </div>
+
+      {/* The most configuration-heavy surface in the product finally has its
+          AI entry — rules and distribution are exactly what to ask about. */}
+      <ExpertDepth className="mb-6" prompts={['expert.depth.automation.q1', 'expert.depth.automation.q2', 'expert.depth.automation.q3']} />
 
       {/* Section tabs */}
       <div className="mb-6 flex flex-wrap gap-2">
