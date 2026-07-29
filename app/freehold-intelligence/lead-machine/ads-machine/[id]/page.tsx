@@ -484,7 +484,68 @@ export default function MachineDashboardPage() {
             {t('lm.machine.trials.empty')}
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-[18px] border border-line bg-surface">
+          <>
+          {/* LITE: phone trial cards — the 860px table is desktop depth. Each
+              card keeps the daily controls: status, budget, on/off, Live. */}
+          <div className="mt-4 divide-y divide-line rounded-[18px] border border-line bg-surface md:hidden">
+            {campaigns.map((c) => {
+              const st = TRIAL_STATUS[c.status]
+              const dl = delivery[c.campaignId]
+              const dm = dl ? DELIVERY_META[dl.state] : null
+              const canToggle = (c.status === 'active' || c.status === 'paused')
+                && !(c.channel === 'google' && c.campaignId.startsWith('local-'))
+              const isOn = c.status === 'active'
+              const busy = togglingId === c.campaignId
+              return (
+                <div key={c.id} className="p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate text-sm font-semibold text-white">{c.trialLabel}</span>
+                    {canToggle ? (
+                      <button
+                        type="button" role="switch" aria-checked={isOn} disabled={busy}
+                        onClick={() => toggleTrial(c)}
+                        title={isOn ? t('lm.machine.trial.turnOff') : t('lm.machine.trial.turnOn')}
+                        className={`relative h-6 w-11 shrink-0 rounded-full transition ${isOn ? 'bg-emerald-400/90' : 'bg-surface-3'} disabled:opacity-60`}
+                      >
+                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${isOn ? 'start-[22px]' : 'start-0.5'}`} />
+                      </button>
+                    ) : (
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${st.cls}`}>{t(st.labelKey)}</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-slate-400">
+                    {c.projectSlug} · {c.channel === 'meta' ? 'Meta' : 'Google'} · AED {c.dailyBudgetAed.toLocaleString()}
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {canToggle && (
+                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.cls}`}>{t(st.labelKey)}</span>
+                    )}
+                    {dm && (
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${dm.cls}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${dm.dot}`} />
+                        {t(dm.labelKey)}
+                      </span>
+                    )}
+                    {dl?.notSpending && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-300">
+                        <span className="h-1 w-1 rounded-full bg-amber-400" />
+                        {t('lm.machine.delivery.notSpending')}
+                      </span>
+                    )}
+                    <Link
+                      href={c.channel === 'meta'
+                        ? `/freehold-intelligence/ads-live/meta/${encodeURIComponent(c.campaignId)}`
+                        : `/freehold-intelligence/lead-machine/google/campaigns/${encodeURIComponent(c.campaignId)}`}
+                      className="ms-auto inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
+                    >
+                      {t('lm.machine.trials.live')} <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-4 hidden overflow-x-auto rounded-[18px] border border-line bg-surface md:block">
             <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-line text-start text-xs uppercase tracking-wider text-slate-500">
@@ -580,6 +641,7 @@ export default function MachineDashboardPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 

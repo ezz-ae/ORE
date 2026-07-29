@@ -195,8 +195,44 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
         ))}
       </div>
 
+      {/* LITE: phone card list — the 900px table is desktop depth */}
+      <div className="mt-6 divide-y divide-line rounded-2xl border border-line bg-surface-2 md:hidden">
+        {listings.length === 0 ? (
+          <div className="py-12 text-center text-sm text-slate-500">{t('paim.listings.empty')}</div>
+        ) : (
+          listings.map(({ prop, content }) => (
+            <div key={prop.id} className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate text-sm font-semibold text-slate-100">{prop.name}</span>
+                <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge(content.status)}`}>
+                  {t(STATUS_KEY[content.status])}
+                </span>
+              </div>
+              <div className="mt-0.5 truncate text-xs text-slate-400">
+                {prop.area} · <span className="capitalize">{prop.status.replace('_', ' ')}</span>
+                {content.words != null ? ` · ${content.words.toLocaleString()} ${t('paim.listings.col.words').toLowerCase()}` : ''}
+              </div>
+              <div className="mt-2.5 flex items-center gap-2">
+                <button
+                  disabled={improving.includes(prop.id) || !!processing}
+                  onClick={() => handleImprove(prop)}
+                  className="flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/10 px-2.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50"
+                >
+                  {improving.includes(prop.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  {improving.includes(prop.id) ? t('paim.listings.improveBusy') : t('paim.listings.improveIdle')}
+                </button>
+                <Link href={`/freehold-intelligence/inventory/${prop.slug}`}
+                  className="flex items-center gap-1 rounded-lg border border-line-strong px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:text-white">
+                  <Edit2 className="h-3 w-3" /> {t('paim.listings.edit')}
+                </Link>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Table */}
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface-2">
+      <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-line bg-surface-2 md:block">
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-line">
