@@ -282,6 +282,8 @@ export default function NewCampaignPage() {
   const [campaignSources, setCampaignSources] = useState<{ label: string; text: string }[]>([])
   const [srcLink, setSrcLink] = useState('')
   const [srcBusy, setSrcBusy] = useState(false)
+  // LITE: the sources panel is optional enrichment — folded on phones.
+  const [srcOpen, setSrcOpen] = useState(false)
   const [srcError, setSrcError] = useState<string | null>(null)
 
   async function addSourceFile(file: File | null) {
@@ -1326,21 +1328,33 @@ export default function NewCampaignPage() {
         <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.newCampaign.back')}
       </Link>
 
-      <div className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
+      <div className="mt-5 sm:mt-7">
+        <div className="hidden items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85 sm:flex">
           <Megaphone className="h-3.5 w-3.5" /> {t('lm.newCampaign.eyebrow')}
         </div>
-        <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white sm:text-[40px]">
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-white sm:mt-3 sm:text-2xl">
           {t('lm.newCampaign.title')}
         </h1>
       </div>
 
       {/* Builder (left) + always-on live preview rail (right) — use the full tab. */}
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="mt-6 grid items-start gap-6 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_400px]">
       <div className="min-w-0">
 
-      {/* Step indicator */}
-      <div className="flex items-center gap-0">
+      {/* Step indicator — phones get a labeled progress line (the circles-only
+          row read as four anonymous dots at 390px); sm+ keeps the full stepper. */}
+      <div className="sm:hidden">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-sm font-semibold text-white">{t(STEPS[step - 1].labelKey)}</span>
+          <span className="text-xs text-slate-500">{step}/{STEPS.length}</span>
+        </div>
+        <div className="mt-2 flex gap-1.5">
+          {STEPS.map((s) => (
+            <div key={s.n} className={`h-1 flex-1 rounded-full ${step >= s.n ? 'bg-gold' : 'bg-surface-2'}`} />
+          ))}
+        </div>
+      </div>
+      <div className="hidden items-center gap-0 sm:flex">
         {STEPS.map((s, i) => {
           const active  = step === s.n
           const done    = step > s.n
@@ -1348,15 +1362,15 @@ export default function NewCampaignPage() {
           return (
             <div key={s.n} className="flex flex-1 items-center">
               <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                done    ? 'border-emerald-400/40 bg-gold/15 text-gold'
+                done    ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
                 : active ? 'border-gold/50 bg-gold/15 text-gold'
                 : 'border-line bg-surface-2 text-slate-500'
               }`}>
                 {done ? <CheckCircle2 className="h-4 w-4" /> : s.n}
               </div>
-              <span className={`ml-2 hidden text-sm font-medium sm:block ${active ? 'text-white' : done ? 'text-gold/70' : 'text-slate-600'}`}>{t(s.labelKey)}</span>
+              <span className={`ml-2 text-sm font-medium ${active ? 'text-white' : done ? 'text-emerald-300/70' : 'text-slate-600'}`}>{t(s.labelKey)}</span>
               {i < STEPS.length - 1 && (
-                <div className={`mx-3 h-px flex-1 ${done ? 'bg-gold/30' : 'bg-surface-2'}`} />
+                <div className={`mx-3 h-px flex-1 ${done ? 'bg-emerald-400/25' : 'bg-surface-2'}`} />
               )}
             </div>
           )
@@ -1393,9 +1407,20 @@ export default function NewCampaignPage() {
                 campaign when the project is a NEW LAUNCH with no landing page.
                 Feeds the AI copy generation on step 3. */}
             <div className="rounded-2xl border border-line bg-surface p-4" data-coach="wiz-sources">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
-                <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}
-              </div>
+              <button
+                type="button"
+                onClick={() => setSrcOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-gold sm:pointer-events-none"
+              >
+                <span className="flex items-center gap-1.5">
+                  <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}
+                  {campaignSources.length > 0 && (
+                    <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-gold">{campaignSources.length}</span>
+                  )}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 transition sm:hidden ${srcOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={srcOpen ? '' : 'max-sm:hidden'}>
               <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{t('lm.newCampaign.src.sub')}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
@@ -1428,6 +1453,7 @@ export default function NewCampaignPage() {
                   ))}
                 </div>
               )}
+              </div>
             </div>
 
             <div>
@@ -2375,7 +2401,9 @@ export default function NewCampaignPage() {
             either way it attaches to this ad instantly. */}
         {formPopupOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setFormPopupOpen(false)}>
-            <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+            {/* max-h + scroll: on a 390px phone the selects + footer overflowed
+                the viewport with no way to reach them. */}
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[15px] font-semibold text-white">{t('lm.newCampaign.leadForm.popupTitle')}</div>
                 <button type="button" onClick={() => setFormPopupOpen(false)} className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">{t('lm.newCampaign.s3.closePreview')}</button>
@@ -2658,8 +2686,10 @@ export default function NewCampaignPage() {
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="mt-6 flex items-center justify-between">
+      {/* Navigation — sticky on phones/tablets so advancing never requires
+          scrolling to the bottom of a long step; static on lg+ where the
+          preview rail keeps the page short. */}
+      <div className="sticky bottom-0 z-30 -mx-4 mt-6 flex items-center justify-between border-t border-white/[0.07] bg-chrome/95 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
         {step > 1 ? (
           <button
             type="button"
