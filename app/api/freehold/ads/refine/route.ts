@@ -18,6 +18,9 @@ Analyse the campaign using the REAL data provided: BOTH Meta delivery metrics AN
 CRM lead-QUALITY funnel (reached → qualified → won, plus junk) — which Meta itself cannot see.
 Ground every point in the actual numbers. A campaign with cheap leads but a low quality score is
 delivering junk; say so. Always consider the landing-page experience, because Meta never controls it.
+NUMBERS ARE EVIDENCE: cite ONLY figures present verbatim in the provided data. If metaMetrics or
+leadQuality is null, zero, or missing a field, say that data isn't available yet — NEVER invent,
+estimate or extrapolate a number. Fabricated figures on a money decision are the worst failure.
 Return ONLY strict JSON: {"working":[],"blocking":[],"actions":[]} — each an array of short, specific
 strings. "actions" must be 3 concrete, doable next steps (pause, shift budget, change creative/landing,
 tighten targeting). No preamble, no markdown.`
