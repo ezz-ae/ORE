@@ -4,6 +4,9 @@ import { subscribePageToLeadgenWebhook, MetaApiError, MetaConfigError } from '@/
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// The sweep pages through every form's full lead history — allow the longest
+// duration the plan permits instead of the 10s default.
+export const maxDuration = 60
 
 /**
  * Daily Meta lead-form sync (Vercel Cron) — the safety net behind the

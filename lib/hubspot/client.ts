@@ -128,24 +128,42 @@ export interface HubspotContact {
   createdAt: string
 }
 
-/** Pull the most recently created HubSpot contacts (for import into the CRM). */
-export async function listRecentContacts(limit = 50): Promise<HubspotContact[]> {
-  const data = await hs<{ results: Array<{ id: string; properties: Record<string, string>; createdAt: string }> }>(
-    '/crm/v3/objects/contacts/search',
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }],
-        properties: ['email', 'firstname', 'lastname', 'phone'],
-        limit: Math.min(limit, 100),
-      }),
-    },
-  )
-  return (data.results || []).map((r) => ({
-    id: r.id,
-    email: (r.properties.email || '').toLowerCase(),
-    name: [r.properties.firstname, r.properties.lastname].filter(Boolean).join(' ').trim(),
-    phone: r.properties.phone || '',
-    createdAt: r.createdAt,
-  }))
+/**
+ * Pull HubSpot contacts newest-first, following the search cursor until
+ * `limit` contacts are fetched or HubSpot reports no next page — the old
+ * single-page version silently capped every "sync" at 100 contacts.
+ */
+export async function listRecentContacts(limit = 1000): Promise<HubspotContact[]> {
+  const out: HubspotContact[] = []
+  let after: string | undefined
+  while (out.length < limit) {
+    const data = await hs<{
+      results: Array<{ id: string; properties: Record<string, string>; createdAt: string }>
+      paging?: { next?: { after?: string } }
+    }>(
+      '/crm/v3/objects/contacts/search',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }],
+          properties: ['email', 'firstname', 'lastname', 'phone'],
+          limit: Math.min(limit - out.length, 100),
+          ...(after ? { after } : {}),
+        }),
+      },
+    )
+    const batch = data.results || []
+    for (const r of batch) {
+      out.push({
+        id: r.id,
+        email: (r.properties.email || '').toLowerCase(),
+        name: [r.properties.firstname, r.properties.lastname].filter(Boolean).join(' ').trim(),
+        phone: r.properties.phone || '',
+        createdAt: r.createdAt,
+      })
+    }
+    after = data.paging?.next?.after
+    if (!after || batch.length === 0) break
+  }
+  return out
 }

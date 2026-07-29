@@ -10,6 +10,9 @@ import {
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// Full syncs page through hundreds of contacts/leads — give the function the
+// longest duration the plan allows instead of the 10s default.
+export const maxDuration = 60
 
 /**
  * Two-way HubSpot sync.
@@ -30,7 +33,9 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({})) as { direction?: 'push' | 'pull' | 'both'; limit?: number }
   const direction = body.direction ?? 'both'
-  const limit = Math.min(Math.max(body.limit ?? 50, 1), 100)
+  // Full sync by default: the old 50-per-click cap silently left everything
+  // beyond the newest 50 leads/contacts out of HubSpot forever.
+  const limit = Math.min(Math.max(body.limit ?? 1000, 1), 5000)
 
   let pushed = 0, pulled = 0, skipped = 0
 
