@@ -5,7 +5,7 @@ import { query } from '@/lib/db'
 import { ensureLeadActivityTable, ensureLeadsTable } from '@/lib/data'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? 'freehold_verify_token'
-const APP_SECRET = (process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET ?? '').trim()
+const APP_SECRET = (process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET ?? process.env.FACEBOOK_APP_SECRET ?? '').trim()
 
 // Verify Meta's X-Hub-Signature-256 HMAC over the RAW body. Returns true when
 // valid (or, before a secret is configured outside production, skips the check

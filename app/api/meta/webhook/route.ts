@@ -7,7 +7,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const VERIFY_TOKEN = process.env.META_LEADGEN_WEBHOOK_VERIFY_TOKEN ?? 'freehold_verify_token'
-const APP_SECRET = (process.env.META_APP_SECRET ?? '').trim()
+// Accept both spellings — Meta's dashboard calls it the (Facebook) App Secret.
+const APP_SECRET = (process.env.META_APP_SECRET ?? process.env.FACEBOOK_APP_SECRET ?? '').trim()
 
 // Same signature scheme as the WhatsApp webhook (app/api/whatsapp/webhook) —
 // Meta signs every webhook product with the app secret the same way.
