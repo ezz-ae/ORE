@@ -398,7 +398,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     {campaignPlatform && realCampaign && (
                       <span className={`shrink-0 rounded-full border px-1.5 py-px text-[10px] font-medium ${
                         campaignPlatform === 'meta'
-                          ? 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'
+                          ? 'border-violet-400/30 bg-violet-400/10 text-violet-300'
                           : 'border-gold/25 bg-gold/10 text-gold'
                       }`}>
                         {campaignPlatform === 'meta' ? 'Meta' : 'Google'}

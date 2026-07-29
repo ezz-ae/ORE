@@ -24,11 +24,11 @@ function scoreColor(n: number) {
 function stageStyle(stage: string) {
   const map: Record<string, string> = {
     Hot:         'text-red-300 border-red-400/20 bg-red-400/10',
-    Qualified:   'text-gold border-gold/20 bg-gold/10',
-    'Follow-up': 'text-[#F8E7AE] border-gold/20 bg-gold/10',
+    Qualified:   'text-violet-300 border-violet-400/30 bg-violet-400/10',
+    'Follow-up': 'text-amber-300 border-amber-400/30 bg-amber-400/10',
     New:         'text-teal-200 border-teal-400/20 bg-teal-400/10',
-    Viewing:     'text-fuchsia-200 border-fuchsia-400/20 bg-fuchsia-400/10',
-    Negotiation: 'text-orange-200 border-orange-400/20 bg-orange-400/10',
+    Viewing:     'text-violet-300 border-violet-400/30 bg-violet-400/10',
+    Negotiation: 'text-violet-300 border-violet-400/30 bg-violet-400/10',
     Closed:      'text-emerald-300 border-emerald-400/20 bg-emerald-400/10',
     Lost:        'text-slate-500 border-line-strong bg-surface-2',
   }
@@ -109,7 +109,7 @@ export default function CrmLeadsPage() {
   function clearFilters() { setQuery(''); setActiveStage('All'); setActiveAgent('All'); setActiveLanding('All') }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <PageHeader
         eyebrow={t('crm.crm')}
