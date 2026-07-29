@@ -354,7 +354,34 @@ export default function GoogleKeywordsPage() {
 
           {/* ── Keywords table ── */}
           {filtered.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-[20px] border border-line bg-surface">
+            <>
+            {/* LITE: stacked keyword cards on phones — the 8-column grid stays md+ */}
+            <div className="mt-4 divide-y divide-white/[0.035] overflow-hidden rounded-[20px] border border-line bg-surface md:hidden">
+              {filtered.map((kw) => (
+                <div key={kw.id} className="px-4 py-3.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${kw.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">{kw.text}</span>
+                    <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${MATCH_BADGE[kw.matchType]}`}>
+                      {MATCH_LABEL[kw.matchType]}
+                    </span>
+                    {(kw.id.startsWith('local-') || kw.resourceName) && (
+                      <button onClick={() => removeKeyword(kw)} title={t('common.remove')}
+                        className="shrink-0 rounded p-0.5 text-slate-600 transition hover:bg-white/[0.06] hover:text-red-400">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-400">
+                    <span>{kw.metrics?.clicks.toLocaleString() ?? '—'} · {kw.metrics?.ctr != null ? fmtPct(kw.metrics.ctr) : '—'}</span>
+                    <span>{kw.metrics?.averageCpcMicros != null ? fmtMicros(kw.metrics.averageCpcMicros) : '—'}</span>
+                    <span className="font-medium text-slate-300">{kw.metrics?.conversions != null ? Math.round(kw.metrics.conversions) : '—'} conv.</span>
+                    {kw.qualityScore != null && <QualityScore score={kw.qualityScore} />}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 hidden overflow-hidden rounded-[20px] border border-line bg-surface md:block">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                 <span>Keyword</span>
@@ -432,6 +459,7 @@ export default function GoogleKeywordsPage() {
                 ))}
               </div>
             </div>
+            </>
           ) : (
             /* ── Empty state ── */
             <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-14 text-center">

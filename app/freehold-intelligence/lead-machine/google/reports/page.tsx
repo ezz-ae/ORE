@@ -465,7 +465,30 @@ export default function GoogleReportsPage() {
                 No search terms match the selected filter.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
+              <>
+              {/* LITE: stacked search-term cards on phones — the 9-column grid stays md+ */}
+              <div className="divide-y divide-white/[0.04] overflow-hidden rounded-[20px] border border-line bg-surface md:hidden">
+                {filteredTerms.map((t, idx) => {
+                  const status = t.status as SearchTermStatus
+                  return (
+                    <div key={`${t.searchTerm}-${idx}`} className="px-4 py-3.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="min-w-0 truncate text-xs font-medium text-slate-200" title={t.searchTerm}>{t.searchTerm}</span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status] ?? STATUS_BADGE.NONE}`}>
+                          {STATUS_LABEL[status] ?? status}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-slate-500">{t.campaignName} · {t.adGroupName}</div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                        <span className="rounded border border-white/[0.1] bg-surface-2 px-1.5 py-0.5 text-slate-500">{t.matchType}</span>
+                        <span>{fmtNum(t.clicks)} · {fmtPct(t.ctr)}</span>
+                        <span className="font-medium text-slate-300">{Math.round(t.conversions)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="hidden overflow-hidden rounded-[20px] border border-line bg-surface md:block">
                 {/* Table header */}
                 <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-line px-5 py-2.5">
                   {['Term', 'Match', 'Campaign', 'Ad Group', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Status'].map((h) => (
@@ -521,6 +544,7 @@ export default function GoogleReportsPage() {
                   })}
                 </div>
               </div>
+              </>
             )}
 
             {/* Search terms note */}
