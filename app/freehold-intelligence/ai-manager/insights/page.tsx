@@ -136,7 +136,7 @@ export default function InsightsPage() {
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="mt-1 flex shrink-0 items-center gap-2 self-start rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+          className="mt-1 flex shrink-0 items-center gap-2 self-start rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60"
         >
           {generating ? (
             <>

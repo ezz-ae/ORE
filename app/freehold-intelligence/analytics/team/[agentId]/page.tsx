@@ -152,7 +152,7 @@ export default function AgentProfilePage() {
 
   if (!data) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8">
         <Link href="/freehold-intelligence/analytics/team" className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100">
           <ArrowLeft className="h-4 w-4" /> {t('analytics.agent.back')}
         </Link>
@@ -164,7 +164,7 @@ export default function AgentProfilePage() {
   const { agent, leadStats, leads, activity, deals, finance, ads } = data
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/analytics/team" className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100">
         <ArrowLeft className="h-4 w-4" /> {t('analytics.agent.back')}
       </Link>
@@ -173,7 +173,7 @@ export default function AgentProfilePage() {
       <div className="flex flex-wrap items-center gap-4">
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-lg font-bold text-slate-100">{initials(agent.name)}</span>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{agent.name}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100 sm:text-2xl">{agent.name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
             <span>{agent.email}</span>
             {agent.phone && <span>· {agent.phone}</span>}

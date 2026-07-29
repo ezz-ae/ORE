@@ -101,9 +101,9 @@ export default function TeamAnalyticsPage() {
   const questions = ['analytics.ai.q1', 'analytics.ai.q2', 'analytics.ai.q3', 'analytics.ai.q4']
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('analytics.tab.team')}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-100 sm:text-2xl">{t('analytics.tab.team')}</h1>
         <p className="mt-1 text-sm text-slate-400">{t('analytics.team.sub')}</p>
       </div>
 

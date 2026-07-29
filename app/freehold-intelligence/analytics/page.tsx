@@ -3,10 +3,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { FileText, Loader2, ExternalLink, X, ArrowUpRight } from 'lucide-react'
+import { FileText, Loader2, ExternalLink, ArrowUpRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { prettySource, STAGE_ORDER, fmtAed } from '@/lib/freehold/analytics-format'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
+import { Modal } from '@/components/freehold/ui'
 
 type LiveLeads = { total: number; last30d: number; last7d: number; closed: number; new: number; closingRate: number }
 type LiveData = {
@@ -125,10 +126,10 @@ export default function CompanyAnalyticsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('analytics.tab.company')}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100 sm:text-2xl">{t('analytics.tab.company')}</h1>
           <p className="mt-1 text-sm text-slate-400">{t('analytics.company.sub')}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +142,7 @@ export default function CompanyAnalyticsPage() {
             onClick={generateReport}
             disabled={reporting}
             title={t('analytics.report.hint')}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-3.5 py-2 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-3.5 py-2 text-sm font-semibold text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {reporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
             {reporting ? t('analytics.report.generating') : t('analytics.report.generate')}
@@ -236,25 +237,20 @@ export default function CompanyAnalyticsPage() {
         </section>
       </div>
 
-      {/* Report viewer — sandboxed iframe (model-generated HTML, no script/same-origin) */}
-      {showReport && report && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowReport(false)}>
-          <div className="relative flex h-[82vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-line bg-[#0B131F]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5">
-              <span className="truncate text-sm font-semibold text-white">{report.title}</span>
-              <button onClick={() => setShowReport(false)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <iframe
-              title={report.title}
-              sandbox=""
-              srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#0B131F;color:#e2e8f0;font-family:system-ui,sans-serif;padding:24px">${report.content}</body>`}
-              className="min-h-0 flex-1 w-full bg-[#0B131F]"
-            />
-          </div>
-        </div>
-      )}
+      {/* Report viewer — the kit Modal (ESC, scroll-lock, aria, bottom-sheet on
+          phones) around a sandboxed iframe (model-generated HTML, no script/
+          same-origin). The srcDoc keeps literal colors — an iframe document
+          can't read the app's CSS tokens. */}
+      <Modal open={showReport && !!report} onClose={() => setShowReport(false)} title={report?.title ?? ''} maxWidth="max-w-3xl">
+        {report && (
+          <iframe
+            title={report.title}
+            sandbox=""
+            srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#0B131F;color:#e2e8f0;font-family:system-ui,sans-serif;padding:24px">${report.content}</body>`}
+            className="h-[70vh] w-full rounded-lg"
+          />
+        )}
+      </Modal>
     </div>
   )
 }
