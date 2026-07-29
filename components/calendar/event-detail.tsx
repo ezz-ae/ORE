@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   X, MapPin, Users, CalendarClock, Download, Check, XCircle, Pencil, Trash2,
@@ -21,6 +21,14 @@ interface Props {
 }
 
 export function EventDetail({ event, meEmail, onClose, onChanged, onEdit }: Props) {
+  // Dialog chrome: ESC to close + body scroll-lock while mounted.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
+  }, [onClose])
   const t = useT()
   const { locale, dir } = useI18n()
   const [busy, setBusy] = useState(false)
@@ -72,7 +80,7 @@ export function EventDetail({ event, meEmail, onClose, onChanged, onEdit }: Prop
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center" dir={dir}>
+    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" dir={dir}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full sm:max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-line bg-chrome shadow-2xl">
         <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-line bg-chrome px-5 py-4">
