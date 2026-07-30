@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import {
   Loader2, Upload, Sparkles, Check, Download, QrCode, MessageSquareText,
-  Monitor, ArrowRight, ArrowLeft, RefreshCw, Save, ExternalLink, Megaphone, FolderOpen,
+  Monitor, ArrowRight, ArrowLeft, RefreshCw, Save, ExternalLink, Megaphone, FolderOpen, FileText,
 } from 'lucide-react'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
@@ -138,7 +138,36 @@ export default function AdDesignerPage() {
     reader.readAsDataURL(file)
   }
 
-  const canGenerate = (!!listingId || !!uploadUrl) && !!overlay.headline.trim()
+  // "From brochure": the third source from the spec — a developer PDF goes
+  // through the real brochure parser and its facts fill the overlay fields.
+  const [brochureBusy, setBrochureBusy] = useState(false)
+  const brochureRef = useRef<HTMLInputElement>(null)
+  async function onBrochure(file: File | null) {
+    if (!file || brochureBusy) return
+    setBrochureBusy(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
+      const d = await res.json().catch(() => ({}))
+      const b = d?.data as { name?: string; area?: string; developer?: string; priceFrom?: number | null; paymentPlan?: string } | undefined
+      if (!res.ok || !b) { toast.error(d?.error || t('adz.source.brochureFail')); return }
+      setOverlay((prev) => ({
+        eyebrow: b.area ? `${b.area} · Dubai` : (b.developer || prev.eyebrow),
+        headline: b.name || prev.headline,
+        price: b.priceFrom ? fmtPrice(b.priceFrom) : prev.price,
+        priceUnit: prev.priceUnit || 'AED',
+        footnote: b.paymentPlan || prev.footnote,
+      }))
+      setListingId('')
+      toast.success(t('adz.source.brochureDone'))
+    } catch { toast.error(t('adz.source.brochureFail')) } finally { setBrochureBusy(false) }
+  }
+
+  // A photo is optional now: without one the engine draws a styled placeholder
+  // ground, and Enhance (img2img) can paint a real scene over it.
+  const hasImage = !!listingId || !!uploadUrl
+  const canGenerate = !!overlay.headline.trim()
 
   async function generate() {
     if (!canGenerate || generating) return
@@ -505,17 +534,22 @@ export default function AdDesignerPage() {
                 <option value="">—</option>
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <div className="mt-2.5 grid grid-cols-2 gap-2">
+              <div className="mt-2.5 grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => fileRef.current?.click()}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-gold/30">
-                  <Upload className="h-4 w-4" /> {t('adz.source.upload')}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-2.5 text-[13px] font-semibold text-slate-200 transition hover:border-gold/30">
+                  <Upload className="h-4 w-4 shrink-0" /> {t('adz.source.upload')}
                 </button>
                 <button type="button" onClick={openDrivePicker}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-gold/30">
-                  <FolderOpen className="h-4 w-4" /> {t('adz.source.drive')}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-2.5 text-[13px] font-semibold text-slate-200 transition hover:border-gold/30">
+                  <FolderOpen className="h-4 w-4 shrink-0" /> {t('adz.source.drive')}
+                </button>
+                <button type="button" onClick={() => brochureRef.current?.click()} disabled={brochureBusy}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-2.5 text-[13px] font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-60">
+                  {brochureBusy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <FileText className="h-4 w-4 shrink-0" />} {t('adz.source.brochure')}
                 </button>
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
+              <input ref={brochureRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { onBrochure(e.target.files?.[0] ?? null); e.target.value = '' }} />
 
               <div className="mt-5 border-t border-line pt-4">
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.overlay')}</div>
@@ -581,6 +615,9 @@ export default function AdDesignerPage() {
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-3 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('adz.generate.cta')}
               </button>
+              {!hasImage && canGenerate && (
+                <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-500">{t('adz.noImageHint')}</p>
+              )}
             </div>
           </div>
         )}
