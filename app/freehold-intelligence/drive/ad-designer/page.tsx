@@ -12,6 +12,10 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
 import { useT } from '@/lib/i18n/provider'
 import { fieldClass, Modal } from '@/components/freehold/ui'
+import {
+  PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl,
+  type LayoutKey, type FormatKey, type Overlay,
+} from '@/lib/freehold/ad-compose'
 
 /**
  * AD DESIGNER — the generative ad-creative flow, end to end:
@@ -40,215 +44,8 @@ const STEPS: { key: Step; icon: React.ElementType }[] = [
   { key: 'preview',  icon: Monitor },
 ]
 
-type LayoutKey = 'heroPrice' | 'frame' | 'statFooter'
-type Palette = { bg: string; bg2: string; ink: string; accent: string; chip: string }
-const PALETTES: Palette[] = [
-  { bg: '#D9C6A0', bg2: '#CBB488', ink: '#231d12', accent: '#8a6f3c', chip: '#EBDDBE' }, // sand
-  { bg: '#0F172A', bg2: '#1E293B', ink: '#F8FAFC', accent: '#D4AF37', chip: '#26334A' }, // ink/gold
-  { bg: '#F3EFE6', bg2: '#E7E0D0', ink: '#173B2C', accent: '#C69B3E', chip: '#FFFFFF' }, // ivory/green
-]
-const LAYOUTS: LayoutKey[] = ['heroPrice', 'frame', 'statFooter']
-
 interface Variant { id: string; layout: LayoutKey; palette: number; fmt: FormatKey; dataUrl: string }
-interface Overlay { eyebrow: string; headline: string; price: string; priceUnit: string; footnote: string }
 
-// Ad formats — real Meta placement resolutions. Compositions are
-// resolution-aware: horizontal type scales with width, vertical anchors are
-// fractions of height, so the same design language holds in 4:5, 1:1 and 9:16.
-type FormatKey = 'feed' | 'square' | 'story'
-const FORMATS: Record<FormatKey, { w: number; h: number }> = {
-  feed:   { w: 1080, h: 1350 },
-  square: { w: 1080, h: 1080 },
-  story:  { w: 1080, h: 1920 },
-}
-const isRtl = (s: string) => /[؀-ۿ]/.test(s)
-
-// ── Canvas helpers ───────────────────────────────────────────────────────────
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
-}
-
-/** Wrap text to maxWidth; returns drawn height. */
-function drawWrapped(
-  ctx: CanvasRenderingContext2D, text: string, x: number, y: number,
-  maxWidth: number, lineHeight: number, maxLines = 3,
-): number {
-  const words = text.split(/\s+/).filter(Boolean)
-  const lines: string[] = []
-  let cur = ''
-  for (const w of words) {
-    const probe = cur ? `${cur} ${w}` : w
-    if (ctx.measureText(probe).width > maxWidth && cur) { lines.push(cur); cur = w }
-    else cur = probe
-    if (lines.length === maxLines) break
-  }
-  if (cur && lines.length < maxLines) lines.push(cur)
-  lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight))
-  return lines.length * lineHeight
-}
-
-/** Cover-fit draw of an image into a rect. */
-function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const scale = Math.max(w / img.width, h / img.height)
-  const dw = img.width * scale
-  const dh = img.height * scale
-  ctx.save()
-  ctx.beginPath()
-  ctx.rect(x, y, w, h)
-  ctx.clip()
-  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
-  ctx.restore()
-}
-
-function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Palette, o: Overlay, fmt: FormatKey): string {
-  const { w: W, h: H } = FORMATS[fmt]
-  const canvas = document.createElement('canvas')
-  canvas.width = W
-  canvas.height = H
-  const ctx = canvas.getContext('2d')!
-  const rtl = isRtl(o.headline || o.eyebrow)
-  ctx.direction = rtl ? 'rtl' : 'ltr'
-  const ax = rtl ? W - 64 : 64            // aligned text x
-  ctx.textAlign = rtl ? 'right' : 'left'
-  const font = (px: number, weight = 700) => `${weight} ${px}px system-ui, -apple-system, "Segoe UI", sans-serif`
-  // Vertical anchors are height fractions so 1:1 / 4:5 / 9:16 all read right.
-  const Y = (f: number) => Math.round(H * f)
-
-  if (layout === 'heroPrice') {
-    // Gradient ground, eyebrow + headline, huge price in a soft blob, image bottom.
-    const g = ctx.createLinearGradient(0, 0, 0, H)
-    g.addColorStop(0, p.bg)
-    g.addColorStop(1, p.bg2)
-    ctx.fillStyle = g
-    ctx.fillRect(0, 0, W, H)
-    ctx.fillStyle = p.ink
-    ctx.font = font(34, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, Y(0.07))
-    ctx.font = font(58, 800)
-    const hh = o.headline ? drawWrapped(ctx, o.headline, ax, Y(0.07) + 80, W - 128, 72, fmt === 'square' ? 2 : 3) : 0
-    if (o.price) {
-      const py = Y(0.07) + 100 + hh + 60
-      ctx.fillStyle = p.chip
-      roundRect(ctx, W / 2 - 380, py - 40, 760, 220, 110)
-      ctx.fill()
-      ctx.fillStyle = p.ink
-      ctx.textAlign = 'center'
-      ctx.font = font(150, 800)
-      ctx.fillText(o.price, W / 2 + (o.priceUnit ? 60 : 0), py + 105)
-      if (o.priceUnit) { ctx.font = font(44, 700); ctx.fillText(o.priceUnit, W / 2 - 280, py + 110) }
-      ctx.textAlign = rtl ? 'right' : 'left'
-    }
-    const imgTop = Y(fmt === 'square' ? 0.56 : 0.52)
-    if (o.footnote) { ctx.font = font(28, 500); ctx.fillStyle = p.ink; ctx.fillText(o.footnote, ax, imgTop - 36) }
-    if (img) drawCover(ctx, img, 0, imgTop, W, H - imgTop)
-    else { ctx.fillStyle = p.bg2; ctx.fillRect(0, imgTop, W, H - imgTop) }
-  } else if (layout === 'frame') {
-    // Full-bleed image with top/bottom scrims and bands.
-    ctx.fillStyle = p.bg2
-    ctx.fillRect(0, 0, W, H)
-    if (img) drawCover(ctx, img, 0, 0, W, H)
-    const top = ctx.createLinearGradient(0, 0, 0, Y(0.24))
-    top.addColorStop(0, 'rgba(10,10,14,0.82)')
-    top.addColorStop(1, 'rgba(10,10,14,0)')
-    ctx.fillStyle = top
-    ctx.fillRect(0, 0, W, Y(0.24))
-    const bot = ctx.createLinearGradient(0, H - Y(0.27), 0, H)
-    bot.addColorStop(0, 'rgba(10,10,14,0)')
-    bot.addColorStop(1, 'rgba(10,10,14,0.88)')
-    ctx.fillStyle = bot
-    ctx.fillRect(0, H - Y(0.27), W, Y(0.27))
-    ctx.fillStyle = p.accent
-    ctx.font = font(32, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, Y(0.065))
-    ctx.fillStyle = '#FFFFFF'
-    ctx.font = font(56, 800)
-    if (o.headline) drawWrapped(ctx, o.headline, ax, Y(0.065) + 68, W - 128, 68, 2)
-    if (o.price) {
-      ctx.fillStyle = p.accent
-      ctx.font = font(88, 800)
-      ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - Y(0.115))
-    }
-    if (o.footnote) { ctx.fillStyle = '#E7E5E4'; ctx.font = font(30, 500); ctx.fillText(o.footnote, ax, H - Y(0.055)) }
-  } else {
-    // statFooter: headline band, image middle, stat chips at the bottom band.
-    ctx.fillStyle = p.bg
-    ctx.fillRect(0, 0, W, H)
-    ctx.fillStyle = p.ink
-    ctx.font = font(30, 600)
-    if (o.eyebrow) { ctx.textAlign = 'center'; ctx.fillText(o.eyebrow, W / 2, Y(0.055)) }
-    ctx.font = font(52, 800)
-    ctx.textAlign = 'center'
-    if (o.headline) drawWrapped(ctx, o.headline, W / 2, Y(0.055) + 74, W - 120, 62, 2)
-    ctx.textAlign = rtl ? 'right' : 'left'
-    const imgTop = Y(0.22)
-    const imgBottom = Y(0.785)
-    if (img) drawCover(ctx, img, 0, imgTop, W, imgBottom - imgTop)
-    else { ctx.fillStyle = p.bg2; ctx.fillRect(0, imgTop, W, imgBottom - imgTop) }
-    ctx.fillStyle = p.bg2
-    ctx.fillRect(0, imgBottom, W, H - imgBottom)
-    const cells: [string, string][] = []
-    if (o.price) cells.push([`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ''])
-    if (o.footnote) cells.push([o.footnote, ''])
-    if (o.eyebrow) cells.push([o.eyebrow, ''])
-    const n = Math.max(cells.length, 1)
-    cells.forEach(([v], i) => {
-      const cx = ((rtl ? n - 1 - i : i) + 0.5) * (W / n)
-      ctx.textAlign = 'center'
-      ctx.fillStyle = p.ink
-      ctx.font = font(v.length > 16 ? 34 : 54, 800)
-      ctx.fillText(v, cx, imgBottom + Math.round((H - imgBottom) * 0.62))
-    })
-  }
-  return canvas.toDataURL('image/png')
-}
-
-/** Stamp a QR (with white rounded backing) onto a design's corner. */
-function stampQr(baseUrl: string, qrImg: HTMLImageElement, corner: 'tl' | 'tr' | 'bl' | 'br', sizePct: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const base = new Image()
-    base.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = base.width
-        canvas.height = base.height
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(base, 0, 0)
-        const s = Math.round(base.width * (sizePct / 100))
-        const pad = Math.round(s * 0.1)
-        const m = Math.round(base.width * 0.035)
-        const x = corner.includes('l') ? m : base.width - s - 2 * pad - m
-        const y = corner.includes('t') ? m : base.height - s - 2 * pad - m
-        // Trakhees-style white rounded backing so the code always scans.
-        ctx.fillStyle = '#FFFFFF'
-        roundRect(ctx, x, y, s + 2 * pad, s + 2 * pad, Math.round(s * 0.12))
-        ctx.fill()
-        ctx.drawImage(qrImg, x + pad, y + pad, s, s)
-        resolve(canvas.toDataURL('image/png'))
-      } catch (e) { reject(e) }
-    }
-    base.onerror = () => reject(new Error('load failed'))
-    base.src = baseUrl
-  })
-}
-
-function loadImage(src: string, cross = false): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    if (cross) img.crossOrigin = 'anonymous'
-    img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('image load failed'))
-    img.src = src
-  })
-}
-
-const fmtPrice = (n: number) => (n >= 1_000_000 ? `${Math.round((n / 1_000_000) * 10) / 10}M` : n.toLocaleString())
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -286,6 +83,18 @@ export default function AdDesignerPage() {
 
   const fileRef = useRef<HTMLInputElement>(null)
   const qrFileRef = useRef<HTMLInputElement>(null)
+
+  // Deep-link seeding from the Creative Suite: /drive/ad-designer?format=story
+  // (&layout=frame&palette=1) opens with that recipe preselected.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    const f = sp.get('format') as FormatKey | null
+    if (f && FORMATS[f]) setFormat(f)
+    const l = sp.get('layout') as LayoutKey | null
+    if (l && LAYOUTS.includes(l)) setLayoutsOn(new Set([l]))
+    const p = sp.get('palette')
+    if (p !== null && PALETTES[Number(p)]) setPalettesOn(new Set([Number(p)]))
+  }, [])
 
   // "From Drive": media made in the editors (image editor, Creative Studio,
   // AI generations) is a first-class source — picked straight from the Library.

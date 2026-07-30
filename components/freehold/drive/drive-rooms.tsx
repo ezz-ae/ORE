@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n/provider'
 type Room = { key: string; href: string; Icon: React.ElementType; icon: string; glow: string; ring: string }
 
 const ROOMS: Room[] = [
-  { key: 'studio', href: '/freehold-intelligence/drive/studio',  Icon: Sparkles,   icon: 'text-gold',        glow: 'from-gold/15',        ring: 'ring-gold/25' },
+  { key: 'studio', href: '/freehold-intelligence/drive/create',  Icon: Sparkles,   icon: 'text-gold',        glow: 'from-gold/15',        ring: 'ring-gold/25' },
   { key: 'editor', href: '/freehold-intelligence/drive/media',   Icon: Wand2,      icon: 'text-violet-300',  glow: 'from-violet-500/15',  ring: 'ring-violet-400/25' },
   { key: 'web',    href: '/freehold-intelligence/drive/web',     Icon: Monitor,    icon: 'text-teal-300',    glow: 'from-teal-500/15',    ring: 'ring-teal-400/25' },
   { key: 'files',  href: '/freehold-intelligence/drive/files',   Icon: FolderOpen, icon: 'text-sky-300',     glow: 'from-sky-500/15',     ring: 'ring-sky-400/25' },

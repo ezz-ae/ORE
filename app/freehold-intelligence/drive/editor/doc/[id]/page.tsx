@@ -98,7 +98,15 @@ export default function DriveDocEditor() {
       const found = (Array.isArray(d.items) ? d.items : []).find((x: Item) => x.id === id) as Item | undefined
       if (!found) { setNotFound(true); return }
       setItem(found); setTitle(found.title); setContent(toEditableHtml(found.content ?? ''))
+      // Creative Suite deep link: a fresh (empty) doc opened with ?tpl=<starter>
+      // arrives pre-filled with that starter — unsaved, so the user stays in charge.
+      if (!(found.content ?? '').trim()) {
+        const tplKey = new URLSearchParams(window.location.search).get('tpl')
+        const tpl = DOC_TEMPLATES.find((x) => x.key === tplKey)
+        if (tpl) { setContent(toEditableHtml(t(tpl.bodyKey))); setDirty(true); setRevision((r) => r + 1) }
+      }
     } catch { setNotFound(true) } finally { setLoading(false) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
   useEffect(() => { if (id) load() }, [id, load])
 
