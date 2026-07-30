@@ -36,7 +36,7 @@ function StudioAdvancedRow() {
         <ArrowRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold rtl:rotate-180" />
       </Link>
       <Link
-        href="/freehold-intelligence/drive/studio"
+        href="/freehold-intelligence/drive/create"
         className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-gold/30"
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-gold/25 bg-gold/10 text-gold">

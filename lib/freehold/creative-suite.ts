@@ -29,6 +29,12 @@ export const SUITE_TEMPLATES: SuiteTemplate[] = [
   { id: 'story-frame-night', layout: 'frame',      palette: 1, format: 'story',  copy: 'launch' },
   { id: 'story-hero-ivory',  layout: 'heroPrice',  palette: 2, format: 'story',  copy: 'offer'  },
   { id: 'story-stat-sand',   layout: 'statFooter', palette: 0, format: 'story',  copy: 'open'   },
+  { id: 'feed-split-pearl',    layout: 'splitCard', palette: 4, format: 'feed',   copy: 'launch' },
+  { id: 'square-badge-emerald', layout: 'badge',    palette: 3, format: 'square', copy: 'offer'  },
+  { id: 'story-split-night',   layout: 'splitCard', palette: 1, format: 'story',  copy: 'open'   },
+  { id: 'feed-badge-sand',     layout: 'badge',     palette: 0, format: 'feed',   copy: 'open'   },
+  { id: 'square-split-emerald', layout: 'splitCard', palette: 3, format: 'square', copy: 'launch' },
+  { id: 'story-badge-pearl',   layout: 'badge',     palette: 4, format: 'story',  copy: 'offer'  },
 ]
 
 export function templateHref(tpl: SuiteTemplate): string {

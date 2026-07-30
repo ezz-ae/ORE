@@ -9,14 +9,16 @@
  * pixels — what you download is what Meta gets.
  */
 
-export type LayoutKey = 'heroPrice' | 'frame' | 'statFooter'
+export type LayoutKey = 'heroPrice' | 'frame' | 'statFooter' | 'splitCard' | 'badge'
 export type Palette = { bg: string; bg2: string; ink: string; accent: string; chip: string }
 export const PALETTES: Palette[] = [
   { bg: '#D9C6A0', bg2: '#CBB488', ink: '#231d12', accent: '#8a6f3c', chip: '#EBDDBE' }, // sand
   { bg: '#0F172A', bg2: '#1E293B', ink: '#F8FAFC', accent: '#D4AF37', chip: '#26334A' }, // ink/gold
   { bg: '#F3EFE6', bg2: '#E7E0D0', ink: '#173B2C', accent: '#C69B3E', chip: '#FFFFFF' }, // ivory/green
+  { bg: '#0C2621', bg2: '#14382F', ink: '#ECFDF5', accent: '#D4AF37', chip: '#1D4A3E' }, // emerald/gold
+  { bg: '#F5F7FA', bg2: '#E4EAF2', ink: '#152238', accent: '#B48A2C', chip: '#FFFFFF' }, // pearl/navy
 ]
-export const LAYOUTS: LayoutKey[] = ['heroPrice', 'frame', 'statFooter']
+export const LAYOUTS: LayoutKey[] = ['heroPrice', 'frame', 'statFooter', 'splitCard', 'badge']
 
 export interface Overlay { eyebrow: string; headline: string; price: string; priceUnit: string; footnote: string }
 
@@ -165,6 +167,61 @@ export function composeVariant(
       ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - Y(0.115))
     }
     if (o.footnote) { ctx.fillStyle = '#E7E5E4'; ctx.font = font(30, 500); ctx.fillText(o.footnote, ax, H - Y(0.055)) }
+  } else if (layout === 'splitCard') {
+    // splitCard: photo on top, a clean listing card below with an accent rule.
+    const split = Y(fmt === 'story' ? 0.58 : 0.55)
+    if (img) drawCover(ctx, img, 0, 0, W, split)
+    else drawPhotoGhost(ctx, p, 0, 0, W, split)
+    ctx.fillStyle = p.bg
+    ctx.fillRect(0, split, W, H - split)
+    ctx.fillStyle = p.accent
+    ctx.fillRect(0, split, W, 8)
+    ctx.font = font(30, 600)
+    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, split + 78)
+    ctx.fillStyle = p.ink
+    ctx.font = font(56, 800)
+    if (o.headline) drawWrapped(ctx, o.headline, ax, split + 150, W - 128, 66, 2)
+    if (o.price) {
+      ctx.fillStyle = p.accent
+      ctx.font = font(96, 800)
+      ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - Y(0.095))
+    }
+    if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.75; ctx.font = font(28, 500); ctx.fillText(o.footnote, ax, H - Y(0.04)); ctx.globalAlpha = 1 }
+  } else if (layout === 'badge') {
+    // badge: full-bleed photo, a round price badge up top, a solid bottom band.
+    if (img) drawCover(ctx, img, 0, 0, W, H)
+    else drawPhotoGhost(ctx, p, 0, 0, W, H)
+    const band = H - Y(0.24)
+    ctx.fillStyle = p.bg
+    ctx.fillRect(0, band, W, H - band)
+    ctx.fillStyle = p.accent
+    ctx.fillRect(0, band, W, 6)
+    ctx.font = font(28, 600)
+    if (o.eyebrow) { ctx.fillStyle = p.accent; ctx.fillText(o.eyebrow, ax, band + 60) }
+    ctx.fillStyle = p.ink
+    ctx.font = font(52, 800)
+    if (o.headline) drawWrapped(ctx, o.headline, ax, band + 126, W - 128, 62, 2)
+    if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.7; ctx.font = font(26, 500); ctx.fillText(o.footnote, ax, H - 42); ctx.globalAlpha = 1 }
+    if (o.price) {
+      const R = Math.round(W * 0.155)
+      const bx = rtl ? 84 + R : W - 84 - R
+      const by = 84 + R
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(bx, by, R, 0, Math.PI * 2)
+      ctx.fillStyle = p.chip
+      ctx.fill()
+      ctx.lineWidth = 8
+      ctx.strokeStyle = p.accent
+      ctx.stroke()
+      ctx.fillStyle = p.ink
+      ctx.textAlign = 'center'
+      ctx.font = font(64, 800)
+      ctx.fillText(o.price, bx, by + (o.priceUnit ? 10 : 22))
+      if (o.priceUnit) { ctx.font = font(30, 700); ctx.fillText(o.priceUnit, bx, by + 58) }
+      ctx.restore()
+      ctx.textAlign = rtl ? 'right' : 'left'
+    }
   } else {
     // statFooter: headline band, image middle, stat chips at the bottom band.
     ctx.fillStyle = p.bg
