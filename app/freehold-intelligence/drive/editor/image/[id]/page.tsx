@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import QRCode from 'qrcode'
@@ -14,6 +14,9 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
 import { type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
+import { composeVariant, PALETTES as AD_PALETTES, type Overlay as AdOverlay } from '@/lib/freehold/ad-compose'
+import { SUITE_TEMPLATES, type SuiteCopy, type SuiteTemplate } from '@/lib/freehold/creative-suite'
+import { TemplateThumb } from '@/components/freehold/drive/template-thumb'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LibRow = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
@@ -146,6 +149,24 @@ export default function DriveImageEditor() {
       toast.error(t('ed.image.exportFailed'))
     }
   }, [t])
+
+  // "Start from a design": suite templates composed at full ad resolution by
+  // the shared engine become the source layer — then every real tool (crop,
+  // adjust, text, brand, QR) works on top of it.
+  const [tplBusy, setTplBusy] = useState<string | null>(null)
+  const tplCopy = useMemo<Record<SuiteCopy, AdOverlay>>(() => ({
+    launch: { eyebrow: t('suite.copy.launch.eyebrow'), headline: t('suite.copy.launch.headline'), price: '1.4M', priceUnit: 'AED', footnote: t('suite.copy.launch.footnote') },
+    offer:  { eyebrow: t('suite.copy.offer.eyebrow'),  headline: t('suite.copy.offer.headline'),  price: '980K', priceUnit: 'AED', footnote: t('suite.copy.offer.footnote') },
+    open:   { eyebrow: t('suite.copy.open.eyebrow'),   headline: t('suite.copy.open.headline'),   price: '2.1M', priceUnit: 'AED', footnote: t('suite.copy.open.footnote') },
+  }), [t])
+  async function applyTemplate(tpl: SuiteTemplate) {
+    if (tplBusy) return
+    setTplBusy(tpl.id)
+    try {
+      const url = composeVariant(null, tpl.layout, AD_PALETTES[tpl.palette] ?? AD_PALETTES[0], tplCopy[tpl.copy], tpl.format, 1)
+      await applySource(url)
+    } finally { setTplBusy(null) }
+  }
 
   useEffect(() => {
     let alive = true
@@ -787,6 +808,19 @@ export default function DriveImageEditor() {
               <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
             </button>
             <p className="mt-2 text-[10px] leading-snug text-slate-600">{t('ed.image.ai.boundary')}</p>
+          </div>
+
+          {/* Or start from a suite design — composed live by the real engine. */}
+          <div className="absolute inset-x-0 bottom-4 z-[1] mx-auto w-full max-w-2xl px-4">
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('suite.tpl.startFrom')}</p>
+            <div className="flex justify-center gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SUITE_TEMPLATES.slice(0, 8).map((tpl) => (
+                <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} disabled={tplBusy !== null}
+                  className={`w-16 shrink-0 overflow-hidden rounded-md ring-1 ring-white/15 transition hover:ring-2 hover:ring-gold/50 disabled:opacity-60 ${tplBusy === tpl.id ? 'ring-2 ring-gold' : ''}`}>
+                  <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={tplCopy[tpl.copy]} />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
