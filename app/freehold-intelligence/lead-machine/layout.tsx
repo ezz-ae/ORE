@@ -107,7 +107,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
   }
 
   // Brokers return home to their workspace; managers go to the ads hub
-  const backHref  = isBroker ? '/freehold-intelligence/agent' : '/freehold-intelligence/ads'
+  const backHref  = isBroker ? '/freehold-intelligence/agent' : '/freehold-intelligence'
   const backLabel = isBroker ? t('lm.nav.backBroker') : t('lm.nav.backManager')
 
   return (

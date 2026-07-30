@@ -69,6 +69,13 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   const t = useT()
 
   const [addLeadOpen, setAddLeadOpen] = useState(false)
+  // Pages inside the section (e.g. the empty-pipeline CTA) open the Add Lead
+  // modal by dispatching this event — the modal lives up here in the layout.
+  useEffect(() => {
+    const open = () => setAddLeadOpen(true)
+    window.addEventListener('fh:add-lead', open)
+    return () => window.removeEventListener('fh:add-lead', open)
+  }, [])
   // Live badge counts derived from real DB leads (no seed/mock).
   const { leads } = useLiveLeads()
   const newLeads      = leads.filter(l => l.pipelineStage === 'new').length
