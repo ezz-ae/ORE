@@ -346,7 +346,7 @@ export default function MetaIntegrationPage() {
   // ── Idle / Error: connection form ──────────────────────────────────────────
   if (phase === 'idle' || phase === 'error') {
     return (
-      <div className="mx-auto max-w-2xl px-5 pb-20 pt-8 sm:px-8">
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
         {/* Header */}
         <div className="mb-8 flex items-center gap-3">
@@ -354,7 +354,7 @@ export default function MetaIntegrationPage() {
             <span className="text-[20px]">🔵</span>
           </div>
           <div>
-            <h1 className="text-[20px] font-semibold text-white">{t('pintmeta.title')}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('pintmeta.title')}</h1>
             <p className="text-xs text-slate-500">{t('pintmeta.subtitle')}</p>
           </div>
         </div>
@@ -467,7 +467,7 @@ export default function MetaIntegrationPage() {
 
   // ── Connected dashboard ────────────────────────────────────────────────────
   return (
-    <div className="mx-auto max-w-5xl px-5 pb-20 pt-7 sm:px-8">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Connected header */}
       <div className="mb-7 flex items-center gap-4">

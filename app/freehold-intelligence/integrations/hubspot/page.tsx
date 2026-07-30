@@ -171,7 +171,7 @@ export default function HubSpotPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="mb-7 flex items-start justify-between gap-4">
@@ -180,7 +180,7 @@ export default function HubSpotPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-orange-500/15">
               <Users2 className="h-4 w-4 text-orange-400" />
             </div>
-            <h1 className="text-[20px] font-semibold text-white">{t('pinthub.title')}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('pinthub.title')}</h1>
           </div>
           <p className="mt-1 text-xs text-slate-500">{t('pinthub.subtitle')}</p>
         </div>

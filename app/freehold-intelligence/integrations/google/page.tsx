@@ -144,7 +144,7 @@ export default function GoogleAdsPage() {
   const totalConversions = MOCK_CAMPAIGNS.reduce((s, c) => s + c.conversions, 0)
 
   return (
-    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="mb-7 flex items-start justify-between gap-4">
@@ -153,7 +153,7 @@ export default function GoogleAdsPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-blue-500/10">
               <Search className="h-4 w-4 text-blue-400" />
             </div>
-            <h1 className="text-[20px] font-semibold text-white">{t('pintg.title')}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('pintg.title')}</h1>
           </div>
           <p className="mt-1 text-xs text-slate-500">{t('pintg.subtitle')}</p>
         </div>
