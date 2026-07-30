@@ -41,6 +41,7 @@ import { p_studio_nodes } from './dictionaries/p_studio_nodes'
 import { cs_quick } from './dictionaries/cs_quick'
 import { p_viewings } from './dictionaries/p_viewings'
 import { p_ad_designer } from './dictionaries/p_ad_designer'
+import { p_creative_suite } from './dictionaries/p_creative_suite'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -119,6 +120,7 @@ const en: Dict = {
   'drive.nav.all': 'All assets',
   'drive.nav.library': 'Library',
   'drive.nav.notebook': 'Notebook',
+  'drive.nav.create': 'Create',
   'drive.nav.editor': 'Editor',
   'drive.editor.tag': 'Start something new or jump back into a recent asset.',
   'drive.new.image': 'New image',
@@ -157,8 +159,8 @@ const en: Dict = {
   'med.app.brochure.desc': 'A new brochure document from a template.',
   'med.app.video.title': 'Video editor',
   'med.app.video.desc': 'Upload a clip to trim, caption & brand.',
-  'drive.room.studio.title': 'Generative Studio',
-  'drive.room.studio.desc': 'Generate images & videos from your inventory — canvas or one-screen form.',
+  'drive.room.studio.title': 'Creative Suite',
+  'drive.room.studio.desc': 'One studio for ads, images, documents and video — start from a live template.',
   'drive.room.editor.title': 'Media Editor',
   'drive.room.editor.desc': 'Open and edit images, videos, PDFs and documents.',
   'drive.room.web.title': 'Web Designer',
@@ -803,6 +805,7 @@ const ar: Dict = {
   'drive.nav.all': 'كل الأصول',
   'drive.nav.library': 'المكتبة',
   'drive.nav.notebook': 'دفتر الملاحظات',
+  'drive.nav.create': 'إنشاء',
   'drive.nav.editor': 'المحرّر',
   'drive.editor.tag': 'ابدأ شيئاً جديداً أو عُد إلى أصل حديث.',
   'drive.new.image': 'صورة جديدة',
@@ -841,8 +844,8 @@ const ar: Dict = {
   'med.app.brochure.desc': 'مستند كتيّب جديد من قالب.',
   'med.app.video.title': 'محرّر الفيديو',
   'med.app.video.desc': 'ارفع مقطعًا لقصّه وإضافة تعليق وعلامتك.',
-  'drive.room.studio.title': 'استوديو التوليد',
-  'drive.room.studio.desc': 'ولّد صورًا وفيديوهات من مخزونك — لوحة أو نموذج بشاشة واحدة.',
+  'drive.room.studio.title': 'الاستوديو الإبداعي',
+  'drive.room.studio.desc': 'استوديو واحد للإعلانات والصور والمستندات والفيديو — ابدأ من قالب حي.',
   'drive.room.editor.title': 'محرّر الوسائط',
   'drive.room.editor.desc': 'افتح وحرّر الصور والفيديو وملفات PDF والمستندات.',
   'drive.room.web.title': 'مصمّم الويب',
@@ -1478,6 +1481,7 @@ const ru: Dict = {
   'drive.nav.all': 'Все ресурсы',
   'drive.nav.library': 'Библиотека',
   'drive.nav.notebook': 'Блокнот',
+  'drive.nav.create': 'Создать',
   'drive.nav.editor': 'Редактор',
   'drive.editor.tag': 'Начните новое или вернитесь к недавнему ресурсу.',
   'drive.new.image': 'Новое изображение',
@@ -1516,8 +1520,8 @@ const ru: Dict = {
   'med.app.brochure.desc': 'Новый документ-брошюра из шаблона.',
   'med.app.video.title': 'Видеоредактор',
   'med.app.video.desc': 'Загрузите клип, чтобы обрезать и брендировать.',
-  'drive.room.studio.title': 'Студия генерации',
-  'drive.room.studio.desc': 'Генерируйте изображения и видео из вашего каталога — холст или форма в один экран.',
+  'drive.room.studio.title': 'Творческая студия',
+  'drive.room.studio.desc': 'Одна студия для рекламы, изображений, документов и видео — начните с живого шаблона.',
   'drive.room.editor.title': 'Медиаредактор',
   'drive.room.editor.desc': 'Открывайте и редактируйте изображения, видео, PDF и документы.',
   'drive.room.web.title': 'Веб-дизайнер',
@@ -2093,7 +2097,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_audiences.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en, ...integrations.en, ...p_tasks.en, ...p_reviews.en, ...p_aim1.en, ...p_aim2.en, ...p_aim3.en, ...p_forms.en, ...p_campaign.en, ...p_int_meta.en, ...p_ads_google.en, ...p_automation.en, ...p_insights.en, ...p_int1.en, ...p_int2.en, ...p_misc1.en, ...p_misc2.en, ...setup_guide.en, ...p_calendar.en, ...p_studio_nodes.en, ...p_roadshow.en, ...cs_quick.en, ...p_viewings.en, ...p_ad_designer.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_audiences.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar, ...integrations.ar, ...p_tasks.ar, ...p_reviews.ar, ...p_aim1.ar, ...p_aim2.ar, ...p_aim3.ar, ...p_forms.ar, ...p_campaign.ar, ...p_int_meta.ar, ...p_ads_google.ar, ...p_automation.ar, ...p_insights.ar, ...p_int1.ar, ...p_int2.ar, ...p_misc1.ar, ...p_misc2.ar, ...setup_guide.ar, ...p_calendar.ar, ...p_studio_nodes.ar, ...p_roadshow.ar, ...cs_quick.ar, ...p_viewings.ar, ...p_ad_designer.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_audiences.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru, ...integrations.ru, ...p_tasks.ru, ...p_reviews.ru, ...p_aim1.ru, ...p_aim2.ru, ...p_aim3.ru, ...p_forms.ru, ...p_campaign.ru, ...p_int_meta.ru, ...p_ads_google.ru, ...p_automation.ru, ...p_insights.ru, ...p_int1.ru, ...p_int2.ru, ...p_misc1.ru, ...p_misc2.ru, ...setup_guide.ru, ...p_calendar.ru, ...p_studio_nodes.ru, ...p_roadshow.ru, ...cs_quick.ru, ...p_viewings.ru, ...p_ad_designer.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_audiences.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en, ...integrations.en, ...p_tasks.en, ...p_reviews.en, ...p_aim1.en, ...p_aim2.en, ...p_aim3.en, ...p_forms.en, ...p_campaign.en, ...p_int_meta.en, ...p_ads_google.en, ...p_automation.en, ...p_insights.en, ...p_int1.en, ...p_int2.en, ...p_misc1.en, ...p_misc2.en, ...setup_guide.en, ...p_calendar.en, ...p_studio_nodes.en, ...p_roadshow.en, ...cs_quick.en, ...p_viewings.en, ...p_ad_designer.en, ...p_creative_suite.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_audiences.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar, ...integrations.ar, ...p_tasks.ar, ...p_reviews.ar, ...p_aim1.ar, ...p_aim2.ar, ...p_aim3.ar, ...p_forms.ar, ...p_campaign.ar, ...p_int_meta.ar, ...p_ads_google.ar, ...p_automation.ar, ...p_insights.ar, ...p_int1.ar, ...p_int2.ar, ...p_misc1.ar, ...p_misc2.ar, ...setup_guide.ar, ...p_calendar.ar, ...p_studio_nodes.ar, ...p_roadshow.ar, ...cs_quick.ar, ...p_viewings.ar, ...p_ad_designer.ar, ...p_creative_suite.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_audiences.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru, ...integrations.ru, ...p_tasks.ru, ...p_reviews.ru, ...p_aim1.ru, ...p_aim2.ru, ...p_aim3.ru, ...p_forms.ru, ...p_campaign.ru, ...p_int_meta.ru, ...p_ads_google.ru, ...p_automation.ru, ...p_insights.ru, ...p_int1.ru, ...p_int2.ru, ...p_misc1.ru, ...p_misc2.ru, ...setup_guide.ru, ...p_calendar.ru, ...p_studio_nodes.ru, ...p_roadshow.ru, ...cs_quick.ru, ...p_viewings.ru, ...p_ad_designer.ru, ...p_creative_suite.ru },
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { HardDrive, LayoutGrid, FolderOpen, BookOpen, Wand2 } from 'lucide-react'
+import { HardDrive, LayoutGrid, FolderOpen, BookOpen, Wand2, Sparkles } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
 
@@ -29,6 +29,7 @@ export default function DriveLayout({ children }: { children: React.ReactNode })
 
   const items = [
     { label: t('drive.nav.all'),      href: '/freehold-intelligence/drive',          exact: true, Icon: LayoutGrid },
+    { label: t('drive.nav.create'),   href: '/freehold-intelligence/drive/create',                Icon: Sparkles },
     { label: t('drive.nav.editor'),   href: '/freehold-intelligence/drive/editor',                Icon: Wand2 },
     { label: t('drive.nav.library'),  href: '/freehold-intelligence/drive/library',               Icon: FolderOpen },
     // Notebook lives under Drive — links out to its existing route (not moved).
