@@ -37,10 +37,11 @@ const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
   EXACT:  'bg-gold/10 text-gold border-gold/20',
 }
 
+// i18n keys — render with t(MATCH_LABEL[type])
 const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
-  BROAD:  'Broad',
-  PHRASE: 'Phrase',
-  EXACT:  'Exact',
+  BROAD:  'lm.google.common.broad',
+  PHRASE: 'lm.google.common.phrase',
+  EXACT:  'lm.google.common.exact',
 }
 
 const INTENT_BADGE: Record<string, string> = {
@@ -160,7 +161,7 @@ export default function GoogleKeywordsPage() {
       const json = await res.json()
       setData(json)
     } catch {
-      setData({ error: 'Network error — could not reach Google Ads API' })
+      setData({ error: t('lm.google.err.network') })
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -197,16 +198,16 @@ export default function GoogleKeywordsPage() {
         <section>
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" />
-            Keywords
+            {t('lm.google.keywords.title')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-            Keyword management /<br />
+            {t('lm.google.kw.heading')} /<br />
             <span className="text-slate-500">
               {loading
                 ? '…'
                 : isConfigErr
-                  ? 'not connected.'
-                  : `${keywords.length} keywords.`}
+                  ? t('lm.google.sub.notConnected')
+                  : t('lm.google.kw.countSub', { n: keywords.length })}
             </span>
           </h1>
         </section>
@@ -294,8 +295,8 @@ export default function GoogleKeywordsPage() {
             {(['ALL', 'BROAD', 'PHRASE', 'EXACT'] as MatchFilter[]).map((f) => {
               const label =
                 f === 'ALL'
-                  ? `All (${keywords.length})`
-                  : `${MATCH_LABEL[f as GoogleKeywordMatchType]} (${keywords.filter((k) => k.matchType === f).length})`
+                  ? `${t('lm.google.keywords.filter.all')} (${keywords.length})`
+                  : `${t(MATCH_LABEL[f as GoogleKeywordMatchType])} (${keywords.filter((k) => k.matchType === f).length})`
               return (
                 <button
                   key={f}
@@ -363,7 +364,7 @@ export default function GoogleKeywordsPage() {
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${kw.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">{kw.text}</span>
                     <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${MATCH_BADGE[kw.matchType]}`}>
-                      {MATCH_LABEL[kw.matchType]}
+                      {t(MATCH_LABEL[kw.matchType])}
                     </span>
                     {(kw.id.startsWith('local-') || kw.resourceName) && (
                       <button onClick={() => removeKeyword(kw)} title={t('common.remove')}
@@ -375,7 +376,7 @@ export default function GoogleKeywordsPage() {
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-400">
                     <span>{kw.metrics?.clicks.toLocaleString() ?? '—'} · {kw.metrics?.ctr != null ? fmtPct(kw.metrics.ctr) : '—'}</span>
                     <span>{kw.metrics?.averageCpcMicros != null ? fmtMicros(kw.metrics.averageCpcMicros) : '—'}</span>
-                    <span className="font-medium text-slate-300">{kw.metrics?.conversions != null ? Math.round(kw.metrics.conversions) : '—'} conv.</span>
+                    <span className="font-medium text-slate-300">{kw.metrics?.conversions != null ? Math.round(kw.metrics.conversions) : '—'} {t('lm.google.kw.convSuffix')}</span>
                     {kw.qualityScore != null && <QualityScore score={kw.qualityScore} />}
                   </div>
                 </div>
@@ -384,14 +385,14 @@ export default function GoogleKeywordsPage() {
             <div className="mt-4 hidden overflow-hidden rounded-[20px] border border-line bg-surface md:block">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
-                <span>Keyword</span>
-                <span>Match</span>
-                <span>Quality score</span>
-                <span className="text-right">Impr.</span>
-                <span className="text-right">Clicks</span>
-                <span className="text-right">CTR</span>
-                <span className="text-right">Avg CPC</span>
-                <span className="text-right">Conv.</span>
+                <span>{t('lm.google.kw.th.keyword')}</span>
+                <span>{t('lm.google.kw.th.match')}</span>
+                <span>{t('lm.google.common.qualityScore')}</span>
+                <span className="text-right">{t('lm.google.kw.th.impr')}</span>
+                <span className="text-right">{t('lm.google.common.clicks')}</span>
+                <span className="text-right">{t('lm.google.overview.stat.ctr')}</span>
+                <span className="text-right">{t('lm.google.overview.stat.cpc')}</span>
+                <span className="text-right">{t('lm.google.kw.th.conv')}</span>
               </div>
 
               <div className="divide-y divide-white/[0.035]">
@@ -423,7 +424,7 @@ export default function GoogleKeywordsPage() {
                     <span
                       className={`inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${MATCH_BADGE[kw.matchType]}`}
                     >
-                      {MATCH_LABEL[kw.matchType]}
+                      {t(MATCH_LABEL[kw.matchType])}
                     </span>
 
                     {/* Quality score */}
@@ -467,8 +468,8 @@ export default function GoogleKeywordsPage() {
               <div className="text-[16px] font-semibold text-white">{t('lm.google.keywords.empty')}</div>
               <p className="mt-2 text-sm text-slate-500">
                 {matchFilter !== 'ALL'
-                  ? `No ${MATCH_LABEL[matchFilter as GoogleKeywordMatchType].toLowerCase()} match keywords. Try a different filter.`
-                  : 'Add keywords to your campaigns to start capturing search traffic.'}
+                  ? t('lm.google.kw.emptyFiltered', { match: t(MATCH_LABEL[matchFilter as GoogleKeywordMatchType]).toLowerCase() })
+                  : t('lm.google.kw.emptyAdd')}
               </p>
             </div>
           )}
@@ -481,9 +482,9 @@ export default function GoogleKeywordsPage() {
                 className="flex w-full items-center justify-between rounded-[16px] border border-line bg-surface px-5 py-4 text-left transition hover:border-white/[0.10]"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-white">Negative keywords</span>
+                  <span className="text-sm font-semibold text-white">{t('lm.google.kw.negatives')}</span>
                   <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-300">
-                    {negatives.length} exclusions
+                    {t('lm.google.kw.exclusions', { n: negatives.length })}
                   </span>
                 </div>
                 {negsOpen ? (
@@ -497,9 +498,9 @@ export default function GoogleKeywordsPage() {
                 <div className="mt-1 overflow-hidden rounded-[16px] border border-line bg-surface">
                   {/* Column headers */}
                   <div className="grid grid-cols-[1fr_80px_120px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
-                    <span>Keyword</span>
-                    <span>Match</span>
-                    <span>Campaign</span>
+                    <span>{t('lm.google.kw.th.keyword')}</span>
+                    <span>{t('lm.google.kw.th.match')}</span>
+                    <span>{t('lm.google.kw.th.campaign')}</span>
                   </div>
                   <div className="divide-y divide-white/[0.04]">
                     {negatives.map((neg) => (
@@ -511,7 +512,7 @@ export default function GoogleKeywordsPage() {
                         <span
                           className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-xs font-medium ${MATCH_BADGE[neg.matchType]}`}
                         >
-                          {MATCH_LABEL[neg.matchType]}
+                          {t(MATCH_LABEL[neg.matchType])}
                         </span>
                         <span className="truncate text-sm text-slate-500">{neg.campaignId}</span>
                       </div>
@@ -526,10 +527,10 @@ export default function GoogleKeywordsPage() {
           <section className="mt-12">
             <div className="mb-5">
               <div className="text-sm font-medium uppercase tracking-wider text-slate-500">
-                UAE Real Estate keyword themes
+                {t('lm.google.kw.themesTitle')}
               </div>
               <p className="mt-1.5 text-sm text-slate-500">
-                Curated keyword groups optimised for UAE real estate campaigns.
+                {t('lm.google.kw.themesBody')}
               </p>
             </div>
 
@@ -550,10 +551,10 @@ export default function GoogleKeywordsPage() {
                           }`}
                         >
                           {theme.intent === 'high'
-                            ? 'High intent'
+                            ? t('lm.google.kw.intentHigh')
                             : theme.intent === 'brand'
-                              ? 'Brand'
-                              : 'Medium intent'}
+                              ? t('lm.google.kw.intentBrand')
+                              : t('lm.google.kw.intentMedium')}
                         </span>
                       </div>
                       <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -561,7 +562,7 @@ export default function GoogleKeywordsPage() {
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-sm font-medium text-slate-400">
-                      {theme.keywords.length} kws
+                      {t('lm.google.kw.kwCount', { n: theme.keywords.length })}
                     </span>
                   </div>
 
@@ -573,13 +574,13 @@ export default function GoogleKeywordsPage() {
                         <span
                           className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-medium ${MATCH_BADGE[kw.matchType]}`}
                         >
-                          {MATCH_LABEL[kw.matchType]}
+                          {t(MATCH_LABEL[kw.matchType])}
                         </span>
                       </div>
                     ))}
                     {theme.keywords.length > 5 && (
                       <p className="text-sm text-slate-600">
-                        +{theme.keywords.length - 5} more keywords
+                        {t('lm.google.kw.moreKeywords', { n: theme.keywords.length - 5 })}
                       </p>
                     )}
                   </div>
@@ -590,7 +591,7 @@ export default function GoogleKeywordsPage() {
                       href="/freehold-intelligence/lead-machine/google/campaigns/new"
                       className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-400 transition hover:border-[#4285F4]/30 hover:text-white"
                     >
-                      Add to campaign <ArrowUpRight className="h-3 w-3" />
+                      {t('lm.google.kw.addToCampaign')} <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>

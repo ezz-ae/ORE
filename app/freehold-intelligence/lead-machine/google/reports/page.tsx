@@ -53,11 +53,12 @@ const STATUS_BADGE: Record<SearchTermStatus, string> = {
   ADDED_EXCLUDED: 'text-orange-300 border border-orange-400/25 bg-orange-400/[0.07]',
 }
 
+// i18n keys — render with t(STATUS_LABEL[status])
 const STATUS_LABEL: Record<SearchTermStatus, string> = {
-  NONE:           'Not added',
-  ADDED:          'Added',
-  EXCLUDED:       'Excluded',
-  ADDED_EXCLUDED: 'Added+Excl',
+  NONE:           'lm.google.rep.status.none',
+  ADDED:          'lm.google.rep.status.added',
+  EXCLUDED:       'lm.google.rep.status.excluded',
+  ADDED_EXCLUDED: 'lm.google.rep.status.addedExcluded',
 }
 
 const DEVICE_ICON: Record<string, string> = {
@@ -87,7 +88,7 @@ export default function GoogleReportsPage() {
         const data: ReportResponse = await res.json()
         if (data.type === 'config') {
           setConfigErr(true)
-          setError(data.error ?? 'Google Ads is not connected.')
+          setError(data.error ?? t('lm.google.common.notConnected'))
           setReport(null)
           return
         }
@@ -98,7 +99,7 @@ export default function GoogleReportsPage() {
         }
         setReport(data.report ?? null)
       } catch {
-        setError('Network error — could not reach the reports API.')
+        setError(t('lm.google.err.network'))
       } finally {
         setLoading(false)
       }
@@ -148,9 +149,9 @@ export default function GoogleReportsPage() {
   }
 
   const rangeLabel: Record<DateRange, string> = {
-    '7d':  '7-day',
-    '30d': '30-day',
-    '90d': '90-day',
+    '7d':  t('lm.google.rep.range.7d'),
+    '30d': t('lm.google.rep.range.30d'),
+    '90d': t('lm.google.rep.range.90d'),
   }
 
   return (
@@ -159,11 +160,11 @@ export default function GoogleReportsPage() {
       {/* Header */}
       <section>
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#4285F4]/85">
-          <BarChart2 className="h-3.5 w-3.5" /> Reports
+          <BarChart2 className="h-3.5 w-3.5" /> {t('lm.google.nav.reports')}
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          Performance reports<br />
-          <span className="text-slate-500">{rangeLabel[range]} window.</span>
+          {t('lm.google.rep.heading')}<br />
+          <span className="text-slate-500">{t('lm.google.rep.window', { range: rangeLabel[range] })}</span>
         </h1>
       </section>
 
@@ -217,7 +218,7 @@ export default function GoogleReportsPage() {
       {/* Loading */}
       {loading && (
         <div className="mt-16 text-center text-[14px] text-slate-500">
-          Loading {rangeLabel[range]} report…
+          {t('lm.google.rep.loading', { range: rangeLabel[range] })}
         </div>
       )}
 
@@ -227,7 +228,7 @@ export default function GoogleReportsPage() {
           <BarChart2 className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
           <div className="text-[17px] font-semibold text-white">{t('lm.google.reports.empty')}</div>
           <p className="mt-2 text-sm text-slate-500">
-            No performance data is available for the selected window.
+            {t('lm.google.rep.emptyBody')}
           </p>
         </div>
       )}
@@ -237,7 +238,7 @@ export default function GoogleReportsPage() {
           {/* ── KPI summary cards ───────────────────────────────────────────── */}
           <section className="mt-10">
             <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
-              Summary — {rangeLabel[range]}
+              {t('lm.google.rep.summary', { range: rangeLabel[range] })}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {[
@@ -265,12 +266,12 @@ export default function GoogleReportsPage() {
           {sortedCampaigns.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
-                By campaign — sorted by spend
+                {t('lm.google.rep.byCampaign')}
               </div>
               <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
                 {/* Table header */}
                 <div className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] gap-x-4 border-b border-line px-5 py-2.5">
-                  {['Campaign', 'Type', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Spend'].map((h) => (
+                  {[t('lm.google.rep.th.campaign'), t('lm.google.rep.th.type'), t('lm.google.rep.th.impr'), t('lm.google.common.clicks'), t('lm.google.overview.stat.ctr'), t('lm.google.rep.th.conv'), t('lm.google.common.spend')].map((h) => (
                     <div key={h} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
                       {h}
                     </div>
@@ -314,7 +315,7 @@ export default function GoogleReportsPage() {
           {report.byDevice.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
-                By device
+                {t('lm.google.rep.byDevice')}
               </div>
               <div className="overflow-hidden rounded-[20px] border border-line bg-surface p-5">
                 <div className="space-y-5">
@@ -337,9 +338,9 @@ export default function GoogleReportsPage() {
                               />
                             </div>
                             <div className="flex w-48 shrink-0 justify-end gap-5 text-sm text-slate-500">
-                              <span>{fmtNum(d.impressions)} impr.</span>
-                              <span>{fmtPct(ctr)} CTR</span>
-                              <span>{Math.round(d.conversions)} conv.</span>
+                              <span>{t('lm.google.rep.deviceImpr', { n: fmtNum(d.impressions) })}</span>
+                              <span>{t('lm.google.rep.deviceCtr', { n: fmtPct(ctr) })}</span>
+                              <span>{t('lm.google.rep.deviceConv', { n: Math.round(d.conversions) })}</span>
                             </div>
                           </div>
                         </div>
@@ -354,7 +355,7 @@ export default function GoogleReportsPage() {
           {last14Days.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
-                Daily performance — last {last14Days.length} days
+                {t('lm.google.rep.dailyPerf', { n: last14Days.length })}
               </div>
               <div className="overflow-hidden rounded-[20px] border border-line bg-surface p-5">
                 {/* SVG line chart */}
@@ -382,9 +383,9 @@ export default function GoogleReportsPage() {
                   return (
                     <>
                       <div className="mb-3 flex items-center gap-5 text-xs text-slate-500">
-                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-[#4285F4]" /> Spend</span>
-                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-gold" /> Clicks</span>
-                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-emerald-400" /> Conversions</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-[#4285F4]" /> {t('lm.google.common.spend')}</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-gold" /> {t('lm.google.common.clicks')}</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-emerald-400" /> {t('lm.google.common.conversions')}</span>
                       </div>
                       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88 }} preserveAspectRatio="none">
                         <defs>
@@ -416,9 +417,9 @@ export default function GoogleReportsPage() {
                 {/* Summary row below chart */}
                 <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4">
                   {[
-                    { label: 'Total spend',  value: fmtMicros(last14Days.reduce((s, d) => s + d.costMicros, 0)) },
-                    { label: 'Total clicks', value: last14Days.reduce((s, d) => s + d.clicks, 0).toLocaleString() },
-                    { label: 'Conversions',  value: Math.round(last14Days.reduce((s, d) => s + d.conversions, 0)).toLocaleString() },
+                    { label: t('lm.google.rep.totalSpend'),  value: fmtMicros(last14Days.reduce((s, d) => s + d.costMicros, 0)) },
+                    { label: t('lm.google.rep.totalClicks'), value: last14Days.reduce((s, d) => s + d.clicks, 0).toLocaleString() },
+                    { label: t('lm.google.common.conversions'),  value: Math.round(last14Days.reduce((s, d) => s + d.conversions, 0)).toLocaleString() },
                   ].map((m) => (
                     <div key={m.label}>
                       <div className="text-[17px] font-semibold text-white">{m.value}</div>
@@ -434,15 +435,15 @@ export default function GoogleReportsPage() {
           <section className="mt-10">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm font-medium uppercase tracking-wider text-slate-500">
-                Search terms — top 50 by impressions
+                {t('lm.google.rep.searchTerms')}
               </div>
               {/* Status filter */}
               <div className="flex items-center gap-1.5">
                 {([
-                  { value: 'all',      label: 'All'        },
-                  { value: 'NONE',     label: 'Not Added'  },
-                  { value: 'ADDED',    label: 'Added'      },
-                  { value: 'EXCLUDED', label: 'Excluded'   },
+                  { value: 'all',      label: t('lm.google.keywords.filter.all')     },
+                  { value: 'NONE',     label: t('lm.google.rep.status.none')     },
+                  { value: 'ADDED',    label: t('lm.google.rep.status.added')    },
+                  { value: 'EXCLUDED', label: t('lm.google.rep.status.excluded') },
                 ] as { value: StatusFilter; label: string }[]).map((f) => (
                   <button
                     key={f.value}
@@ -462,27 +463,27 @@ export default function GoogleReportsPage() {
 
             {filteredTerms.length === 0 ? (
               <div className="rounded-[16px] border border-line bg-surface px-5 py-8 text-center text-sm text-slate-500">
-                No search terms match the selected filter.
+                {t('lm.google.rep.noTermsMatch')}
               </div>
             ) : (
               <>
               {/* LITE: stacked search-term cards on phones — the 9-column grid stays md+ */}
               <div className="divide-y divide-white/[0.04] overflow-hidden rounded-[20px] border border-line bg-surface md:hidden">
-                {filteredTerms.map((t, idx) => {
-                  const status = t.status as SearchTermStatus
+                {filteredTerms.map((row, idx) => {
+                  const status = row.status as SearchTermStatus
                   return (
-                    <div key={`${t.searchTerm}-${idx}`} className="px-4 py-3.5">
+                    <div key={`${row.searchTerm}-${idx}`} className="px-4 py-3.5">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="min-w-0 truncate text-xs font-medium text-slate-200" title={t.searchTerm}>{t.searchTerm}</span>
+                        <span className="min-w-0 truncate text-xs font-medium text-slate-200" title={row.searchTerm}>{row.searchTerm}</span>
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status] ?? STATUS_BADGE.NONE}`}>
-                          {STATUS_LABEL[status] ?? status}
+                          {STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : status}
                         </span>
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-slate-500">{t.campaignName} · {t.adGroupName}</div>
+                      <div className="mt-0.5 truncate text-xs text-slate-500">{row.campaignName} · {row.adGroupName}</div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
-                        <span className="rounded border border-white/[0.1] bg-surface-2 px-1.5 py-0.5 text-slate-500">{t.matchType}</span>
-                        <span>{fmtNum(t.clicks)} · {fmtPct(t.ctr)}</span>
-                        <span className="font-medium text-slate-300">{Math.round(t.conversions)}</span>
+                        <span className="rounded border border-white/[0.1] bg-surface-2 px-1.5 py-0.5 text-slate-500">{row.matchType}</span>
+                        <span>{fmtNum(row.clicks)} · {fmtPct(row.ctr)}</span>
+                        <span className="font-medium text-slate-300">{Math.round(row.conversions)}</span>
                       </div>
                     </div>
                   )
@@ -491,7 +492,7 @@ export default function GoogleReportsPage() {
               <div className="hidden overflow-hidden rounded-[20px] border border-line bg-surface md:block">
                 {/* Table header */}
                 <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-line px-5 py-2.5">
-                  {['Term', 'Match', 'Campaign', 'Ad Group', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Status'].map((h) => (
+                  {[t('lm.google.rep.th.term'), t('lm.google.rep.th.match'), t('lm.google.rep.th.campaign'), t('lm.google.rep.th.adGroup'), t('lm.google.rep.th.impr'), t('lm.google.common.clicks'), t('lm.google.overview.stat.ctr'), t('lm.google.rep.th.conv'), t('lm.google.rep.th.status')].map((h) => (
                     <div key={h} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
                       {h}
                     </div>
@@ -499,44 +500,44 @@ export default function GoogleReportsPage() {
                 </div>
                 {/* Rows */}
                 <div className="divide-y divide-white/[0.04]">
-                  {filteredTerms.map((t, idx) => {
-                    const displayTerm = t.searchTerm.length > 60
-                      ? t.searchTerm.slice(0, 60) + '…'
-                      : t.searchTerm
-                    const status = t.status as SearchTermStatus
+                  {filteredTerms.map((row, idx) => {
+                    const displayTerm = row.searchTerm.length > 60
+                      ? row.searchTerm.slice(0, 60) + '…'
+                      : row.searchTerm
+                    const status = row.status as SearchTermStatus
                     return (
                       <div
-                        key={`${t.searchTerm}-${idx}`}
+                        key={`${row.searchTerm}-${idx}`}
                         className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] items-center gap-x-3 px-5 py-3 transition hover:bg-surface-2"
                       >
                         <div
                           className="truncate text-xs text-slate-200"
-                          title={t.searchTerm}
+                          title={row.searchTerm}
                         >
                           {displayTerm}
                         </div>
                         <div>
                           <span className="rounded border border-white/[0.1] bg-surface-2 px-1.5 py-0.5 text-xs text-slate-500">
-                            {t.matchType}
+                            {row.matchType}
                           </span>
                         </div>
-                        <div className="truncate text-sm text-slate-500" title={t.campaignName}>
-                          {t.campaignName}
+                        <div className="truncate text-sm text-slate-500" title={row.campaignName}>
+                          {row.campaignName}
                         </div>
-                        <div className="truncate text-sm text-slate-500" title={t.adGroupName}>
-                          {t.adGroupName}
+                        <div className="truncate text-sm text-slate-500" title={row.adGroupName}>
+                          {row.adGroupName}
                         </div>
-                        <div className="text-sm text-slate-400">{fmtNum(t.impressions)}</div>
-                        <div className="text-sm text-slate-400">{fmtNum(t.clicks)}</div>
-                        <div className="text-sm text-slate-400">{fmtPct(t.ctr)}</div>
-                        <div className="text-sm text-slate-400">{Math.round(t.conversions)}</div>
+                        <div className="text-sm text-slate-400">{fmtNum(row.impressions)}</div>
+                        <div className="text-sm text-slate-400">{fmtNum(row.clicks)}</div>
+                        <div className="text-sm text-slate-400">{fmtPct(row.ctr)}</div>
+                        <div className="text-sm text-slate-400">{Math.round(row.conversions)}</div>
                         <div>
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                               STATUS_BADGE[status] ?? STATUS_BADGE.NONE
                             }`}
                           >
-                            {STATUS_LABEL[status] ?? status}
+                            {STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : status}
                           </span>
                         </div>
                       </div>
@@ -549,8 +550,7 @@ export default function GoogleReportsPage() {
 
             {/* Search terms note */}
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              Search terms are matched queries that triggered your ads. Adding high-performing terms
-              as keywords improves Quality Score.
+              {t('lm.google.rep.termsNote')}
             </p>
           </section>
         </>
