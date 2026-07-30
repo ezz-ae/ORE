@@ -20,6 +20,10 @@ type Profile = {
 } | null
 
 const initials = (name: string) => name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+// Raw DB enums render translated when the value is known, raw otherwise —
+// never a wrong label for an unexpected value.
+const STAGE_SET = new Set(['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed'])
+const PRI_SET = new Set(['priority', 'hot', 'warm', 'cold'])
 function statusTone(s: string) {
   if (s === 'closed' || s === 'approved') return 'text-emerald-400 border-emerald-400/25 bg-emerald-400/10'
   if (s === 'lost' || s === 'rejected') return 'text-red-400 border-red-400/25 bg-red-400/10'
@@ -311,8 +315,8 @@ export default function AgentProfilePage() {
             {leads.map((l) => (
               <tr key={l.id} className="transition hover:bg-surface-2">
                 <td className="px-4 py-2.5 font-medium text-slate-200">{l.name}</td>
-                <td className="px-4 py-2.5"><span className={`inline-flex rounded-md border px-2 py-0.5 text-xs capitalize ${statusTone(l.status)}`}>{l.status}</span></td>
-                <td className={`px-4 py-2.5 capitalize ${priorityTone(l.priority)}`}>{l.priority}</td>
+                <td className="px-4 py-2.5"><span className={`inline-flex rounded-md border px-2 py-0.5 text-xs capitalize ${statusTone(l.status)}`}>{STAGE_SET.has(l.status) ? t(`analytics.stage.${l.status}`) : l.status}</span></td>
+                <td className={`px-4 py-2.5 capitalize ${priorityTone(l.priority)}`}>{PRI_SET.has(l.priority) ? t(`analytics.agent.pri.${l.priority}`) : l.priority}</td>
                 <td className="px-4 py-2.5 text-slate-400">{prettySource(l.source)}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-slate-300">{l.budgetAed > 0 ? fmtAed(l.budgetAed) : '—'}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-slate-500">{fmtDate(l.createdAt)}</td>

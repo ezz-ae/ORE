@@ -74,11 +74,21 @@ const STATUS_COLOR: Record<string, string> = {
   FLAGGED:    'text-amber-400',
   RESTRICTED: 'text-red-400',
 }
+// Meta's raw enums translated for the UI — unknown values fall back to the
+// raw string (honest) rather than a wrong label.
+const STATUS_KEY: Record<string, string> = {
+  CONNECTED: 'pintwa.status.connected', PENDING: 'pintwa.status.pending',
+  FLAGGED: 'pintwa.status.flagged', RESTRICTED: 'pintwa.status.restricted',
+}
 
 const TMPL_COLOR: Record<string, string> = {
   APPROVED: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   PENDING:  'text-amber-400   bg-amber-400/10   border-amber-400/20',
   REJECTED: 'text-red-400     bg-red-400/10     border-red-400/20',
+}
+const TMPL_KEY: Record<string, string> = {
+  APPROVED: 'pintwa.tstatus.approved', PENDING: 'pintwa.tstatus.pending',
+  REJECTED: 'pintwa.tstatus.rejected', PAUSED: 'pintwa.tstatus.paused',
 }
 
 function errKey(err: any): string {
@@ -275,7 +285,7 @@ export default function WhatsAppPage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className={`text-xs font-medium ${STATUS_COLOR[data.phone.status] ?? 'text-slate-500'}`}>
-                  {data.phone.status}
+                  {STATUS_KEY[data.phone.status] ? t(STATUS_KEY[data.phone.status]) : data.phone.status}
                 </span>
                 {data.phone.quality_rating && (
                   <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${QUALITY_COLOR[data.phone.quality_rating] ?? 'text-slate-500 bg-surface-2 border-white/10'}`}>
@@ -331,7 +341,7 @@ export default function WhatsAppPage() {
                         <div className="text-xs text-slate-600">{tmpl.language} · {tmpl.category}</div>
                       </div>
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${TMPL_COLOR[tmpl.status] ?? 'text-slate-500 bg-surface-2 border-white/10'}`}>
-                        {tmpl.status}
+                        {TMPL_KEY[tmpl.status] ? t(TMPL_KEY[tmpl.status]) : tmpl.status}
                       </span>
                     </div>
                   ))

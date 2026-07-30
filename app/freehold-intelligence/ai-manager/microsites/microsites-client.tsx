@@ -118,7 +118,9 @@ export function MicrositesClient() {
                         <div className="flex items-center gap-2">
                           <span className="truncate text-sm font-semibold text-slate-100">{item.name}</span>
                           {item.hasMicrosite && item.status && (
-                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[item.status]}`}>{item.status}</span>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[item.status]}`}>
+                              {t(item.status === 'published' ? 'paim.topics.status.published' : 'paim.topics.status.draft')}
+                            </span>
                           )}
                         </div>
                         <div className="mt-0.5 text-xs text-slate-500">{item.area} · {item.developerName}</div>
