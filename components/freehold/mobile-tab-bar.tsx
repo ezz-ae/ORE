@@ -16,7 +16,7 @@ const HOME_HREF = '/freehold-intelligence'
 const ESSENTIALS: { href: string; Icon: typeof Users; key: string }[] = [
   { href: '/freehold-intelligence/crm/leads', Icon: Users, key: 'mtb.leads' },
   { href: '/freehold-intelligence/inventory', Icon: Package, key: 'nav.inventory' },
-  { href: '/freehold-intelligence/ads', Icon: Megaphone, key: 'nav.ads' },
+  { href: '/freehold-intelligence/lead-machine', Icon: Megaphone, key: 'nav.ads' },
   { href: '/freehold-intelligence/management/team', Icon: UsersRound, key: 'mtb.team' },
   { href: '/freehold-intelligence/management/deals', Icon: Handshake, key: 'mtb.deals' },
   { href: '/freehold-intelligence/finance', Icon: DollarSign, key: 'nav.finance' },

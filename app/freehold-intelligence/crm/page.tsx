@@ -181,9 +181,10 @@ export default function FreeholdCrmPage() {
               description={t('crm.empty.desc')}
               className="mb-5"
               action={(
-                <Link href="/freehold-intelligence/crm/leads" className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
+                <button type="button" onClick={() => window.dispatchEvent(new Event('fh:add-lead'))}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
                   <Plus className="h-3.5 w-3.5" /> {t('crm.empty.cta')}
-                </Link>
+                </button>
               )}
             />
           ) : (

@@ -70,11 +70,13 @@ export const APPS: AppDef[] = [
   },
   {
     id: 'ads', label: 'Ads', sub: 'Meta · Google · Forms · Live',
-    href: '/freehold-intelligence/ads', Icon: Megaphone,
+    href: '/freehold-intelligence/lead-machine', Icon: Megaphone,
     metric: 'Campaigns · creatives · attribution', badge: 0, accent: '#60A5FA',
     card: 'border-blue-400/15 hover:border-blue-400/30',
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
     brokerHide: true,
+    // The old /ads launcher redirects here; light the tab across the whole loop.
+    match: ['/freehold-intelligence/lead-machine', '/freehold-intelligence/ads-live', '/freehold-intelligence/ads'],
   },
   {
     id: 'inventory', label: 'Inventory', sub: 'Properties · Projects · Off-plan',
