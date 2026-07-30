@@ -40,6 +40,7 @@ import { p_roadshow } from './dictionaries/p_roadshow'
 import { p_studio_nodes } from './dictionaries/p_studio_nodes'
 import { cs_quick } from './dictionaries/cs_quick'
 import { p_viewings } from './dictionaries/p_viewings'
+import { p_ad_designer } from './dictionaries/p_ad_designer'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -176,6 +177,8 @@ const en: Dict = {
   'drive.studio.app.notebook.desc': 'Generate documents, reports and brochures.',
   'drive.studio.app.roadshow.title': 'Roadshow Builder',
   'drive.studio.app.roadshow.desc': 'Generate a full roadshow campaign and its assets.',
+  'drive.studio.app.addesigner.title': 'Ad Designer',
+  'drive.studio.app.addesigner.desc': 'Listing or image + text → a ready set of Meta ad designs, QR, caption and preview.',
   'drive.web.title': 'Web Designer',
   'drive.web.subtitle': 'Anything that renders as a live web page.',
   'drive.web.app.landings.title': 'Landing Pages',
@@ -858,6 +861,8 @@ const ar: Dict = {
   'drive.studio.app.notebook.desc': 'ولّد المستندات والتقارير والكتيبات.',
   'drive.studio.app.roadshow.title': 'منشئ الجولة الترويجية',
   'drive.studio.app.roadshow.desc': 'ولّد حملة جولة كاملة وأصولها.',
+  'drive.studio.app.addesigner.title': 'مصمّم الإعلانات',
+  'drive.studio.app.addesigner.desc': 'عقار أو صورة + نص → مجموعة إعلانات ميتا جاهزة مع QR ونص ومعاينة.',
   'drive.web.title': 'مصمّم الويب',
   'drive.web.subtitle': 'كل ما يظهر كصفحة ويب حيّة.',
   'drive.web.app.landings.title': 'صفحات الهبوط',
@@ -1531,6 +1536,8 @@ const ru: Dict = {
   'drive.studio.app.notebook.desc': 'Генерируйте документы, отчёты и брошюры.',
   'drive.studio.app.roadshow.title': 'Конструктор роуд-шоу',
   'drive.studio.app.roadshow.desc': 'Сгенерируйте полную кампанию роуд-шоу и её материалы.',
+  'drive.studio.app.addesigner.title': 'Дизайнер рекламы',
+  'drive.studio.app.addesigner.desc': 'Объект или изображение + текст → готовый набор объявлений Meta с QR, текстом и предпросмотром.',
   'drive.web.title': 'Веб-дизайнер',
   'drive.web.subtitle': 'Всё, что отображается как живая веб-страница.',
   'drive.web.app.landings.title': 'Лендинги',
@@ -2086,7 +2093,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_audiences.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en, ...integrations.en, ...p_tasks.en, ...p_reviews.en, ...p_aim1.en, ...p_aim2.en, ...p_aim3.en, ...p_forms.en, ...p_campaign.en, ...p_int_meta.en, ...p_ads_google.en, ...p_automation.en, ...p_insights.en, ...p_int1.en, ...p_int2.en, ...p_misc1.en, ...p_misc2.en, ...setup_guide.en, ...p_calendar.en, ...p_studio_nodes.en, ...p_roadshow.en, ...cs_quick.en, ...p_viewings.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_audiences.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar, ...integrations.ar, ...p_tasks.ar, ...p_reviews.ar, ...p_aim1.ar, ...p_aim2.ar, ...p_aim3.ar, ...p_forms.ar, ...p_campaign.ar, ...p_int_meta.ar, ...p_ads_google.ar, ...p_automation.ar, ...p_insights.ar, ...p_int1.ar, ...p_int2.ar, ...p_misc1.ar, ...p_misc2.ar, ...setup_guide.ar, ...p_calendar.ar, ...p_studio_nodes.ar, ...p_roadshow.ar, ...cs_quick.ar, ...p_viewings.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_audiences.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru, ...integrations.ru, ...p_tasks.ru, ...p_reviews.ru, ...p_aim1.ru, ...p_aim2.ru, ...p_aim3.ru, ...p_forms.ru, ...p_campaign.ru, ...p_int_meta.ru, ...p_ads_google.ru, ...p_automation.ru, ...p_insights.ru, ...p_int1.ru, ...p_int2.ru, ...p_misc1.ru, ...p_misc2.ru, ...setup_guide.ru, ...p_calendar.ru, ...p_studio_nodes.ru, ...p_roadshow.ru, ...cs_quick.ru, ...p_viewings.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_audiences.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en, ...integrations.en, ...p_tasks.en, ...p_reviews.en, ...p_aim1.en, ...p_aim2.en, ...p_aim3.en, ...p_forms.en, ...p_campaign.en, ...p_int_meta.en, ...p_ads_google.en, ...p_automation.en, ...p_insights.en, ...p_int1.en, ...p_int2.en, ...p_misc1.en, ...p_misc2.en, ...setup_guide.en, ...p_calendar.en, ...p_studio_nodes.en, ...p_roadshow.en, ...cs_quick.en, ...p_viewings.en, ...p_ad_designer.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_audiences.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar, ...integrations.ar, ...p_tasks.ar, ...p_reviews.ar, ...p_aim1.ar, ...p_aim2.ar, ...p_aim3.ar, ...p_forms.ar, ...p_campaign.ar, ...p_int_meta.ar, ...p_ads_google.ar, ...p_automation.ar, ...p_insights.ar, ...p_int1.ar, ...p_int2.ar, ...p_misc1.ar, ...p_misc2.ar, ...setup_guide.ar, ...p_calendar.ar, ...p_studio_nodes.ar, ...p_roadshow.ar, ...cs_quick.ar, ...p_viewings.ar, ...p_ad_designer.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_audiences.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru, ...integrations.ru, ...p_tasks.ru, ...p_reviews.ru, ...p_aim1.ru, ...p_aim2.ru, ...p_aim3.ru, ...p_forms.ru, ...p_campaign.ru, ...p_int_meta.ru, ...p_ads_google.ru, ...p_automation.ru, ...p_insights.ru, ...p_int1.ru, ...p_int2.ru, ...p_misc1.ru, ...p_misc2.ru, ...setup_guide.ru, ...p_calendar.ru, ...p_studio_nodes.ru, ...p_roadshow.ru, ...cs_quick.ru, ...p_viewings.ru, ...p_ad_designer.ru },
 }
