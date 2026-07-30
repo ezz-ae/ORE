@@ -6,12 +6,12 @@ import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import {
   Loader2, Upload, Sparkles, Check, Download, QrCode, MessageSquareText,
-  Monitor, ArrowRight, ArrowLeft, RefreshCw, Save, ExternalLink, Megaphone,
+  Monitor, ArrowRight, ArrowLeft, RefreshCw, Save, ExternalLink, Megaphone, FolderOpen,
 } from 'lucide-react'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
 import { useT } from '@/lib/i18n/provider'
-import { fieldClass } from '@/components/freehold/ui'
+import { fieldClass, Modal } from '@/components/freehold/ui'
 
 /**
  * AD DESIGNER — the generative ad-creative flow, end to end:
@@ -269,6 +269,26 @@ export default function AdDesignerPage() {
 
   const fileRef = useRef<HTMLInputElement>(null)
   const qrFileRef = useRef<HTMLInputElement>(null)
+
+  // "From Drive": media made in the editors (image editor, Creative Studio,
+  // AI generations) is a first-class source — picked straight from the Library.
+  const [driveOpen, setDriveOpen] = useState(false)
+  const [driveItems, setDriveItems] = useState<{ id: string; title: string; url: string }[] | null>(null)
+  async function openDrivePicker() {
+    setDriveOpen(true)
+    if (driveItems !== null) return
+    const d = await fetch('/api/freehold/library?kind=image', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    const items = (Array.isArray(d?.items) ? d.items : [])
+      .filter((i: { url?: string | null }) => !!i.url)
+      .map((i: { id: string; title?: string; url: string }) => ({ id: i.id, title: i.title || 'Untitled', url: i.url }))
+    setDriveItems(items)
+  }
+  function pickDriveItem(url: string) {
+    setUploadUrl(url)
+    setListingId('')
+    setDriveOpen(false)
+  }
 
   const listing: LiveProject | undefined = projects.find((l) => l.id === listingId)
 
@@ -656,10 +676,16 @@ export default function AdDesignerPage() {
                 <option value="">—</option>
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <button type="button" onClick={() => fileRef.current?.click()}
-                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-gold/30">
-                <Upload className="h-4 w-4" /> {t('adz.source.upload')}
-              </button>
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => fileRef.current?.click()}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-gold/30">
+                  <Upload className="h-4 w-4" /> {t('adz.source.upload')}
+                </button>
+                <button type="button" onClick={openDrivePicker}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-gold/30">
+                  <FolderOpen className="h-4 w-4" /> {t('adz.source.drive')}
+                </button>
+              </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
 
               <div className="mt-5 border-t border-line pt-4">
@@ -770,6 +796,28 @@ export default function AdDesignerPage() {
           </div>
         )}
       </div>
+
+      {/* From Drive — pick media made in the editors / Creative Studio */}
+      <Modal open={driveOpen} onClose={() => setDriveOpen(false)} title={t('adz.source.drive')} maxWidth="max-w-2xl">
+        {driveItems === null ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-400">
+            <Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}
+          </div>
+        ) : driveItems.length === 0 ? (
+          <p className="py-10 text-center text-sm text-slate-500">{t('adz.source.driveEmpty')}</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {driveItems.map((item) => (
+              <button key={item.id} type="button" onClick={() => pickDriveItem(item.url)}
+                className="group overflow-hidden rounded-xl border border-line text-start transition hover:border-gold/40">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.url} alt="" className="aspect-square w-full object-cover" />
+                <span className="block truncate px-2.5 py-1.5 text-[11px] text-slate-400 group-hover:text-slate-200">{item.title}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
     </DriveEditorFrame>
   )
 }
