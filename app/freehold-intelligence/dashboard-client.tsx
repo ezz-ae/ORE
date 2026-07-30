@@ -248,7 +248,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
     // From Drive — the same rooms/nav entries, surfaced as one-tap shortcuts.
     { key: 'webDesigner', href: `${FI}/drive/web`, Icon: Monitor, label: t('drive.room.web.title') },
     { key: 'editor', href: `${FI}/drive/editor`, Icon: Wand2, label: t('drive.nav.editor') },
-    { key: 'studio', href: `${FI}/drive/studio`, Icon: Sparkles, label: t('drive.room.studio.title') },
+    { key: 'studio', href: `${FI}/drive/create`, Icon: Sparkles, label: t('drive.room.studio.title') },
     { key: 'cloud', href: `${FI}/cloud`, Icon: Cloud, label: t('drive.room.cloud.title') },
     { key: 'whatsNew', onClick: openWhatsNew, Icon: Bell, label: t('whatsnew.menu') },
     { key: 'guide', href: `${FI}/help`, Icon: BookOpen, label: t('hub.go.guide') },

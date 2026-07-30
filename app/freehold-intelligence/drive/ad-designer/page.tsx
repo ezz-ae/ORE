@@ -63,7 +63,7 @@ export default function AdDesignerPage() {
   // The options: format (single) + which layouts/palettes to compose (multi).
   const [format, setFormat] = useState<FormatKey>('feed')
   const [layoutsOn, setLayoutsOn] = useState<Set<LayoutKey>>(new Set(LAYOUTS))
-  const [palettesOn, setPalettesOn] = useState<Set<number>>(new Set([0, 1, 2]))
+  const [palettesOn, setPalettesOn] = useState<Set<number>>(new Set(PALETTES.map((_, i) => i)))
   const [generating, setGenerating] = useState(false)
   const [genStage, setGenStage] = useState(0)
   const [enhancing, setEnhancing] = useState<string | null>(null)
@@ -156,7 +156,7 @@ export default function AdDesignerPage() {
       setGenStage(2)
       const out: Variant[] = []
       const layouts = LAYOUTS.filter((l) => layoutsOn.has(l))
-      const palettes = [0, 1, 2].filter((pi) => palettesOn.has(pi))
+      const palettes = PALETTES.map((_, i) => i).filter((pi) => palettesOn.has(pi))
       for (const layout of layouts) {
         for (const pi of palettes) {
           out.push({ id: `${format}-${layout}-${pi}`, layout, palette: pi, fmt: format, dataUrl: composeVariant(img, layout, PALETTES[pi], overlay, format) })
