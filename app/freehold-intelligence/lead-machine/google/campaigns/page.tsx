@@ -37,12 +37,13 @@ const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   VIDEO:           'bg-rose-400/10 text-slate-400 border-rose-400/20',
 }
 
+// label holds an i18n key — render with t(label)
 const FILTER_TYPES: { label: string; value: GoogleCampaignType | 'ALL' }[] = [
-  { label: 'All',             value: 'ALL' },
-  { label: 'Search',          value: 'SEARCH' },
-  { label: 'Performance Max', value: 'PERFORMANCE_MAX' },
-  { label: 'Display',         value: 'DISPLAY' },
-  { label: 'Video',           value: 'VIDEO' },
+  { label: 'lm.google.keywords.filter.all',    value: 'ALL' },
+  { label: 'lm.google.campaignNew.type.search', value: 'SEARCH' },
+  { label: 'lm.google.campaignNew.type.pmax',   value: 'PERFORMANCE_MAX' },
+  { label: 'lm.google.campaignNew.type.display', value: 'DISPLAY' },
+  { label: 'lm.google.campaignNew.type.video',   value: 'VIDEO' },
 ]
 
 // ─── API shapes ───────────────────────────────────────────────────────────────
@@ -100,7 +101,7 @@ export default function GoogleCampaignsPage() {
 
       if (data.type === 'config') {
         setConfigErr(true)
-        setError(data.error ?? 'Google Ads not configured')
+        setError(data.error ?? t('lm.google.common.notConnected'))
         return
       }
       if (data.error) {
@@ -110,7 +111,7 @@ export default function GoogleCampaignsPage() {
       setDemoMode(data.demo === true)
       setCampaigns(data.campaigns ?? [])
     } catch {
-      setError('Network error — could not reach Google Ads API')
+      setError(t('lm.google.err.network'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -136,10 +137,10 @@ export default function GoogleCampaignsPage() {
         )
       } else {
         const json = await res.json()
-        setError(json.error ?? 'Failed to update campaign status')
+        setError(json.error ?? t('lm.google.camp.updateFailed'))
       }
     } catch {
-      setError('Network error — could not update campaign')
+      setError(t('lm.google.camp.updateNetwork'))
     } finally {
       setTogglingId(null)
     }
@@ -165,19 +166,19 @@ export default function GoogleCampaignsPage() {
         <section>
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" />
-            Google Ads / Campaigns
+            {t('lm.google.camp.eyebrow')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Search &amp; Performance Max
+            {t('lm.google.camp.heading')}
             <br />
             <span className="text-slate-500">
               {loading
                 ? '…'
                 : configErr
-                  ? 'not connected.'
+                  ? t('lm.google.sub.notConnected')
                   : demoMode
-                    ? 'not connected — demo data.'
-                    : `${campaigns.length} total.`}
+                    ? t('lm.google.camp.demoSub')
+                    : t('lm.google.camp.totalSub', { n: campaigns.length })}
             </span>
           </h1>
         </section>
@@ -295,7 +296,7 @@ export default function GoogleCampaignsPage() {
                       : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
                   ].join(' ')}
                 >
-                  {label}
+                  {t(label)}
                 </button>
               )
             })}
@@ -334,14 +335,14 @@ export default function GoogleCampaignsPage() {
                         className={`h-2 w-2 shrink-0 rounded-full ${
                           isEnabled ? 'bg-gold' : 'bg-white/20'
                         }`}
-                        title={isEnabled ? 'Active' : 'Paused'}
+                        title={isEnabled ? t('lm.google.common.active') : t('lm.google.common.paused')}
                       />
                     </div>
 
                     {/* Row 2: budget + metrics */}
                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-400">
                       <span>
-                        Daily budget:{' '}
+                        {t('lm.google.campaignNew.review.dailyBudget')}:{' '}
                         <span className="text-slate-300">
                           AED {Math.round(campaign.dailyBudgetMicros / 1_000_000).toLocaleString()}
                         </span>
@@ -350,27 +351,27 @@ export default function GoogleCampaignsPage() {
                       {m && (
                         <>
                           <span>
-                            Impressions:{' '}
+                            {t('lm.google.common.impressions')}:{' '}
                             <span className="text-slate-300">
                               {m.impressions.toLocaleString()}
                             </span>
                           </span>
                           <span>
-                            Clicks:{' '}
+                            {t('lm.google.common.clicks')}:{' '}
                             <span className="text-slate-300">{m.clicks.toLocaleString()}</span>
                           </span>
                           <span>
-                            CTR:{' '}
+                            {t('lm.google.overview.stat.ctr')}:{' '}
                             <span className="text-slate-300">{fmtPct(m.ctr)}</span>
                           </span>
                           <span>
-                            Conversions:{' '}
+                            {t('lm.google.common.conversions')}:{' '}
                             <span className="font-medium text-[#FBBC04]">
                               {Math.round(m.conversions).toLocaleString()}
                             </span>
                           </span>
                           <span>
-                            Cost:{' '}
+                            {t('lm.google.common.spend')}:{' '}
                             <span className="text-slate-300">{fmtMicros(m.costMicros)}</span>
                           </span>
                         </>
@@ -430,11 +431,7 @@ export default function GoogleCampaignsPage() {
           {!error && campaigns.length > 0 && filtered.length === 0 && (
             <div className="mt-10 rounded-[20px] border border-line bg-surface-2 px-6 py-10 text-center">
               <p className="text-[14px] text-slate-400">
-                No{' '}
-                <span className="text-slate-400">
-                  {filter.replace(/_/g, ' ').toLowerCase()}
-                </span>{' '}
-                campaigns found.
+                {t('lm.google.camp.noneFiltered', { type: filter.replace(/_/g, ' ').toLowerCase() })}
               </p>
             </div>
           )}
