@@ -49,11 +49,18 @@ const PALETTES: Palette[] = [
 ]
 const LAYOUTS: LayoutKey[] = ['heroPrice', 'frame', 'statFooter']
 
-interface Variant { id: string; layout: LayoutKey; palette: number; dataUrl: string }
+interface Variant { id: string; layout: LayoutKey; palette: number; fmt: FormatKey; dataUrl: string }
 interface Overlay { eyebrow: string; headline: string; price: string; priceUnit: string; footnote: string }
 
-const W = 1080
-const H = 1350
+// Ad formats — real Meta placement resolutions. Compositions are
+// resolution-aware: horizontal type scales with width, vertical anchors are
+// fractions of height, so the same design language holds in 4:5, 1:1 and 9:16.
+type FormatKey = 'feed' | 'square' | 'story'
+const FORMATS: Record<FormatKey, { w: number; h: number }> = {
+  feed:   { w: 1080, h: 1350 },
+  square: { w: 1080, h: 1080 },
+  story:  { w: 1080, h: 1920 },
+}
 const isRtl = (s: string) => /[؀-ۿ]/.test(s)
 
 // ── Canvas helpers ───────────────────────────────────────────────────────────
@@ -100,7 +107,8 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: numb
   ctx.restore()
 }
 
-function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Palette, o: Overlay): string {
+function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Palette, o: Overlay, fmt: FormatKey): string {
+  const { w: W, h: H } = FORMATS[fmt]
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
@@ -110,6 +118,8 @@ function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Pale
   const ax = rtl ? W - 64 : 64            // aligned text x
   ctx.textAlign = rtl ? 'right' : 'left'
   const font = (px: number, weight = 700) => `${weight} ${px}px system-ui, -apple-system, "Segoe UI", sans-serif`
+  // Vertical anchors are height fractions so 1:1 / 4:5 / 9:16 all read right.
+  const Y = (f: number) => Math.round(H * f)
 
   if (layout === 'heroPrice') {
     // Gradient ground, eyebrow + headline, huge price in a soft blob, image bottom.
@@ -120,11 +130,11 @@ function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Pale
     ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = p.ink
     ctx.font = font(34, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, 96)
+    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, Y(0.07))
     ctx.font = font(58, 800)
-    const hh = o.headline ? drawWrapped(ctx, o.headline, ax, 176, W - 128, 72, 3) : 0
+    const hh = o.headline ? drawWrapped(ctx, o.headline, ax, Y(0.07) + 80, W - 128, 72, fmt === 'square' ? 2 : 3) : 0
     if (o.price) {
-      const py = 200 + hh + 60
+      const py = Y(0.07) + 100 + hh + 60
       ctx.fillStyle = p.chip
       roundRect(ctx, W / 2 - 380, py - 40, 760, 220, 110)
       ctx.fill()
@@ -135,51 +145,54 @@ function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Pale
       if (o.priceUnit) { ctx.font = font(44, 700); ctx.fillText(o.priceUnit, W / 2 - 280, py + 110) }
       ctx.textAlign = rtl ? 'right' : 'left'
     }
-    if (o.footnote) { ctx.font = font(28, 500); ctx.fillStyle = p.ink; ctx.fillText(o.footnote, ax, 662) }
-    if (img) drawCover(ctx, img, 0, 700, W, H - 700)
-    else { ctx.fillStyle = p.bg2; ctx.fillRect(0, 700, W, H - 700) }
+    const imgTop = Y(fmt === 'square' ? 0.56 : 0.52)
+    if (o.footnote) { ctx.font = font(28, 500); ctx.fillStyle = p.ink; ctx.fillText(o.footnote, ax, imgTop - 36) }
+    if (img) drawCover(ctx, img, 0, imgTop, W, H - imgTop)
+    else { ctx.fillStyle = p.bg2; ctx.fillRect(0, imgTop, W, H - imgTop) }
   } else if (layout === 'frame') {
     // Full-bleed image with top/bottom scrims and bands.
     ctx.fillStyle = p.bg2
     ctx.fillRect(0, 0, W, H)
     if (img) drawCover(ctx, img, 0, 0, W, H)
-    const top = ctx.createLinearGradient(0, 0, 0, 330)
+    const top = ctx.createLinearGradient(0, 0, 0, Y(0.24))
     top.addColorStop(0, 'rgba(10,10,14,0.82)')
     top.addColorStop(1, 'rgba(10,10,14,0)')
     ctx.fillStyle = top
-    ctx.fillRect(0, 0, W, 330)
-    const bot = ctx.createLinearGradient(0, H - 360, 0, H)
+    ctx.fillRect(0, 0, W, Y(0.24))
+    const bot = ctx.createLinearGradient(0, H - Y(0.27), 0, H)
     bot.addColorStop(0, 'rgba(10,10,14,0)')
     bot.addColorStop(1, 'rgba(10,10,14,0.88)')
     ctx.fillStyle = bot
-    ctx.fillRect(0, H - 360, W, 360)
+    ctx.fillRect(0, H - Y(0.27), W, Y(0.27))
     ctx.fillStyle = p.accent
     ctx.font = font(32, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, 88)
+    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, Y(0.065))
     ctx.fillStyle = '#FFFFFF'
     ctx.font = font(56, 800)
-    if (o.headline) drawWrapped(ctx, o.headline, ax, 156, W - 128, 68, 2)
+    if (o.headline) drawWrapped(ctx, o.headline, ax, Y(0.065) + 68, W - 128, 68, 2)
     if (o.price) {
       ctx.fillStyle = p.accent
       ctx.font = font(88, 800)
-      ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - 160)
+      ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - Y(0.115))
     }
-    if (o.footnote) { ctx.fillStyle = '#E7E5E4'; ctx.font = font(30, 500); ctx.fillText(o.footnote, ax, H - 76) }
+    if (o.footnote) { ctx.fillStyle = '#E7E5E4'; ctx.font = font(30, 500); ctx.fillText(o.footnote, ax, H - Y(0.055)) }
   } else {
-    // statFooter: headline band, image middle, three stat chips at bottom.
+    // statFooter: headline band, image middle, stat chips at the bottom band.
     ctx.fillStyle = p.bg
     ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = p.ink
     ctx.font = font(30, 600)
-    if (o.eyebrow) { ctx.textAlign = 'center'; ctx.fillText(o.eyebrow, W / 2, 76) }
+    if (o.eyebrow) { ctx.textAlign = 'center'; ctx.fillText(o.eyebrow, W / 2, Y(0.055)) }
     ctx.font = font(52, 800)
     ctx.textAlign = 'center'
-    if (o.headline) drawWrapped(ctx, o.headline, W / 2, 150, W - 120, 62, 2)
+    if (o.headline) drawWrapped(ctx, o.headline, W / 2, Y(0.055) + 74, W - 120, 62, 2)
     ctx.textAlign = rtl ? 'right' : 'left'
-    if (img) drawCover(ctx, img, 0, 300, W, 760)
-    else { ctx.fillStyle = p.bg2; ctx.fillRect(0, 300, W, 760) }
+    const imgTop = Y(0.22)
+    const imgBottom = Y(0.785)
+    if (img) drawCover(ctx, img, 0, imgTop, W, imgBottom - imgTop)
+    else { ctx.fillStyle = p.bg2; ctx.fillRect(0, imgTop, W, imgBottom - imgTop) }
     ctx.fillStyle = p.bg2
-    ctx.fillRect(0, 1060, W, H - 1060)
+    ctx.fillRect(0, imgBottom, W, H - imgBottom)
     const cells: [string, string][] = []
     if (o.price) cells.push([`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ''])
     if (o.footnote) cells.push([o.footnote, ''])
@@ -190,7 +203,7 @@ function composeVariant(img: HTMLImageElement | null, layout: LayoutKey, p: Pale
       ctx.textAlign = 'center'
       ctx.fillStyle = p.ink
       ctx.font = font(v.length > 16 ? 34 : 54, 800)
-      ctx.fillText(v, cx, 1210)
+      ctx.fillText(v, cx, imgBottom + Math.round((H - imgBottom) * 0.62))
     })
   }
   return canvas.toDataURL('image/png')
@@ -250,6 +263,10 @@ export default function AdDesignerPage() {
 
   const [variants, setVariants] = useState<Variant[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  // The options: format (single) + which layouts/palettes to compose (multi).
+  const [format, setFormat] = useState<FormatKey>('feed')
+  const [layoutsOn, setLayoutsOn] = useState<Set<LayoutKey>>(new Set(LAYOUTS))
+  const [palettesOn, setPalettesOn] = useState<Set<number>>(new Set([0, 1, 2]))
   const [generating, setGenerating] = useState(false)
   const [genStage, setGenStage] = useState(0)
   const [enhancing, setEnhancing] = useState<string | null>(null)
@@ -329,14 +346,17 @@ export default function AdDesignerPage() {
       }
       setGenStage(2)
       const out: Variant[] = []
-      for (const layout of LAYOUTS) {
-        for (let pi = 0; pi < PALETTES.length; pi++) {
-          out.push({ id: `${layout}-${pi}`, layout, palette: pi, dataUrl: composeVariant(img, layout, PALETTES[pi], overlay) })
+      const layouts = LAYOUTS.filter((l) => layoutsOn.has(l))
+      const palettes = [0, 1, 2].filter((pi) => palettesOn.has(pi))
+      for (const layout of layouts) {
+        for (const pi of palettes) {
+          out.push({ id: `${format}-${layout}-${pi}`, layout, palette: pi, fmt: format, dataUrl: composeVariant(img, layout, PALETTES[pi], overlay, format) })
         }
         setGenStage((s) => Math.min(s + 1, 4))
         // Yield to the browser so the progress bar actually paints between batches.
         await new Promise((r) => setTimeout(r, 60))
       }
+      setGenStage(4)
       setVariants(out)
       setStep('generate')
     } catch {
@@ -693,11 +713,58 @@ export default function AdDesignerPage() {
                 <div className="space-y-2.5">
                   <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })} placeholder={t('adz.field.eyebrow')} className={fieldClass('lg')} dir="auto" />
                   <input value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })} placeholder={t('adz.field.headline')} className={fieldClass('lg')} dir="auto" />
+                  {/* Wrappers own the widths — fieldClass bakes in w-full, which
+                      otherwise fights a width utility and collapses the row. */}
                   <div className="flex gap-2">
-                    <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })} placeholder={t('adz.field.price')} className={fieldClass('lg', 'min-w-0 flex-1')} dir="auto" />
-                    <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })} className={fieldClass('lg', 'w-24 shrink-0 text-center')} dir="auto" />
+                    <div className="min-w-0 flex-1">
+                      <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })} placeholder={t('adz.field.price')} className={fieldClass('lg')} dir="auto" />
+                    </div>
+                    <div className="w-24 shrink-0">
+                      <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })} className={fieldClass('lg', 'text-center')} dir="auto" />
+                    </div>
                   </div>
                   <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })} placeholder={t('adz.field.footnote')} className={fieldClass('lg')} dir="auto" />
+                </div>
+              </div>
+
+              {/* Options: format + which layouts/colors to compose */}
+              <div className="mt-5 border-t border-line pt-4">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.format')}</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(Object.keys(FORMATS) as FormatKey[]).map((f) => (
+                    <button key={f} type="button" onClick={() => setFormat(f)}
+                      className={`rounded-lg border px-2 py-2 text-center text-[11px] font-semibold transition ${format === f ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+                      {t(`adz.format.${f}`)}
+                      <span className="block text-[9px] font-normal text-slate-500">{FORMATS[f].w}×{FORMATS[f].h}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.layouts')}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {LAYOUTS.map((l) => {
+                    const on = layoutsOn.has(l)
+                    return (
+                      <button key={l} type="button"
+                        onClick={() => setLayoutsOn((prev) => { const n = new Set(prev); if (n.has(l)) { if (n.size > 1) n.delete(l) } else n.add(l); return n })}
+                        className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+                        {t(`adz.layout.${l}`)}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.palettes')}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {PALETTES.map((p, pi) => {
+                    const on = palettesOn.has(pi)
+                    return (
+                      <button key={pi} type="button"
+                        onClick={() => setPalettesOn((prev) => { const n = new Set(prev); if (n.has(pi)) { if (n.size > 1) n.delete(pi) } else n.add(pi); return n })}
+                        className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+                        <span className="h-3 w-3 rounded-full border border-black/20" style={{ background: p.bg }} />
+                        {t(`adz.pal.${pi}`)}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -717,7 +784,7 @@ export default function AdDesignerPage() {
                 <div key={v.id} className={`group relative overflow-hidden rounded-xl border transition ${on ? 'border-gold ring-2 ring-gold/40' : 'border-line hover:border-line-strong'}`}>
                   <button type="button" onClick={() => toggle(v.id)} className="block w-full">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={v.dataUrl} alt="" className="aspect-[4/5] w-full object-cover" />
+                    <img src={v.dataUrl} alt="" className="w-full object-cover" style={{ aspectRatio: `${FORMATS[v.fmt].w} / ${FORMATS[v.fmt].h}` }} />
                   </button>
                   <span className={`absolute start-2 top-2 grid h-6 w-6 place-items-center rounded-md border text-ink ${on ? 'border-gold bg-gold' : 'border-white/40 bg-black/30'}`}>
                     {on && <Check className="h-4 w-4" />}
