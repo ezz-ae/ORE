@@ -496,40 +496,10 @@ export default function AdDesignerPage() {
         })}
       </div>
 
+      {/* The source step's form lives in the CENTER canvas where there is real
+          room to write — the rail only carries the stepper + a hint here. */}
       {step === 'source' && (
-        <div className="space-y-3">
-          <div>
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.listing')}</div>
-            <select value={listingId} onChange={(e) => { setListingId(e.target.value); if (e.target.value) setUploadUrl(null) }} className={fieldClass('md')}>
-              <option value="">—</option>
-              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </div>
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30">
-            <Upload className="h-3.5 w-3.5" /> {t('adz.source.upload')}
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
-          <p className="text-[11px] leading-relaxed text-slate-500">{t('adz.source.hint')}</p>
-
-          <div className="border-t border-line pt-3">
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.overlay')}</div>
-            <div className="space-y-2">
-              <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })} placeholder={t('adz.field.eyebrow')} className={fieldClass('sm')} dir="auto" />
-              <input value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })} placeholder={t('adz.field.headline')} className={fieldClass('sm')} dir="auto" />
-              <div className="flex gap-2">
-                <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })} placeholder={t('adz.field.price')} className={fieldClass('sm')} dir="auto" />
-                <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })} className={fieldClass('sm', 'w-20 shrink-0')} dir="auto" />
-              </div>
-              <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })} placeholder={t('adz.field.footnote')} className={fieldClass('sm')} dir="auto" />
-            </div>
-          </div>
-
-          <button type="button" onClick={generate} disabled={!canGenerate || generating}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('adz.generate.cta')}
-          </button>
-        </div>
+        <p className="text-[11px] leading-relaxed text-slate-500">{t('adz.source.hint')}</p>
       )}
 
       {step === 'generate' && (
@@ -649,31 +619,67 @@ export default function AdDesignerPage() {
 
   return (
     <DriveEditorFrame type="image" title={t('adz.title')} statusNote={t('adz.note')} toolRail={toolRail}>
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
 
         {step === 'source' && (
-          <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-            {(uploadUrl || listing?.heroImage) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={uploadUrl ?? listing?.heroImage ?? ''} alt="" className="max-h-[46vh] rounded-2xl border border-line object-contain" />
-            ) : (
-              <div className="grid h-52 w-full max-w-md place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-slate-500">
-                {t('adz.source.empty')}
-              </div>
-            )}
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-slate-400">{t('adz.source.desc')}</p>
-            {generating && (
-              <div className="mt-6 w-full max-w-md">
-                <div className="flex justify-between text-[11px] text-slate-500">
-                  {genStages.map((s, i) => (
-                    <span key={s} className={i < genStage ? 'text-emerald-300' : i === genStage ? 'text-gold' : ''}>{s}</span>
-                  ))}
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+            {/* Left: the source image (or drop hint) + what this tool does */}
+            <div>
+              {(uploadUrl || listing?.heroImage) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={uploadUrl ?? listing?.heroImage ?? ''} alt="" className="max-h-[56vh] w-full rounded-2xl border border-line object-cover" />
+              ) : (
+                <button type="button" onClick={() => fileRef.current?.click()}
+                  className="grid h-72 w-full place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-slate-500 transition hover:border-gold/30 hover:text-slate-300">
+                  {t('adz.source.empty')}
+                </button>
+              )}
+              <p className="mt-4 text-sm leading-relaxed text-slate-400">{t('adz.source.desc')}</p>
+              {generating && (
+                <div className="mt-6">
+                  <div className="flex justify-between text-[11px] text-slate-500">
+                    {genStages.map((s, i) => (
+                      <span key={s} className={i < genStage ? 'text-emerald-300' : i === genStage ? 'text-gold' : ''}>{s}</span>
+                    ))}
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${(genStage / 4) * 100}%` }} />
+                  </div>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                  <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${(genStage / 4) * 100}%` }} />
+              )}
+            </div>
+
+            {/* Right: the real form, with room to write */}
+            <div className="rounded-2xl border border-line bg-surface p-5">
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.listing')}</div>
+              <select value={listingId} onChange={(e) => { setListingId(e.target.value); if (e.target.value) setUploadUrl(null) }} className={fieldClass('lg')}>
+                <option value="">—</option>
+                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <button type="button" onClick={() => fileRef.current?.click()}
+                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-gold/30">
+                <Upload className="h-4 w-4" /> {t('adz.source.upload')}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
+
+              <div className="mt-5 border-t border-line pt-4">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.overlay')}</div>
+                <div className="space-y-2.5">
+                  <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })} placeholder={t('adz.field.eyebrow')} className={fieldClass('lg')} dir="auto" />
+                  <input value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })} placeholder={t('adz.field.headline')} className={fieldClass('lg')} dir="auto" />
+                  <div className="flex gap-2">
+                    <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })} placeholder={t('adz.field.price')} className={fieldClass('lg', 'min-w-0 flex-1')} dir="auto" />
+                    <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })} className={fieldClass('lg', 'w-24 shrink-0 text-center')} dir="auto" />
+                  </div>
+                  <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })} placeholder={t('adz.field.footnote')} className={fieldClass('lg')} dir="auto" />
                 </div>
               </div>
-            )}
+
+              <button type="button" onClick={generate} disabled={!canGenerate || generating}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-3 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
+                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('adz.generate.cta')}
+              </button>
+            </div>
           </div>
         )}
 
