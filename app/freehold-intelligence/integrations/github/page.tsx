@@ -136,7 +136,7 @@ export default function GitHubPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="mb-7 flex items-start justify-between gap-4">
@@ -145,7 +145,7 @@ export default function GitHubPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-2">
               <Github className="h-4 w-4 text-slate-300" />
             </div>
-            <h1 className="text-[20px] font-semibold text-white">GitHub</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">GitHub</h1>
           </div>
           <p className="mt-1 text-xs text-slate-500">{t('pintgh.subtitle')}</p>
         </div>

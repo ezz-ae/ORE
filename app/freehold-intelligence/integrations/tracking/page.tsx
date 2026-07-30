@@ -48,14 +48,14 @@ export default function TrackingIntegrationPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> {t('track.back')}
       </Link>
       <div className="mt-3 flex items-center gap-2.5">
         <div className="grid h-9 w-9 place-items-center rounded-xl border border-violet-400/25 bg-violet-400/10"><BarChart3 className="h-4 w-4 text-violet-300" /></div>
         <div>
-          <h1 className="text-lg font-semibold text-white">{t('track.title')}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">{t('track.title')}</h1>
           <p className="text-xs text-slate-500">{t('track.sub')}</p>
         </div>
       </div>
