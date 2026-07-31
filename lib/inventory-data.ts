@@ -1,6 +1,6 @@
 import { query } from "@/lib/db"
 import { normalizePaymentPlan } from "@/lib/payment-plan"
-import { normalizePermit } from "@/lib/freehold/trakheesi"
+import { normalizePermit, normalizePermitExpiry } from "@/lib/freehold/trakheesi"
 import type {
   InventoryProperty,
   LandingStatus,
@@ -108,6 +108,21 @@ function extractPermitNumber(payload: Record<string, unknown> | null): string | 
   const candidates = [payload.permitNumber, payload.trakheesiPermit, payload.dldPermit, pfDetail(payload).permitNumber]
   for (const c of candidates) {
     const n = normalizePermit(c)
+    if (n) return n
+  }
+  return null
+}
+
+// The permit's expiry date when the project data carries one. A permit number
+// without a date proves nothing about today, so this seeds the Ads Machine's
+// validity gate the same way the number seeds its presence gate. Only a real
+// YYYY-MM-DD survives normalisation — never a guessed window.
+function extractPermitExpiry(payload: Record<string, unknown> | null): string | null {
+  if (!payload) return null
+  const d = pfDetail(payload)
+  const candidates = [payload.permitExpiry, payload.trakheesiExpiry, payload.permitExpiryDate, d.permitExpiry, d.permitExpiryDate]
+  for (const c of candidates) {
+    const n = normalizePermitExpiry(c)
     if (n) return n
   }
   return null
@@ -273,6 +288,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     landingUrl: landing?.published ? `/lp/${landing.slug}` : null,
     brochureUrl: extractBrochureUrl(row.payload),
     permitNumber: extractPermitNumber(row.payload),
+    permitExpiry: extractPermitExpiry(row.payload),
     hasImages,
     imageCount: hasImages ? 1 : 0,
     dataQuality,

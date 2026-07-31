@@ -17,13 +17,14 @@ import { toast } from 'sonner'
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowLeftRight, ArrowUpRight, Bell,
   Check, Eye, FileText, ListChecks, Loader2, Pause, Pencil, Play, RefreshCw,
-  Rocket, Shield, Square, X,
+  Rocket, Shield, ShieldAlert, Square, X,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
 import { MachineLaunchReview } from '@/components/freehold/machine-launch-review'
 import type { TrialEdit, ProjectEdit } from '@/lib/freehold/ads-machine-plan-edit'
 import type { DeliveryState, CampaignDelivery } from '@/lib/freehold/campaign-delivery'
+import type { PermitState } from '@/lib/freehold/trakheesi'
 import type {
   ActivityKind, AdsMachine, MachineActivity, MachineCampaign, MachineStatus,
   VerdictAggregates, VerdictQueueItem,
@@ -47,6 +48,17 @@ interface Detail {
   verdictQueue: VerdictQueueItem[]
   verdictAggregates: VerdictAggregates
   starvedTrials?: { campaignId: string; trialLabel: string; projectSlug: string; pending: number; decisive: number; needed: number }[]
+  /** Where each project's Trakheesi permit stands today — computed server-side
+   *  from the same helper the engine gates launches on. */
+  permits?: {
+    projectSlug: string
+    listingName: string
+    permitNumber: string | null
+    permitExpiry: string | null
+    daysLeft: number | null
+    state: PermitState
+    activeTrials: number
+  }[]
   /** What the engine actually judged each trial on, from its last observation. */
   evidence?: TrialEvidence[]
   evidenceAt?: string | null
@@ -96,6 +108,7 @@ const KIND_META: Record<ActivityKind, { Icon: typeof Rocket; color: string; bg: 
   feedback_answered:     { Icon: Check,          color: 'text-emerald-300', bg: 'bg-emerald-400/10', labelKey: 'lm.machine.kind.feedback_answered' },
   cap_enforced:          { Icon: Shield,         color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.cap_enforced' },
   permit_blocked:        { Icon: Shield,         color: 'text-orange-300', bg: 'bg-orange-400/10', labelKey: 'lm.machine.kind.permit_blocked' },
+  permit_warning:        { Icon: ShieldAlert,    color: 'text-amber-300',  bg: 'bg-amber-400/10',  labelKey: 'lm.machine.kind.permit_warning' },
   error:                 { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.error' },
   google_draft_prepared: { Icon: FileText,       color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.google_draft_prepared' },
   planned:               { Icon: ListChecks,     color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.planned' },
@@ -348,6 +361,12 @@ export default function MachineDashboardPage() {
   const { machine, campaigns, activity, verdictQueue, verdictAggregates, budget } = data
   // The engine's own numbers, keyed for the trials table.
   const evidenceById = new Map((data.evidence ?? []).map((e) => [e.campaignId, e]))
+  // Only permits that need a human: 'ok' is the silent default. Worst first,
+  // and within a tier the project with live spend on the line comes first.
+  const PERMIT_RANK: Record<PermitState, number> = { expired: 0, missing: 1, expiring: 2, no_expiry: 3, ok: 4 }
+  const permitAlerts = (data.permits ?? [])
+    .filter((p) => p.state !== 'ok')
+    .sort((a, b) => PERMIT_RANK[a.state] - PERMIT_RANK[b.state] || b.activeTrials - a.activeTrials)
   const pill = STATUS_PILL[machine.status]
   const btnCls = 'inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-50'
 
@@ -482,6 +501,46 @@ export default function MachineDashboardPage() {
           <div className="mt-1.5 text-sm text-slate-500">{t('lm.machine.stat.pending')}</div>
         </div>
       </div>
+
+      {/* ── Trakheesi standing ────────────────────────────────────────────────
+          A permit is issued for a fixed window, and the engine stops a
+          project's trials the day it lapses. That has to be visible BEFORE it
+          happens — a renewal takes days, a stopped campaign is instant. Only
+          projects that need attention are listed; a fully-valid plan says
+          nothing here rather than adding another green box to scroll past. */}
+      {permitAlerts.length > 0 && (
+        <section className="mt-8">
+          <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.permit.title')}</div>
+          <div className="mt-4 space-y-2">
+            {permitAlerts.map((p) => {
+              const tone = p.state === 'expired' || p.state === 'missing'
+                ? { box: 'border-red-400/30 bg-red-400/[0.07]', icon: 'text-red-300', text: 'text-red-200', sub: 'text-red-200/80' }
+                : p.state === 'expiring'
+                  ? { box: 'border-amber-400/30 bg-amber-400/[0.07]', icon: 'text-amber-300', text: 'text-amber-200', sub: 'text-amber-200/80' }
+                  : { box: 'border-line bg-surface-2/40', icon: 'text-slate-500', text: 'text-slate-300', sub: 'text-slate-500' }
+              const body =
+                p.state === 'expired' ? t('lm.machine.permit.expired', { date: p.permitExpiry ?? '—' })
+                : p.state === 'expiring' ? t('lm.machine.permit.expiring', { date: p.permitExpiry ?? '—', days: String(p.daysLeft ?? 0) })
+                : p.state === 'missing' ? t('lm.machine.permit.missing')
+                : t('lm.machine.permit.noExpiry')
+              return (
+                <div key={p.projectSlug} className={`flex items-start gap-3 rounded-[18px] border p-4 ${tone.box}`}>
+                  <ShieldAlert className={`mt-0.5 h-4 w-4 shrink-0 ${tone.icon}`} />
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold leading-relaxed ${tone.text}`}>{p.listingName}</p>
+                    <p className={`mt-0.5 text-xs leading-relaxed ${tone.sub}`}>{body}</p>
+                    {p.activeTrials > 0 && (
+                      <p className={`mt-1 text-xs ${tone.sub}`}>
+                        {t('lm.machine.permit.liveTrials', { n: String(p.activeTrials) })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── Trials ── */}
       {/* ── The plan: what the machine is creating, per project ── */}

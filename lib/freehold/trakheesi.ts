@@ -29,6 +29,91 @@ export function hasPermit(raw: unknown): boolean {
   return normalizePermit(raw) !== null
 }
 
+/* ── Permit VALIDITY ────────────────────────────────────────────────────────
+ *
+ * A Trakheesi permit is not permanent — DET issues it for a fixed window, and
+ * an ad that keeps running past that window is as non-compliant as one that
+ * never had a permit. The number alone therefore proves nothing about *today*;
+ * the machine needs the expiry date to keep a launched campaign legal.
+ *
+ * Dates are compared on Dubai's calendar day, not the server's. Vercel crons
+ * run in UTC, which is 4 hours behind Asia/Dubai — comparing UTC days would
+ * treat a permit as still valid through the last four hours of the Dubai day
+ * after it lapsed. On a compliance gate, that error must not exist.
+ */
+
+/** Warn this many days ahead of expiry, so a permit can be renewed before the
+ *  machine has to stop the ads. */
+export const PERMIT_EXPIRY_WARN_DAYS = 5
+
+/** Today's date in Dubai as `YYYY-MM-DD`. `en-CA` formats exactly that way. */
+export function dubaiToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(now)
+}
+
+/**
+ * Accept an expiry only as a real `YYYY-MM-DD` calendar date. Anything else —
+ * blank, prose, an impossible date like 2026-02-31 — is null, i.e. honestly
+ * "no expiry on file", never a guessed one.
+ */
+export function normalizePermitExpiry(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  const s = raw.trim().slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null
+  // Round-trip through UTC to reject dates that don't exist on the calendar.
+  const d = new Date(`${s}T00:00:00Z`)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString().slice(0, 10) === s ? s : null
+}
+
+/**
+ * Whole days from today (Dubai) until the permit lapses. 0 = lapses today and
+ * is still valid today; negative = already lapsed. null when no expiry is on
+ * file — the caller must treat that as "unknown", never as "fine".
+ */
+export function permitDaysLeft(expiry: unknown, now: Date = new Date()): number | null {
+  const e = normalizePermitExpiry(expiry)
+  if (!e) return null
+  const end = Date.parse(`${e}T00:00:00Z`)
+  const today = Date.parse(`${dubaiToday(now)}T00:00:00Z`)
+  return Math.round((end - today) / 86_400_000)
+}
+
+/**
+ * True only when we KNOW the permit has lapsed. A permit is valid *through*
+ * its expiry date, so it expires the day after. No expiry on file → false:
+ * we cannot assert a lapse we have no evidence for (that case is surfaced as
+ * a "no expiry on file" warning instead, so it is never silently ignored).
+ */
+export function isPermitExpired(expiry: unknown, now: Date = new Date()): boolean {
+  const left = permitDaysLeft(expiry, now)
+  return left !== null && left < 0
+}
+
+/** The permit string only when it is usable for advertising RIGHT NOW — a real
+ *  permit number that is not known to have lapsed. The single check the Ads
+ *  Machine uses before launching, reallocating into, or continuing a trial. */
+export function usablePermit(permitRaw: unknown, expiryRaw: unknown, now: Date = new Date()): string | null {
+  const permit = normalizePermit(permitRaw)
+  if (!permit) return null
+  return isPermitExpired(expiryRaw, now) ? null : permit
+}
+
+export type PermitState = 'ok' | 'expiring' | 'expired' | 'no_expiry' | 'missing'
+
+/** How a project's permit stands today — one classification shared by the
+ *  engine's gate and the operator-facing alert strip, so the dashboard can
+ *  never disagree with what the machine actually did. */
+export function permitState(permitRaw: unknown, expiryRaw: unknown, now: Date = new Date()): PermitState {
+  if (!normalizePermit(permitRaw)) return 'missing'
+  const left = permitDaysLeft(expiryRaw, now)
+  if (left === null) return 'no_expiry'
+  if (left < 0) return 'expired'
+  return left <= PERMIT_EXPIRY_WARN_DAYS ? 'expiring' : 'ok'
+}
+
 /**
  * The public DLD "validate advertising permit" page, deep-linked to this
  * permit. The QR encodes this URL so a scan lands on the official verification

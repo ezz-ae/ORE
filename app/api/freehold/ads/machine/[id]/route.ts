@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
+import { normalizePermit, normalizePermitExpiry, permitDaysLeft, permitState } from '@/lib/freehold/trakheesi'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import {
   getMachine,
@@ -71,6 +72,27 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const obsData = latestObservation?.data as { trials?: unknown[] } | undefined
   const evidence = Array.isArray(obsData?.trials) ? obsData.trials : []
 
+  // PERMIT STANDING per project. A Trakheesi permit is issued for a fixed
+  // window, and the engine stops a project's trials the day it lapses — so the
+  // operator needs to see that coming while there is still time to renew,
+  // rather than discovering it from a stopped campaign. Computed from the same
+  // helper the engine gates on, so this can never disagree with what it did.
+  const permits = machine.plan?.viable
+    ? machine.plan.projects.map((p) => {
+        const expiry = normalizePermitExpiry(p.permitExpiry)
+        return {
+          projectSlug: p.slug,
+          listingName: p.listingName,
+          permitNumber: normalizePermit(p.permitNumber),
+          permitExpiry: expiry,
+          daysLeft: permitDaysLeft(expiry),
+          state: permitState(p.permitNumber, expiry),
+          /** Whether this project still has live spend riding on that permit. */
+          activeTrials: campaigns.filter((c) => c.projectSlug === p.slug && c.status === 'active').length,
+        }
+      })
+    : []
+
   return NextResponse.json({
     machine,
     campaigns,
@@ -78,6 +100,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     verdictQueue,
     verdictAggregates,
     starvedTrials,
+    permits,
     evidence,
     evidenceAt: latestObservation?.createdAt ?? null,
     budget: {

@@ -106,6 +106,12 @@ export interface MachineProjectPlan {
    * operator in the launch review. The engine will NOT launch a project's
    * trials without it (real Dubai compliance — no permit, no ad). */
   permitNumber?: string | null
+  /** The permit's expiry as `YYYY-MM-DD`, when known. A Trakheesi permit is
+   * issued for a fixed window; past it, a running ad is as non-compliant as an
+   * unpermitted one, so the engine stops that project's trials. Absent/null
+   * means "no expiry on file" — the machine keeps running but says so loudly
+   * rather than pretending the permit is valid forever. */
+  permitExpiry?: string | null
   /** The project's landing-page slug (published or draft) when one exists —
    * lets the launch review deep-link into the landing editor. Absent on older
    * plans; the review then derives it from landingUrl. */
@@ -546,6 +552,7 @@ export async function buildMachinePlan(
       // otherwise null (the operator supplies it in the launch review, and the
       // engine blocks launch until it exists).
       permitNumber: listing?.permitNumber ?? null,
+      permitExpiry: listing?.permitExpiry ?? null,
       // The project's landing-page slug (published OR draft) when one exists —
       // lets the launch review deep-link straight into the landing editor.
       landingSlug: listing?.landingSlug ?? null,

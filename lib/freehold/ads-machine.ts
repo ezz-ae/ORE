@@ -32,6 +32,9 @@ export type ActivityKind =
   | 'feedback_answered'
   | 'cap_enforced'
   | 'permit_blocked'
+  /** Permit renewal notice — raised while ads are still running, so the permit
+   *  can be renewed before the machine has to stop them. */
+  | 'permit_warning'
   | 'error'
 
 let ensured: Promise<void> | null = null
