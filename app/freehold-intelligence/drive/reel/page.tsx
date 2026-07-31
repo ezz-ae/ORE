@@ -10,9 +10,11 @@ import {
 } from 'lucide-react'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
-import { useT } from '@/lib/i18n/provider'
+import { useI18n } from '@/lib/i18n/provider'
 import { fieldClass, Modal } from '@/components/freehold/ui'
 import { PALETTES, FORMATS, loadImage, fmtPrice, ensureAdFonts, type Overlay } from '@/lib/freehold/ad-compose'
+import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
+import { SUITE_LANGS, type SuiteLang } from '@/lib/freehold/creative-suite'
 import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type ReelOptions } from '@/lib/freehold/reel-compose'
 
 /**
@@ -37,7 +39,7 @@ function pickWebmMime(): string | null {
 type Shot = { id: string; url: string; img: HTMLImageElement }
 
 export default function ReelMakerPage() {
-  const t = useT()
+  const { t, locale } = useI18n()
   const { projects } = useLiveProjects()
 
   const [listingId, setListingId] = useState('')
@@ -51,6 +53,45 @@ export default function ReelMakerPage() {
   const [exporting, setExporting] = useState(false)
   const [exportPct, setExportPct] = useState(0)
   const [saving, setSaving] = useState(false)
+
+  // Describe the reel in words — the same grounded writer the Ad Designer
+  // uses, so a reel and an ad from one listing are written the same way.
+  const [describe, setDescribe] = useState('')
+  const [describeBusy, setDescribeBusy] = useState(false)
+  const [adLang, setAdLang] = useState<SuiteLang>(
+    () => ((SUITE_LANGS as string[]).includes(locale) ? (locale as SuiteLang) : 'en'),
+  )
+
+  async function writeCopy() {
+    const brief = describe.trim()
+    if (!brief || describeBusy) return
+    setDescribeBusy(true)
+    try {
+      const written = await writeAdCopy({
+        brief,
+        lang: adLang,
+        facts: {
+          project: listing?.name, area: listing?.area,
+          price: overlay.price, priceUnit: overlay.priceUnit,
+          paymentPlan: listing?.paymentPlan,
+        },
+      })
+      const before = overlay
+      setOverlay((prev) => ({
+        ...prev,
+        eyebrow: written.eyebrow || prev.eyebrow,
+        headline: written.headline || prev.headline,
+        footnote: written.footnote || prev.footnote,
+      }))
+      toast.success(t('adz.describe.done'), {
+        action: { label: t('ed.ai.undo'), onClick: () => setOverlay(before) },
+      })
+    } catch {
+      toast.error(t('adz.describe.err'))
+    } finally {
+      setDescribeBusy(false)
+    }
+  }
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
@@ -332,21 +373,71 @@ export default function ReelMakerPage() {
         )}
       </div>
 
-      {/* Copy */}
+      {/* Describe the reel — same grounded writer as the Ad Designer */}
       <div className="border-t border-line pt-3">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('reel.copy')}</div>
-        <div className="space-y-2">
-          <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })} placeholder={t('adz.field.eyebrow')} className={fieldClass('sm')} dir="auto" />
-          <input value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })} placeholder={t('adz.field.headline')} className={fieldClass('sm')} dir="auto" />
-          <div className="flex gap-1.5">
-            <div className="min-w-0 flex-1">
-              <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })} placeholder={t('adz.field.price')} className={fieldClass('sm')} dir="auto" />
-            </div>
-            <div className="w-16 shrink-0">
-              <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })} className={fieldClass('sm', 'text-center')} dir="auto" />
-            </div>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.describe.title')}</span>
+          <div className="flex gap-1">
+            {SUITE_LANGS.map((l) => (
+              <button key={l} type="button" onClick={() => setAdLang(l)}
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold transition ${adLang === l ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-500 hover:text-slate-300'}`}>
+                {t(`suite.tpl.lang.${l}`)}
+              </button>
+            ))}
           </div>
-          <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })} placeholder={t('adz.field.footnote')} className={fieldClass('sm')} dir="auto" />
+        </div>
+        <textarea value={describe} onChange={(e) => setDescribe(e.target.value)}
+          placeholder={t('adz.describe.ph')} rows={3} maxLength={BRIEF_MAX}
+          className={fieldClass('sm', 'resize-y leading-relaxed')} dir="auto" />
+        <button type="button" onClick={writeCopy} disabled={!describe.trim() || describeBusy}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+          {describeBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {describeBusy ? t('adz.describe.working') : t('adz.describe.cta')}
+        </button>
+      </div>
+
+      {/* The words on the reel — labelled and sized like the designer's */}
+      <div className="border-t border-line pt-3">
+        <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('reel.copy')}</div>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium text-slate-300">{t('adz.field.eyebrow')}</span>
+              <span className="text-[11px] tabular-nums text-slate-500">{overlay.eyebrow.length}/40</span>
+            </span>
+            <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })}
+              placeholder={t('adz.field.eyebrowPh')} className={fieldClass('sm')} dir="auto" />
+          </label>
+          <label className="block">
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium text-slate-300">{t('adz.field.headline')}</span>
+              <span className="text-[11px] tabular-nums text-slate-500">{overlay.headline.length}/60</span>
+            </span>
+            {/* The title card carries this — it needs room, like the ad's. */}
+            <textarea value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })}
+              placeholder={t('adz.field.headlinePh')} rows={2}
+              className={fieldClass('sm', 'resize-y font-semibold leading-snug')} dir="auto" />
+          </label>
+          <div className="flex gap-1.5">
+            <label className="block min-w-0 flex-1">
+              <span className="mb-1 block text-[11px] font-medium text-slate-300">{t('adz.field.price')}</span>
+              <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })}
+                placeholder={t('adz.field.pricePh')} className={fieldClass('sm')} dir="auto" />
+            </label>
+            <label className="block w-20 shrink-0">
+              <span className="mb-1 block truncate text-[11px] font-medium text-slate-300">{t('adz.field.unit')}</span>
+              <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })}
+                className={fieldClass('sm', 'text-center')} dir="auto" />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium text-slate-300">{t('adz.field.footnote')}</span>
+              <span className="text-[11px] tabular-nums text-slate-500">{overlay.footnote.length}/48</span>
+            </span>
+            <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })}
+              placeholder={t('adz.field.footnotePh')} className={fieldClass('sm')} dir="auto" />
+          </label>
         </div>
       </div>
 
