@@ -205,6 +205,12 @@ export default async function FormsPage() {
                       <span>
                         {t('lm.forms.created')} <span className="text-slate-400">{new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</span>
                       </span>
+                      {/* Which Facebook Page this form lives on. The list now
+                          spans every accessible Page, so without this two
+                          identically-named forms are indistinguishable. */}
+                      {form.page_name && (
+                        <span className="truncate text-slate-500">{form.page_name}</span>
+                      )}
                     </div>
                   </div>
                   <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { syncAllMetaLeads } from '@/lib/freehold/meta-lead-sync'
-import { subscribePageToLeadgenWebhook, MetaApiError, MetaConfigError } from '@/lib/meta/client'
+import { subscribeAllPagesToLeadgen, MetaApiError, MetaConfigError } from '@/lib/meta/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   try {
     const [result] = await Promise.all([
       syncAllMetaLeads(),
-      subscribePageToLeadgenWebhook().catch((error) => {
+      subscribeAllPagesToLeadgen().catch((error) => {
         console.error('[sync-meta-leads] leadgen webhook re-subscribe failed', error)
       }),
     ])

@@ -348,6 +348,12 @@ export interface MetaLeadForm {
   created_time: string
   locale?: string
   follow_up_action_url?: string
+  /** The Page this form belongs to. Forms are a Page asset and the app reads
+   *  every accessible Page, so a form has to say which one it came from — both
+   *  to group them in the UI and to sync its leads with that Page's own token.
+   *  Never carries the token itself; that is resolved server-side. */
+  page_id?: string
+  page_name?: string | null
   questions?: {
     type: string
     label?: string
