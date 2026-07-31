@@ -188,7 +188,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={cairo.variable} suppressHydrationWarning>
       <head>
         {/* Apply the persisted Freehold light/dark mode before paint (no flash). */}
         <script

@@ -163,7 +163,7 @@ export default function CreativeSuitePage() {
             <Link key={tpl.id} href={templateHref(tpl)} className="group block">
               <div className="overflow-hidden rounded-lg ring-1 ring-line transition group-hover:ring-2 group-hover:ring-gold/50">
                 <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={templateOverlay(tpl)}
-                  img={heroes.length > 0 ? heroes[i % heroes.length] : null} />
+                  img={heroes.length > 0 ? heroes[i % heroes.length] : null} index={i} />
               </div>
               <div className="mt-1.5 flex items-center justify-between px-0.5">
                 <span className="truncate text-[11px] font-medium text-slate-300">{t(`adz.layout.${tpl.layout}`)} · {t(`adz.pal.${tpl.palette}`)}</span>
