@@ -14,7 +14,7 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
 import { type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
-import { composeVariant, PALETTES as AD_PALETTES } from '@/lib/freehold/ad-compose'
+import { composeVariant, ensureAdFonts, PALETTES as AD_PALETTES } from '@/lib/freehold/ad-compose'
 import { SUITE_TEMPLATES, SUITE_LANGS, templateOverlay, type SuiteLang, type SuiteTemplate } from '@/lib/freehold/creative-suite'
 import { TemplateThumb } from '@/components/freehold/drive/template-thumb'
 
@@ -161,6 +161,7 @@ export default function DriveImageEditor() {
     if (tplBusy) return
     setTplBusy(tpl.id)
     try {
+      await ensureAdFonts()
       const url = composeVariant(null, tpl.layout, AD_PALETTES[tpl.palette] ?? AD_PALETTES[0], templateOverlay(tpl), tpl.format, 1)
       // Match the canvas to the template's real aspect BEFORE the source lands —
       // otherwise a 9:16 design gets centre-cropped into the default square.

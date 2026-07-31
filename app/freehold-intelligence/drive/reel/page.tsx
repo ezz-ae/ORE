@@ -12,7 +12,7 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
 import { useT } from '@/lib/i18n/provider'
 import { fieldClass, Modal } from '@/components/freehold/ui'
-import { PALETTES, FORMATS, loadImage, fmtPrice, type Overlay } from '@/lib/freehold/ad-compose'
+import { PALETTES, FORMATS, loadImage, fmtPrice, ensureAdFonts, type Overlay } from '@/lib/freehold/ad-compose'
 import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type ReelOptions } from '@/lib/freehold/reel-compose'
 
 /**
@@ -108,7 +108,11 @@ export default function ReelMakerPage() {
     drawReelFrame(ctx, tSec, opts)
   }, [opts])
 
-  useEffect(() => { if (!playing) paint(Math.min(1, opts.titleSecs * 0.5)) }, [paint, playing, opts.titleSecs])
+  // Resolve the ad fonts once, then repaint — otherwise the idle frame the
+  // user judges the reel by is drawn in the fallback face.
+  const [fontsReady, setFontsReady] = useState(false)
+  useEffect(() => { ensureAdFonts().then(() => setFontsReady(true)) }, [])
+  useEffect(() => { if (!playing) paint(Math.min(1, opts.titleSecs * 0.5)) }, [paint, playing, opts.titleSecs, fontsReady])
 
   useEffect(() => {
     if (!playing) return
@@ -182,6 +186,7 @@ export default function ReelMakerPage() {
     setExporting(true)
     setExportPct(0)
     try {
+      await ensureAdFonts()
       const stream = canvas.captureStream(REEL_FPS)
       const rec = new MediaRecorder(stream, { mimeType })
       const chunks: BlobPart[] = []

@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter, Geist_Mono, Playfair_Display } from "next/font/google"
+import { Inter, Geist_Mono, Playfair_Display, Cairo } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
@@ -29,6 +29,17 @@ const geistMono = Geist_Mono({
 const playfair = Playfair_Display({ 
   subsets: ["latin"],
   variable: "--font-serif",
+  preload: false,
+})
+
+// Cairo — the ad engine's Arabic face. Canvas text falls back to whatever
+// Arabic font happens to be installed on the machine doing the rendering,
+// which makes an exported ad look different for every agent. Loading a real
+// webfont and composing only after it is ready makes the pixels deterministic.
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-ad-ar",
   preload: false,
 })
 
@@ -186,7 +197,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} ${geistMono.variable} bg-background font-sans antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} ${geistMono.variable} ${cairo.variable} bg-background font-sans antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

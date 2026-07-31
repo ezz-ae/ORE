@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  PALETTES, FORMATS, composeVariant,
+  PALETTES, FORMATS, composeVariant, ensureAdFonts,
   type FormatKey, type LayoutKey, type Overlay,
 } from '@/lib/freehold/ad-compose'
 
@@ -28,7 +28,11 @@ export function TemplateThumb({
 
   useEffect(() => {
     // Compose off the paint path; 0.3× keeps the canvas cheap and crisp.
-    const id = window.requestAnimationFrame(() => {
+    let alive = true
+    // Fonts first: composing before the Arabic face resolves bakes the
+    // fallback into the preview the user judges the template by.
+    ensureAdFonts().then(() => {
+      if (!alive) return
       try { setUrl(composeVariant(img, layout, PALETTES[palette] ?? PALETTES[0], overlay, format, 0.3)) }
       catch {
         // A tainted/broken image must not kill the preview — fall back to the ghost.
@@ -36,7 +40,7 @@ export function TemplateThumb({
         catch { setUrl(null) }
       }
     })
-    return () => window.cancelAnimationFrame(id)
+    return () => { alive = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, palette, format, img, overlay.eyebrow, overlay.headline, overlay.price, overlay.priceUnit, overlay.footnote])
 
