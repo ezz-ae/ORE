@@ -156,7 +156,22 @@ export default function DriveImageEditor() {
   const [tplBusy, setTplBusy] = useState<string | null>(null)
   // Starter designs in the agent's own language (English if the locale has none).
   const stripLang: SuiteLang = (SUITE_LANGS as string[]).includes(locale) ? (locale as SuiteLang) : 'en'
-  const stripTemplates = useMemo(() => SUITE_TEMPLATES.filter((x) => x.lang === stripLang).slice(0, 8), [stripLang])
+  const stripTemplates = useMemo(() => {
+    // Take a spread across formats — the old .slice(0, 8) took the first eight
+    // recipes, which are all feed/square, so no story starter was reachable.
+    const mine = SUITE_TEMPLATES.filter((x) => x.lang === stripLang)
+    const byFormat = new Map<string, typeof mine>()
+    mine.forEach((x) => byFormat.set(x.format, [...(byFormat.get(x.format) ?? []), x]))
+    const out: typeof mine = []
+    for (let i = 0; out.length < 9; i++) {
+      let added = false
+      for (const list of byFormat.values()) {
+        if (list[i]) { out.push(list[i]); added = true }
+      }
+      if (!added) break
+    }
+    return out.slice(0, 9)
+  }, [stripLang])
   async function applyTemplate(tpl: SuiteTemplate) {
     if (tplBusy) return
     setTplBusy(tpl.id)
@@ -167,6 +182,9 @@ export default function DriveImageEditor() {
       // otherwise a 9:16 design gets centre-cropped into the default square.
       setPreset(tpl.format === 'story' ? '9_16' : tpl.format === 'feed' ? '4_5' : '1_1')
       await applySource(url)
+    } catch {
+      // A throw from an onClick would otherwise be an unhandled rejection.
+      toast.error(t('ed.image.exportFailed'))
     } finally { setTplBusy(null) }
   }
 
@@ -822,10 +840,10 @@ export default function DriveImageEditor() {
             <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-[#8b98ab]">{t('suite.tpl.startFrom')}</p>
             <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="mx-auto flex w-max gap-2.5">
-                {stripTemplates.map((tpl) => (
+                {stripTemplates.map((tpl, i) => (
                   <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} disabled={tplBusy !== null}
                     className={`w-16 shrink-0 overflow-hidden rounded-md ring-1 ring-white/15 transition hover:ring-2 hover:ring-gold/50 disabled:opacity-60 ${tplBusy === tpl.id ? 'ring-2 ring-gold' : ''}`}>
-                    <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={templateOverlay(tpl)} />
+                    <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={templateOverlay(tpl)} index={i} scale={0.12} />
                   </button>
                 ))}
               </div>

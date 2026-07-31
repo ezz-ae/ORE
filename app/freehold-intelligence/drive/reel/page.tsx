@@ -62,8 +62,14 @@ export default function ReelMakerPage() {
   const nextShotId = () => `shot-${++shotSeq.current}`
   // Navigating away mid-export must stop the render loop, not keep painting
   // a detached canvas.
+  // Armed on mount, not just cleared on unmount: under StrictMode's double
+  // invoke the cleanup runs once and a ref left false would make every later
+  // export bail on frame 1 and emit an empty file.
   const aliveRef = useRef(true)
-  useEffect(() => () => { aliveRef.current = false }, [])
+  useEffect(() => {
+    aliveRef.current = true
+    return () => { aliveRef.current = false }
+  }, [])
 
   const listing: LiveProject | undefined = projects.find((l) => l.id === listingId)
 
@@ -221,6 +227,9 @@ export default function ReelMakerPage() {
       })
       rec.stop()
       const blob = await done
+      // Release the capture tracks — repeated exports otherwise pile up live
+      // tracks against the canvas.
+      stream.getTracks().forEach((track) => track.stop())
       setExportPct(100)
       return blob
     } catch {

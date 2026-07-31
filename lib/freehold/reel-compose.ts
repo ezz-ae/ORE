@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  FORMATS, PALETTES, roundRect, drawWrapped, drawCover, isRtl, adFontStack,
+  FORMATS, PALETTES, roundRect, drawWrapped, drawCover, isRtl, adFontStack, fitFontOn,
   type FormatKey, type Overlay, type Palette,
 } from '@/lib/freehold/ad-compose'
 
@@ -149,8 +149,9 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, t: number, o: ReelO
   if (t < endStart && o.overlay.price) {
     ctx.save()
     ctx.fillStyle = p.accent
-    ctx.font = font(64, 800)
-    ctx.fillText(`${o.overlay.price}${o.overlay.priceUnit ? ` ${o.overlay.priceUnit}` : ''}`, ax, H - Y(0.115))
+    const band = `${o.overlay.price}${o.overlay.priceUnit ? ` ${o.overlay.priceUnit}` : ''}`
+    fitFontOn(ctx, band, 64, 800, W - 144)
+    ctx.fillText(band, ax, H - Y(0.115))
     if (o.overlay.footnote) {
       ctx.fillStyle = '#E7E5E4'
       ctx.font = font(30, 500)
@@ -183,8 +184,11 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, t: number, o: ReelO
       roundRect(ctx, W / 2 - 340, Y(0.56), 680, 170, 85)
       ctx.fill()
       ctx.fillStyle = p.ink
-      ctx.font = font(96, 800)
-      ctx.fillText(`${o.overlay.price}${o.overlay.priceUnit ? ` ${o.overlay.priceUnit}` : ''}`, W / 2, Y(0.56) + 112)
+      // Fit the chip, not the frame: "95 000 AED/год" at 96px is ~742px in a
+      // 680px chip and spilled out of both rounded ends.
+      const line = `${o.overlay.price}${o.overlay.priceUnit ? ` ${o.overlay.priceUnit}` : ''}`
+      fitFontOn(ctx, line, 96, 800, 680 - 72)
+      ctx.fillText(line, W / 2, Y(0.56) + 112)
     }
     if (o.overlay.footnote) {
       ctx.fillStyle = p.ink

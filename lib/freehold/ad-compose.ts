@@ -116,6 +116,28 @@ export function fitHeadline(text: string, layout: LayoutKey, fmt: FormatKey): { 
   return { lines, truncated: consumed < words.length }
 }
 
+/**
+ * Set ctx.font to the largest size ≤ px at which `text` fits `maxWidth`, and
+ * return the size chosen. Prices are the one field whose LENGTH varies wildly
+ * — "1.4M" and "95,000" with "AED/month" or "درهم/سنة" are not the same
+ * object — and a fixed size made long ones collide or run past the design.
+ * NOTE: this deliberately LEAVES ctx.font set to the fitted size; callers draw
+ * with it immediately.
+ */
+export function fitFontOn(
+  ctx: CanvasRenderingContext2D, text: string, px: number, weight: number,
+  maxWidth: number, min = 22,
+): number {
+  const stack = adFontStack()
+  let size = px
+  ctx.font = `${weight} ${size}px ${stack}`
+  while (size > min && ctx.measureText(text).width > maxWidth) {
+    size -= 2
+    ctx.font = `${weight} ${size}px ${stack}`
+  }
+  return size
+}
+
 export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
@@ -200,22 +222,8 @@ export function composeVariant(
   ctx.textAlign = rtl ? 'right' : 'left'
   const stack = adFontStack()
   const font = (px: number, weight = 700) => `${weight} ${px}px ${stack}`
-  /**
-   * Set ctx.font to the largest size ≤ px at which `text` fits `maxWidth`.
-   * Prices are the one field whose LENGTH varies wildly — "1.4M" and
-   * "95,000" with "AED/month" or "درهم/سنة" are not the same object — and a
-   * fixed size made long ones collide or run past the design. Returns the
-   * size chosen so callers can position from it.
-   */
-  const fitFont = (text: string, px: number, weight: number, maxWidth: number, min = 22) => {
-    let size = px
-    ctx.font = font(size, weight)
-    while (size > min && ctx.measureText(text).width > maxWidth) {
-      size -= 2
-      ctx.font = font(size, weight)
-    }
-    return size
-  }
+  const fitFont = (text: string, px: number, weight: number, maxWidth: number, min = 22) =>
+    fitFontOn(ctx, text, px, weight, maxWidth, min)
   // Vertical anchors are height fractions so 1:1 / 4:5 / 9:16 all read right.
   const Y = (f: number) => Math.round(H * f)
 
@@ -264,7 +272,14 @@ export function composeVariant(
       ctx.textAlign = rtl ? 'right' : 'left'
     }
     const imgTop = Y(fmt === 'square' ? 0.56 : 0.52)
-    if (o.footnote) { ctx.font = font(28, 500); ctx.fillStyle = p.ink; ctx.fillText(o.footnote, ax, imgTop - 36) }
+    if (o.footnote) {
+      ctx.font = font(28, 500)
+      ctx.fillStyle = p.ink
+      // Never let the footnote ride on top of the price blob: at square with a
+      // two-line headline the blob's bottom edge sits below imgTop - 36.
+      const blobBottom = o.price ? Y(0.07) + 100 + hh + 60 + 180 : 0
+      ctx.fillText(o.footnote, ax, Math.max(imgTop - 36, blobBottom + 44))
+    }
     if (img) drawCover(ctx, img, 0, imgTop, W, H - imgTop)
     else drawPhotoGhost(ctx, p, 0, imgTop, W, H - imgTop)
   } else if (layout === 'frame') {
@@ -374,16 +389,21 @@ export function composeVariant(
     else drawPhotoGhost(ctx, p, 0, imgTop, W, imgBottom - imgTop)
     ctx.fillStyle = p.bg2
     ctx.fillRect(0, imgBottom, W, H - imgBottom)
-    const cells: [string, string][] = []
-    if (o.price) cells.push([`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ''])
-    if (o.footnote) cells.push([o.footnote, ''])
-    if (o.eyebrow) cells.push([o.eyebrow, ''])
+    // Footer cells. The eyebrow is NOT repeated here — it is already drawn at
+    // the top of this layout, and a third cell only squeezed the two that
+    // carry new information.
+    const cells: string[] = []
+    if (o.price) cells.push(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`)
+    if (o.footnote) cells.push(o.footnote)
     const n = Math.max(cells.length, 1)
-    cells.forEach(([v], i) => {
-      const cx = ((rtl ? n - 1 - i : i) + 0.5) * (W / n)
+    const cellW = W / n
+    cells.forEach((v, i) => {
+      const cx = ((rtl ? n - 1 - i : i) + 0.5) * cellW
       ctx.textAlign = 'center'
       ctx.fillStyle = p.ink
-      ctx.font = font(v.length > 16 ? 34 : 54, 800)
+      // Each cell fits ITS cell, not the frame: "95,000 AED/year" beside
+      // "Tenant in place · contract running" overlapped by ~170px before.
+      fitFont(v, v.length > 16 ? 34 : 54, 800, cellW - 32)
       ctx.fillText(v, cx, imgBottom + Math.round((H - imgBottom) * 0.62))
     })
   }
