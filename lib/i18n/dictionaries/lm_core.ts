@@ -510,6 +510,13 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.campaigns.emptyTitle': 'No campaigns yet',
     'lm.campaigns.emptyDescBroker': 'Launch your first Meta campaign to start generating leads.',
     'lm.campaigns.emptyDescManager': 'Create the first campaign to start generating leads from Meta and Instagram.',
+    'lm.campaigns.hiddenTitle': 'These campaigns are not yours',
+    'lm.campaigns.hiddenBody': 'This ad account has {n} campaign(s), but none are assigned to you, so none are shown. A manager can assign them to you, or you can launch your own.',
+    'lm.campaigns.wrongAccountTitle': 'You are connected to an ad account with no campaigns',
+    'lm.campaigns.wrongAccountBody': 'This page reads one ad account — {account} — and it has no campaigns. Your Meta login can see {n} campaign(s) in a different account. The Integrations page lists every account, which is why it looks like everything is there. Switch the connected ad account to the one you actually advertise from:',
+    'lm.campaigns.wrongAccountRow': '{n} campaign(s)',
+    'lm.campaigns.switchAccount': 'Change the connected ad account',
+    'lm.campaigns.accountPinnedByEnv': 'This ad account is pinned by the META_AD_ACCOUNT_ID environment variable, which overrides the connection made here — reconnecting on the Integrations page will not change it. Update or remove that variable in your hosting environment, then redeploy.',
     'lm.campaigns.launchFirst': 'Launch first campaign',
 
     // ── Attribution page ──
@@ -1908,6 +1915,13 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.campaigns.emptyTitle': 'لا توجد حملات بعد',
     'lm.campaigns.emptyDescBroker': 'أطلق أول حملة Meta الخاصة بك لبدء جلب العملاء المحتملين.',
     'lm.campaigns.emptyDescManager': 'أنشئ أول حملة لبدء جلب العملاء المحتملين من Meta وInstagram.',
+    'lm.campaigns.hiddenTitle': 'هذه الحملات ليست حملاتك',
+    'lm.campaigns.hiddenBody': 'يحتوي هذا الحساب الإعلاني على {n} حملة، لكن لم تُسنَد إليك أي منها، لذلك لا تظهر. يمكن للمدير إسنادها إليك، أو يمكنك إطلاق حملتك الخاصة.',
+    'lm.campaigns.wrongAccountTitle': 'أنت متصل بحساب إعلاني لا يحتوي على حملات',
+    'lm.campaigns.wrongAccountBody': 'تقرأ هذه الصفحة حسابًا إعلانيًا واحدًا — {account} — وهو بلا حملات. يستطيع حسابك على Meta رؤية {n} حملة في حساب آخر. صفحة التكاملات تعرض كل الحسابات، ولهذا يبدو أن كل شيء موجود. غيِّر الحساب الإعلاني المتصل إلى الحساب الذي تعلن منه فعليًا:',
+    'lm.campaigns.wrongAccountRow': '{n} حملة',
+    'lm.campaigns.switchAccount': 'تغيير الحساب الإعلاني المتصل',
+    'lm.campaigns.accountPinnedByEnv': 'هذا الحساب الإعلاني مثبَّت عبر متغيّر البيئة META_AD_ACCOUNT_ID، وهو يتجاوز الاتصال الذي تُجريه هنا — لن تُغيّره إعادة الربط من صفحة التكاملات. عدِّل هذا المتغيّر أو احذفه من بيئة الاستضافة ثم أعد النشر.',
     'lm.campaigns.launchFirst': 'إطلاق أول حملة',
 
     // ── Attribution ──
@@ -3268,6 +3282,13 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.campaigns.emptyTitle': 'Кампаний пока нет',
     'lm.campaigns.emptyDescBroker': 'Запустите свою первую кампанию Meta для начала генерации лидов.',
     'lm.campaigns.emptyDescManager': 'Создайте первую кампанию для генерации лидов из Meta и Instagram.',
+    'lm.campaigns.hiddenTitle': 'Эти кампании не ваши',
+    'lm.campaigns.hiddenBody': 'В этом рекламном аккаунте {n} кампаний, но ни одна не закреплена за вами, поэтому список пуст. Менеджер может назначить их вам, либо запустите свою.',
+    'lm.campaigns.wrongAccountTitle': 'Вы подключены к рекламному аккаунту без кампаний',
+    'lm.campaigns.wrongAccountBody': 'Эта страница читает один рекламный аккаунт — {account} — и в нём нет кампаний. Ваш вход в Meta видит {n} кампаний в другом аккаунте. Страница интеграций показывает все аккаунты, поэтому кажется, что всё на месте. Переключите подключённый аккаунт на тот, из которого вы действительно рекламируете:',
+    'lm.campaigns.wrongAccountRow': 'кампаний: {n}',
+    'lm.campaigns.switchAccount': 'Сменить подключённый рекламный аккаунт',
+    'lm.campaigns.accountPinnedByEnv': 'Этот рекламный аккаунт закреплён переменной окружения META_AD_ACCOUNT_ID, которая переопределяет подключение отсюда — повторное подключение на странице интеграций ничего не изменит. Измените или удалите эту переменную в хостинге и выполните редеплой.',
     'lm.campaigns.launchFirst': 'Запустить первую кампанию',
 
     // ── Attribution ──

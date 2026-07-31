@@ -5,7 +5,7 @@ import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap, Layers } from 'lucide-
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 import { DemoNotice } from '@/components/freehold/demo-badge'
-import { listCampaigns, getCampaignInsights, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { listCampaigns, getCampaignInsights, scanAdAccounts, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
@@ -82,11 +82,25 @@ export default async function CampaignsPage() {
   const isConfigError = data.demo === true
 
   // Brokers only see campaigns they created; managers see everything
+  const fetchedCount = data.campaigns.length
   let campaigns = data.campaigns
   if (isBroker && brokerId) {
     const brokerIds = await getBrokerCampaignIds(brokerId)
     campaigns = campaigns.filter(c => brokerIds.has(c.id))
   }
+
+  // WHY IS THIS EMPTY? Two different causes used to produce the same wrong
+  // message ("no campaigns yet — create one"):
+  //   1. the account HAS campaigns, but this broker owns none of them, so the
+  //      role filter above removed every row;
+  //   2. we are reading a different ad account than the one holding the ads —
+  //      the case where Integrations → Meta looks perfect (it lists every
+  //      account the token can see) while this page reads only the configured
+  //      one. Ask Meta which accounts actually hold campaigns and say so.
+  const hiddenByBrokerFilter = fetchedCount > 0 && campaigns.length === 0
+  const scan = !isConfigError && !data.error && fetchedCount === 0
+    ? await scanAdAccounts().catch(() => null)
+    : null
 
   const active     = campaigns.filter((c) => c.status === 'ACTIVE').length
   const paused     = campaigns.filter((c) => c.status === 'PAUSED').length
@@ -162,8 +176,59 @@ export default async function CampaignsPage() {
 
       {campaigns.length > 0 && <CampaignList campaigns={campaigns} />}
 
-      {/* Empty state */}
-      {!isConfigError && !data.error && campaigns.length === 0 && (
+      {/* ── Empty for a REASON we can name ──────────────────────────────────
+          Shown instead of "launch your first campaign", which is the one
+          message that is actively wrong in both of these cases. */}
+      {!isConfigError && !data.error && campaigns.length === 0 && (hiddenByBrokerFilter || (scan && scan.elsewhere > 0)) && (
+        <div className="mt-8 rounded-[20px] border border-amber-400/25 bg-amber-400/[0.06] p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <div className="min-w-0">
+              {hiddenByBrokerFilter ? (
+                <>
+                  <div className="text-sm font-semibold text-white">{t('lm.campaigns.hiddenTitle')}</div>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {t('lm.campaigns.hiddenBody', { n: String(fetchedCount) })}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm font-semibold text-white">{t('lm.campaigns.wrongAccountTitle')}</div>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {t('lm.campaigns.wrongAccountBody', {
+                      account: scan!.configuredName ? `${scan!.configuredName} (${scan!.configuredAccountId})` : scan!.configuredAccountId,
+                      n: String(scan!.elsewhere),
+                    })}
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {scan!.others.map((o) => (
+                      <li key={o.id} className="text-xs text-amber-200/90">
+                        • {o.name ?? o.id} <span className="text-amber-200/60">({o.id})</span> — {t('lm.campaigns.wrongAccountRow', { n: String(o.campaigns) })}
+                      </li>
+                    ))}
+                  </ul>
+                  {/* An env-pinned account cannot be changed from the UI at
+                      all — sending someone to reconnect would waste their time
+                      and make the app look broken a second time. */}
+                  {scan!.accountSource === 'env' ? (
+                    <p className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/[0.07] px-3 py-2 text-xs leading-relaxed text-amber-200">
+                      {t('lm.campaigns.accountPinnedByEnv')}
+                    </p>
+                  ) : !isBroker && (
+                    <Link href="/freehold-intelligence/integrations/meta"
+                      className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold">
+                      {t('lm.campaigns.switchAccount')} <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state — only when it is genuinely, explainably empty. */}
+      {!isConfigError && !data.error && campaigns.length === 0 && !hiddenByBrokerFilter && !(scan && scan.elsewhere > 0) && (
         <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <Zap className="mx-auto h-8 w-8 text-gold/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">

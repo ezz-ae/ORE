@@ -76,7 +76,11 @@ async function creds() {
   if (!pageId) throw new MetaConfigError('META_PAGE_ID')
 
   const adAccountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`
-  return { token, adAccountId, pageId, pixelId: pixelId ?? null }
+  // Where the AD ACCOUNT came from. Env wins over the UI connection, so if an
+  // env var is set, reconnecting through Integrations → Meta changes nothing —
+  // which looks exactly like the app ignoring you. Callers surface this.
+  const accountSource: 'env' | 'db' = process.env.META_AD_ACCOUNT_ID ? 'env' : 'db'
+  return { token, adAccountId, pageId, pixelId: pixelId ?? null, accountSource }
 }
 
 // True when Meta ad credentials are configured (env or stored) — distinct from
@@ -197,6 +201,66 @@ export async function listCampaigns(): Promise<MetaCampaign[]> {
     limit: '100',
   })
   return res.data ?? []
+}
+
+/**
+ * Why is the campaign list empty when Integrations → Meta shows plenty?
+ *
+ * Those two screens ask Meta different questions. Integrations enumerates
+ * `/me/adaccounts` and lists campaigns for EVERY account the access token can
+ * see. Everything else in the app — this client — reads exactly ONE account,
+ * the configured `META_AD_ACCOUNT_ID`. So a token with access to several
+ * accounts, pointed at the wrong (or a brand-new, empty) one, produces a fully
+ * "connected" integration page and a completely empty ads page.
+ *
+ * The empty state could not tell those apart, so it said "no campaigns yet —
+ * create one", which is simply false when the campaigns exist one account over.
+ * This scan is what lets it tell the truth instead. Only run it when the list
+ * came back empty: it costs one call per visible account, which is worth it
+ * exactly once, at the moment someone is staring at a wrong empty screen.
+ */
+export interface MetaAccountScan {
+  configuredAccountId: string
+  configuredName: string | null
+  /** 'env' means an environment variable pins this account and reconnecting
+   *  through the UI will NOT change it — the fix is an env change. */
+  accountSource: 'env' | 'db'
+  /** Other ad accounts this token can see, with how many campaigns each holds. */
+  others: { id: string; name: string | null; campaigns: number }[]
+  /** Total campaigns visible to the token outside the configured account. */
+  elsewhere: number
+}
+
+export async function scanAdAccounts(): Promise<MetaAccountScan | null> {
+  try {
+    const { adAccountId, accountSource } = await creds()
+    const accts = await apiFetch<{ data: { id: string; name?: string }[] }>('/me/adaccounts', undefined, {
+      fields: 'id,name',
+      limit: '25',
+    })
+    const list = accts.data ?? []
+    if (list.length === 0) return null
+
+    const configured = list.find((a) => a.id === adAccountId) ?? null
+    const others: MetaAccountScan['others'] = []
+    for (const a of list) {
+      if (a.id === adAccountId) continue
+      try {
+        const r = await apiFetch<{ data: { id: string }[] }>(`/${a.id}/campaigns`, undefined, { fields: 'id', limit: '50' })
+        const n = (r.data ?? []).length
+        if (n > 0) others.push({ id: a.id, name: a.name ?? null, campaigns: n })
+      } catch { /* one unreadable account must not sink the whole diagnosis */ }
+    }
+    return {
+      configuredAccountId: adAccountId,
+      configuredName: configured?.name ?? null,
+      accountSource,
+      others,
+      elsewhere: others.reduce((s, o) => s + o.campaigns, 0),
+    }
+  } catch {
+    return null
+  }
 }
 
 export async function getCampaign(campaignId: string): Promise<MetaCampaign> {
