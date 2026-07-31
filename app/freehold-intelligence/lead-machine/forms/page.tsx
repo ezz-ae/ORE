@@ -4,6 +4,7 @@ import { MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
+import { query } from '@/lib/db'
 import { DemoNotice } from '@/components/freehold/demo-badge'
 import { FormsSyncControls } from './_sync'
 
@@ -41,9 +42,32 @@ function statusConfig(s: string): { dot: string; text: string; badge: string; la
   return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-500/20 bg-slate-500/10',   labelKey: null                       }
 }
 
+/**
+ * How many leads from each Meta form actually made it into the CRM. The forms
+ * page only ever showed Meta's own `leads_count`, so a form could report 47
+ * captured leads while the CRM held zero of them and nothing on screen
+ * disagreed. This is the number that makes the gap visible.
+ */
+async function getCrmCountsByForm(): Promise<Map<string, number>> {
+  try {
+    const rows = await query<{ meta_form_id: string; n: string }>(
+      `SELECT meta_form_id, COUNT(*)::text AS n
+         FROM freehold_site_leads
+        WHERE meta_form_id IS NOT NULL AND archived IS NOT TRUE
+        GROUP BY meta_form_id`,
+    )
+    return new Map(rows.map((r) => [r.meta_form_id, Number(r.n) || 0]))
+  } catch {
+    // The column may not exist until the first sync — an empty map degrades to
+    // "0 in CRM", never to a crashed page.
+    return new Map()
+  }
+}
+
 export default async function FormsPage() {
   const { t }         = await getServerT()
   const data          = await getForms()
+  const crmByForm     = await getCrmCountsByForm()
   const isConfigError = data.demo === true
   const forms         = data.forms
   const active        = forms.filter((f) => f.status === 'ACTIVE').length
@@ -157,6 +181,22 @@ export default async function FormsPage() {
                         <Users className="h-3 w-3" />
                         <span className="text-slate-300">{t('lm.forms.leadsCapture', { n: String(form.leads_count ?? 0) })}</span>
                       </span>
+                      {/* Meta's count vs OURS. This page used to show only
+                          Meta's number, so a form reading "47 leads" looked
+                          healthy while the CRM held none of them — the exact
+                          gap that made "leads aren't showing" invisible here. */}
+                      {(() => {
+                        const inCrm = crmByForm.get(form.id) ?? 0
+                        const missing = (form.leads_count ?? 0) - inCrm
+                        return missing > 0 ? (
+                          <span className="flex items-center gap-1 font-medium text-amber-300">
+                            <AlertCircle className="h-3 w-3" />
+                            {t('lm.forms.notInCrm', { n: String(missing) })}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">{t('lm.forms.inCrm', { n: String(inCrm) })}</span>
+                        )
+                      })()}
                       {form.follow_up_action_url && (
                         <span className="truncate">
                           URL: <span className="font-mono text-slate-400 truncate">{form.follow_up_action_url.replace('https://', '').slice(0, 40)}</span>
