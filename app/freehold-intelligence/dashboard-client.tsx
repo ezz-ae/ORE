@@ -340,9 +340,9 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
             />
             <div className="grid grid-cols-4 divide-x divide-white/[0.06]">
               {[
-                { label: t('hub.w.leadsTotal'), value: crm.total, href: `${FI}/crm/leads` },
+                { label: t('hub.w.leadsTotal'), value: crm.total, href: `${FI}/crm` },
                 { label: t('hub.w.leadsNew'), value: crm.fresh, href: `${FI}/crm/inbox`, gold: crm.fresh > 0 },
-                { label: t('hub.w.leadsHot'), value: crm.hot, href: `${FI}/crm/leads` },
+                { label: t('hub.w.leadsHot'), value: crm.hot, href: `${FI}/crm` },
                 { label: t('hub.w.overdueShort'), value: crm.overdue, href: `${FI}/crm/follow-up`, red: crm.overdue > 0 },
               ].map((k) => (
                 <Link key={k.label} href={k.href} className="px-4 py-4 text-center transition hover:bg-white/[0.03]">

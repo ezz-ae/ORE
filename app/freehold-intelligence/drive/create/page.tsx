@@ -61,10 +61,12 @@ export default function CreativeSuitePage() {
 
   const templates = SUITE_TEMPLATES.filter((tpl) => filter === 'all' || tpl.format === filter)
 
-  /** Create a fresh document (optionally seeded with a starter) and open it. */
-  async function newDoc(tplKey?: string) {
+  /** Create a fresh document (optionally seeded with a starter) and open it.
+   *  busyKey distinguishes buttons that share a template (quick-start vs the
+   *  starter card) so only the clicked one spins. */
+  async function newDoc(tplKey?: string, busyKey?: string) {
     if (docBusy) return
-    setDocBusy(tplKey ?? '_blank')
+    setDocBusy(busyKey ?? tplKey ?? '_blank')
     try {
       const res = await fetch('/api/freehold/library', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -100,9 +102,9 @@ export default function CreativeSuitePage() {
               <span className="text-[13px] font-semibold text-white">{t(labelKey)}</span>
             </Link>
           ))}
-          <button type="button" onClick={() => newDoc('brochure')} disabled={docBusy !== null}
+          <button type="button" onClick={() => newDoc('brochure', 'quick:brochure')} disabled={docBusy !== null}
             className="flex min-w-[132px] shrink-0 flex-col gap-2.5 rounded-xl border border-sky-400/25 bg-sky-400/[0.06] p-3.5 text-sky-300 transition hover:brightness-110 disabled:opacity-60">
-            {docBusy === 'brochure' ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}
+            {docBusy === 'quick:brochure' ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}
             <span className="text-start text-[13px] font-semibold text-white">{t('suite.quick.doc')}</span>
           </button>
         </div>

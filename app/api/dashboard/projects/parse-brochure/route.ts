@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PDFParse } from "pdf-parse"
 import { DEFAULT_GEMINI_MODELS, getGeminiModelByName } from "@/lib/gemini"
+import { requireSession } from "@/lib/freehold/api-auth"
 
 export const runtime = "nodejs"
 
@@ -17,6 +18,11 @@ const extractJson = (value: string) => {
 }
 
 export async function POST(req: NextRequest) {
+  // Session-gated: an unauthenticated caller must not burn Gemini quota on
+  // arbitrary uploads. Any signed-in role may parse (the PDF tools and the
+  // Ad Designer both use this).
+  const auth = await requireSession()
+  if ('res' in auth) return auth.res
   try {
     const hasGeminiKey =
       Boolean(process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY || process.env.google_api_key)

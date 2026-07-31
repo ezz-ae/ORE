@@ -96,9 +96,13 @@ export function DriveEditorFrame({
                 </div>
                 {/* Close the sheet when a tool action (button/link) is tapped so the
                     result panel behind it is revealed; scrolling/inputs are untouched. */}
+                {/* Close ONLY on navigation (links) or buttons that explicitly
+                    opt in with data-close-sheet — a multi-tap tool (corner
+                    pickers, toggles, steppers) must not dismiss the sheet on
+                    every tap. */}
                 <div
                   className="max-h-[70vh] overflow-y-auto px-3 pb-6"
-                  onClick={(e) => { if ((e.target as HTMLElement).closest('button,a')) setToolsOpen(false) }}
+                  onClick={(e) => { if ((e.target as HTMLElement).closest('a,[data-close-sheet]')) setToolsOpen(false) }}
                 >
                   {toolRail}
                 </div>

@@ -311,7 +311,7 @@ export default function ManagementDashboard() {
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Mail className="h-4 w-4 text-slate-400" />
                 <span className="text-sm font-semibold text-white">{t('mgmt.latestLeads')}</span>
-                <Link href="/freehold-intelligence/crm/leads" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300">
+                <Link href="/freehold-intelligence/crm" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300">
                   {t('mgmt.all')} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>

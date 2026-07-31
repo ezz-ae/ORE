@@ -6,6 +6,8 @@ type Dict = Record<string, string>
 export const p_ad_designer: Record<Locale, Dict> = {
   en: {
     'adz.title': 'Ad Designer',
+    'adz.preview.sponsored': 'Sponsored',
+    'adz.preview.learnMore': 'Learn more',
     'adz.note': 'Composed at full ad resolution — what you download is what Meta gets.',
     'adz.opt.format': 'Format',
     'adz.format.feed': 'Feed 4:5',
@@ -89,6 +91,8 @@ export const p_ad_designer: Record<Locale, Dict> = {
   },
   ar: {
     'adz.title': 'مصمّم الإعلانات',
+    'adz.preview.sponsored': 'مموَّل',
+    'adz.preview.learnMore': 'اعرف المزيد',
     'adz.note': 'يُركَّب بدقة الإعلان الكاملة — ما تنزّله هو ما يصل إلى ميتا.',
     'adz.opt.format': 'المقاس',
     'adz.format.feed': 'الخلاصة 4:5',
@@ -172,6 +176,8 @@ export const p_ad_designer: Record<Locale, Dict> = {
   },
   ru: {
     'adz.title': 'Дизайнер рекламы',
+    'adz.preview.sponsored': 'Реклама',
+    'adz.preview.learnMore': 'Подробнее',
     'adz.note': 'Собирается в полном рекламном разрешении — что скачиваете, то и получает Meta.',
     'adz.opt.format': 'Формат',
     'adz.format.feed': 'Лента 4:5',
