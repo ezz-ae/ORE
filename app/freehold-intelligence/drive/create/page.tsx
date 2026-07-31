@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import {
   Megaphone, Sparkles, FileText, Clapperboard, Wand2, Workflow, Presentation,
   NotebookPen, FolderOpen, Image as ImageIcon, FileType, Plus, Loader2,
-  RectangleVertical, Square, Smartphone,
+  RectangleVertical, Square, Smartphone, Film,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DraftsShelf } from '@/components/freehold/drive/drafts-shelf'
@@ -30,15 +30,17 @@ const QUICK: { key: string; href: string; Icon: React.ElementType; labelKey: str
   { key: 'feed',   href: '/freehold-intelligence/drive/ad-designer?format=feed',   Icon: RectangleVertical, labelKey: 'adz.format.feed',   accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
   { key: 'square', href: '/freehold-intelligence/drive/ad-designer?format=square', Icon: Square,            labelKey: 'adz.format.square', accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
   { key: 'story',  href: '/freehold-intelligence/drive/ad-designer?format=story',  Icon: Smartphone,        labelKey: 'adz.format.story',  accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
-  { key: 'video',  href: '/freehold-intelligence/drive/editor/video/new',          Icon: Clapperboard,      labelKey: 'suite.quick.video', accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
+  { key: 'reel',   href: '/freehold-intelligence/drive/reel',                       Icon: Clapperboard,      labelKey: 'suite.quick.reel',  accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
+  { key: 'video',  href: '/freehold-intelligence/drive/editor/video/new',          Icon: Film,              labelKey: 'suite.quick.video', accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
   { key: 'ai',     href: '/freehold-intelligence/creative-studio',                 Icon: Sparkles,          labelKey: 'suite.quick.ai',    accent: 'text-sky-300 border-sky-400/25 bg-sky-400/[0.06]' },
 ]
 
 const TOOLS: { key: string; href?: string; Icon: React.ElementType; accent: string }[] = [
   { key: 'addesigner', href: '/freehold-intelligence/drive/ad-designer',        Icon: Megaphone,    accent: 'text-gold' },
+  { key: 'reel',       href: '/freehold-intelligence/drive/reel',               Icon: Clapperboard, accent: 'text-violet-300' },
   { key: 'image',      href: '/freehold-intelligence/drive/editor/image/new',   Icon: ImageIcon,    accent: 'text-violet-300' },
   { key: 'doc',                                                                 Icon: FileText,     accent: 'text-sky-300' },
-  { key: 'video',      href: '/freehold-intelligence/drive/editor/video/new',   Icon: Clapperboard, accent: 'text-emerald-300' },
+  { key: 'video',      href: '/freehold-intelligence/drive/editor/video/new',   Icon: Film,         accent: 'text-emerald-300' },
   { key: 'pdf',        href: '/freehold-intelligence/drive/files',              Icon: FileType,     accent: 'text-rose-300' },
   { key: 'quick',      href: '/freehold-intelligence/creative-studio',          Icon: Wand2,        accent: 'text-violet-300' },
   { key: 'canvas',     href: '/freehold-intelligence/creative-studio/canvas',   Icon: Workflow,     accent: 'text-teal-300' },
