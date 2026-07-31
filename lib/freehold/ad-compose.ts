@@ -200,6 +200,22 @@ export function composeVariant(
   ctx.textAlign = rtl ? 'right' : 'left'
   const stack = adFontStack()
   const font = (px: number, weight = 700) => `${weight} ${px}px ${stack}`
+  /**
+   * Set ctx.font to the largest size ≤ px at which `text` fits `maxWidth`.
+   * Prices are the one field whose LENGTH varies wildly — "1.4M" and
+   * "95,000" with "AED/month" or "درهم/سنة" are not the same object — and a
+   * fixed size made long ones collide or run past the design. Returns the
+   * size chosen so callers can position from it.
+   */
+  const fitFont = (text: string, px: number, weight: number, maxWidth: number, min = 22) => {
+    let size = px
+    ctx.font = font(size, weight)
+    while (size > min && ctx.measureText(text).width > maxWidth) {
+      size -= 2
+      ctx.font = font(size, weight)
+    }
+    return size
+  }
   // Vertical anchors are height fractions so 1:1 / 4:5 / 9:16 all read right.
   const Y = (f: number) => Math.round(H * f)
 
@@ -217,14 +233,34 @@ export function composeVariant(
     const hh = o.headline ? drawWrapped(ctx, o.headline, ax, Y(0.07) + 80, W - 128, 72, fmt === 'square' ? 2 : 3) : 0
     if (o.price) {
       const py = Y(0.07) + 100 + hh + 60
+      const blobW = 760
       ctx.fillStyle = p.chip
-      roundRect(ctx, W / 2 - 380, py - 40, 760, 220, 110)
+      roundRect(ctx, W / 2 - blobW / 2, py - 40, blobW, 220, 110)
       ctx.fill()
       ctx.fillStyle = p.ink
       ctx.textAlign = 'center'
-      ctx.font = font(150, 800)
-      ctx.fillText(o.price, W / 2 + (o.priceUnit ? 60 : 0), py + 105)
-      if (o.priceUnit) { ctx.font = font(44, 700); ctx.fillText(o.priceUnit, W / 2 - 280, py + 110) }
+      // Price and unit are laid out as ONE measured group, each shrunk to fit
+      // its share of the blob. Fixed positions worked for "1.4M AED" and
+      // collided the moment the copy said "4,900" + "AED/month".
+      const inner = blobW - 88
+      const priceSize = fitFont(o.price, 150, 800, o.priceUnit ? inner * 0.62 : inner)
+      const priceW = ctx.measureText(o.price).width
+      let unitW = 0
+      let unitSize = 0
+      if (o.priceUnit) {
+        unitSize = fitFont(o.priceUnit, 44, 700, inner * 0.32)
+        unitW = ctx.measureText(o.priceUnit).width
+      }
+      const gap = o.priceUnit ? 22 : 0
+      // The unit sits left of the number in BOTH directions: Arabic reads it
+      // after the (always-LTR) figure, and Dubai English writes "AED 1.4M".
+      const startX = W / 2 - (priceW + gap + unitW) / 2
+      if (o.priceUnit) {
+        ctx.font = font(unitSize, 700)
+        ctx.fillText(o.priceUnit, startX + unitW / 2, py + 105)
+      }
+      ctx.font = font(priceSize, 800)
+      ctx.fillText(o.price, startX + unitW + gap + priceW / 2, py + 105)
       ctx.textAlign = rtl ? 'right' : 'left'
     }
     const imgTop = Y(fmt === 'square' ? 0.56 : 0.52)
@@ -255,8 +291,9 @@ export function composeVariant(
     if (o.headline) drawWrapped(ctx, o.headline, ax, Y(0.065) + 68, W - 128, 68, 2)
     if (o.price) {
       ctx.fillStyle = p.accent
-      ctx.font = font(88, 800)
-      ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - Y(0.115))
+      const line = `${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`
+      fitFont(line, 88, 800, W - 128)
+      ctx.fillText(line, ax, H - Y(0.115))
     }
     if (o.footnote) { ctx.fillStyle = '#E7E5E4'; ctx.font = font(30, 500); ctx.fillText(o.footnote, ax, H - Y(0.055)) }
   } else if (layout === 'splitCard') {
@@ -275,8 +312,9 @@ export function composeVariant(
     if (o.headline) drawWrapped(ctx, o.headline, ax, split + 150, W - 128, 66, 2)
     if (o.price) {
       ctx.fillStyle = p.accent
-      ctx.font = font(96, 800)
-      ctx.fillText(`${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`, ax, H - Y(0.095))
+      const line = `${o.price}${o.priceUnit ? ` ${o.priceUnit}` : ''}`
+      fitFont(line, 96, 800, W - 128)
+      ctx.fillText(line, ax, H - Y(0.095))
     }
     if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.75; ctx.font = font(28, 500); ctx.fillText(o.footnote, ax, H - Y(0.04)); ctx.globalAlpha = 1 }
   } else if (layout === 'badge') {
@@ -308,9 +346,14 @@ export function composeVariant(
       ctx.stroke()
       ctx.fillStyle = p.ink
       ctx.textAlign = 'center'
-      ctx.font = font(64, 800)
+      // The badge is a circle — both lines must fit its chord, not the frame.
+      const chord = R * 1.5
+      fitFont(o.price, 64, 800, chord)
       ctx.fillText(o.price, bx, by + (o.priceUnit ? 10 : 22))
-      if (o.priceUnit) { ctx.font = font(30, 700); ctx.fillText(o.priceUnit, bx, by + 58) }
+      if (o.priceUnit) {
+        fitFont(o.priceUnit, 30, 700, chord)
+        ctx.fillText(o.priceUnit, bx, by + 58)
+      }
       ctx.restore()
       ctx.textAlign = rtl ? 'right' : 'left'
     }
