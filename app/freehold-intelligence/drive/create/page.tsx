@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -13,7 +13,8 @@ import { useT } from '@/lib/i18n/provider'
 import { DraftsShelf } from '@/components/freehold/drive/drafts-shelf'
 import { TemplateThumb } from '@/components/freehold/drive/template-thumb'
 import { SUITE_TEMPLATES, DOC_TEMPLATE_KEYS, templateHref, type SuiteCopy } from '@/lib/freehold/creative-suite'
-import type { FormatKey, Overlay } from '@/lib/freehold/ad-compose'
+import { loadImage, type FormatKey, type Overlay } from '@/lib/freehold/ad-compose'
+import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 
 /**
  * CREATIVE SUITE — the one front door for everything that gets made.
@@ -51,6 +52,21 @@ export default function CreativeSuitePage() {
   const router = useRouter()
   const [filter, setFilter] = useState<FormatFilter>('all')
   const [docBusy, setDocBusy] = useState<string | null>(null)
+
+  // The gallery previews compose with the user's REAL inventory photos when
+  // there are any — each template gets a hero image from a live project,
+  // rotating across the set. Load failures (missing CORS headers, dead URLs)
+  // fall back silently to the engine's styled ghost.
+  const { projects } = useLiveProjects()
+  const [heroes, setHeroes] = useState<HTMLImageElement[]>([])
+  useEffect(() => {
+    let alive = true
+    const urls = projects.filter((p) => !!p.heroImage).slice(0, 6).map((p) => p.heroImage as string)
+    if (urls.length === 0) return
+    Promise.all(urls.map((u) => loadImage(u, !u.startsWith('data:')).catch(() => null)))
+      .then((imgs) => { if (alive) setHeroes(imgs.filter((i): i is HTMLImageElement => i !== null)) })
+    return () => { alive = false }
+  }, [projects])
 
   // Sample copy the template previews render with — real estate, not lorem.
   const copySets = useMemo<Record<SuiteCopy, Overlay>>(() => ({
@@ -128,10 +144,11 @@ export default function CreativeSuitePage() {
             <Plus className="h-6 w-6" />
             <span className="px-3 text-center text-xs font-medium">{t('suite.tpl.blank')}</span>
           </Link>
-          {templates.map((tpl) => (
+          {templates.map((tpl, i) => (
             <Link key={tpl.id} href={templateHref(tpl)} className="group block">
               <div className="overflow-hidden rounded-lg ring-1 ring-line transition group-hover:ring-2 group-hover:ring-gold/50">
-                <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={copySets[tpl.copy]} />
+                <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={copySets[tpl.copy]}
+                  img={heroes.length > 0 ? heroes[i % heroes.length] : null} />
               </div>
               <div className="mt-1.5 flex items-center justify-between px-0.5">
                 <span className="truncate text-[11px] font-medium text-slate-300">{t(`adz.layout.${tpl.layout}`)} · {t(`adz.pal.${tpl.palette}`)}</span>
