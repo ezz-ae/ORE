@@ -16,7 +16,11 @@ import { BRAND } from '@/lib/freehold/brand'
  *              Google campaign metrics), CRM quality, verdict stats; creates
  *              per-lead feedback questions for brokers; ONE aggregated
  *              'observation' activity per machine per cycle.
- *   ROTATE   — deterministic, per project, ≤1 pause per project per cycle;
+ *   ROTATE   — deterministic, per project, ≤1 pause per project per CYCLE
+ *              (the machine cycles twice a day, so a bad trial is caught in
+ *              hours rather than burning a full day of the cap — the spend,
+ *              quality and verdict gates are unchanged, only the reaction
+ *              time is);
  *              only HUMAN-answered decisive verdicts (yes/no) count; freed
  *              budget is reallocated under the cap. Meta and Google trials
  *              share one per-project pool, so cross-channel reallocation is
@@ -126,6 +130,16 @@ export interface CycleResult {
  * utm_id = the Google campaign id (stamped by the campaign tracking template).
  * The basis is recorded on every observation so no number pretends to be what
  * it isn't.
+ *
+ * COMPARABILITY. Those two bases are NOT interchangeable. Meta-reported counts
+ * every lead event the platform saw; CRM-attributed counts only the leads that
+ * reached our CRM carrying the campaign's utm. The second is systematically
+ * smaller, so a Google trial's CPL looks worse than a Meta trial's for purely
+ * measurement reasons — and the rotation would pause Google trials that are
+ * actually performing. Cross-channel comparisons therefore use
+ * attributedCplAed, the CPL on the basis BOTH channels share; same-channel
+ * comparisons keep the native basis, which is identical on both sides and
+ * more timely.
  */
 interface TrialState {
   row: MachineCampaign
@@ -136,6 +150,9 @@ interface TrialState {
   leads: number
   leadBasis: 'meta-reported' | 'crm-attributed'
   cplAed: number | null
+  /** CPL on the ONE basis every channel shares: real CRM-attributed leads.
+   *  Cross-channel comparisons must use this — see cplCondemned. */
+  attributedCplAed: number | null
   qualityScore: number | null
   attributed: number
   verdicts: TrialVerdictStats | null
@@ -659,6 +676,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       leads,
       leadBasis,
       cplAed: leads > 0 ? spendAed / leads : null,
+      attributedCplAed: attributed > 0 ? spendAed / attributed : null,
       qualityScore,
       attributed,
       verdicts: verdictStats.get(row.campaignId) ?? null,
@@ -709,6 +727,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           // the campaign's lifetime cost from the Google Ads API).
           leadBasis: s.leadBasis,
           cplAed: s.cplAed,
+          attributedCplAed: s.attributedCplAed,
           qualityScore: s.qualityScore,
           attributed: s.attributed,
           verdicts: s.verdicts,
@@ -747,18 +766,29 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       const spendGated = (s: TrialState) => s.spendAed >= SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed
 
-      // (C) CPL-condemned vs best sibling — both need ≥3 leads for the ratio
-      // to mean anything. Siblings may be cross-channel (each side's CPL uses
-      // its own honest lead basis — see TrialState.leadBasis).
-      const cplCondemned = (s: TrialState) => {
-        if (!spendGated(s) || isProtected(s)) return false
-        if (s.cplAed === null || s.leads < MIN_LEADS_FOR_CPL) return false
-        const siblingCpls = group
-          .filter((o) => o !== s && o.cplAed !== null && o.leads >= MIN_LEADS_FOR_CPL)
-          .map((o) => o.cplAed as number)
-        if (!siblingCpls.length) return false
-        return s.cplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...siblingCpls)
+      // (C) CPL-condemned vs best sibling — both sides need ≥3 leads for the
+      // ratio to mean anything, and both must be measured the SAME way.
+      //   · same channel  → native basis (identical on both sides, timelier)
+      //   · cross channel → CRM-attributed, the only shared basis
+      // Comparing Meta-reported against CRM-attributed condemned Google trials
+      // for being measured more conservatively, not for performing worse.
+      const cplCondemnedBy = (s: TrialState): 'native' | 'attributed' | null => {
+        if (!spendGated(s) || isProtected(s)) return null
+        if (s.cplAed !== null && s.leads >= MIN_LEADS_FOR_CPL) {
+          const same = group
+            .filter((o) => o !== s && o.row.channel === s.row.channel && o.cplAed !== null && o.leads >= MIN_LEADS_FOR_CPL)
+            .map((o) => o.cplAed as number)
+          if (same.length && s.cplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...same)) return 'native'
+        }
+        if (s.attributedCplAed !== null && s.attributed >= MIN_LEADS_FOR_CPL) {
+          const cross = group
+            .filter((o) => o !== s && o.row.channel !== s.row.channel && o.attributedCplAed !== null && o.attributed >= MIN_LEADS_FOR_CPL)
+            .map((o) => o.attributedCplAed as number)
+          if (cross.length && s.attributedCplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...cross)) return 'attributed'
+        }
+        return null
       }
+      const cplCondemned = (s: TrialState) => cplCondemnedBy(s) !== null
 
       // (Q) Quality-condemned — this trial's CRM quality is bad while a
       // sibling proves the project itself converts.
@@ -782,7 +812,12 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       const reasons: string[] = []
       if (verdictCondemned(target)) reasons.push(`human verdicts condemned it (yes-ratio ${(100 * (yesRatio(target) ?? 0)).toFixed(0)}% < ${CONDEMN_YES_RATIO * 100}%)`)
-      if (cplCondemned(target)) reasons.push(`CPL AED ${target.cplAed!.toFixed(0)} > ${CPL_CONDEMN_MULTIPLIER}× best sibling`)
+      const cplBasis = cplCondemnedBy(target)
+      if (cplBasis === 'native') {
+        reasons.push(`CPL AED ${target.cplAed!.toFixed(0)} (${target.leadBasis}) > ${CPL_CONDEMN_MULTIPLIER}× the best same-channel sibling`)
+      } else if (cplBasis === 'attributed') {
+        reasons.push(`CPL AED ${target.attributedCplAed!.toFixed(0)} on CRM-attributed leads > ${CPL_CONDEMN_MULTIPLIER}× the best sibling on the same basis`)
+      }
       if (qualityCondemned(target)) reasons.push(`CRM quality ${target.qualityScore} < ${QUALITY_CONDEMN_BELOW} while a sibling holds ≥ ${QUALITY_SIBLING_AT_LEAST}`)
       const evidence = `Evidence: ${verdictEvidence(target.verdicts)}; spend AED ${Math.round(target.spendAed)} on AED ${target.row.dailyBudgetAed}/day.`
 
