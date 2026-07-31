@@ -18,7 +18,7 @@
  */
 import { META_MIN_TRIAL_BUDGET_AED } from '@/lib/freehold/ads-machine-planner'
 import type { MachinePlan, MachineProjectPlan } from '@/lib/freehold/ads-machine-planner'
-import { normalizePermit } from '@/lib/freehold/trakheesi'
+import { normalizePermit, normalizePermitExpiry } from '@/lib/freehold/trakheesi'
 import type { MetaCta } from '@/lib/meta/types'
 
 const META_CTAS: readonly MetaCta[] = [
@@ -41,11 +41,13 @@ export interface TrialEdit {
   googleDescriptions?: string[]
 }
 
-/** Per-project edit — currently the Trakheesi permit the operator entered in
- * the launch review. An empty string clears it (back to "no permit"). */
+/** Per-project edit — the Trakheesi permit and its expiry, as entered in the
+ * launch review. An empty string clears either one (back to "not on file"). */
 export interface ProjectEdit {
   projectSlug: string
   permitNumber?: string
+  /** `YYYY-MM-DD`. Anything else is stored as null — no guessed expiry dates. */
+  permitExpiry?: string
 }
 
 export type PlanEditResult =
@@ -83,9 +85,14 @@ export function applyPlanEdits(
   // Per-project permit edits: present key + empty string clears; a real value
   // sets. Absent key leaves the plan's existing permit untouched.
   const permitBySlug = new Map<string, string | null>()
+  const expiryBySlug = new Map<string, string | null>()
   for (const pe of projectEdits) {
-    if (pe && typeof pe.projectSlug === 'string' && pe.permitNumber !== undefined) {
+    if (!pe || typeof pe.projectSlug !== 'string') continue
+    if (pe.permitNumber !== undefined) {
       permitBySlug.set(pe.projectSlug, normalizePermit(pe.permitNumber))
+    }
+    if (pe.permitExpiry !== undefined) {
+      expiryBySlug.set(pe.projectSlug, normalizePermitExpiry(pe.permitExpiry))
     }
   }
 
@@ -167,6 +174,9 @@ export function applyPlanEdits(
       permitNumber: permitBySlug.has(project.slug)
         ? permitBySlug.get(project.slug)!
         : (project.permitNumber ?? null),
+      permitExpiry: expiryBySlug.has(project.slug)
+        ? expiryBySlug.get(project.slug)!
+        : (project.permitExpiry ?? null),
     })
   }
 

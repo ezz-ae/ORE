@@ -13,12 +13,21 @@
  */
 import { useMemo, useState } from 'react'
 import {
-  AlertTriangle, ExternalLink, Loader2, Rocket, Save, Search, ShieldCheck, Sparkles, FileText, X,
+  AlertTriangle, CalendarClock, ExternalLink, Loader2, Rocket, Save, Search, ShieldCheck, Sparkles, FileText, X,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { MachinePlan, TrialSource } from '@/lib/freehold/ads-machine-planner'
 import type { TrialEdit, ProjectEdit } from '@/lib/freehold/ads-machine-plan-edit'
-import { normalizePermit, qrApiPath, permitVerificationUrl } from '@/lib/freehold/trakheesi'
+import {
+  normalizePermit,
+  normalizePermitExpiry,
+  isPermitExpired,
+  permitDaysLeft,
+  usablePermit,
+  qrApiPath,
+  permitVerificationUrl,
+  PERMIT_EXPIRY_WARN_DAYS,
+} from '@/lib/freehold/trakheesi'
 import type { MetaCta } from '@/lib/meta/types'
 
 const META_MIN = 50
@@ -99,6 +108,15 @@ export function MachineLaunchReview({
     return init
   })
 
+  // …and the date it lapses. Optional to enter, but an EXPIRED one blocks
+  // launch just like a missing number would: the engine treats the two the
+  // same, so the review has to as well or the button would lie.
+  const [permitExpiries, setPermitExpiries] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    for (const p of plan.projects) init[p.slug] = normalizePermitExpiry(p.permitExpiry) ?? ''
+    return init
+  })
+
   const [drafts, setDrafts] = useState<Record<string, Draft>>(() => {
     const init: Record<string, Draft> = {}
     for (const p of plan.projects) {
@@ -142,9 +160,13 @@ export function MachineLaunchReview({
       const b = Math.floor(Number(d.budget))
       if (Number.isFinite(b)) total += b
     }
-    const permitMissing = [...includedSlugByProject].some((slug) => !normalizePermit(permits[slug]))
+    // Same test the engine runs: a real permit number that is not known to
+    // have lapsed. An expired permit is not a valid one.
+    const permitMissing = [...includedSlugByProject].some(
+      (slug) => !usablePermit(permits[slug], permitExpiries[slug]),
+    )
     return { total, includedCount, overCap: total > capAed, permitMissing }
-  }, [drafts, capAed, permits, includedSlugByProject])
+  }, [drafts, capAed, permits, permitExpiries, includedSlugByProject])
 
   const blocked = overCap || includedCount === 0 || permitMissing
 
@@ -165,7 +187,11 @@ export function MachineLaunchReview({
       }
       edits.push(edit)
     }
-    const projectEdits: ProjectEdit[] = plan.projects.map((p) => ({ projectSlug: p.slug, permitNumber: permits[p.slug] ?? '' }))
+    const projectEdits: ProjectEdit[] = plan.projects.map((p) => ({
+      projectSlug: p.slug,
+      permitNumber: permits[p.slug] ?? '',
+      permitExpiry: permitExpiries[p.slug] ?? '',
+    }))
     return { edits, projectEdits }
   }
 
@@ -193,6 +219,12 @@ export function MachineLaunchReview({
             {plan.projects.map((p) => {
               const permitVal = permits[p.slug] ?? ''
               const permitOk = normalizePermit(permitVal)
+              const expiryVal = permitExpiries[p.slug] ?? ''
+              const expired = isPermitExpired(expiryVal)
+              const daysLeft = permitDaysLeft(expiryVal)
+              // "Valid" means a real permit number that is not known to have
+              // lapsed — the same test the engine applies before every launch.
+              const permitUsable = permitOk !== null && !expired
               const projectActive = includedSlugByProject.has(p.slug)
               return (
               <div key={p.slug}>
@@ -204,13 +236,13 @@ export function MachineLaunchReview({
                 {/* ── Trakheesi permit — Dubai law requires it on every ad ── */}
                 <div className={[
                   'mt-3 rounded-[14px] border p-3.5',
-                  permitOk ? 'border-emerald-400/20 bg-emerald-400/[0.04]'
+                  permitUsable ? 'border-emerald-400/20 bg-emerald-400/[0.04]'
                     : projectActive ? 'border-red-400/30 bg-red-400/[0.05]' : 'border-line bg-surface-2/40',
                 ].join(' ')}>
                   <div className="flex items-start gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
-                        <ShieldCheck className={`h-3.5 w-3.5 ${permitOk ? 'text-emerald-400' : 'text-slate-500'}`} />
+                        <ShieldCheck className={`h-3.5 w-3.5 ${permitUsable ? 'text-emerald-400' : 'text-slate-500'}`} />
                         {t('lm.machine.review.permit')}
                       </div>
                       <input
@@ -230,6 +262,35 @@ export function MachineLaunchReview({
                           {t('lm.machine.review.permitRequired')}
                         </p>
                       )}
+
+                      {/* ── Expiry. A permit number says nothing about TODAY;
+                          this is what lets the machine stop the ads by itself
+                          the day the permit lapses, instead of running an
+                          unpermitted campaign until someone notices. ── */}
+                      <div className="mt-3 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
+                        <CalendarClock className={`h-3.5 w-3.5 ${expired ? 'text-red-400' : 'text-slate-500'}`} />
+                        {t('lm.machine.review.permitExpiry')}
+                      </div>
+                      <div className="mt-1.5 max-w-[200px]">
+                        <input
+                          type="date"
+                          value={expiryVal}
+                          onChange={(e) => setPermitExpiries((prev) => ({ ...prev, [p.slug]: e.target.value }))}
+                          className={`${inputCls} ${expired && projectActive ? 'border-red-400/50' : ''}`}
+                          dir="ltr"
+                        />
+                      </div>
+                      <p className={`mt-1.5 text-[11px] ${
+                        expired ? 'text-red-300'
+                          : daysLeft !== null && daysLeft <= PERMIT_EXPIRY_WARN_DAYS ? 'text-amber-300'
+                          : daysLeft !== null ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        {expired ? t('lm.machine.review.permitExpired')
+                          : daysLeft !== null && daysLeft <= PERMIT_EXPIRY_WARN_DAYS
+                            ? t('lm.machine.review.permitExpiringSoon').replace('{days}', String(daysLeft))
+                          : daysLeft !== null ? t('lm.machine.review.permitValidUntil').replace('{date}', expiryVal)
+                          : t('lm.machine.review.permitNoExpiry')}
+                      </p>
                     </div>
                     {/* QR — real, server-rendered from the permit's DLD verification URL */}
                     {permitOk && (

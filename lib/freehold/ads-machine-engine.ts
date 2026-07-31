@@ -80,7 +80,13 @@ import {
   type QuestionKind,
 } from '@/lib/freehold/ads-machine'
 import { META_MIN_TRIAL_BUDGET_AED, type MachinePlan, type MachineProjectPlan, type MachineTrialPlan } from '@/lib/freehold/ads-machine-planner'
-import { normalizePermit, appendPermitToText } from '@/lib/freehold/trakheesi'
+import {
+  appendPermitToText,
+  normalizePermitExpiry,
+  permitDaysLeft,
+  permitState,
+  usablePermit,
+} from '@/lib/freehold/trakheesi'
 
 /**
  * How many days an attributed lead may sit unmoved in new/contacted before the
@@ -111,8 +117,12 @@ export interface CycleResult {
   ran: boolean
   launched: string[]
   capSkipped: string[]
-  /** Trials not launched because their project has no Trakheesi permit. */
+  /** Trials not launched because their project's Trakheesi permit is missing
+   *  or has lapsed. */
   permitBlocked: string[]
+  /** LIVE campaigns stopped because their project's permit expired while they
+   *  were running — compliance, not performance. */
+  permitStopped: string[]
   googleDraftsPrepared: string[]
   observed: number
   verdictRequestsCreated: number
@@ -171,12 +181,29 @@ async function setPlatformStatus(row: MachineCampaign, running: boolean): Promis
 
 const emptyResult = (machineId: string, status: AdsMachine['status'], ran: boolean): CycleResult => ({
   machineId, status, ran,
-  launched: [], capSkipped: [], permitBlocked: [], googleDraftsPrepared: [],
+  launched: [], capSkipped: [], permitBlocked: [], permitStopped: [], googleDraftsPrepared: [],
   observed: 0, verdictRequestsCreated: 0,
   paused: [], budgetShifts: [], errors: [],
 })
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
+
+/**
+ * The permit gate applied OUTSIDE a cycle. The compliance stop is worthless if
+ * the very next click puts the campaign back on air, so every path that turns a
+ * trial ON — machine resume, the dashboard's per-trial switch — has to consult
+ * it too. Returns the expiry date when this project's permit has lapsed (i.e.
+ * "refuse, and here's why"), or null when there is nothing to object to.
+ */
+function expiredPermitFor(machine: AdsMachine, projectSlug: string, now: Date = new Date()): string | null {
+  const plan = machine.plan
+  if (!plan?.viable) return null
+  const p = plan.projects.find((x) => x.slug === projectSlug)
+  if (!p) return null
+  return permitState(p.permitNumber, p.permitExpiry, now) === 'expired'
+    ? (normalizePermitExpiry(p.permitExpiry) ?? '')
+    : null
+}
 
 function planTrials(plan: MachinePlan): MachineTrialPlan[] {
   return plan.viable ? plan.projects.flatMap((p) => p.trials) : []
@@ -411,12 +438,94 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   const result = emptyResult(machineId, machine.status, true)
   let campaigns = await listMachineCampaigns(machineId)
 
+  // ── Trakheesi permit per project ──────────────────────────────────────────
+  // A permit is not a one-time checkbox: DET issues it for a fixed window, and
+  // an ad still running past that window is exactly as non-compliant as one
+  // that never had a permit. `permitBySlug` therefore holds the permit only
+  // while it is USABLE TODAY — a lapsed permit reads as null, so every gate
+  // built on this map (launch, reallocation, explore arms) closes on expiry
+  // without needing to learn about dates. The raw values are kept alongside so
+  // the machine can say *why* in its own log instead of just refusing.
+  const now = new Date()
+  const permitBySlug = new Map(plan.projects.map((p) => [p.slug, usablePermit(p.permitNumber, p.permitExpiry, now)]))
+  const permitStateBySlug = new Map(plan.projects.map((p) => [p.slug, permitState(p.permitNumber, p.permitExpiry, now)]))
+  const permitExpiryBySlug = new Map(plan.projects.map((p) => [p.slug, normalizePermitExpiry(p.permitExpiry)]))
+  const permitProblem = (slug: string): string => {
+    const state = permitStateBySlug.get(slug)
+    if (state === 'expired') {
+      return `its Trakheesi advertising permit expired on ${permitExpiryBySlug.get(slug)}`
+    }
+    return 'it has no Trakheesi advertising permit on file'
+  }
+
+  // ── COMPLIANCE STOP (running only) ────────────────────────────────────────
+  // The gap this closes: the permit was only ever checked at LAUNCH, so a
+  // campaign that started legally kept spending forever after its permit
+  // lapsed. Money is not the reason here and performance is irrelevant — this
+  // runs before everything else, stops EVERY affected trial (not the rotation's
+  // one-per-project), and ignores protection, spend gates and verdicts. Freed
+  // budget is deliberately NOT reallocated: not spending is always compliant.
+  if (machine.status === 'running') {
+    for (const row of campaigns) {
+      if (row.status !== 'active') continue
+      // Only act on a permit we can positively judge. A campaign whose project
+      // is no longer in the plan (re-planning drops projects) is left alone —
+      // absence of data is not evidence of a lapse, and pausing live spend on
+      // a guess would be its own kind of wrong.
+      if (permitStateBySlug.get(row.projectSlug) !== 'expired') continue
+      const expiredOn = permitExpiryBySlug.get(row.projectSlug)
+      try {
+        await setPlatformStatus(row, false)
+      } catch (e) {
+        await logActivity({
+          machineId, kind: 'error',
+          detail: `URGENT — "${row.trialLabel}" (${row.projectSlug}) is still running on a Trakheesi permit that expired on ${expiredOn}, and the ${row.channel === 'google' ? 'Google' : 'Meta'} pause failed: ${errMsg(e)}. Stop this campaign by hand.`,
+          campaignId: row.campaignId,
+        })
+        result.errors.push(`permit_stop:${row.campaignId}`)
+        continue
+      }
+      await updateMachineCampaign(row.id, { status: 'paused' })
+      await logActivity({
+        machineId,
+        kind: 'permit_blocked',
+        detail: `Stopped "${row.trialLabel}" (${row.projectSlug}): its Trakheesi advertising permit expired on ${expiredOn}, and a Dubai property ad may not run without a valid one. Renew the permit and update its expiry in the plan, then run a cycle to restart it. AED ${row.dailyBudgetAed}/day is no longer committed.`,
+        campaignId: row.campaignId,
+        data: { projectSlug: row.projectSlug, permitExpiry: expiredOn, freedAed: row.dailyBudgetAed },
+      })
+      result.permitStopped.push(row.campaignId)
+    }
+    if (result.permitStopped.length > 0) campaigns = await listMachineCampaigns(machineId)
+  }
+
+  // Renewal warning — loud BEFORE the ads have to stop, so a permit can be
+  // renewed instead of a campaign being interrupted. Also names the projects
+  // running with no expiry on file at all: the machine cannot vouch for those,
+  // and saying so beats silently treating them as valid forever.
+  if (machine.status === 'running') {
+    const liveSlugs = new Set(campaigns.filter((c) => c.status === 'active').map((c) => c.projectSlug))
+    const expiring = [...liveSlugs].filter((s) => permitStateBySlug.get(s) === 'expiring')
+    const undated = [...liveSlugs].filter((s) => permitStateBySlug.get(s) === 'no_expiry')
+    if (expiring.length > 0 || undated.length > 0) {
+      const parts: string[] = []
+      for (const s of expiring) {
+        parts.push(`${s} — permit expires ${permitExpiryBySlug.get(s)} (${permitDaysLeft(permitExpiryBySlug.get(s), now)} day(s) left)`)
+      }
+      if (undated.length > 0) {
+        parts.push(`no expiry date on file for ${undated.join(', ')} — the machine cannot confirm those permits are still valid`)
+      }
+      await logActivity({
+        machineId,
+        kind: 'permit_warning',
+        detail: `Trakheesi check: ${parts.join('; ')}.`,
+        data: { expiring, undated },
+      })
+    }
+  }
+
   // ── LAUNCH (running only) ──────────────────────────────────────────────────
   // Google is a LIVE channel: its planned trials launch for real, under the
   // same fresh COMBINED cap check as Meta launches. One cap governs both.
-  // Trakheesi permit per project — the compliance gate below refuses to launch
-  // any project's trials without a valid DLD advertising permit.
-  const permitBySlug = new Map(plan.projects.map((p) => [p.slug, normalizePermit(p.permitNumber)]))
   if (machine.status === 'running') {
     for (const trial of planTrials(plan)) {
       const channel = trialChannel(trial)
@@ -425,14 +534,16 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       )
       if (already) continue
 
-      // ── Trakheesi compliance gate — no valid permit, no ad (Dubai law). ──
+      // ── Trakheesi compliance gate — no VALID permit, no ad (Dubai law).
+      // `permitBySlug` is already expiry-aware, so a lapsed permit fails here
+      // exactly like a missing one; only the wording differs. ──
       const permit = permitBySlug.get(trial.projectSlug) ?? null
       if (!permit) {
         await logActivity({
           machineId,
           kind: 'permit_blocked',
-          detail: `Not launched — "${trial.listingName}" has no Trakheesi advertising permit on file, so "${trial.label}" cannot run in Dubai. Add the DLD permit in the launch review (or Inventory), then run a cycle.`,
-          data: { trialId: trial.id, projectSlug: trial.projectSlug },
+          detail: `Not launched — ${permitProblem(trial.projectSlug)} for "${trial.listingName}", so "${trial.label}" cannot run in Dubai. Add or renew the DLD permit (and its expiry date) in the launch review, then run a cycle.`,
+          data: { trialId: trial.id, projectSlug: trial.projectSlug, permitState: permitStateBySlug.get(trial.projectSlug) ?? null },
         })
         result.permitBlocked.push(trial.id)
         continue
@@ -1130,15 +1241,28 @@ export async function pauseMachine(machineId: string): Promise<{ paused: number;
 /** Resume: reactivate paused trials — Meta AND Google — in launch order, but
  * each one only while the fresh COMBINED cap sum stays under the cap; the
  * rest are logged 'cap_enforced'. */
-export async function resumeMachine(machineId: string): Promise<{ resumed: number; capSkipped: number }> {
+export async function resumeMachine(machineId: string): Promise<{ resumed: number; capSkipped: number; permitSkipped: number }> {
   const machine = await getMachine(machineId)
   if (!machine) throw new Error(`Ads machine not found: ${machineId}`)
   await setMachineStatus(machineId, 'running')
   const campaigns = await listMachineCampaigns(machineId)
   let resumed = 0
   let capSkipped = 0
+  let permitSkipped = 0
   for (const c of campaigns) {
     if (c.status !== 'paused') continue
+    // Compliance outranks the cap: a lapsed permit is not a budget problem, and
+    // "resume everything" must never be the way an unpermitted ad gets back on.
+    const expiredOn = expiredPermitFor(machine, c.projectSlug)
+    if (expiredOn) {
+      permitSkipped++
+      await logActivity({
+        machineId, kind: 'permit_blocked',
+        detail: `Resume skipped "${c.trialLabel}" (${c.projectSlug}): its Trakheesi advertising permit expired on ${expiredOn}. Renew it and update the expiry date in the plan before this trial can run again.`,
+        campaignId: c.campaignId,
+      })
+      continue
+    }
     const committed = await activeSpendAed(machineId)
     if (committed + c.dailyBudgetAed > machine.dailyCapAed) {
       capSkipped++
@@ -1158,7 +1282,7 @@ export async function resumeMachine(machineId: string): Promise<{ resumed: numbe
       await logActivity({ machineId, kind: 'error', detail: `Resume of "${c.trialLabel}" (${c.channel}) failed: ${errMsg(e)}`, campaignId: c.campaignId })
     }
   }
-  return { resumed, capSkipped }
+  return { resumed, capSkipped, permitSkipped }
 }
 
 /**
@@ -1179,6 +1303,13 @@ export async function setTrialRunning(
   if (!row) return { ok: false, error: 'Trial not found on this machine' }
 
   if (running) {
+    // Same compliance gate the cycle applies — otherwise the operator's own
+    // switch would quietly restart a campaign the machine stopped for having
+    // no valid permit, which is the one outcome this must never allow.
+    const expiredOn = expiredPermitFor(machine, row.projectSlug)
+    if (expiredOn) {
+      return { ok: false, error: `"${row.trialLabel}" cannot run: its Trakheesi advertising permit expired on ${expiredOn}. Renew it with DET and update the expiry date in the plan, then turn this trial back on.` }
+    }
     const committed = await activeSpendAed(machineId)
     // Only count this trial's budget as "new" if it isn't already active.
     const additional = row.status === 'active' ? 0 : row.dailyBudgetAed

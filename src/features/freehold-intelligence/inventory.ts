@@ -47,6 +47,10 @@ export interface InventoryProperty {
       one, else null — never invented. Seeds the Ads Machine's permit gate and
       the permit + QR shown on ads and landing pages. */
   permitNumber?: string | null
+  /** The permit's expiry as `YYYY-MM-DD` when the data carries one, else null.
+      A permit number alone says nothing about today — this is what lets the
+      Ads Machine stop a project's ads when its permit lapses. */
+  permitExpiry?: string | null
   hasImages: boolean
   imageCount: number
   dataQuality: number
