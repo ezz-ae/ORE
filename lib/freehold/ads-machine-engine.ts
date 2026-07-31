@@ -933,14 +933,24 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         )
         const winnerTrial = proven ? findPlanTrial(plan, proven.row) : null
         const exploreBudget = Math.floor(Math.min(freed, headroomAfterPause))
-        if (permit && exploreCount < MAX_EXPLORE_ARMS_PER_PROJECT && proven && winnerTrial?.targeting && winnerTrial.creative && exploreBudget >= META_MIN_TRIAL_BUDGET_AED) {
-          const tgt = winnerTrial.targeting
-          const newTargeting = {
-            ...tgt,
-            ageMin: Math.max(18, (tgt.ageMin ?? 25) - 5),
-            ageMax: Math.min(65, (tgt.ageMax ?? 55) + 5),
-          }
+        const tgt = winnerTrial?.targeting
+        const newTargeting = tgt ? {
+          ...tgt,
+          ageMin: Math.max(18, (tgt.ageMin ?? 25) - 5),
+          ageMax: Math.min(65, (tgt.ageMax ?? 55) + 5),
+        } : null
+        // A mint must actually EXPLORE: if the winner already spans the full
+        // band, "broadened" would be a byte-identical clone competing with
+        // its own parent in the same auction. Skip and fall through to the
+        // plain raise instead.
+        const broadens = !!(tgt && newTargeting && (newTargeting.ageMin !== tgt.ageMin || newTargeting.ageMax !== tgt.ageMax))
+        if (permit && exploreCount < MAX_EXPLORE_ARMS_PER_PROJECT && proven && winnerTrial?.targeting && winnerTrial.creative && newTargeting && broadens && exploreBudget >= META_MIN_TRIAL_BUDGET_AED) {
           const label = `${EXPLORE_PREFIX} ${exploreCount + 1}: around ${winnerTrial.label}`
+          // Once the platform launch succeeds, real money is moving on the new
+          // campaign — a later bookkeeping failure must NOT fall through to the
+          // survivor raise (that would double-allocate the freed budget and,
+          // with no campaign row, leave the spend invisible to the cap).
+          let platformLaunched = false
           try {
             const project = plan.projects.find((p) => p.slug === projectSlug)
             const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
@@ -955,6 +965,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               destination: leadFormId ? 'form' : 'landing',
               ...(leadFormId ? { leadFormId } : {}),
             })
+            platformLaunched = true
             await addMachineCampaign({
               machineId, channel: 'meta', campaignId: launch.campaignId,
               projectSlug, trialLabel: label, dailyBudgetAed: exploreBudget, status: 'active',
@@ -968,17 +979,20 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
                 fromCampaignId: target.row.campaignId, basedOnTrialId: winnerTrial.id,
                 amountAed: exploreBudget, ageMin: newTargeting.ageMin, ageMax: newTargeting.ageMax,
               },
-            })
+            }).catch(() => {})
             result.budgetShifts.push(launch.campaignId)
             result.launched.push(launch.campaignId)
             continue
           } catch (e) {
             await logActivity({
               machineId, kind: 'error',
-              detail: `Re-plan launch of "${label}" (${projectSlug}) failed: ${errMsg(e)} — falling back to raising a survivor.`,
+              detail: platformLaunched
+                ? `Re-plan arm "${label}" (${projectSlug}) IS LIVE on Meta but its machine bookkeeping failed: ${errMsg(e)}. The freed budget stays with it — NOT reallocated again. Reconcile the campaign row manually.`
+                : `Re-plan launch of "${label}" (${projectSlug}) failed: ${errMsg(e)} — falling back to raising a survivor.`,
               data: { projectSlug },
-            })
+            }).catch(() => {})
             result.errors.push(`replan-launch:${projectSlug}`)
+            if (platformLaunched) continue // budget is spent on the live arm — never double-allocate
             // fall through to raising a survivor
           }
         }

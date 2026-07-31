@@ -66,6 +66,7 @@ export async function runAutopilotPass(email: string): Promise<{ applied: Array<
       try {
         if (mode === 'approval' && rule.action !== 'notify') {
           // Approval mode: the match is real, the action waits for a human.
+          // NOT marked triggered — nothing was applied yet.
           actions.push({
             campaign: campaign.name, rule: rule.id, action: rule.action,
             metric: rule.metric, value: match.currentValue, needsApproval: true,
@@ -80,7 +81,11 @@ export async function runAutopilotPass(email: string): Promise<{ applied: Array<
           actions.push({ campaign: campaign.name, rule: rule.id, action: 'resume', metric: rule.metric, value: match.currentValue })
         } else if (rule.action === 'budget_up' || rule.action === 'budget_down') {
           // Budgets live on ad sets. Requested % is clamped to ±15%/pass.
-          const requestedPct = Math.abs(Number(rule.actionValue ?? 10))
+          // actionValue is user-authored: a non-numeric value must fall back to
+          // 10, never poison the math (NaN would ride through min/max/round
+          // and reach the live account as an NaN budget).
+          const rawPct = Number(rule.actionValue)
+          const requestedPct = Number.isFinite(rawPct) ? Math.abs(rawPct) : 10
           const pct = Math.min(15, requestedPct) * (rule.action === 'budget_up' ? 1 : -1)
           const sets = await listAdSets(campaign.id)
           for (const set of sets) {

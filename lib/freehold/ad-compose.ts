@@ -50,13 +50,20 @@ export function drawWrapped(
   const words = text.split(/\s+/).filter(Boolean)
   const lines: string[] = []
   let cur = ''
+  let consumed = 0
   for (const w of words) {
     const probe = cur ? `${cur} ${w}` : w
     if (ctx.measureText(probe).width > maxWidth && cur) { lines.push(cur); cur = w }
     else cur = probe
-    if (lines.length === maxLines) break
+    consumed++
+    if (lines.length === maxLines) { consumed--; break }
   }
   if (cur && lines.length < maxLines) lines.push(cur)
+  // Truncation is visible, never silent: overflow gets an ellipsis so the
+  // preview admits text was cut instead of ending mid-sentence.
+  if (consumed < words.length && lines.length > 0) {
+    lines[lines.length - 1] = `${lines[lines.length - 1]}…`
+  }
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight))
   return lines.length * lineHeight
 }

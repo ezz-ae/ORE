@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 
-type MachineAction = { id: string; action: string; platform: string; campaignName: string; detail: string; createdAt: string }
+type MachineAction = { id: string; source?: string; action: string; platform: string; campaignId?: string; campaignName: string; detail: string; createdAt: string }
 
 // The advisor's grounded output (app/api/freehold/ads/advisor) — suggestions
 // carry an optional machine-applicable action in one of three safe shapes.
@@ -94,8 +94,15 @@ export default function CampaignOptimizePage() {
   }
   useEffect(() => { loadMachine() }, [])
 
+  // Rank ALL spenders. A campaign burning money with ZERO leads is the worst
+  // case the optimizer exists to catch — it ranks as infinite CPL (last),
+  // never filtered out. Only zero-spend zero-lead rows are excluded.
+  const effCpl = (c: LiveCampaign) => (c.leads > 0 ? c.cpl : c.spendAED > 0 ? Infinity : 0)
   const ranked = useMemo(
-    () => [...campaigns].filter((c) => c.cpl > 0 && !pausedIds.includes(c.id)).sort((a, b) => a.cpl - b.cpl),
+    () => [...campaigns]
+      .filter((c) => (c.leads > 0 || c.spendAED > 0) && !pausedIds.includes(c.id))
+      .sort((a, b) => effCpl(a) - effCpl(b)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [campaigns, pausedIds],
   )
   const best = ranked[0]
@@ -142,6 +149,7 @@ export default function CampaignOptimizePage() {
       if (!r.ok) { toast.error(d.error || t('lm.adv.applyFailed')); return }
       setAppliedIdx((p) => [...p, idx])
       if (a.type === 'pause_campaign') setPausedIds((p) => [...p, advisorFor.id])
+      if (a.type === 'resume_campaign') setPausedIds((p) => p.filter((x) => x !== advisorFor.id))
       toast.success(t('lm.adv.applied'))
       loadMachine()
     } catch { toast.error(t('lm.adv.applyFailed')) }
@@ -219,9 +227,9 @@ export default function CampaignOptimizePage() {
               <p className="mt-2 text-sm leading-relaxed text-slate-200">
                 {t('lm.optimize.shiftReco', {
                   from: worst.name,
-                  fromCpl: worst.cpl.toFixed(0),
+                  fromCpl: worst.leads > 0 ? worst.cpl.toFixed(0) : '∞',
                   to: best.name,
-                  toCpl: best.cpl.toFixed(0),
+                  toCpl: best.leads > 0 ? best.cpl.toFixed(0) : '∞',
                 })}
               </p>
               {/* The one real, reversible action the Machine applies: pause the
@@ -273,6 +281,9 @@ export default function CampaignOptimizePage() {
               )}
               {advisor && advisor.available && advisor.suggestions.length === 0 && (
                 <p className="mt-4 rounded-xl border border-line bg-surface-2 px-4 py-3 text-xs text-slate-400">{t('lm.adv.none')}</p>
+              )}
+              {advisor && advisor.available && advisor.suggestions.length > 0 && !canApply && advisor.suggestions.some((s) => s.action) && (
+                <p className="mt-3 text-xs text-slate-500">{t('lm.machine.notAllowed')}</p>
               )}
               {advisor && advisor.available && advisor.suggestions.length > 0 && (
                 <div className="mt-4 space-y-3">
@@ -326,7 +337,7 @@ export default function CampaignOptimizePage() {
                   </div>
                   <div className={`flex shrink-0 items-center gap-1 text-sm font-semibold ${i === 0 ? 'text-emerald-400' : i === ranked.length - 1 ? 'text-red-300' : 'text-slate-300'}`}>
                     {i === 0 ? <TrendingDown className="h-3.5 w-3.5" /> : i === ranked.length - 1 ? <TrendingUp className="h-3.5 w-3.5" /> : null}
-                    AED {c.cpl.toFixed(0)}
+                    {c.leads > 0 ? `AED ${c.cpl.toFixed(0)}` : t('lm.optimize.zeroLeads')}
                   </div>
                 </div>
               ))}
@@ -348,16 +359,23 @@ export default function CampaignOptimizePage() {
               <p className="rounded-2xl border border-line bg-surface px-5 py-6 text-sm text-slate-500">{t('lm.machine.noHistory')}</p>
             ) : (
               <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-                {log.map((a) => (
-                  <div key={a.id} className="flex items-start gap-3 px-5 py-3.5">
-                    <Pause className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-300" />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-slate-200">{a.campaignName} <span className="text-slate-500">· {a.platform}</span></div>
-                      <div className="mt-0.5 text-xs text-slate-500">{a.detail}</div>
+                {log.map((a) => {
+                  // The merged ledger carries machine moves too — icon by action,
+                  // not a blanket pause; blank trial labels fall back to the id.
+                  const isPause = a.action === 'pause' || a.action === 'trial_paused' || a.action === 'cap_enforced'
+                  const Icon = isPause ? Pause : a.action === 'launched' ? Sparkles : Zap
+                  const tone = isPause ? 'text-red-300' : a.action === 'launched' ? 'text-emerald-400' : 'text-gold'
+                  return (
+                    <div key={`${a.source ?? 'op'}-${a.id}`} className="flex items-start gap-3 px-5 py-3.5">
+                      <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${tone}`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-slate-200">{a.campaignName || a.campaignId || a.action} <span className="text-slate-500">· {a.platform || a.source || ''}</span></div>
+                        <div className="mt-0.5 text-xs text-slate-500">{a.detail}</div>
+                      </div>
+                      <span className="shrink-0 text-[11px] text-slate-500">{new Date(a.createdAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
                     </div>
-                    <span className="shrink-0 text-[11px] text-slate-500">{new Date(a.createdAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </section>

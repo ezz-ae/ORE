@@ -164,6 +164,9 @@ export default function DriveImageEditor() {
     setTplBusy(tpl.id)
     try {
       const url = composeVariant(null, tpl.layout, AD_PALETTES[tpl.palette] ?? AD_PALETTES[0], tplCopy[tpl.copy], tpl.format, 1)
+      // Match the canvas to the template's real aspect BEFORE the source lands —
+      // otherwise a 9:16 design gets centre-cropped into the default square.
+      setPreset(tpl.format === 'story' ? '9_16' : tpl.format === 'feed' ? '4_5' : '1_1')
       await applySource(url)
     } finally { setTplBusy(null) }
   }
@@ -758,7 +761,8 @@ export default function DriveImageEditor() {
           />
 
           {/* Floating zoom dock — reposition/zoom without leaving the canvas */}
-          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2 py-1.5 shadow-lg shadow-black/40 backdrop-blur-sm">
+          {/* bottom-20 below lg — the frame's mobile Tools FAB owns bottom-5. */}
+          <div className="absolute bottom-20 lg:bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2 py-1.5 shadow-lg shadow-black/40 backdrop-blur-sm">
             <button type="button" onClick={() => { setZoom((z) => clamp(Math.round((z - 0.1) * 100) / 100, 1, 3)); mark() }}
               disabled={zoom <= 1} title={t('ed.image.zoom')} className="grid h-6 w-6 place-items-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white disabled:opacity-40">
               <ZoomOut className="h-3.5 w-3.5" />
@@ -780,7 +784,7 @@ export default function DriveImageEditor() {
         </div>
       ) : (
         <div
-          className="relative flex h-full w-full items-center justify-center overflow-hidden p-6"
+          className="relative flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto p-6"
           style={{ background: 'radial-gradient(130% 100% at 50% -10%, rgba(212,175,55,0.07), transparent 55%), #0b0b0d' }}
         >
           <div
@@ -801,25 +805,31 @@ export default function DriveImageEditor() {
             <span className={`grid h-16 w-16 place-items-center rounded-2xl bg-gold/10 text-gold ring-1 ring-gold/20 transition ${dropping ? 'scale-110' : ''}`}>
               <Upload className="h-8 w-8" />
             </span>
-            {notFound && <p className="text-xs text-slate-500">{t('ed.notFound')}</p>}
-            <p className="text-base font-semibold text-white">{dropping ? t('ed.image.dropHere') : t('ed.image.uploadTitle')}</p>
-            <p className="text-xs leading-relaxed text-slate-400">{t('ed.image.uploadHint')}</p>
+            {notFound && <p className="text-xs text-[#8b98ab]">{t('ed.notFound')}</p>}
+            <p className="text-base font-semibold text-[#f8fafc]">{dropping ? t('ed.image.dropHere') : t('ed.image.uploadTitle')}</p>
+            <p className="text-xs leading-relaxed text-[#94a3b8]">{t('ed.image.uploadHint')}</p>
             <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold text-ink shadow-lg shadow-gold/10 transition hover:bg-gold-bright">
               <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
             </button>
-            <p className="mt-2 text-[10px] leading-snug text-slate-600">{t('ed.image.ai.boundary')}</p>
+            <p className="mt-2 text-[10px] leading-snug text-[#64748b]">{t('ed.image.ai.boundary')}</p>
           </div>
 
-          {/* Or start from a suite design — composed live by the real engine. */}
-          <div className="absolute inset-x-0 bottom-4 z-[1] mx-auto w-full max-w-2xl px-4">
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('suite.tpl.startFrom')}</p>
-            <div className="flex justify-center gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {SUITE_TEMPLATES.slice(0, 8).map((tpl) => (
-                <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} disabled={tplBusy !== null}
-                  className={`w-16 shrink-0 overflow-hidden rounded-md ring-1 ring-white/15 transition hover:ring-2 hover:ring-gold/50 disabled:opacity-60 ${tplBusy === tpl.id ? 'ring-2 ring-gold' : ''}`}>
-                  <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={tplCopy[tpl.copy]} />
-                </button>
-              ))}
+          {/* Or start from a suite design — composed live by the real engine.
+              A FLOW sibling (not absolute) so it can never cover the upload
+              card on short viewports; the row scrolls from its start edge. */}
+          <div className="relative z-[1] w-full max-w-2xl px-4">
+            {/* The stage keeps its intentional dark ground in BOTH themes, so
+                this label's colour is fixed rather than theme-remapped slate. */}
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-[#8b98ab]">{t('suite.tpl.startFrom')}</p>
+            <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mx-auto flex w-max gap-2.5">
+                {SUITE_TEMPLATES.slice(0, 8).map((tpl) => (
+                  <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} disabled={tplBusy !== null}
+                    className={`w-16 shrink-0 overflow-hidden rounded-md ring-1 ring-white/15 transition hover:ring-2 hover:ring-gold/50 disabled:opacity-60 ${tplBusy === tpl.id ? 'ring-2 ring-gold' : ''}`}>
+                    <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={tplCopy[tpl.copy]} />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -11,6 +11,8 @@ import {
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
 import { useT } from '@/lib/i18n/provider'
+import { useBrand } from '@/components/whitelabel/brand-provider'
+import { BRAND } from '@/lib/freehold/brand'
 import { fieldClass, Modal } from '@/components/freehold/ui'
 import {
   PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl,
@@ -51,6 +53,7 @@ interface Variant { id: string; layout: LayoutKey; palette: number; fmt: FormatK
 
 export default function AdDesignerPage() {
   const t = useT()
+  const brand = useBrand()
   const { projects } = useLiveProjects()
 
   const [step, setStep] = useState<Step>('source')
@@ -63,7 +66,10 @@ export default function AdDesignerPage() {
   // The options: format (single) + which layouts/palettes to compose (multi).
   const [format, setFormat] = useState<FormatKey>('feed')
   const [layoutsOn, setLayoutsOn] = useState<Set<LayoutKey>>(new Set(LAYOUTS))
-  const [palettesOn, setPalettesOn] = useState<Set<number>>(new Set(PALETTES.map((_, i) => i)))
+  // Default to 3 of the 5 palettes: 5 layouts × 5 palettes = 25 full-res
+  // canvases froze mid-range phones; 15 is the honest ceiling for one tap
+  // (all five stay one tap away in the chips).
+  const [palettesOn, setPalettesOn] = useState<Set<number>>(new Set([0, 1, 2]))
   const [generating, setGenerating] = useState(false)
   const [genStage, setGenStage] = useState(0)
   const [enhancing, setEnhancing] = useState<string | null>(null)
@@ -93,7 +99,7 @@ export default function AdDesignerPage() {
     const l = sp.get('layout') as LayoutKey | null
     if (l && LAYOUTS.includes(l)) setLayoutsOn(new Set([l]))
     const p = sp.get('palette')
-    if (p !== null && PALETTES[Number(p)]) setPalettesOn(new Set([Number(p)]))
+    if (p !== null && /^\d+$/.test(p) && PALETTES[Number(p)]) setPalettesOn(new Set([Number(p)]))
   }, [])
 
   // "From Drive": media made in the editors (image editor, Creative Studio,
@@ -152,12 +158,14 @@ export default function AdDesignerPage() {
       const d = await res.json().catch(() => ({}))
       const b = d?.data as { name?: string; area?: string; developer?: string; priceFrom?: number | null; paymentPlan?: string } | undefined
       if (!res.ok || !b) { toast.error(d?.error || t('adz.source.brochureFail')); return }
+      // Fill only fields the user hasn't typed — same contract as the listing
+      // prefill: an upload must never overwrite written copy.
       setOverlay((prev) => ({
-        eyebrow: b.area ? `${b.area} · Dubai` : (b.developer || prev.eyebrow),
-        headline: b.name || prev.headline,
-        price: b.priceFrom ? fmtPrice(b.priceFrom) : prev.price,
+        eyebrow: prev.eyebrow || (b.area ? `${b.area} · Dubai` : b.developer || ''),
+        headline: prev.headline || b.name || '',
+        price: prev.price || (b.priceFrom ? fmtPrice(b.priceFrom) : ''),
         priceUnit: prev.priceUnit || 'AED',
-        footnote: b.paymentPlan || prev.footnote,
+        footnote: prev.footnote || b.paymentPlan || '',
       }))
       setListingId('')
       toast.success(t('adz.source.brochureDone'))
@@ -189,10 +197,11 @@ export default function AdDesignerPage() {
       for (const layout of layouts) {
         for (const pi of palettes) {
           out.push({ id: `${format}-${layout}-${pi}`, layout, palette: pi, fmt: format, dataUrl: composeVariant(img, layout, PALETTES[pi], overlay, format) })
+          // Yield after EVERY compose — each is a full-res canvas + PNG encode
+          // on the main thread; back-to-back bursts freeze mid-range phones.
+          await new Promise((r) => setTimeout(r, 0))
         }
         setGenStage((s) => Math.min(s + 1, 4))
-        // Yield to the browser so the progress bar actually paints between batches.
-        await new Promise((r) => setTimeout(r, 60))
       }
       setGenStage(4)
       setVariants(out)
@@ -417,7 +426,10 @@ export default function AdDesignerPage() {
             </button>
             <input ref={qrFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onQrUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
             <div className="flex gap-1.5">
-              <input value={qrLink} onChange={(e) => setQrLink(e.target.value)} placeholder={t('adz.qr.linkPh')} className={fieldClass('sm')} />
+              {/* Wrapper owns the width — fieldClass bakes in w-full. */}
+              <div className="min-w-0 flex-1">
+                <input value={qrLink} onChange={(e) => setQrLink(e.target.value)} placeholder={t('adz.qr.linkPh')} className={fieldClass('sm')} />
+              </div>
               <button type="button" onClick={qrFromLink} className="shrink-0 rounded-lg border border-line-strong px-2.5 text-xs font-semibold text-slate-200 transition hover:border-gold/30">{t('adz.qr.make')}</button>
             </div>
             {qrImage && (
@@ -433,7 +445,7 @@ export default function AdDesignerPage() {
                 <label className="block text-[11px] text-slate-500">{t('adz.qr.size')}
                   <input type="range" min={8} max={20} value={qrPct} onChange={(e) => setQrPct(Number(e.target.value))} className="mt-1 w-full accent-[#D4AF37]" />
                 </label>
-                <button type="button" onClick={applyQr} disabled={qrBusy}
+                <button type="button" data-close-sheet onClick={applyQr} disabled={qrBusy}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                   {qrBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />} {t('adz.qr.apply')}
                 </button>
@@ -680,14 +692,14 @@ export default function AdDesignerPage() {
               <div className="overflow-hidden rounded-2xl border border-line bg-white text-[#050505]">
                 <div className="flex items-center gap-2 px-3 py-2.5">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-gold text-xs font-bold text-ink">F</span>
-                  <div className="text-xs"><div className="font-semibold">Freehold Property</div><div className="text-[10px] text-neutral-500">Sponsored</div></div>
+                  <div className="text-xs"><div className="font-semibold">{brand.name}</div><div className="text-[10px] text-neutral-500">{t('adz.preview.sponsored')}</div></div>
                 </div>
                 <div className="whitespace-pre-wrap px-3 pb-2 text-xs leading-relaxed" dir="auto">{caption.slice(0, 220)}{caption.length > 220 ? '…' : ''}</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={finalUrl} alt="" className="w-full object-cover" />
                 <div className="flex items-center justify-between bg-neutral-100 px-3 py-2.5">
-                  <span className="text-[11px] font-semibold text-neutral-600">{listing ? new URL(listing.landingUrl).hostname : 'freeholdproperty.ae'}</span>
-                  <span className="rounded-md bg-neutral-200 px-3 py-1.5 text-[11px] font-bold">Learn more</span>
+                  <span className="text-[11px] font-semibold text-neutral-600">{listing ? new URL(listing.landingUrl).hostname : BRAND.domain}</span>
+                  <span className="rounded-md bg-neutral-200 px-3 py-1.5 text-[11px] font-bold">{t('adz.preview.learnMore')}</span>
                 </div>
               </div>
             </div>
@@ -699,10 +711,10 @@ export default function AdDesignerPage() {
                 <img src={finalUrl} alt="" className="h-full w-full object-cover" />
                 <div className="absolute inset-x-0 top-0 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent p-3">
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-gold text-[10px] font-bold text-ink">F</span>
-                  <span className="text-[11px] font-semibold text-white">Freehold Property</span>
+                  <span className="text-[11px] font-semibold text-white">{brand.name}</span>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-10 text-center">
-                  <span className="rounded-full bg-white px-4 py-1.5 text-[11px] font-bold text-black">Learn more</span>
+                  <span className="rounded-full bg-white px-4 py-1.5 text-[11px] font-bold text-black">{t('adz.preview.learnMore')}</span>
                 </div>
               </div>
             </div>
