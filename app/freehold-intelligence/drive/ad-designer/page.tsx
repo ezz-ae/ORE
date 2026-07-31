@@ -16,7 +16,7 @@ import { BRAND } from '@/lib/freehold/brand'
 import { fieldClass, Modal } from '@/components/freehold/ui'
 import { SUITE_COPY, type SuiteCopy, type SuiteLang } from '@/lib/freehold/creative-suite'
 import {
-  PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl,
+  PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts,
   type LayoutKey, type FormatKey, type Overlay,
 } from '@/lib/freehold/ad-compose'
 
@@ -210,6 +210,7 @@ export default function AdDesignerPage() {
     if (!canGenerate || generating) return
     setGenerating(true)
     setGenStage(1)
+    await ensureAdFonts()
     setVariants([])
     setSelected(new Set())
     try {
@@ -313,6 +314,7 @@ export default function AdDesignerPage() {
     // are engine-composed fresh from the source photo.
     setComposingSet(true)
     try {
+      await ensureAdFonts()
       let img: HTMLImageElement | null = null
       const src = uploadUrl ?? listing?.heroImage ?? null
       if (src) { try { img = await loadImage(src, !src.startsWith('data:')) } catch { img = null } }

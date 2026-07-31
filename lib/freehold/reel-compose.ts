@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  FORMATS, PALETTES, roundRect, drawWrapped, drawCover, isRtl,
+  FORMATS, PALETTES, roundRect, drawWrapped, drawCover, isRtl, adFontStack,
   type FormatKey, type Overlay, type Palette,
 } from '@/lib/freehold/ad-compose'
 
@@ -44,8 +44,7 @@ export function reelDuration(o: Pick<ReelOptions, 'photos' | 'perPhoto' | 'endSe
   return Math.max(1, n * o.perPhoto + o.endSecs)
 }
 
-const font = (px: number, weight = 700) =>
-  `${weight} ${px}px system-ui, -apple-system, "Segoe UI", sans-serif`
+const font = (px: number, weight = 700) => `${weight} ${px}px ${adFontStack()}`
 const easeInOut = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2)
 
 /** Cover-draw with a Ken Burns transform: scale `s`, drifting by (dx, dy) fractions. */

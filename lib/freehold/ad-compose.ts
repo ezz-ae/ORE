@@ -32,6 +32,49 @@ export const FORMATS: Record<FormatKey, { w: number; h: number }> = {
 
 export const isRtl = (s: string) => /[؀-ۿ]/.test(s)
 
+/**
+ * The ad engine's canvas font stack.
+ *
+ * Canvas text renders with whatever font the MACHINE has — so an Arabic ad
+ * composed on one agent's laptop and the same ad composed on another's came
+ * out in different faces, and neither was chosen. `--font-ad-ar` is the Cairo
+ * webfont loaded in app/layout.tsx; it leads the stack so Arabic gets a real
+ * Gulf-advertising face, with installed Arabic fonts and then the system sans
+ * behind it. Latin copy is unaffected — Cairo carries Latin too, and the
+ * system stack still backs it up.
+ */
+export function adFontStack(): string {
+  const webfont = typeof document !== 'undefined'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--font-ad-ar').trim()
+    : ''
+  return [
+    webfont,
+    '"Noto Sans Arabic"', '"Noto Kufi Arabic"', 'Tahoma',
+    'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif',
+  ].filter(Boolean).join(', ')
+}
+
+/**
+ * Resolve the ad fonts before composing. Without this the FIRST render of a
+ * design uses the fallback face and silently bakes it into the exported
+ * pixels — the font arrives a beat later and only the next render looks right.
+ */
+export async function ensureAdFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return
+  try {
+    const stack = adFontStack()
+    // Load the weights the engine actually draws with, at a nominal size.
+    await Promise.all([
+      document.fonts.load(`800 64px ${stack}`, 'أب Ab'),
+      document.fonts.load(`600 32px ${stack}`, 'أب Ab'),
+      document.fonts.load(`500 28px ${stack}`, 'أب Ab'),
+    ])
+    await document.fonts.ready
+  } catch {
+    // Font loading is best-effort: a failure must never block composing.
+  }
+}
+
 export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
@@ -114,7 +157,8 @@ export function composeVariant(
   ctx.direction = rtl ? 'rtl' : 'ltr'
   const ax = rtl ? W - 64 : 64            // aligned text x
   ctx.textAlign = rtl ? 'right' : 'left'
-  const font = (px: number, weight = 700) => `${weight} ${px}px system-ui, -apple-system, "Segoe UI", sans-serif`
+  const stack = adFontStack()
+  const font = (px: number, weight = 700) => `${weight} ${px}px ${stack}`
   // Vertical anchors are height fractions so 1:1 / 4:5 / 9:16 all read right.
   const Y = (f: number) => Math.round(H * f)
 
