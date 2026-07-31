@@ -35,6 +35,7 @@ interface Detail {
   activity: MachineActivity[]
   verdictQueue: VerdictQueueItem[]
   verdictAggregates: VerdictAggregates
+  starvedTrials?: { campaignId: string; trialLabel: string; projectSlug: string; pending: number; decisive: number; needed: number }[]
   budget: { dailyCapAed: number; committedDailyAed: number; headroomAed: number }
 }
 
@@ -681,6 +682,28 @@ export default function MachineDashboardPage() {
       {/* ── Verdict queue (admin view) — the accuracy warning comes FIRST ── */}
       <section className="mt-12">
         <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.queue.title')}</div>
+        {/* Verdict starvation — trials the machine CANNOT rotate on human
+            evidence because too few answers exist. Silent before; loud now. */}
+        {(data.starvedTrials?.length ?? 0) > 0 && (
+          <div className="mt-4 rounded-[18px] border border-red-400/30 bg-red-400/[0.07] p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-relaxed text-red-200">
+                  {t('lm.machine.starved.title', { n: String(data.starvedTrials!.length) })}
+                </p>
+                <p className="mt-0.5 text-xs leading-relaxed text-red-200/80">{t('lm.machine.starved.body')}</p>
+                <ul className="mt-2 space-y-1">
+                  {data.starvedTrials!.map((s) => (
+                    <li key={s.campaignId} className="text-xs text-red-200/90">
+                      • {s.trialLabel} · {s.projectSlug} — {t('lm.machine.starved.row', { pending: String(s.pending), needed: String(s.needed) })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mt-4 flex items-start gap-3 rounded-[18px] border border-amber-400/30 bg-amber-400/[0.08] p-4">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
           <p className="text-sm leading-relaxed text-amber-200">{t('lm.machine.queue.warning')}</p>

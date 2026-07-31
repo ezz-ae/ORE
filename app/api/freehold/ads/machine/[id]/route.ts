@@ -9,6 +9,7 @@ import {
   listActivity,
   listUnansweredVerdicts,
   getVerdictAggregates,
+  getVerdictStats,
   activeSpendAed,
   submitVerdictAnswer,
   getVerdictRow,
@@ -36,13 +37,30 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const machine = await getMachine(id)
   if (!machine) return NextResponse.json({ error: 'Machine not found' }, { status: 404 })
 
-  const [campaigns, activity, verdictQueue, verdictAggregates, committedDailyAed] = await Promise.all([
+  const [campaigns, activity, verdictQueue, verdictAggregates, verdictStats, committedDailyAed] = await Promise.all([
     listMachineCampaigns(id),
     listActivity(id, 100),
     listUnansweredVerdicts(id),
     getVerdictAggregates(id),
+    getVerdictStats(id),
     activeSpendAed(id),
   ])
+
+  // Verdict starvation — the silent single point of failure made loud. A trial
+  // with unanswered questions and fewer than 3 decisive human answers cannot be
+  // verdict-condemned OR verdict-protected: rotation falls back to metrics
+  // alone. Surface exactly which trials are blocked and how many answers are
+  // missing, so an unanswered queue never goes dark quietly.
+  const MIN_DECISIVE = 3
+  const starvedTrials = campaigns
+    .filter((c) => c.status === 'active')
+    .map((c) => {
+      const s = verdictStats.get(c.campaignId)
+      return s && s.pending > 0 && s.decisive < MIN_DECISIVE
+        ? { campaignId: c.campaignId, trialLabel: c.trialLabel, projectSlug: c.projectSlug, pending: s.pending, decisive: s.decisive, needed: MIN_DECISIVE - s.decisive }
+        : null
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
 
   return NextResponse.json({
     machine,
@@ -50,6 +68,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     activity,
     verdictQueue,
     verdictAggregates,
+    starvedTrials,
     budget: {
       dailyCapAed: machine.dailyCapAed,
       committedDailyAed,

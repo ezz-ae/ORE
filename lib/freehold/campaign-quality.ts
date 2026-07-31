@@ -25,6 +25,10 @@ export interface CampaignQuality {
   /** 0–100, or null when there is no attributed lead yet. */
   score: number | null
   funnel: { key: 'reached' | 'qualified' | 'won' | 'junk'; count: number; pct: number }[]
+  /** Landing-session behaviour (leading signal): average 0–100 score over the
+   *  attributed leads that HAVE one, and how many that is. null/0 when none. */
+  avgBehaviour: number | null
+  behaviourCount: number
 }
 
 /** CRM statuses that count as "qualified or deeper" — shared with the Ads
@@ -36,18 +40,29 @@ const WON = new Set(['converted', 'closed'])
 export const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
 
 export async function getCampaignQuality(campaignId: string, campaignName: string): Promise<CampaignQuality> {
-  let rows: { id: string; status: string | null; blocked: boolean | null; phone: string | null }[] = []
+  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null }
+  let rows: Row[] = []
   try {
-    rows = await query<{ id: string; status: string | null; blocked: boolean | null; phone: string | null }>(
-      `SELECT id, status, blocked, phone
+    rows = await query<Row>(
+      `SELECT id, status, blocked, phone, behaviour_score
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
           AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
       [campaignId || '', campaignName || ''],
     )
   } catch {
-    // Never let a schema/DB hiccup break the campaign surface.
-    rows = []
+    // Never let a schema/DB hiccup break the campaign surface. (Also the
+    // fallback when behaviour_score doesn't exist yet — that column is added
+    // by the landing intake route on first scored lead.)
+    try {
+      rows = await query<Row>(
+        `SELECT id, status, blocked, phone, NULL::int AS behaviour_score
+           FROM freehold_site_leads
+          WHERE archived IS NOT TRUE
+            AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
+        [campaignId || '', campaignName || ''],
+      )
+    } catch { rows = [] }
   }
 
   // Layer 10 — a lead caught in a queue-purge burst (see training-integrity.ts)
@@ -68,10 +83,24 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   }
 
   const rate = (n: number) => (attributed > 0 ? n / attributed : 0)
+
+  // Landing-session behaviour — the LEADING signal. CRM outcomes take weeks;
+  // how thoroughly the visitors read the page is known within minutes. It gets
+  // a bounded ±10-point adjustment (never the driver, outcomes stay dominant),
+  // and only with ≥3 scored leads so one session can't swing a campaign.
+  const scored = rows.filter((r) => typeof r.behaviour_score === 'number' && r.behaviour_score !== null)
+  const behaviourCount = scored.length
+  const avgBehaviour = behaviourCount > 0
+    ? Math.round(scored.reduce((s, r) => s + (r.behaviour_score as number), 0) / behaviourCount)
+    : null
+  const behaviourAdj = behaviourCount >= 3 && avgBehaviour !== null
+    ? ((avgBehaviour - 50) / 50) * 10
+    : 0
+
   // Weighted toward the real objective event (won), then qualification, then
   // basic reachability; junk drags it down. Clamped 0–100.
   const score = attributed === 0 ? null : Math.max(0, Math.min(100, Math.round(
-    rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20,
+    rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20 + behaviourAdj,
   )))
 
   const pct = (n: number) => (attributed > 0 ? Math.round((n / attributed) * 100) : 0)
@@ -82,5 +111,5 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     { key: 'junk', count: junk, pct: pct(junk) },
   ]
 
-  return { campaignId, attributed, reached, qualified, won, junk, score, funnel }
+  return { campaignId, attributed, reached, qualified, won, junk, score, funnel, avgBehaviour, behaviourCount }
 }
