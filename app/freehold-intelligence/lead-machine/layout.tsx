@@ -14,48 +14,42 @@ import {
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
 
-// One clear mental model, no platform mixing:
-//   Inventory (app)  = the projects on the front-end site
-//   Landing pages    = turns those projects into selling pages
-//   Meta Ads         = campaigns + creative (hero image/copy) + lead forms + targeting
-//   Google Ads       = its own world (search campaigns, RSA)
-//   Across platforms = live results, attribution, optimizer, ops
+// The nav mirrors the loop the app exists for: run ads → generate leads →
+// learn from each step. The Machine (the AI that closes that loop) leads;
+// Launch holds the manual campaign tools; Sources feed the launches; Ops is
+// paperwork. "Readiness" is the honest name for the old Pipeline tab — the
+// page scores inventory/landing readiness, it never showed a lead pipeline.
 const MANAGER_NAV_SECTIONS = [
   {
-    key: 'lm.nav.sec.pipeline',
+    key: 'lm.nav.sec.machine',
     items: [
-      { key: 'lm.nav.pipeline',    href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
+      { key: 'lm.nav.adsMachine',  href: '/freehold-intelligence/lead-machine/ads-machine',                 Icon: Bot         },
+      { key: 'lm.nav.optimizer',   href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
+      { key: 'lm.nav.attribution', href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
+      { key: 'lm.nav.live',        href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
     ],
   },
   {
-    key: 'lm.nav.sec.landings',
-    items: [
-      { key: 'lm.nav.landings',    href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
-    ],
-  },
-  {
-    key: 'lm.nav.sec.meta',
+    key: 'lm.nav.sec.launch',
     items: [
       { key: 'lm.nav.campaigns',   href: '/freehold-intelligence/lead-machine/campaigns',      exact: true, Icon: Megaphone   },
       { key: 'lm.nav.creative',    href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
       { key: 'lm.nav.forms',       href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
       { key: 'lm.nav.targeting',   href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
       { key: 'lm.nav.audiences',   href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users,       coach: 'lm-audiences' },
-    ],
-  },
-  {
-    key: 'lm.nav.sec.google',
-    items: [
       { key: 'lm.nav.google',      href: '/freehold-intelligence/lead-machine/google',                      Icon: Search      },
     ],
   },
   {
-    key: 'lm.nav.sec.across',
+    key: 'lm.nav.sec.sources',
     items: [
-      { key: 'lm.nav.adsMachine',  href: '/freehold-intelligence/lead-machine/ads-machine',                 Icon: Bot         },
-      { key: 'lm.nav.live',        href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
-      { key: 'lm.nav.attribution', href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
-      { key: 'lm.nav.optimizer',   href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
+      { key: 'lm.nav.pipeline',    href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
+      { key: 'lm.nav.landings',    href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
+    ],
+  },
+  {
+    key: 'lm.nav.sec.ops',
+    items: [
       { key: 'lm.nav.adRequests',  href: '/freehold-intelligence/lead-machine/ad-requests',                 Icon: FileText    },
       { key: 'lm.nav.requirements', href: '/freehold-intelligence/lead-machine/requirements',               Icon: FileCheck   },
       { key: 'lm.nav.permissions', href: '/freehold-intelligence/lead-machine/permissions',                 Icon: Shield      },
