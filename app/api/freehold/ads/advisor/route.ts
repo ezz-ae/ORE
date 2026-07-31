@@ -6,6 +6,7 @@ import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 import type { MetaAdSet, MetaCampaign, MetaInsights } from '@/lib/meta/types'
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
+import { listDecisions } from '@/lib/freehold/decision-ledger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -187,6 +188,7 @@ Rules:
   {"type":"set_budget","adSetId":"<an id from DATA.adSets>","dailyBudgetAED":<integer>} — a new daily budget for that ad set, within ±30% of its current dailyBudgetAED and at least 50.
   {"type":"pause_campaign"} — only when the campaign is ACTIVE and DATA shows meaningful spend with clearly poor results.
   {"type":"resume_campaign"} — only when the campaign is PAUSED and DATA justifies resuming it.
+- DATA.recentDecisions lists what was ALREADY done to this campaign recently (by the operator or the machine). Never suggest an action equivalent to one just taken — build on the record, don't repeat it.
   Never attach an action you cannot justify from DATA, and never invent an adSetId.`
 }
 
@@ -278,6 +280,10 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return NextResponse.json({ available: false, reason: 'no_ai_key', metrics })
 
+  // The decision ledger — what was already done to this campaign, so the
+  // advisor builds on the record instead of amnesically re-suggesting it.
+  const decisions = await listDecisions({ campaignId, limit: 8 }).catch(() => [])
+
   // Compact JSON context of ONLY real fetched/computed values.
   const context = {
     campaign: campaign
@@ -288,6 +294,7 @@ export async function POST(req: NextRequest) {
     crmQuality: quality
       ? { attributed: quality.attributed, reached: quality.reached, qualified: quality.qualified, won: quality.won, junk: quality.junk, score: quality.score }
       : null,
+    recentDecisions: decisions.map((d) => `${d.createdAt.slice(0, 10)} [${d.source}] ${d.action}: ${d.detail}`.slice(0, 220)),
   }
 
   let raw = ''
