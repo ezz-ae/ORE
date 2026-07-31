@@ -9,13 +9,13 @@ import {
   AlignLeft, AlignCenter, AlignRight, Bold, Move, Palette, RotateCcw,
   Crop, SlidersHorizontal, Sparkles, ZoomIn, ZoomOut, Maximize2,
 } from 'lucide-react'
-import { useT } from '@/lib/i18n/provider'
+import { useI18n } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
 import { type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
-import { composeVariant, PALETTES as AD_PALETTES, type Overlay as AdOverlay } from '@/lib/freehold/ad-compose'
-import { SUITE_TEMPLATES, type SuiteCopy, type SuiteTemplate } from '@/lib/freehold/creative-suite'
+import { composeVariant, PALETTES as AD_PALETTES } from '@/lib/freehold/ad-compose'
+import { SUITE_TEMPLATES, SUITE_LANGS, templateOverlay, type SuiteLang, type SuiteTemplate } from '@/lib/freehold/creative-suite'
 import { TemplateThumb } from '@/components/freehold/drive/template-thumb'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ function qrSize(q: QrLayer, W: number) {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function DriveImageEditor() {
-  const t = useT()
+  const { t, locale } = useI18n()
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const id = String(params?.id || '')
@@ -154,16 +154,14 @@ export default function DriveImageEditor() {
   // the shared engine become the source layer — then every real tool (crop,
   // adjust, text, brand, QR) works on top of it.
   const [tplBusy, setTplBusy] = useState<string | null>(null)
-  const tplCopy = useMemo<Record<SuiteCopy, AdOverlay>>(() => ({
-    launch: { eyebrow: t('suite.copy.launch.eyebrow'), headline: t('suite.copy.launch.headline'), price: '1.4M', priceUnit: 'AED', footnote: t('suite.copy.launch.footnote') },
-    offer:  { eyebrow: t('suite.copy.offer.eyebrow'),  headline: t('suite.copy.offer.headline'),  price: '980K', priceUnit: 'AED', footnote: t('suite.copy.offer.footnote') },
-    open:   { eyebrow: t('suite.copy.open.eyebrow'),   headline: t('suite.copy.open.headline'),   price: '2.1M', priceUnit: 'AED', footnote: t('suite.copy.open.footnote') },
-  }), [t])
+  // Starter designs in the agent's own language (English if the locale has none).
+  const stripLang: SuiteLang = (SUITE_LANGS as string[]).includes(locale) ? (locale as SuiteLang) : 'en'
+  const stripTemplates = useMemo(() => SUITE_TEMPLATES.filter((x) => x.lang === stripLang).slice(0, 8), [stripLang])
   async function applyTemplate(tpl: SuiteTemplate) {
     if (tplBusy) return
     setTplBusy(tpl.id)
     try {
-      const url = composeVariant(null, tpl.layout, AD_PALETTES[tpl.palette] ?? AD_PALETTES[0], tplCopy[tpl.copy], tpl.format, 1)
+      const url = composeVariant(null, tpl.layout, AD_PALETTES[tpl.palette] ?? AD_PALETTES[0], templateOverlay(tpl), tpl.format, 1)
       // Match the canvas to the template's real aspect BEFORE the source lands —
       // otherwise a 9:16 design gets centre-cropped into the default square.
       setPreset(tpl.format === 'story' ? '9_16' : tpl.format === 'feed' ? '4_5' : '1_1')
@@ -823,10 +821,10 @@ export default function DriveImageEditor() {
             <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-[#8b98ab]">{t('suite.tpl.startFrom')}</p>
             <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="mx-auto flex w-max gap-2.5">
-                {SUITE_TEMPLATES.slice(0, 8).map((tpl) => (
+                {stripTemplates.map((tpl) => (
                   <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} disabled={tplBusy !== null}
                     className={`w-16 shrink-0 overflow-hidden rounded-md ring-1 ring-white/15 transition hover:ring-2 hover:ring-gold/50 disabled:opacity-60 ${tplBusy === tpl.id ? 'ring-2 ring-gold' : ''}`}>
-                    <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={tplCopy[tpl.copy]} />
+                    <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={templateOverlay(tpl)} />
                   </button>
                 ))}
               </div>

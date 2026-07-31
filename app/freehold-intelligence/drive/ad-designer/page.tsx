@@ -14,6 +14,7 @@ import { useT } from '@/lib/i18n/provider'
 import { useBrand } from '@/components/whitelabel/brand-provider'
 import { BRAND } from '@/lib/freehold/brand'
 import { fieldClass, Modal } from '@/components/freehold/ui'
+import { SUITE_COPY, type SuiteCopy, type SuiteLang } from '@/lib/freehold/creative-suite'
 import {
   PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl,
   type LayoutKey, type FormatKey, type Overlay,
@@ -96,8 +97,14 @@ export default function AdDesignerPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const qrFileRef = useRef<HTMLInputElement>(null)
 
+  // Sample copy seeded by a template deep-link. Held so that picking a real
+  // listing REPLACES the placeholder wholesale — sample text must never
+  // block the listing's own facts the way typed copy rightly does.
+  const seededSample = useRef<Overlay | null>(null)
+
   // Deep-link seeding from the Creative Suite: /drive/ad-designer?format=story
-  // (&layout=frame&palette=1) opens with that recipe preselected.
+  // (&layout=frame&palette=1&copy=monthly&lang=ar) opens with that recipe AND
+  // its sample copy — in the AD's language, whatever the dashboard is set to.
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search)
     const f = sp.get('format') as FormatKey | null
@@ -106,6 +113,13 @@ export default function AdDesignerPage() {
     if (l && LAYOUTS.includes(l)) setLayoutsOn(new Set([l]))
     const p = sp.get('palette')
     if (p !== null && /^\d+$/.test(p) && PALETTES[Number(p)]) setPalettesOn(new Set([Number(p)]))
+    const copy = sp.get('copy') as SuiteCopy | null
+    const lang = (sp.get('lang') as SuiteLang | null) ?? 'en'
+    if (copy && SUITE_COPY[lang]?.[copy]) {
+      const sample = SUITE_COPY[lang][copy]
+      seededSample.current = sample
+      setOverlay(sample)
+    }
   }, [])
 
   // "From Drive": media made in the editors (image editor, Creative Studio,
@@ -130,16 +144,25 @@ export default function AdDesignerPage() {
 
   const listing: LiveProject | undefined = projects.find((l) => l.id === listingId)
 
-  // Prefill overlay text from the picked listing (only fields the user hasn't typed).
+  // Prefill overlay text from the picked listing. Fields the user TYPED are
+  // never overwritten — but untouched template sample copy is: a placeholder
+  // must yield to the real project's facts.
   useEffect(() => {
     if (!listing) return
-    setOverlay((prev) => ({
-      eyebrow: prev.eyebrow || `${listing.area} · Dubai`,
-      headline: prev.headline || listing.name,
-      price: prev.price || (listing.priceAED ? fmtPrice(listing.priceAED) : ''),
-      priceUnit: prev.priceUnit || 'AED',
-      footnote: prev.footnote || (listing.paymentPlan ?? ''),
-    }))
+    setOverlay((prev) => {
+      const s = seededSample.current
+      const isSample = !!s && (['eyebrow', 'headline', 'price', 'priceUnit', 'footnote'] as const)
+        .every((k) => prev[k] === s[k])
+      const keep = (k: keyof Overlay) => (isSample ? '' : prev[k])
+      return {
+        eyebrow: keep('eyebrow') || `${listing.area} · Dubai`,
+        headline: keep('headline') || listing.name,
+        price: keep('price') || (listing.priceAED ? fmtPrice(listing.priceAED) : ''),
+        priceUnit: (isSample ? '' : prev.priceUnit) || 'AED',
+        footnote: keep('footnote') || (listing.paymentPlan ?? ''),
+      }
+    })
+    seededSample.current = null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId])
 
