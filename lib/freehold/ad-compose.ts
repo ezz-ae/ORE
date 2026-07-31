@@ -75,6 +75,47 @@ export async function ensureAdFonts(): Promise<void> {
   }
 }
 
+/**
+ * What each layout actually gives the headline. Kept beside the layouts it
+ * describes so the editor can warn about truncation using the SAME numbers the
+ * renderer uses, instead of a guessed character count.
+ */
+const HEADLINE_SPEC: Record<LayoutKey, { px: number; pad: number; maxLines: (f: FormatKey) => number }> = {
+  heroPrice:  { px: 58, pad: 128, maxLines: (f) => (f === 'square' ? 2 : 3) },
+  frame:      { px: 56, pad: 128, maxLines: () => 2 },
+  statFooter: { px: 52, pad: 120, maxLines: () => 2 },
+  splitCard:  { px: 56, pad: 128, maxLines: () => 2 },
+  badge:      { px: 52, pad: 128, maxLines: () => 2 },
+}
+
+let fitCanvas: HTMLCanvasElement | null = null
+
+/** Does this headline fit the layout, or will the renderer cut it? */
+export function fitHeadline(text: string, layout: LayoutKey, fmt: FormatKey): { lines: number; truncated: boolean } {
+  const spec = HEADLINE_SPEC[layout]
+  const words = text.trim().split(/\s+/).filter(Boolean)
+  if (!spec || words.length === 0) return { lines: 0, truncated: false }
+  if (typeof document === 'undefined') return { lines: 1, truncated: false }
+  fitCanvas = fitCanvas ?? document.createElement('canvas')
+  const ctx = fitCanvas.getContext('2d')
+  if (!ctx) return { lines: 1, truncated: false }
+  ctx.font = `800 ${spec.px}px ${adFontStack()}`
+  const maxWidth = FORMATS[fmt].w - spec.pad
+  const maxLines = spec.maxLines(fmt)
+  let lines = 0
+  let cur = ''
+  let consumed = 0
+  for (const w of words) {
+    const probe = cur ? `${cur} ${w}` : w
+    if (ctx.measureText(probe).width > maxWidth && cur) { lines++; cur = w }
+    else cur = probe
+    consumed++
+    if (lines === maxLines) { consumed--; break }
+  }
+  if (cur && lines < maxLines) lines++
+  return { lines, truncated: consumed < words.length }
+}
+
 export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)

@@ -16,7 +16,7 @@ import { BRAND } from '@/lib/freehold/brand'
 import { fieldClass, Modal } from '@/components/freehold/ui'
 import { SUITE_COPY, type SuiteCopy, type SuiteLang } from '@/lib/freehold/creative-suite'
 import {
-  PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts,
+  PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts, fitHeadline,
   type LayoutKey, type FormatKey, type Overlay,
 } from '@/lib/freehold/ad-compose'
 
@@ -173,6 +173,70 @@ export default function AdDesignerPage() {
     reader.readAsDataURL(file)
   }
 
+  // ── Describe the ad → the AI writes the on-image copy ──
+  // Grounded like every other AI surface here: it may only use the facts we
+  // hand it. Prices and dates it was not given must not be invented, and the
+  // price field is never touched — that number is the listing's, not a
+  // model's.
+  const [describe, setDescribe] = useState('')
+  const [describeBusy, setDescribeBusy] = useState(false)
+  const [adLang, setAdLang] = useState<SuiteLang>('en')
+
+  async function writeCopy() {
+    const brief = describe.trim()
+    if (!brief || describeBusy) return
+    setDescribeBusy(true)
+    try {
+      const facts = [
+        listing?.name && `Project: ${listing.name}`,
+        listing?.area && `Area: ${listing.area}, Dubai`,
+        overlay.price && `Price shown on the ad: ${overlay.price} ${overlay.priceUnit}`,
+        listing?.paymentPlan && `Payment terms: ${listing.paymentPlan}`,
+      ].filter(Boolean).join('\n') || 'No project facts were provided.'
+      const langName = adLang === 'ar' ? 'Arabic' : adLang === 'ru' ? 'Russian' : 'English'
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `You write the text that sits ON a Dubai real-estate ad image. Return ONLY strict JSON, no markdown:
+{"eyebrow":"...","headline":"...","footnote":"..."}
+
+What the agent wants:
+${brief}
+
+The ONLY facts you may use:
+${facts}
+
+Rules:
+- Write in ${langName}.
+- Speak to a BUYER, never to the industry. What matters to them is the monthly payment, the deposit, the move-in date, and what they can see from the balcony. NEVER use payment-split ratios like "60/40" or "80/20", and never the phrase "post-handover" — those mean nothing to a buyer.
+- eyebrow: max 40 characters — the area, or the moment ("Open house · Saturday").
+- headline: max 60 characters, one sentence, the reason to care.
+- footnote: max 48 characters, one concrete supporting fact.
+- NEVER invent a number, price, date, yield, size or amenity. If a fact is not listed above, do not state it.
+- No hashtags, no emoji, no surrounding quotes.`,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.text) throw new Error('failed')
+      const raw = String(d.text)
+      const json = raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1)
+      const parsed = JSON.parse(json) as { eyebrow?: string; headline?: string; footnote?: string }
+      const clean = (v: unknown, max: number) => String(v ?? '').replace(/^["'\s]+|["'\s]+$/g, '').slice(0, max)
+      setOverlay((prev) => ({
+        ...prev,
+        eyebrow: clean(parsed.eyebrow, 40) || prev.eyebrow,
+        headline: clean(parsed.headline, 60) || prev.headline,
+        footnote: clean(parsed.footnote, 48) || prev.footnote,
+      }))
+      seededSample.current = null
+      toast.success(t('adz.describe.done'))
+    } catch {
+      toast.error(t('adz.err.caption'))
+    } finally {
+      setDescribeBusy(false)
+    }
+  }
+
   // "From brochure": the third source from the spec — a developer PDF goes
   // through the real brochure parser and its facts fill the overlay fields.
   const [brochureBusy, setBrochureBusy] = useState(false)
@@ -205,6 +269,17 @@ export default function AdDesignerPage() {
   // ground, and Enhance (img2img) can paint a real scene over it.
   const hasImage = !!listingId || !!uploadUrl
   const canGenerate = !!overlay.headline.trim()
+
+  // Truthful truncation warning: the SAME measurement the renderer uses, run
+  // against every selected layout, so the editor can say which design will cut
+  // the headline instead of guessing at a character limit.
+  const headlineWarning = useMemo(() => {
+    const text = overlay.headline.trim()
+    if (!text) return null
+    const cut = LAYOUTS.filter((l) => layoutsOn.has(l) && fitHeadline(text, l, format).truncated)
+    if (cut.length === 0) return null
+    return t('adz.field.headlineCut', { layouts: cut.map((l) => t(`adz.layout.${l}`)).join(', ') })
+  }, [overlay.headline, layoutsOn, format, t])
 
   async function generate() {
     if (!canGenerate || generating) return
@@ -637,22 +712,86 @@ export default function AdDesignerPage() {
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
               <input ref={brochureRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { onBrochure(e.target.files?.[0] ?? null); e.target.value = '' }} />
 
+              {/* Describe the ad in your own words — the AI writes the copy */}
               <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.overlay')}</div>
-                <div className="space-y-2.5">
-                  <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })} placeholder={t('adz.field.eyebrow')} className={fieldClass('lg')} dir="auto" />
-                  <input value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })} placeholder={t('adz.field.headline')} className={fieldClass('lg')} dir="auto" />
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.describe.title')}</span>
+                  <div className="flex gap-1">
+                    {(['en', 'ar', 'ru'] as SuiteLang[]).map((l) => (
+                      <button key={l} type="button" onClick={() => setAdLang(l)}
+                        className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold transition ${adLang === l ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-500 hover:text-slate-300'}`}>
+                        {t(`suite.tpl.lang.${l}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  value={describe}
+                  onChange={(e) => setDescribe(e.target.value)}
+                  placeholder={t('adz.describe.ph')}
+                  rows={3}
+                  className={fieldClass('lg', 'resize-y leading-relaxed')}
+                  dir="auto"
+                />
+                <button type="button" onClick={writeCopy} disabled={!describe.trim() || describeBusy}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+                  {describeBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {describeBusy ? t('adz.describe.working') : t('adz.describe.cta')}
+                </button>
+                <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">{t('adz.describe.note')}</p>
+              </div>
+
+              {/* The words that go ON the image — labelled, sized for real copy */}
+              <div className="mt-5 border-t border-line pt-4">
+                <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.overlay')}</div>
+                <div className="space-y-3.5">
+                  <label className="block">
+                    <span className="mb-1 flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-300">{t('adz.field.eyebrow')}</span>
+                      <span className="text-[10px] tabular-nums text-slate-600">{overlay.eyebrow.length}/40</span>
+                    </span>
+                    <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })}
+                      placeholder={t('adz.field.eyebrowPh')} className={fieldClass('lg')} dir="auto" />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-300">{t('adz.field.headline')}</span>
+                      <span className="text-[10px] tabular-nums text-slate-600">{overlay.headline.length}/60</span>
+                    </span>
+                    {/* The headline IS the ad — it gets room to be written and
+                        read, not a single-word-looking box. */}
+                    <textarea value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })}
+                      placeholder={t('adz.field.headlinePh')} rows={2}
+                      className={fieldClass('lg', 'resize-y text-[15px] font-semibold leading-snug')} dir="auto" />
+                    {headlineWarning && (
+                      <span className="mt-1 block text-[10px] leading-snug text-amber-300">{headlineWarning}</span>
+                    )}
+                  </label>
+
                   {/* Wrappers own the widths — fieldClass bakes in w-full, which
                       otherwise fights a width utility and collapses the row. */}
                   <div className="flex gap-2">
-                    <div className="min-w-0 flex-1">
-                      <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })} placeholder={t('adz.field.price')} className={fieldClass('lg')} dir="auto" />
-                    </div>
-                    <div className="w-24 shrink-0">
-                      <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })} className={fieldClass('lg', 'text-center')} dir="auto" />
-                    </div>
+                    <label className="block min-w-0 flex-1">
+                      <span className="mb-1 block text-[11px] font-medium text-slate-300">{t('adz.field.price')}</span>
+                      <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })}
+                        placeholder={t('adz.field.pricePh')} className={fieldClass('lg')} dir="auto" />
+                    </label>
+                    <label className="block w-24 shrink-0">
+                      <span className="mb-1 block truncate text-[11px] font-medium text-slate-300">{t('adz.field.unit')}</span>
+                      <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })}
+                        className={fieldClass('lg', 'text-center')} dir="auto" />
+                    </label>
                   </div>
-                  <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })} placeholder={t('adz.field.footnote')} className={fieldClass('lg')} dir="auto" />
+
+                  <label className="block">
+                    <span className="mb-1 flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-300">{t('adz.field.footnote')}</span>
+                      <span className="text-[10px] tabular-nums text-slate-600">{overlay.footnote.length}/48</span>
+                    </span>
+                    <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })}
+                      placeholder={t('adz.field.footnotePh')} className={fieldClass('lg')} dir="auto" />
+                  </label>
                 </div>
               </div>
 
