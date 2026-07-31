@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { upload } from '@vercel/blob/client'
 import {
   Loader2, Upload, FolderOpen, Play, Pause, Download, Save, Trash2,
-  Clapperboard, Sparkles, ArrowRight, GripVertical,
+  Clapperboard, Sparkles, GripVertical,
 } from 'lucide-react'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
@@ -56,6 +56,14 @@ export default function ReelMakerPage() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const startRef = useRef<number>(0)
+  // Monotonic shot ids. Using the array length would collide after a removal
+  // (add, add, remove-first, add → two shots claim the same React key).
+  const shotSeq = useRef(0)
+  const nextShotId = () => `shot-${++shotSeq.current}`
+  // Navigating away mid-export must stop the render loop, not keep painting
+  // a detached canvas.
+  const aliveRef = useRef(true)
+  useEffect(() => () => { aliveRef.current = false }, [])
 
   const listing: LiveProject | undefined = projects.find((l) => l.id === listingId)
 
@@ -86,7 +94,7 @@ export default function ReelMakerPage() {
     const hero = listing.heroImage
     if (!hero) return
     loadImage(hero, !hero.startsWith('data:'))
-      .then((img) => setShots((prev) => (prev.some((s) => s.url === hero) ? prev : [...prev, { id: hero, url: hero, img }])))
+      .then((img) => setShots((prev) => (prev.some((s) => s.url === hero) ? prev : [...prev, { id: nextShotId(), url: hero, img }])))
       .catch(() => toast.error(t('reel.err.photo')))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId])
@@ -126,7 +134,7 @@ export default function ReelMakerPage() {
           const url = String(reader.result)
           try {
             const img = await loadImage(url)
-            setShots((prev) => [...prev, { id: `${url.slice(-24)}-${prev.length}`, url, img }])
+            setShots((prev) => [...prev, { id: nextShotId(), url, img }])
           } catch { toast.error(t('reel.err.photo')) }
           resolve()
         }
@@ -151,7 +159,7 @@ export default function ReelMakerPage() {
     setDriveOpen(false)
     try {
       const img = await loadImage(url, !url.startsWith('data:'))
-      setShots((prev) => [...prev, { id: `${url}-${prev.length}`, url, img }])
+      setShots((prev) => [...prev, { id: nextShotId(), url, img }])
     } catch { toast.error(t('reel.err.photo')) }
   }
 
@@ -184,12 +192,24 @@ export default function ReelMakerPage() {
       rec.start()
       // Drive the frames in real time so the recorder captures the true motion.
       const t0 = performance.now()
+      let lastPct = -1
       await new Promise<void>((resolve) => {
         const step = () => {
+          if (!aliveRef.current) { resolve(); return }
           const el = (performance.now() - t0) / 1000
-          if (el >= duration) { resolve(); return }
+          if (el >= duration) {
+            // Paint the true final frame and give the recorder a beat to grab
+            // it — stopping immediately drops the last of the closing card.
+            paint(duration - 0.001)
+            window.setTimeout(resolve, 1000 / REEL_FPS + 40)
+            return
+          }
           paint(el)
-          setExportPct(Math.min(99, Math.round((el / duration) * 100)))
+          // Progress is throttled: a setState per animation frame would re-render
+          // the page ~60×/s while the canvas is being recorded, and the jank
+          // lands in the exported file.
+          const pct = Math.min(99, Math.round((el / duration) * 100))
+          if (pct !== lastPct && pct % 5 === 0) { lastPct = pct; setExportPct(pct) }
           window.requestAnimationFrame(step)
         }
         window.requestAnimationFrame(step)
