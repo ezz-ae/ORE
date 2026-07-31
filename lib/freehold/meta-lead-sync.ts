@@ -44,14 +44,22 @@ function extractContact(lead: MetaFormLead) {
 }
 
 /**
+ * What one form's sync actually did. `skipped` exists because a lead with no
+ * phone AND no email cannot be used in the CRM, so it is dropped — previously
+ * with nothing but a console.warn. That made "Meta says 30 leads, the CRM has
+ * 0, and the sync reported no error" completely unexplainable from the UI.
+ */
+export interface SyncOutcome { synced: number; skipped: number }
+
+/**
  * Pull-sync: insert any of a form's Meta leads that aren't already in the CRM
  * (deduped by meta_lead_id), then run each newly-inserted lead through the
  * SAME automation engine an on-site landing-page lead gets (broker
  * assignment / distribution rules) — a synced lead with no owner sits just
  * as invisibly as one that never arrived.
  */
-export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Promise<number> {
-  if (!leads.length) return 0
+export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Promise<SyncOutcome> {
+  if (!leads.length) return { synced: 0, skipped: 0 }
   await ensureLeadsTable()
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_lead_id text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_id text`)
@@ -63,9 +71,11 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
 
   let synced = 0
+  let skipped = 0
   for (const lead of leads) {
     const contact = extractContact(lead)
     if (!contact.phone && !contact.email) {
+      skipped += 1
       // A contact-less lead is unusable in the CRM — but the skip must be
       // observable, not a silent undercount.
       console.warn(
@@ -105,7 +115,7 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
       })
     }
   }
-  return synced
+  return { synced, skipped }
 }
 
 /**
@@ -120,28 +130,38 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
 export async function syncAllMetaLeads(): Promise<{
   formsChecked: number
   totalSynced: number
-  perForm: Array<{ formId: string; formName: string; synced: number; error?: string }>
+  /** Leads Meta returned that had neither a phone nor an email. */
+  totalSkipped: number
+  /** Forms whose lead fetch FAILED — the count that matters most, because a
+   *  sweep where every form errors reports "0 synced" and reads as success. */
+  formsFailed: number
+  perForm: Array<{ formId: string; formName: string; synced: number; skipped: number; error?: string }>
 }> {
   // Merged source (paginated Meta list + locally-registered draft forms) so
   // the sweep covers every form we know about, not just Meta's first page.
   // Registry entries confirmed deleted on Meta have no leads edge to poll.
   const forms = (await listLeadFormsMerged()).filter((f) => f.status !== 'DELETED')
-  const perForm: Array<{ formId: string; formName: string; synced: number; error?: string }> = []
+  const perForm: Array<{ formId: string; formName: string; synced: number; skipped: number; error?: string }> = []
   let totalSynced = 0
+  let totalSkipped = 0
+  let formsFailed = 0
   for (const form of forms) {
     try {
       const leads = await getFormLeads(form.id)
-      const synced = await syncLeadsToCrm(form.id, leads)
-      perForm.push({ formId: form.id, formName: form.name, synced })
+      const { synced, skipped } = await syncLeadsToCrm(form.id, leads)
+      perForm.push({ formId: form.id, formName: form.name, synced, skipped })
       totalSynced += synced
+      totalSkipped += skipped
     } catch (error) {
+      formsFailed += 1
       perForm.push({
         formId: form.id,
         formName: form.name,
         synced: 0,
+        skipped: 0,
         error: error instanceof Error ? error.message : 'Unknown error',
       })
     }
   }
-  return { formsChecked: forms.length, totalSynced, perForm }
+  return { formsChecked: forms.length, totalSynced, totalSkipped, formsFailed, perForm }
 }

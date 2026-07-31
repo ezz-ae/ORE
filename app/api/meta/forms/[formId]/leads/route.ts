@@ -12,11 +12,14 @@ export async function GET(
   try {
     const { formId } = await params
     const leads = await getFormLeads(formId)
-    const synced = await syncLeadsToCrm(formId, leads).catch((error) => {
+    const { synced, skipped } = await syncLeadsToCrm(formId, leads).catch((error) => {
       console.error('[meta-leads] CRM sync failed', error)
-      return 0
+      return { synced: 0, skipped: 0 }
     })
-    return NextResponse.json({ leads, total: leads.length, syncedToCrm: synced })
+    // `skipped` is surfaced, not swallowed: leads Meta returned that carry
+    // neither a phone nor an email can't enter the CRM, and silently dropping
+    // them is what makes "Meta says N, the CRM has 0" look like a mystery.
+    return NextResponse.json({ leads, total: leads.length, syncedToCrm: synced, skipped })
   } catch (err) {
     if (err instanceof MetaConfigError)
       return NextResponse.json({ error: err.message, type: 'config' }, { status: 503 })

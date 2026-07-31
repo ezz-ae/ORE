@@ -21,6 +21,8 @@ export function FormsSyncControls() {
   const [syncing, setSyncing] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [failed, setFailed] = useState<string[]>([])
+  const [skipped, setSkipped] = useState(0)
 
   useEffect(() => {
     fetch('/api/meta/forms/sync', { cache: 'no-store' })
@@ -34,12 +36,24 @@ export function FormsSyncControls() {
   }, [])
 
   async function syncNow() {
-    setSyncing(true); setResult(null); setError(null)
+    setSyncing(true); setResult(null); setError(null); setFailed([]); setSkipped(0)
     try {
       const res = await fetch('/api/meta/forms/sync', { method: 'POST' })
       const d = await res.json()
       if (!res.ok) throw new Error(d?.error || 'Sync failed')
       setResult(t('lm.forms.sync.result', { n: String(d.totalSynced ?? 0), m: String(d.formsChecked ?? 0) }))
+      // THE FIX: the sweep has always reported a per-form error list, and this
+      // UI has always thrown it away — so a run where EVERY form failed (an
+      // access token without leads_retrieval, say) rendered as "synced 0 leads
+      // from 12 forms", which reads as success with nothing to do. Zero synced
+      // and zero errors is a real, different state from zero synced because
+      // nothing could be read, and the operator has to be able to tell them
+      // apart. Same for leads dropped for having no phone or email.
+      const failures = (Array.isArray(d.perForm) ? d.perForm : [])
+        .filter((f: { error?: string }) => f.error)
+        .map((f: { formName?: string; formId: string; error?: string }) => `${f.formName || f.formId}: ${f.error}`)
+      setFailed(failures)
+      setSkipped(Number(d.totalSkipped) || 0)
       if (d.resubscribed) setSubscribed(true)
       // Server-rendered counts (forms list, lead totals) refresh with the sync.
       router.refresh()
@@ -73,6 +87,29 @@ export function FormsSyncControls() {
 
       {result && <span className="text-xs text-slate-300">{result}</span>}
       {error && <span className="text-xs text-red-400">{error}</span>}
+
+      {/* Per-form failures — the reason a sweep can report "0 synced" and be
+          reporting a total outage rather than an empty inbox. */}
+      {failed.length > 0 && (
+        <div className="w-full rounded-lg border border-red-400/30 bg-red-400/[0.07] px-3 py-2">
+          <p className="text-xs font-semibold text-red-200">
+            {t('lm.forms.sync.failedTitle', { n: String(failed.length) })}
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {failed.map((f) => (
+              <li key={f} className="text-[11px] leading-relaxed text-red-200/90">• {f}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {skipped > 0 && (
+        <div className="w-full rounded-lg border border-amber-400/25 bg-amber-400/[0.07] px-3 py-2">
+          <p className="text-[11px] leading-relaxed text-amber-200">
+            {t('lm.forms.sync.skipped', { n: String(skipped) })}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
