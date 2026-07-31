@@ -3,7 +3,8 @@ import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { getAutonomyLevel } from '@/lib/freehold/agent-autonomy'
-import { listMachineActions, recordMachineAction } from '@/lib/freehold/machine-log'
+import { recordMachineAction } from '@/lib/freehold/machine-log'
+import { listDecisions } from '@/lib/freehold/decision-ledger'
 import { updateCampaignStatus as metaUpdateStatus, getAdSet, updateAdSet } from '@/lib/meta/client'
 import { updateCampaignStatus as googleUpdateStatus } from '@/lib/google/client'
 
@@ -17,8 +18,10 @@ const ADS_ROLES = new Set<string>([...MANAGEMENT_ROLES, 'marketing'])
 export async function GET() {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // History = the UNIFIED decision ledger: operator actions (this route) and
+  // the autonomous Ads Machine's own moves, one merged timeline.
   const [actions, autonomy] = await Promise.all([
-    listMachineActions(20).catch(() => []),
+    listDecisions({ limit: 20 }).catch(() => []),
     getAutonomyLevel().catch(() => 1 as const),
   ])
   return NextResponse.json({ actions, autonomy, canApply: ADS_ROLES.has(user.role) })

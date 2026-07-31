@@ -40,6 +40,7 @@ import type {
 import type { LaunchGoogleCampaignPayload } from '@/lib/google/types'
 import type { ListingFacts } from '@/lib/meta/form-templates'
 import { withIntent, type BuyerIntent } from '@/lib/meta/intent'
+import { listPastCondemnations, type PastCondemnation } from '@/lib/freehold/decision-ledger'
 
 /** Minimum viable daily trial budget (Meta's ad-set floor; the machine holds
  * Google search trials to the same AED 50/day floor). */
@@ -413,6 +414,25 @@ export async function buildMachinePlan(
       },
       rationale: 'Advantage+ baseline: broad delivery lets Meta’s algorithm hunt on our conversion signals — the control arm every trial set needs.',
     })
+
+    // The decision ledger ends planner amnesia: an audience family a PREVIOUS
+    // machine already condemned for this project is proposed LAST (so it drops
+    // out first when the budget is tight) and its rationale says why — the
+    // operator sees the record, and can still override it in the plan editor.
+    const condemned = await listPastCondemnations(slug).catch(() => [] as PastCondemnation[])
+    const condemnedByLabel = new Map<string, PastCondemnation>()
+    for (const c of condemned) if (!condemnedByLabel.has(c.trialLabel)) condemnedByLabel.set(c.trialLabel, c)
+    if (condemnedByLabel.size > 0) {
+      candidates.sort((a, b) => Number(condemnedByLabel.has(a.label)) - Number(condemnedByLabel.has(b.label)))
+      for (const cand of candidates) {
+        const past = condemnedByLabel.get(cand.label)
+        if (past) {
+          cand.rationale += ` LEDGER: "${cand.label}" was paused by the machine on ${past.createdAt.slice(0, 10)}` +
+            `${past.qualityScore !== null ? ` at CRM quality ${past.qualityScore}` : ''}` +
+            `${past.reasons.length ? ` (${past.reasons[0]})` : ''} — proposed last on that record.`
+        }
+      }
+    }
 
     // Fund as many distinct trials as the per-project share allows at the
     // AED 50 floor (every share >= 50 was already guaranteed above). The Meta
