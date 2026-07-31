@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  FORMATS, PALETTES, roundRect, drawWrapped, drawCover, isRtl, adFontStack, fitFontOn,
+  FORMATS, PALETTES, roundRect, drawWrapped, drawCover, isRtl, adFontStack, fitFontOn, drawFittedLine,
   type FormatKey, type Overlay, type Palette,
 } from '@/lib/freehold/ad-compose'
 
@@ -134,8 +134,7 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, t: number, o: ReelO
     ctx.globalAlpha = Math.min(1, Math.max(0, a))
     if (o.overlay.eyebrow) {
       ctx.fillStyle = p.accent
-      ctx.font = font(36, 600)
-      ctx.fillText(o.overlay.eyebrow, ax, Y(0.1))
+      drawFittedLine(ctx, o.overlay.eyebrow, ax, Y(0.1), W - 144, 36, 600)
     }
     if (o.overlay.headline) {
       ctx.fillStyle = '#FFFFFF'
@@ -154,8 +153,7 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, t: number, o: ReelO
     ctx.fillText(band, ax, H - Y(0.115))
     if (o.overlay.footnote) {
       ctx.fillStyle = '#E7E5E4'
-      ctx.font = font(30, 500)
-      ctx.fillText(o.overlay.footnote, ax, H - Y(0.065))
+      drawFittedLine(ctx, o.overlay.footnote, ax, H - Y(0.065), W - 144, 30, 500)
     }
     ctx.restore()
   }
@@ -171,8 +169,7 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, t: number, o: ReelO
     ctx.textAlign = 'center'
     if (o.overlay.eyebrow) {
       ctx.fillStyle = p.accent
-      ctx.font = font(34, 600)
-      ctx.fillText(o.overlay.eyebrow, W / 2, Y(0.33))
+      drawFittedLine(ctx, o.overlay.eyebrow, W / 2, Y(0.33), W - 160, 34, 600)
     }
     if (o.overlay.headline) {
       ctx.fillStyle = p.ink
@@ -193,8 +190,7 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, t: number, o: ReelO
     if (o.overlay.footnote) {
       ctx.fillStyle = p.ink
       ctx.globalAlpha = 0.75
-      ctx.font = font(32, 500)
-      ctx.fillText(o.overlay.footnote, W / 2, Y(0.74))
+      drawFittedLine(ctx, o.overlay.footnote, W / 2, Y(0.74), W - 160, 32, 500)
       ctx.globalAlpha = 1
     }
     ctx.restore()

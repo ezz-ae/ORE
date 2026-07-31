@@ -138,6 +138,28 @@ export function fitFontOn(
   return size
 }
 
+/**
+ * Draw ONE line of text that is guaranteed to stay inside `maxWidth`: shrink
+ * to fit, and if it still doesn't fit at the floor size, end it with an
+ * ellipsis. Every single-line field on an ad (eyebrow, footnote) goes through
+ * this — their content is unbounded in practice, since a listing's area name
+ * or payment plan is whatever the inventory says, and the editor's character
+ * counters are guidance, not a limit.
+ */
+export function drawFittedLine(
+  ctx: CanvasRenderingContext2D, text: string, x: number, y: number,
+  maxWidth: number, px: number, weight: number, min = 18,
+): void {
+  if (!text) return
+  fitFontOn(ctx, text, px, weight, maxWidth, min)
+  let out = text
+  if (ctx.measureText(out).width > maxWidth) {
+    while (out.length > 1 && ctx.measureText(`${out}…`).width > maxWidth) out = out.slice(0, -1)
+    out = `${out}…`
+  }
+  ctx.fillText(out, x, y)
+}
+
 export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
@@ -235,8 +257,7 @@ export function composeVariant(
     ctx.fillStyle = g
     ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = p.ink
-    ctx.font = font(34, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, Y(0.07))
+    if (o.eyebrow) drawFittedLine(ctx, o.eyebrow, ax, Y(0.07), W - 128, 34, 600)
     ctx.font = font(58, 800)
     const hh = o.headline ? drawWrapped(ctx, o.headline, ax, Y(0.07) + 80, W - 128, 72, fmt === 'square' ? 2 : 3) : 0
     if (o.price) {
@@ -273,12 +294,11 @@ export function composeVariant(
     }
     const imgTop = Y(fmt === 'square' ? 0.56 : 0.52)
     if (o.footnote) {
-      ctx.font = font(28, 500)
       ctx.fillStyle = p.ink
       // Never let the footnote ride on top of the price blob: at square with a
       // two-line headline the blob's bottom edge sits below imgTop - 36.
       const blobBottom = o.price ? Y(0.07) + 100 + hh + 60 + 180 : 0
-      ctx.fillText(o.footnote, ax, Math.max(imgTop - 36, blobBottom + 44))
+      drawFittedLine(ctx, o.footnote, ax, Math.max(imgTop - 36, blobBottom + 44), W - 128, 28, 500)
     }
     if (img) drawCover(ctx, img, 0, imgTop, W, H - imgTop)
     else drawPhotoGhost(ctx, p, 0, imgTop, W, H - imgTop)
@@ -299,8 +319,7 @@ export function composeVariant(
     ctx.fillStyle = bot
     ctx.fillRect(0, H - Y(0.27), W, Y(0.27))
     ctx.fillStyle = p.accent
-    ctx.font = font(32, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, Y(0.065))
+    if (o.eyebrow) drawFittedLine(ctx, o.eyebrow, ax, Y(0.065), W - 128, 32, 600)
     ctx.fillStyle = '#FFFFFF'
     ctx.font = font(56, 800)
     if (o.headline) drawWrapped(ctx, o.headline, ax, Y(0.065) + 68, W - 128, 68, 2)
@@ -310,7 +329,7 @@ export function composeVariant(
       fitFont(line, 88, 800, W - 128)
       ctx.fillText(line, ax, H - Y(0.115))
     }
-    if (o.footnote) { ctx.fillStyle = '#E7E5E4'; ctx.font = font(30, 500); ctx.fillText(o.footnote, ax, H - Y(0.055)) }
+    if (o.footnote) { ctx.fillStyle = '#E7E5E4'; drawFittedLine(ctx, o.footnote, ax, H - Y(0.055), W - 128, 30, 500) }
   } else if (layout === 'splitCard') {
     // splitCard: photo on top, a clean listing card below with an accent rule.
     const split = Y(fmt === 'story' ? 0.58 : 0.55)
@@ -320,8 +339,7 @@ export function composeVariant(
     ctx.fillRect(0, split, W, H - split)
     ctx.fillStyle = p.accent
     ctx.fillRect(0, split, W, 8)
-    ctx.font = font(30, 600)
-    if (o.eyebrow) ctx.fillText(o.eyebrow, ax, split + 78)
+    if (o.eyebrow) drawFittedLine(ctx, o.eyebrow, ax, split + 78, W - 128, 30, 600)
     ctx.fillStyle = p.ink
     ctx.font = font(56, 800)
     if (o.headline) drawWrapped(ctx, o.headline, ax, split + 150, W - 128, 66, 2)
@@ -331,7 +349,7 @@ export function composeVariant(
       fitFont(line, 96, 800, W - 128)
       ctx.fillText(line, ax, H - Y(0.095))
     }
-    if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.75; ctx.font = font(28, 500); ctx.fillText(o.footnote, ax, H - Y(0.04)); ctx.globalAlpha = 1 }
+    if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.75; drawFittedLine(ctx, o.footnote, ax, H - Y(0.04), W - 128, 28, 500); ctx.globalAlpha = 1 }
   } else if (layout === 'badge') {
     // badge: full-bleed photo, a round price badge up top, a solid bottom band.
     if (img) drawCover(ctx, img, 0, 0, W, H)
@@ -342,11 +360,11 @@ export function composeVariant(
     ctx.fillStyle = p.accent
     ctx.fillRect(0, band, W, 6)
     ctx.font = font(28, 600)
-    if (o.eyebrow) { ctx.fillStyle = p.accent; ctx.fillText(o.eyebrow, ax, band + 60) }
+    if (o.eyebrow) { ctx.fillStyle = p.accent; drawFittedLine(ctx, o.eyebrow, ax, band + 60, W - 128, 28, 600) }
     ctx.fillStyle = p.ink
     ctx.font = font(52, 800)
     if (o.headline) drawWrapped(ctx, o.headline, ax, band + 126, W - 128, 62, 2)
-    if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.7; ctx.font = font(26, 500); ctx.fillText(o.footnote, ax, H - 42); ctx.globalAlpha = 1 }
+    if (o.footnote) { ctx.fillStyle = p.ink; ctx.globalAlpha = 0.7; drawFittedLine(ctx, o.footnote, ax, H - 42, W - 128, 26, 500); ctx.globalAlpha = 1 }
     if (o.price) {
       const R = Math.round(W * 0.155)
       const bx = rtl ? 84 + R : W - 84 - R
@@ -377,8 +395,7 @@ export function composeVariant(
     ctx.fillStyle = p.bg
     ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = p.ink
-    ctx.font = font(30, 600)
-    if (o.eyebrow) { ctx.textAlign = 'center'; ctx.fillText(o.eyebrow, W / 2, Y(0.055)) }
+    if (o.eyebrow) { ctx.textAlign = 'center'; drawFittedLine(ctx, o.eyebrow, W / 2, Y(0.055), W - 120, 30, 600) }
     ctx.font = font(52, 800)
     ctx.textAlign = 'center'
     if (o.headline) drawWrapped(ctx, o.headline, W / 2, Y(0.055) + 74, W - 120, 62, 2)
