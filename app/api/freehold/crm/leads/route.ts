@@ -44,6 +44,8 @@ interface DbLead {
   snooze_until: string | null
   lead_code: string | null
   duplicate_dismissed_at: string | null
+  utm_id: string | null
+  utm_campaign: string | null
 }
 
 function dbLeadToCRM(row: DbLead) {
@@ -64,7 +66,9 @@ function dbLeadToCRM(row: DbLead) {
     email: row.email ?? '',
     source: row.source ?? 'direct',
     landingId: row.landing_slug ?? '',
-    campaignId: '',
+    // utm_id carries the ad platform's campaign id (meta-lead-sync writes it on
+    // every instant-form lead) — the join key Attribution and quality reads use.
+    campaignId: row.utm_id ?? row.utm_campaign ?? '',
     stage: stage.charAt(0).toUpperCase() + stage.slice(1),
     pipelineStage: stageMap[stage] ?? 'new',
     temperature,
@@ -106,7 +110,8 @@ export async function GET() {
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
-                      snooze_until::text, lead_code, duplicate_dismissed_at::text
+                      snooze_until::text, lead_code, duplicate_dismissed_at::text,
+                      utm_id, utm_campaign
                FROM freehold_site_leads`
 
     if (isBroker && ownerKeys.length) {

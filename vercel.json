@@ -13,6 +13,10 @@
       "schedule": "0 4 * * *"
     },
     {
+      "path": "/api/cron/autopilot",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/opportunity",
       "schedule": "30 3 * * *"
     },

@@ -147,9 +147,28 @@ async function runAction(action: Action, ctx: LeadContext, workspaceId: string):
       await logLeadActivity(ctx.id, 'note', `Flagged for approval by rule`)
       return { action: 'require_approval', detail: 'flagged' }
     }
-    case 'pause_campaign':
-      // Campaign pause is handled by the ads pipeline; record intent here.
-      return { action: 'pause_campaign', detail: 'requested' }
+    case 'pause_campaign': {
+      // Pause the campaign that produced THIS lead — the one designed bridge
+      // from lead-side rules to ad-side spend. utm_id carries the platform
+      // campaign id (meta-lead-sync writes it on every instant-form lead).
+      const rows = await query<{ utm_id: string | null }>(
+        `SELECT utm_id FROM freehold_site_leads WHERE id = $1`, [ctx.id],
+      ).catch(() => [] as { utm_id: string | null }[])
+      const campaignId = rows[0]?.utm_id ?? null
+      if (!campaignId) {
+        await logLeadActivity(ctx.id, 'note', 'Rule requested campaign pause, but the lead has no campaign attribution')
+        return { action: 'pause_campaign', detail: 'no campaign attribution' }
+      }
+      try {
+        const { updateCampaignStatus } = await import('@/lib/meta/client')
+        await updateCampaignStatus(campaignId, 'PAUSED')
+        await logLeadActivity(ctx.id, 'note', `Rule paused campaign ${campaignId}`)
+        return { action: 'pause_campaign', detail: `paused ${campaignId}` }
+      } catch (e) {
+        await logLeadActivity(ctx.id, 'note', `Rule could not pause campaign ${campaignId}: ${e instanceof Error ? e.message : 'failed'}`)
+        return { action: 'pause_campaign', detail: 'pause failed' }
+      }
+    }
     default:
       return null
   }
