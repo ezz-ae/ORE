@@ -9,11 +9,14 @@ import {
   NotebookPen, FolderOpen, Image as ImageIcon, FileType, Plus, Loader2,
   RectangleVertical, Square, Smartphone, Film,
 } from 'lucide-react'
-import { useT } from '@/lib/i18n/provider'
+import { useI18n } from '@/lib/i18n/provider'
 import { DraftsShelf } from '@/components/freehold/drive/drafts-shelf'
 import { TemplateThumb } from '@/components/freehold/drive/template-thumb'
-import { SUITE_TEMPLATES, DOC_TEMPLATE_KEYS, templateHref, type SuiteCopy } from '@/lib/freehold/creative-suite'
-import { loadImage, type FormatKey, type Overlay } from '@/lib/freehold/ad-compose'
+import {
+  SUITE_TEMPLATES, SUITE_LANGS, DOC_TEMPLATE_KEYS, templateHref, templateOverlay,
+  type SuiteLang,
+} from '@/lib/freehold/creative-suite'
+import { loadImage, type FormatKey } from '@/lib/freehold/ad-compose'
 import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 
 /**
@@ -50,9 +53,12 @@ const TOOLS: { key: string; href?: string; Icon: React.ElementType; accent: stri
 ]
 
 export default function CreativeSuitePage() {
-  const t = useT()
+  const { t, locale } = useI18n()
   const router = useRouter()
   const [filter, setFilter] = useState<FormatFilter>('all')
+  // The AD's language — defaults to the dashboard locale, but an agent
+  // working in English still sells to Arabic and Russian buyers, so it switches.
+  const [lang, setLang] = useState<SuiteLang>(() => (SUITE_LANGS as string[]).includes(locale) ? (locale as SuiteLang) : 'en')
   const [docBusy, setDocBusy] = useState<string | null>(null)
 
   // The gallery previews compose with the user's REAL inventory photos when
@@ -70,14 +76,9 @@ export default function CreativeSuitePage() {
     return () => { alive = false }
   }, [projects])
 
-  // Sample copy the template previews render with — real estate, not lorem.
-  const copySets = useMemo<Record<SuiteCopy, Overlay>>(() => ({
-    launch: { eyebrow: t('suite.copy.launch.eyebrow'), headline: t('suite.copy.launch.headline'), price: '1.4M', priceUnit: 'AED', footnote: t('suite.copy.launch.footnote') },
-    offer:  { eyebrow: t('suite.copy.offer.eyebrow'),  headline: t('suite.copy.offer.headline'),  price: '980K', priceUnit: 'AED', footnote: t('suite.copy.offer.footnote') },
-    open:   { eyebrow: t('suite.copy.open.eyebrow'),   headline: t('suite.copy.open.headline'),   price: '2.1M', priceUnit: 'AED', footnote: t('suite.copy.open.footnote') },
-  }), [t])
-
-  const templates = SUITE_TEMPLATES.filter((tpl) => filter === 'all' || tpl.format === filter)
+  const templates = SUITE_TEMPLATES.filter(
+    (tpl) => tpl.lang === lang && (filter === 'all' || tpl.format === filter),
+  )
 
   /** Create a fresh document (optionally seeded with a starter) and open it.
    *  busyKey distinguishes buttons that share a template (quick-start vs the
@@ -140,6 +141,18 @@ export default function CreativeSuitePage() {
             {filterChip('story', t('adz.format.story'))}
           </div>
         </div>
+        {/* The AD's language — the copy and the layout direction, not the UI's */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="me-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('suite.tpl.lang')}</span>
+          {SUITE_LANGS.map((l) => (
+            <button key={l} type="button" onClick={() => setLang(l)}
+              className={['rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                lang === l ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:border-line-strong hover:text-slate-200'].join(' ')}
+              dir={l === 'ar' ? 'rtl' : 'ltr'}>
+              {t(`suite.tpl.lang.${l}`)}
+            </button>
+          ))}
+        </div>
         <div className="mt-4 columns-2 gap-4 sm:columns-3 lg:columns-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
           <Link href="/freehold-intelligence/drive/ad-designer"
             className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line text-slate-400 transition hover:border-gold/40 hover:text-gold">
@@ -149,7 +162,7 @@ export default function CreativeSuitePage() {
           {templates.map((tpl, i) => (
             <Link key={tpl.id} href={templateHref(tpl)} className="group block">
               <div className="overflow-hidden rounded-lg ring-1 ring-line transition group-hover:ring-2 group-hover:ring-gold/50">
-                <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={copySets[tpl.copy]}
+                <TemplateThumb layout={tpl.layout} palette={tpl.palette} format={tpl.format} overlay={templateOverlay(tpl)}
                   img={heroes.length > 0 ? heroes[i % heroes.length] : null} />
               </div>
               <div className="mt-1.5 flex items-center justify-between px-0.5">
