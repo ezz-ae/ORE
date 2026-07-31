@@ -95,6 +95,11 @@ const CPL_CONDEMN_MULTIPLIER = 1.5       // CPL branch: trial CPL > 1.5× best s
 const MIN_LEADS_FOR_CPL = 3
 const QUALITY_CONDEMN_BELOW = 40         // quality branch: trial CRM quality < 40 …
 const QUALITY_SIBLING_AT_LEAST = 60      // … while a sibling holds ≥ 60
+// Re-plan policy: once every planned trial is launched, the machine may MINT a
+// new Meta arm around a proven winner (its targeting broadened one age step)
+// instead of only concentrating budget — bounded hard so arms can't multiply.
+const EXPLORE_PREFIX = 'Explore'         // trial-label prefix for minted arms
+const MAX_EXPLORE_ARMS_PER_PROJECT = 2   // lifetime cap on minted arms per project
 
 export interface CycleResult {
   machineId: string
@@ -890,10 +895,9 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         }
       }
 
-      // Otherwise: raise the best surviving sibling — protected first, then
-      // lowest CPL with ≥3 leads, then highest CRM quality. The survivor may
-      // be on the OTHER channel (freed Meta budget can raise a Google trial
-      // and vice versa) — the raise uses the survivor's own channel mutation.
+      // Rank the surviving siblings — protected first, then lowest CPL with
+      // ≥3 leads, then highest CRM quality. Used by BOTH the re-plan step
+      // (pick the proven winner to explore around) and the budget raise.
       const survivors = group
         .filter((s) => s !== target)
         .sort((a, b) => {
@@ -905,6 +909,84 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           if (aCpl !== bCpl) return aCpl - bCpl
           return (b.qualityScore ?? -1) - (a.qualityScore ?? -1)
         })
+
+      // ── RE-PLAN (learning CREATES, not just prunes): every planned trial is
+      // already launched, so mint ONE new Meta arm derived from the strongest
+      // proven survivor — its targeting broadened one age step, so the machine
+      // explores the audience space adjacent to what the evidence says works
+      // instead of only piling budget onto what it already knows.
+      // Hard bounds: Meta winners only (Google needs RSA synthesis — not
+      // minted), at most MAX_EXPLORE_ARMS_PER_PROJECT ever per project, permit
+      // required, budget = freed ∩ cap headroom at the AED floor. A failed
+      // mint logs and falls through to the plain budget raise.
+      if (!unlaunched) {
+        const permit = permitBySlug.get(projectSlug) ?? null
+        const exploreCount = campaignsNow.filter(
+          (c) => c.projectSlug === projectSlug && c.trialLabel.startsWith(EXPLORE_PREFIX),
+        ).length
+        const proven = survivors.find((s) =>
+          s.row.channel === 'meta' && !s.row.trialLabel.startsWith(EXPLORE_PREFIX) && (
+            isProtected(s) ||
+            (s.leads >= MIN_LEADS_FOR_CPL && s.cplAed !== null) ||
+            (s.qualityScore !== null && s.qualityScore >= QUALITY_SIBLING_AT_LEAST)
+          ),
+        )
+        const winnerTrial = proven ? findPlanTrial(plan, proven.row) : null
+        const exploreBudget = Math.floor(Math.min(freed, headroomAfterPause))
+        if (permit && exploreCount < MAX_EXPLORE_ARMS_PER_PROJECT && proven && winnerTrial?.targeting && winnerTrial.creative && exploreBudget >= META_MIN_TRIAL_BUDGET_AED) {
+          const tgt = winnerTrial.targeting
+          const newTargeting = {
+            ...tgt,
+            ageMin: Math.max(18, (tgt.ageMin ?? 25) - 5),
+            ageMax: Math.min(65, (tgt.ageMax ?? 55) + 5),
+          }
+          const label = `${EXPLORE_PREFIX} ${exploreCount + 1}: around ${winnerTrial.label}`
+          try {
+            const project = plan.projects.find((p) => p.slug === projectSlug)
+            const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
+            const launch = await launchFullCampaign({
+              campaignName: `${winnerTrial.campaignName} — ${label}`.slice(0, 90),
+              objective: 'LEAD_GENERATION',
+              listingName: winnerTrial.listingName,
+              dailyBudgetAED: exploreBudget,
+              targeting: newTargeting,
+              creative: { ...winnerTrial.creative, primaryText: appendPermitToText(winnerTrial.creative.primaryText, permit) },
+              launchStatus: 'ACTIVE',
+              destination: leadFormId ? 'form' : 'landing',
+              ...(leadFormId ? { leadFormId } : {}),
+            })
+            await addMachineCampaign({
+              machineId, channel: 'meta', campaignId: launch.campaignId,
+              projectSlug, trialLabel: label, dailyBudgetAed: exploreBudget, status: 'active',
+            })
+            await logActivity({
+              machineId,
+              kind: 'launched',
+              detail: `Re-plan: minted new arm "${label}" for ${winnerTrial.listingName} at AED ${exploreBudget}/day — ages ${newTargeting.ageMin}–${newTargeting.ageMax}, winner "${winnerTrial.label}" broadened on its evidence (CPL ${proven.cplAed !== null ? `AED ${proven.cplAed.toFixed(0)}` : 'n/a'}, quality ${proven.qualityScore ?? 'n/a'}${proven.verdicts && proven.verdicts.decisive > 0 ? `, verdicts ${proven.verdicts.yes}Y/${proven.verdicts.no}N` : ''}). Funded by pausing "${target.row.trialLabel}". ${evidence}`,
+              campaignId: launch.campaignId,
+              data: {
+                fromCampaignId: target.row.campaignId, basedOnTrialId: winnerTrial.id,
+                amountAed: exploreBudget, ageMin: newTargeting.ageMin, ageMax: newTargeting.ageMax,
+              },
+            })
+            result.budgetShifts.push(launch.campaignId)
+            result.launched.push(launch.campaignId)
+            continue
+          } catch (e) {
+            await logActivity({
+              machineId, kind: 'error',
+              detail: `Re-plan launch of "${label}" (${projectSlug}) failed: ${errMsg(e)} — falling back to raising a survivor.`,
+              data: { projectSlug },
+            })
+            result.errors.push(`replan-launch:${projectSlug}`)
+            // fall through to raising a survivor
+          }
+        }
+      }
+
+      // Otherwise: raise the best surviving sibling. The survivor may be on
+      // the OTHER channel (freed Meta budget can raise a Google trial and
+      // vice versa) — the raise uses the survivor's own channel mutation.
       const survivor = survivors[0]
       if (!survivor) continue
 
