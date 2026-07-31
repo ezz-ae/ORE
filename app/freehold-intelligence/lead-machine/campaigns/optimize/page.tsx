@@ -3,12 +3,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Zap, TrendingDown, TrendingUp, PlugZap, ArrowUpRight, Loader2, Pause, History, ShieldCheck } from 'lucide-react'
+import { Zap, TrendingDown, TrendingUp, PlugZap, ArrowUpRight, Loader2, Pause, History, ShieldCheck, Sparkles, Check } from 'lucide-react'
 import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 
 type MachineAction = { id: string; action: string; platform: string; campaignName: string; detail: string; createdAt: string }
+
+// The advisor's grounded output (app/api/freehold/ads/advisor) — suggestions
+// carry an optional machine-applicable action in one of three safe shapes.
+type AdvisorAction =
+  | { type: 'set_budget'; adSetId: string; dailyBudgetAED: number }
+  | { type: 'pause_campaign' }
+  | { type: 'resume_campaign' }
+type AdvisorSuggestion = { area: string; title: string; detail: string; evidence: string; action?: AdvisorAction | null }
+type AdvisorResult =
+  | { available: true; suggestions: AdvisorSuggestion[] }
+  | { available: false; reason: 'not_connected' | 'no_delivery' | 'no_ai_key' | 'ai_error' }
 
 // Campaign optimizer — ranks the REAL campaigns by cost-per-lead and points
 // budget from the least efficient to the most efficient. No seed budgets,
@@ -89,6 +100,53 @@ export default function CampaignOptimizePage() {
   )
   const best = ranked[0]
   const worst = ranked.length > 1 ? ranked[ranked.length - 1] : undefined
+  // The advisor works on Meta campaigns (its data plane); target the least
+  // efficient one — that's where a grounded review pays most.
+  const worstMeta = useMemo(() => [...ranked].reverse().find((c) => c.platform === 'meta'), [ranked])
+
+  // The REAL AI pass: the grounded advisor (real delivery + CRM quality →
+  // suggestions with safe one-click actions). Runs on the worst Meta campaign.
+  const [advisorFor, setAdvisorFor] = useState<LiveCampaign | null>(null)
+  const [advisorBusy, setAdvisorBusy] = useState(false)
+  const [advisor, setAdvisor] = useState<AdvisorResult | null>(null)
+  const [applying, setApplying] = useState<number | null>(null)
+  const [appliedIdx, setAppliedIdx] = useState<number[]>([])
+
+  async function runAdvisor(c: LiveCampaign) {
+    setAdvisorBusy(true); setAdvisorFor(c); setAdvisor(null); setAppliedIdx([])
+    try {
+      const r = await fetch('/api/freehold/ads/advisor', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId: c.id, campaignName: c.name }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!r.ok || !d) { setAdvisor({ available: false, reason: 'ai_error' }); return }
+      setAdvisor(d as AdvisorResult)
+    } catch { setAdvisor({ available: false, reason: 'ai_error' }) }
+    finally { setAdvisorBusy(false) }
+  }
+
+  async function applySuggestion(idx: number, s: AdvisorSuggestion) {
+    if (!advisorFor || !s.action || applying !== null) return
+    setApplying(idx)
+    try {
+      const a = s.action
+      const payload = a.type === 'set_budget'
+        ? { action: 'set_budget', platform: 'meta', campaignId: advisorFor.id, campaignName: advisorFor.name, adSetId: a.adSetId, dailyBudgetAED: a.dailyBudgetAED }
+        : { action: a.type === 'pause_campaign' ? 'pause' : 'resume', platform: 'meta', campaignId: advisorFor.id, campaignName: advisorFor.name }
+      const r = await fetch('/api/freehold/lead-machine/machine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { toast.error(d.error || t('lm.adv.applyFailed')); return }
+      setAppliedIdx((p) => [...p, idx])
+      if (a.type === 'pause_campaign') setPausedIds((p) => [...p, advisorFor.id])
+      toast.success(t('lm.adv.applied'))
+      loadMachine()
+    } catch { toast.error(t('lm.adv.applyFailed')) }
+    finally { setApplying(null) }
+  }
 
   async function pauseWorst(c: LiveCampaign) {
     setPausingId(c.id); setConfirmId(null)
@@ -157,7 +215,7 @@ export default function CampaignOptimizePage() {
           {/* Recommendation — from the real spread, only when there IS one */}
           {best && worst && best.id !== worst.id && (
             <div className="mt-8 rounded-2xl border border-gold/20 bg-gold/[0.04] p-5">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gold">{t('lm.optimize.aiRecommendations')}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-gold">{t('lm.optimize.machineReco')}</div>
               <p className="mt-2 text-sm leading-relaxed text-slate-200">
                 {t('lm.optimize.shiftReco', {
                   from: worst.name,
@@ -188,6 +246,70 @@ export default function CampaignOptimizePage() {
                 )}
               </div>
               <p className="mt-2 text-[11px] leading-snug text-slate-500">{t('lm.machine.autopilotNote')}</p>
+            </div>
+          )}
+
+          {/* The REAL AI pass — the grounded advisor, with applyable actions */}
+          {worstMeta && (
+            <div className="mt-4 rounded-2xl border border-line bg-surface p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    <Sparkles className="h-3.5 w-3.5 text-gold" /> {t('lm.optimize.aiRecommendations')}
+                  </div>
+                  <p className="mt-1 text-[11px] leading-snug text-slate-500">{t('lm.adv.sub')}</p>
+                </div>
+                <button type="button" onClick={() => runAdvisor(worstMeta)} disabled={advisorBusy}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
+                  {advisorBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {advisorBusy ? t('lm.adv.running') : t('lm.adv.run', { name: worstMeta.name })}
+                </button>
+              </div>
+
+              {advisor && !advisor.available && (
+                <p className="mt-4 rounded-xl border border-line bg-surface-2 px-4 py-3 text-xs text-slate-400">
+                  {t(`lm.adv.unavailable.${advisor.reason}`)}
+                </p>
+              )}
+              {advisor && advisor.available && advisor.suggestions.length === 0 && (
+                <p className="mt-4 rounded-xl border border-line bg-surface-2 px-4 py-3 text-xs text-slate-400">{t('lm.adv.none')}</p>
+              )}
+              {advisor && advisor.available && advisor.suggestions.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {advisor.suggestions.map((s, i) => (
+                    <div key={i} className="rounded-xl border border-line bg-surface-2/60 p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-teal-400/25 bg-teal-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-300">
+                          {t(`lm.adv.area.${s.area}`)}
+                        </span>
+                        <span className="text-sm font-semibold text-white">{s.title}</span>
+                      </div>
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{s.detail}</p>
+                      {s.evidence && (
+                        <p className="mt-1.5 text-[11px] leading-snug text-slate-500">
+                          <span className="font-semibold uppercase tracking-wider">{t('lm.adv.evidence')}:</span> {s.evidence}
+                        </p>
+                      )}
+                      {s.action && canApply && (
+                        <div className="mt-3">
+                          {appliedIdx.includes(i) ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                              <Check className="h-3.5 w-3.5" /> {t('lm.adv.applied')}
+                            </span>
+                          ) : (
+                            <button type="button" onClick={() => applySuggestion(i, s)} disabled={applying !== null}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
+                              {applying === i ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                              {t('lm.adv.apply')}
+                              {s.action.type === 'set_budget' ? ` — AED ${s.action.dailyBudgetAED}/d` : ''}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
