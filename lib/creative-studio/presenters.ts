@@ -1,5 +1,5 @@
 import { query } from '@/lib/db'
-import { PRESENTER_PERSONAS } from './constants'
+import { PRESENTER_PERSONAS, GENDER_NOUN } from './constants'
 
 // ─── Presenter memory ─────────────────────────────────────────────────────────
 // Each on-camera persona (Layla / Omar / Sara) gets ONE face generated and
@@ -9,7 +9,14 @@ import { PRESENTER_PERSONAS } from './constants'
 
 const TENANT = process.env.ENTRESTATE_TENANT_ID || 'freehold'
 
-export interface SavedPresenter { personaId: string; faceUrl: string; createdAt: string }
+export interface SavedPresenter {
+  personaId: string
+  faceUrl: string
+  createdAt: string
+  /** The prompt the face was generated FROM. Kept because it is the only
+   *  evidence of whether a saved face predates the gender fix — see isStaleFace. */
+  prompt: string | null
+}
 
 let ensured: Promise<void> | null = null
 const ensure = async () => {
@@ -33,10 +40,10 @@ export const personaById = (id: string) => PRESENTER_PERSONAS.find((p) => p.id =
 export async function getSavedPresenters(): Promise<Record<string, SavedPresenter>> {
   try {
     await ensureOnce()
-    const rows = await query<{ persona_id: string; face_url: string; created_at: string }>(
-      `SELECT persona_id, face_url, created_at::text FROM freehold_presenters WHERE tenant_id = $1`, [TENANT])
+    const rows = await query<{ persona_id: string; face_url: string; created_at: string; prompt: string | null }>(
+      `SELECT persona_id, face_url, created_at::text, prompt FROM freehold_presenters WHERE tenant_id = $1`, [TENANT])
     const map: Record<string, SavedPresenter> = {}
-    for (const r of rows) map[r.persona_id] = { personaId: r.persona_id, faceUrl: r.face_url, createdAt: r.created_at }
+    for (const r of rows) map[r.persona_id] = { personaId: r.persona_id, faceUrl: r.face_url, createdAt: r.created_at, prompt: r.prompt }
     return map
   } catch { return {} }
 }
@@ -44,6 +51,27 @@ export async function getSavedPresenters(): Promise<Record<string, SavedPresente
 export async function getPresenterFace(personaId: string): Promise<string | null> {
   const all = await getSavedPresenters()
   return all[personaId]?.faceUrl ?? null
+}
+
+/**
+ * Was this face generated BEFORE the persona's gender was put into the prompt?
+ *
+ * This matters because a saved face is reused as the image reference for every
+ * later creative. Fixing the prompt only fixes NEW faces — a face already saved
+ * from the old genderless prompt (the one that rendered Layla as a man) keeps
+ * being handed to the image model forever, so the output stays wrong no matter
+ * how correct the new prompt is. The stored prompt is the only evidence we
+ * have, and it is conclusive: if it never named the persona's gender, that face
+ * was a coin flip and should be regenerated.
+ *
+ * Conservative by design — an unknown/missing prompt is NOT called stale. We
+ * flag only what we can actually show is suspect, never guess a face is bad.
+ */
+export function isStaleFace(saved: SavedPresenter | undefined, gender: string): boolean {
+  if (!saved?.prompt) return false
+  const noun = GENDER_NOUN[gender]
+  if (!noun) return false
+  return !new RegExp(`\\b${noun}\\b`, 'i').test(saved.prompt)
 }
 
 export async function savePresenterFace(personaId: string, faceUrl: string, prompt: string, by: string): Promise<void> {

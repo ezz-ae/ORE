@@ -20,6 +20,8 @@ type Presenter = {
   ethnicity: string
   ageRange: string
   faceUrl: string | null
+  /** Saved from the old genderless prompt — likely the wrong person entirely. */
+  stale?: boolean
 }
 
 /**
@@ -31,6 +33,13 @@ type Presenter = {
  */
 export default function QuickClient({ properties, embedded = false }: { properties: InventoryProperty[]; embedded?: boolean }) {
   const t = useT()
+
+  // Literal keys (not `t(\`cs.quick.gender.${g}\`)`) so the i18n audit can
+  // actually see them — a dynamic key is invisible to it and would rot silently.
+  const genderLabel = (g: string) =>
+    g === 'male' ? t('cs.quick.gender.male')
+      : g === 'non-binary' ? t('cs.quick.gender.non-binary')
+      : t('cs.quick.gender.female')
 
   const [presenters, setPresenters] = useState<Presenter[]>([])
   const [presenterId, setPresenterId] = useState('')          // '' = none
@@ -53,7 +62,9 @@ export default function QuickClient({ properties, embedded = false }: { properti
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok || !d.presenter?.faceUrl) { toast.error(d.error || t('cs.quick.failed')); return }
-      setPresenters((prev) => prev.map((x) => (x.id === personaId ? { ...x, faceUrl: d.presenter.faceUrl as string } : x)))
+      // Regenerating clears the stale flag: the new face came from the fixed
+      // prompt by construction, so leaving the warning up would be a lie.
+      setPresenters((prev) => prev.map((x) => (x.id === personaId ? { ...x, faceUrl: d.presenter.faceUrl as string, stale: false } : x)))
       toast.success(t('cs.quick.faceReady'))
     } catch { toast.error(t('cs.quick.failed')) } finally { setFaceBusy(null) }
   }
@@ -173,11 +184,29 @@ export default function QuickClient({ properties, embedded = false }: { properti
                     <span className="block px-2.5 pb-1 pt-2">
                       <span className={`block truncate text-xs font-semibold ${active ? 'text-gold' : 'text-slate-200'}`}>{p.name}</span>
                       <span className="block truncate text-[10px] text-slate-500">{p.tagline}</span>
+                      {/* Who this character is meant to BE. The card used to show
+                          only a name, so a face that came back the wrong gender
+                          looked like a styling choice rather than a bug. */}
+                      <span className="block truncate text-[10px] text-slate-600">
+                        {genderLabel(p.gender)} · {p.ageRange}
+                      </span>
                     </span>
                   </button>
                   <div className="px-2.5 pb-2.5">
+                    {/* A face saved before the gender fix keeps being reused as
+                        the reference for every creative, so say so plainly and
+                        make regenerating the obvious next click. */}
+                    {p.stale && (
+                      <p className="mb-1.5 rounded-md border border-amber-500/25 bg-amber-500/10 px-1.5 py-1 text-[10px] leading-tight text-amber-300">
+                        {t('cs.quick.staleFace')}
+                      </p>
+                    )}
                     <button type="button" disabled={busy} onClick={() => generateFace(p.id, !!p.faceUrl)}
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-gold/40 hover:text-gold disabled:opacity-60">
+                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition disabled:opacity-60 ${
+                        p.stale
+                          ? 'border-amber-400/40 bg-amber-400/10 text-amber-200 hover:border-amber-400/60'
+                          : 'border-line bg-surface-2 text-slate-300 hover:border-gold/40 hover:text-gold'
+                      }`}>
                       {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
                       {p.faceUrl ? t('cs.quick.regenFace') : t('cs.quick.genFace')}
                     </button>

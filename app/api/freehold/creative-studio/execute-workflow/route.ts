@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { genText, genImage, genVideo } from "@/lib/creative-studio/providers"
+import { personaCharacterPrompt } from "@/lib/creative-studio/constants"
 import { saveLibraryItem } from "@/lib/freehold/library"
 
 export const runtime = "nodejs"
@@ -74,9 +75,19 @@ async function runNode(node: Node, inputs: string[], byHandle: Map<string, strin
     case "ugcModel": {
       // Honor the node's LOCK: reuse the frozen persona instead of regenerating.
       if (d.isLocked && typeof d.lockedImageUrl === "string" && d.lockedImageUrl) return d.lockedImageUrl
-      const desc = [d.gender, d.ageRange, d.ethnicity].filter(Boolean).join(", ")
+      // Same identity rule as every other presenter path: the demographic
+      // anchor leads, in the same words, from the same helper. A bare
+      // "female, 26-35, middle-eastern" list is easy for the writer model to
+      // drop; a stated subject with a do-not-change clause is not.
+      const character = personaCharacterPrompt({
+        name: str(d.name) || undefined,
+        gender: str(d.gender) || undefined,
+        ethnicity: str(d.ethnicity) || undefined,
+        ageRange: str(d.ageRange) || undefined,
+        description: str(d.description) || undefined,
+      })
       return genText(
-        `Describe a realistic UGC creator persona for a Dubai real-estate ad — ${desc || "authentic local creator"}. ${str(d.description)}. One vivid paragraph for an image/video prompt.`,
+        `Describe a realistic UGC creator persona for a Dubai real-estate ad: ${character} One vivid paragraph for an image/video prompt. Keep the stated gender, age and ethnicity exactly as given.`,
       )
     }
     case "structuredOutput": {

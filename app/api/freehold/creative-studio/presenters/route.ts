@@ -4,8 +4,8 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import { genImage } from '@/lib/creative-studio/providers'
-import { PRESENTER_PERSONAS } from '@/lib/creative-studio/constants'
-import { getSavedPresenters, savePresenterFace, deletePresenterFace, personaById } from '@/lib/creative-studio/presenters'
+import { PRESENTER_PERSONAS, personaCharacterPrompt } from '@/lib/creative-studio/constants'
+import { getSavedPresenters, savePresenterFace, deletePresenterFace, personaById, isStaleFace } from '@/lib/creative-studio/presenters'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -23,6 +23,10 @@ export async function GET() {
   const presenters = PRESENTER_PERSONAS.map((p) => ({
     id: p.id, name: p.name, tagline: p.tagline, gender: p.gender, ethnicity: p.ethnicity, ageRange: p.ageRange,
     faceUrl: saved[p.id]?.faceUrl ?? null,
+    // A face saved before the gender fix is still reused as the reference for
+    // every creative, so the prompt fix alone would not clear it. Flag it and
+    // let the operator regenerate — never silently delete someone's saved face.
+    stale: isStaleFace(saved[p.id], p.gender),
   }))
   return NextResponse.json({ presenters })
 }
@@ -46,14 +50,10 @@ export async function POST(req: NextRequest) {
 
   // The persona's demographics MUST anchor the image — the free-text
   // description alone doesn't state gender, so without this the model can (and
-  // did) render e.g. Layla as a man. Lead the prompt with gender/ethnicity/age.
-  const genderNoun: Record<string, string> = { female: 'woman', male: 'man', 'non-binary': 'person' }
-  const subject = [
-    persona.ageRange ? `${persona.ageRange}-year-old` : '',
-    persona.ethnicity ? persona.ethnicity.replace(/-/g, ' ') : '',
-    genderNoun[persona.gender] ?? 'person',
-  ].filter(Boolean).join(' ')
-  const prompt = `Professional photorealistic portrait headshot of a ${subject}. ${persona.description} Natural studio lighting, plain neutral background, looking straight at camera, head and shoulders, sharp focus, high detail. A consistent character reference for a Dubai real-estate video presenter. No text, no logos, no watermark.`
+  // did) render e.g. Layla as a man. `personaCharacterPrompt` is the ONE place
+  // that turns a persona into words, shared with every other render path so
+  // they cannot describe the same character differently.
+  const prompt = `Professional photorealistic portrait headshot of ${personaCharacterPrompt(persona)} Natural studio lighting, plain neutral background, looking straight at camera, head and shoulders, sharp focus, high detail. A consistent character reference for a Dubai real-estate video presenter. No text, no logos, no watermark.`
 
   let url: string
   try {

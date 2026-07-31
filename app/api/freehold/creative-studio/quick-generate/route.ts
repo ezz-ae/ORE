@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { genImage } from '@/lib/creative-studio/providers'
-import { CREATIVE_FORMATS } from '@/lib/creative-studio/constants'
+import { CREATIVE_FORMATS, personaCharacterPrompt } from '@/lib/creative-studio/constants'
 import { getPresenterFace, personaById } from '@/lib/creative-studio/presenters'
 
 export const runtime = 'nodejs'
@@ -57,7 +57,15 @@ export async function POST(req: NextRequest) {
     'Professional, photorealistic real-estate marketing creative for a premium Dubai off-plan property.',
     project ? `Property: ${project}.` : '',
     details ? `${details}.` : '',
-    persona ? `Feature a presenter on camera: ${persona.description} Keep the SAME face as the reference image — natural, confident, looking at the viewer.` : 'Show an elegant architectural / lifestyle scene (no people unless implied).',
+    // The presenter's IDENTITY has to be spelled out here. `persona.description`
+    // is gender-neutral style prose, so passing it alone let the model choose a
+    // gender at random — which is how "Layla" came back as a man. The shared
+    // helper states who the character is; the face reference (when one exists)
+    // then pins the exact features on top of that.
+    persona
+      ? `Feature a presenter on camera: ${personaCharacterPrompt(persona)} Natural, confident, looking at the viewer.`
+        + (face ? ' Keep the SAME face as the reference image — this is the same person, not a lookalike.' : '')
+      : 'Show an elegant architectural / lifestyle scene (no people unless implied).',
     b.brief ? `Art direction: ${String(b.brief).slice(0, 400)}.` : '',
     layout,
     'Warm Dubai golden-hour light, cinematic, high-end, sharp focus, magazine quality. Do NOT bake in any text, price numbers, logos, or watermark — leave clean space for those to be added later.',
