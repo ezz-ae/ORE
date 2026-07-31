@@ -62,6 +62,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
+  // The EVIDENCE the engine actually decided on, per trial. It was already
+  // recorded in the latest 'observation' entry but only as prose inside the
+  // activity feed — so the operator could see the machine's budgets while the
+  // numbers behind its pauses (leads, on which basis, CPL, CRM quality,
+  // verdicts) stayed buried. Money decisions have to be legible.
+  const latestObservation = activity.find((a) => a.kind === 'observation')
+  const obsData = latestObservation?.data as { trials?: unknown[] } | undefined
+  const evidence = Array.isArray(obsData?.trials) ? obsData.trials : []
+
   return NextResponse.json({
     machine,
     campaigns,
@@ -69,6 +78,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     verdictQueue,
     verdictAggregates,
     starvedTrials,
+    evidence,
+    evidenceAt: latestObservation?.createdAt ?? null,
     budget: {
       dailyCapAed: machine.dailyCapAed,
       committedDailyAed,

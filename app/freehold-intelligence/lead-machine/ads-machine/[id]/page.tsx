@@ -29,6 +29,17 @@ import type {
   VerdictAggregates, VerdictQueueItem,
 } from '@/lib/freehold/ads-machine'
 
+interface TrialEvidence {
+  campaignId: string
+  leads?: number
+  leadBasis?: 'meta-reported' | 'crm-attributed'
+  cplAed?: number | null
+  attributedCplAed?: number | null
+  qualityScore?: number | null
+  attributed?: number
+  verdicts?: { yes: number; no: number; decisive: number } | null
+}
+
 interface Detail {
   machine: AdsMachine
   campaigns: MachineCampaign[]
@@ -36,6 +47,9 @@ interface Detail {
   verdictQueue: VerdictQueueItem[]
   verdictAggregates: VerdictAggregates
   starvedTrials?: { campaignId: string; trialLabel: string; projectSlug: string; pending: number; decisive: number; needed: number }[]
+  /** What the engine actually judged each trial on, from its last observation. */
+  evidence?: TrialEvidence[]
+  evidenceAt?: string | null
   budget: { dailyCapAed: number; committedDailyAed: number; headroomAed: number }
 }
 
@@ -332,6 +346,8 @@ export default function MachineDashboardPage() {
   if (!data) return null
 
   const { machine, campaigns, activity, verdictQueue, verdictAggregates, budget } = data
+  // The engine's own numbers, keyed for the trials table.
+  const evidenceById = new Map((data.evidence ?? []).map((e) => [e.campaignId, e]))
   const pill = STATUS_PILL[machine.status]
   const btnCls = 'inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-50'
 
@@ -556,6 +572,7 @@ export default function MachineDashboardPage() {
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.delivery')}</th>
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.status')}</th>
                   <th className="px-4 py-3 text-end font-medium">{t('lm.machine.trials.budget')}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t('lm.machine.trials.evidence')}</th>
                   <th className="px-4 py-3 text-start font-medium">{t('lm.machine.trials.onoff')}</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -565,6 +582,7 @@ export default function MachineDashboardPage() {
                   const st = TRIAL_STATUS[c.status]
                   const dl = delivery[c.campaignId]
                   const dm = dl ? DELIVERY_META[dl.state] : null
+                  const ev = evidenceById.get(c.campaignId)
                   return (
                     <tr key={c.id} className="border-b border-line/50 last:border-0">
                       <td className="px-4 py-3 text-slate-200">{c.projectSlug}</td>
@@ -599,6 +617,28 @@ export default function MachineDashboardPage() {
                         <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.cls}`}>{t(st.labelKey)}</span>
                       </td>
                       <td className="px-4 py-3 text-end font-medium text-slate-200">AED {c.dailyBudgetAed.toLocaleString()}</td>
+                      {/* The numbers the machine pauses on — shown with the
+                          BASIS, because a Meta-reported CPL and a
+                          CRM-attributed one are not the same measurement. */}
+                      <td className="px-4 py-3 text-end">
+                        {ev ? (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-xs font-medium text-slate-200">
+                              {ev.cplAed != null ? `AED ${Math.round(ev.cplAed)}` : '—'}
+                              <span className="ms-1 text-[10px] font-normal text-slate-500">
+                                {ev.leadBasis === 'meta-reported' ? t('lm.machine.ev.metaBasis') : t('lm.machine.ev.crmBasis')}
+                              </span>
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              {t('lm.machine.ev.leads', { n: String(ev.leads ?? 0) })}
+                              {ev.qualityScore != null ? ` · ${t('lm.machine.ev.quality', { n: String(ev.qualityScore) })}` : ''}
+                              {ev.verdicts && ev.verdicts.decisive > 0 ? ` · ${ev.verdicts.yes}Y/${ev.verdicts.no}N` : ''}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-600">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         {(() => {
                           const canToggle = (c.status === 'active' || c.status === 'paused')
