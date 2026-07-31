@@ -94,8 +94,13 @@ async function apiFetch<T>(
   path: string,
   options?: RequestInit,
   params?: Record<string, string>,
+  /** Use a specific access token instead of the connected one. Lead-gen forms
+   *  and their leads are PAGE assets: Meta expects the owning Page's own access
+   *  token, and a business with several Pages needs a different token per Page.
+   *  See listAccessiblePages. */
+  tokenOverride?: string,
 ): Promise<T> {
-  const { token } = await creds()
+  const token = tokenOverride || (await creds()).token
   const url = new URL(`${API_BASE}${path}`)
   url.searchParams.set('access_token', token)
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
@@ -127,6 +132,7 @@ async function apiFetchAllPages<T>(
   path: string,
   params: Record<string, string>,
   maxItems: number,
+  tokenOverride?: string,
 ): Promise<T[]> {
   const items: T[] = []
   let after: string | undefined
@@ -134,7 +140,7 @@ async function apiFetchAllPages<T>(
     const res = await apiFetch<{
       data: T[]
       paging?: { cursors?: { after?: string }; next?: string }
-    }>(path, undefined, { ...params, ...(after ? { after } : {}) })
+    }>(path, undefined, { ...params, ...(after ? { after } : {}) }, tokenOverride)
     const batch = res.data ?? []
     items.push(...batch)
     after = res.paging?.cursors?.after
@@ -143,8 +149,8 @@ async function apiFetchAllPages<T>(
   return items.length > maxItems ? items.slice(0, maxItems) : items
 }
 
-async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
-  const { token } = await creds()
+async function apiPost<T>(path: string, body: Record<string, unknown>, tokenOverride?: string): Promise<T> {
+  const token = tokenOverride || (await creds()).token
   const url = new URL(`${API_BASE}${path}`)
   url.searchParams.set('access_token', token)
 
@@ -1389,16 +1395,72 @@ export async function getAdEngagement(adId: string): Promise<{ likes: number; co
 
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────
 
+/**
+ * Every Facebook Page this login can act on, each with its OWN page access
+ * token.
+ *
+ * Why this exists: lead-gen forms and their leads are PAGE assets, and the app
+ * only ever looked at the single configured META_PAGE_ID using the single
+ * connected token. Two consequences, both reported as bugs:
+ *
+ *   · a business running several Pages saw only one Page's forms — the rest
+ *     were invisible, so their leads were never even attempted;
+ *   · reading /{form}/leads with a USER token frequently fails where the
+ *     owning Page's token succeeds, which is a very common reason for a form
+ *     that plainly has leads on Meta to sync none of them.
+ *
+ * Falls back to the configured page on its own token when /me/accounts can't
+ * be read — which is the normal case when the stored token IS already a page
+ * token. Never throws: an unreadable page list degrades to today's behaviour.
+ */
+export interface MetaPageRef { id: string; name: string | null; token: string }
+
+export async function listAccessiblePages(): Promise<MetaPageRef[]> {
+  const { pageId, token } = await creds()
+  const fallback: MetaPageRef[] = [{ id: pageId, name: null, token }]
+  try {
+    const res = await apiFetchAllPages<{ id: string; name?: string; access_token?: string }>(
+      '/me/accounts', { fields: 'id,name,access_token', limit: '50' }, 100,
+    )
+    const pages = res
+      .filter((p) => p.id)
+      .map((p) => ({ id: p.id, name: p.name ?? null, token: p.access_token || token }))
+    if (pages.length === 0) return fallback
+    // The configured Page must always be included, even if /me/accounts omits
+    // it (it can, for Pages held through a Business rather than personally).
+    if (!pages.some((p) => p.id === pageId)) pages.unshift({ id: pageId, name: null, token })
+    return pages
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * Lead-gen forms across EVERY accessible Page, not just the configured one.
+ * Each Page is read with its own token, and each form is tagged with the Page
+ * it belongs to so the UI can group them and the sync can pick the right token.
+ */
 export async function listLeadForms(): Promise<MetaLeadForm[]> {
-  // Lead-gen forms are a PAGE asset — the act_ ad-account edge does not exist
-  // (Graph error subcode 33). The connected token must have a role on the page.
-  const { pageId } = await creds()
-  // Follows pagination (capped at 200 forms) — one un-followed page of 50 was
-  // silently hiding every form past the first page.
-  return apiFetchAllPages<MetaLeadForm>(`/${pageId}/leadgen_forms`, {
-    fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url',
-    limit:  '50',
-  }, 200)
+  const pages = await listAccessiblePages()
+  const perPage = await Promise.all(pages.map(async (page) => {
+    try {
+      // Follows pagination (capped at 200 forms per Page) — one un-followed
+      // page of 50 was silently hiding every form past the first.
+      const forms = await apiFetchAllPages<MetaLeadForm>(`/${page.id}/leadgen_forms`, {
+        fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url',
+        limit:  '50',
+      }, 200, page.token)
+      return forms.map((f) => ({ ...f, page_id: page.id, page_name: page.name }))
+    } catch {
+      // One Page we lack a role on must not hide every OTHER Page's forms.
+      return [] as MetaLeadForm[]
+    }
+  }))
+  // Dedupe by form id — a Page reachable both directly and via a Business can
+  // appear twice in /me/accounts.
+  const byId = new Map<string, MetaLeadForm>()
+  for (const f of perPage.flat()) if (!byId.has(f.id)) byId.set(f.id, f)
+  return [...byId.values()]
 }
 
 // Conversion pixels on the ad account. Powers the campaign wizard's pixel
@@ -1484,6 +1546,32 @@ async function resolveLeadLanguageLocaleIds(codes: string[]): Promise<number[]> 
 export async function subscribePageToLeadgenWebhook(): Promise<{ success: boolean }> {
   const { pageId } = await creds()
   return apiPost(`/${pageId}/subscribed_apps`, { subscribed_fields: 'leadgen' })
+}
+
+/**
+ * Subscribe the leadgen webhook on EVERY accessible Page, each with its own
+ * token. Subscribing only the configured Page meant real-time lead push simply
+ * did not exist for any other Page's forms — their leads waited for the next
+ * sweep, or never arrived at all if that Page's forms were invisible too.
+ * Returns per-page outcomes rather than one boolean, so a partial failure is
+ * reportable instead of collapsing to "false".
+ */
+export async function subscribeAllPagesToLeadgen(): Promise<{
+  subscribed: number
+  failed: { pageId: string; pageName: string | null; error: string }[]
+}> {
+  const pages = await listAccessiblePages()
+  let subscribed = 0
+  const failed: { pageId: string; pageName: string | null; error: string }[] = []
+  for (const page of pages) {
+    try {
+      await apiPost(`/${page.id}/subscribed_apps`, { subscribed_fields: 'leadgen' }, page.token)
+      subscribed += 1
+    } catch (e) {
+      failed.push({ pageId: page.id, pageName: page.name, error: e instanceof Error ? e.message : 'Unknown error' })
+    }
+  }
+  return { subscribed, failed }
 }
 
 /**
@@ -1627,14 +1715,17 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
   })
 }
 
-export async function getFormLeads(formId: string): Promise<MetaFormLead[]> {
+export async function getFormLeads(formId: string, pageToken?: string): Promise<MetaFormLead[]> {
   // Follows pagination up to 5000 leads per form (25 pages) — and says so
   // when the cap is hit, so a monster form can't silently under-sync.
+  // `pageToken`: leads are a Page asset, and reading them with the owning
+  // Page's token succeeds in cases where the generic connected token is
+  // rejected — a very common reason a form with leads on Meta syncs none.
   const CAP = 5000
   const leads = await apiFetchAllPages<MetaFormLead>(`/${formId}/leads`, {
     fields: 'id,created_time,field_data,ad_id,adset_id,campaign_id',
     limit:  '200',
-  }, CAP)
+  }, CAP, pageToken)
   if (leads.length >= CAP) {
     console.warn(`[meta-leads] form ${formId} returned ${CAP}+ leads — pagination capped, oldest leads beyond the cap were not fetched this pass`)
   }

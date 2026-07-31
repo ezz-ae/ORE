@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
-import { getFormLeads } from '@/lib/meta/client'
+import { getFormLeads, listAccessiblePages } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
 import { handleNewLead } from '@/lib/automation/engine'
@@ -141,13 +141,19 @@ export async function syncAllMetaLeads(): Promise<{
   // the sweep covers every form we know about, not just Meta's first page.
   // Registry entries confirmed deleted on Meta have no leads edge to poll.
   const forms = (await listLeadFormsMerged()).filter((f) => f.status !== 'DELETED')
+  // Each form's leads are read with ITS OWN Page's access token. Meta rejects
+  // /{form}/leads for the generic connected token far more often than it
+  // rejects the owning Page's token, and forms now come from every accessible
+  // Page rather than only the configured one. A form with no page_id (locally
+  // registered drafts) falls back to the connected token, as before.
+  const pageTokens = new Map((await listAccessiblePages().catch(() => [])).map((p) => [p.id, p.token]))
   const perForm: Array<{ formId: string; formName: string; synced: number; skipped: number; error?: string }> = []
   let totalSynced = 0
   let totalSkipped = 0
   let formsFailed = 0
   for (const form of forms) {
     try {
-      const leads = await getFormLeads(form.id)
+      const leads = await getFormLeads(form.id, form.page_id ? pageTokens.get(form.page_id) : undefined)
       const { synced, skipped } = await syncLeadsToCrm(form.id, leads)
       perForm.push({ formId: form.id, formName: form.name, synced, skipped })
       totalSynced += synced

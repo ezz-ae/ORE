@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { syncAllMetaLeads } from '@/lib/freehold/meta-lead-sync'
 import {
-  subscribePageToLeadgenWebhook,
+  subscribeAllPagesToLeadgen,
   getLeadgenSubscriptionStatus,
   MetaApiError,
   MetaConfigError,
@@ -26,16 +26,22 @@ export async function POST() {
   if ('res' in auth) return auth.res
 
   try {
-    const [result, resubscribed] = await Promise.all([
+    // Re-assert real-time push on EVERY accessible Page, not just the
+    // configured one — a form on another Page would otherwise never push.
+    const [result, subs] = await Promise.all([
       syncAllMetaLeads(),
-      subscribePageToLeadgenWebhook()
-        .then(() => true)
-        .catch((error) => {
-          console.error('[meta-forms-sync] leadgen webhook re-subscribe failed', error)
-          return false
-        }),
+      subscribeAllPagesToLeadgen().catch((error) => {
+        console.error('[meta-forms-sync] leadgen webhook re-subscribe failed', error)
+        return { subscribed: 0, failed: [] as { pageId: string; pageName: string | null; error: string }[] }
+      }),
     ])
-    return NextResponse.json({ ok: true, resubscribed, ...result })
+    return NextResponse.json({
+      ok: true,
+      resubscribed: subs.subscribed > 0,
+      pagesSubscribed: subs.subscribed,
+      pagesFailed: subs.failed,
+      ...result,
+    })
   } catch (err) {
     if (err instanceof MetaConfigError)
       return NextResponse.json({ error: err.message, type: 'config' }, { status: 503 })

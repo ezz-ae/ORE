@@ -88,10 +88,16 @@ export async function listLeadFormsMerged(): Promise<MetaLeadForm[]> {
     try {
       extras.push(await getLeadForm(reg.id))
     } catch {
+      // "We could not read this form" is NOT "this form was deleted". Calling
+      // it DELETED both told the operator something false and excluded it from
+      // the lead sweep (which skips DELETED), so a form that was merely
+      // unreadable with the token we tried silently stopped syncing. A distinct
+      // status renders honestly and keeps it in the sweep, where it may well
+      // succeed now that each form is read with its own Page's token.
       extras.push({
         id: reg.id,
         name: reg.name ?? reg.id,
-        status: 'DELETED',
+        status: 'UNAVAILABLE',
         leads_count: 0,
         created_time: reg.created_at instanceof Date
           ? reg.created_at.toISOString()

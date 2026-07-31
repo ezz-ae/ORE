@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { syncLeadsToCrm } from '@/lib/freehold/meta-lead-sync'
-import { getFormLeads } from '@/lib/meta/client'
+import { getFormLeads, listAccessiblePages } from '@/lib/meta/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -62,20 +62,26 @@ export async function POST(req: Request) {
     }
 
     const payload = JSON.parse(raw) as WebhookPayload
-    const formIds = new Set<string>()
+    // `entry.id` IS the Page id for a leadgen change, so the push tells us
+    // which Page's token to read the lead with — the same token rule the sweep
+    // follows. Without it, a lead pushed from a Page other than the configured
+    // one would be fetched with the wrong credential and dropped.
+    const formPages = new Map<string, string | undefined>()
     for (const entry of payload.entry ?? []) {
       for (const change of entry.changes ?? []) {
-        if (change.field === 'leadgen' && change.value?.form_id) formIds.add(change.value.form_id)
+        if (change.field === 'leadgen' && change.value?.form_id) {
+          formPages.set(change.value.form_id, entry.id || change.value.page_id)
+        }
       }
     }
 
-    for (const formId of formIds) {
-      await getFormLeads(formId)
+    const pageTokens = new Map((await listAccessiblePages().catch(() => [])).map((p) => [p.id, p.token]))
+    for (const [formId, pageId] of formPages) {
+      await getFormLeads(formId, pageId ? pageTokens.get(pageId) : undefined)
         .then((leads) => syncLeadsToCrm(formId, leads))
         .catch((error) => console.error('[meta-leadgen webhook] sync failed for form', formId, error))
     }
-
-    return NextResponse.json({ ok: true, formsNotified: formIds.size })
+    return NextResponse.json({ ok: true, formsNotified: formPages.size })
   } catch {
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
