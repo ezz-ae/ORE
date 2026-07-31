@@ -75,8 +75,14 @@ export default function AdDesignerPage() {
   const [enhancing, setEnhancing] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // The design that continues through QR → caption → preview (first selected).
-  const [finalUrl, setFinalUrl] = useState<string | null>(null)
+  // The PLACEMENT SET that continues through QR → caption → preview: the
+  // chosen design composed in ALL THREE formats (the picked one first). QR
+  // stamping and saving apply to the whole set; previews show each
+  // placement's true rendition.
+  const [finalSet, setFinalSet] = useState<{ fmt: FormatKey; dataUrl: string }[]>([])
+  const [composingSet, setComposingSet] = useState(false)
+  const finalUrl = finalSet[0]?.dataUrl ?? null
+  const fmtUrl = (f: FormatKey) => finalSet.find((x) => x.fmt === f)?.dataUrl ?? finalUrl
   const [qrImage, setQrImage] = useState<HTMLImageElement | null>(null)
   const [qrLink, setQrLink] = useState('')
   const [qrCorner, setQrCorner] = useState<'tl' | 'tr' | 'bl' | 'br'>('bl')
@@ -274,12 +280,36 @@ export default function AdDesignerPage() {
     return ok > 0
   }
 
-  function continueToQr() {
+  async function continueToQr() {
     const first = variants.find((v) => selected.has(v.id))
     if (!first) { toast.info(t('adz.pickFirst')); return }
-    setFinalUrl(first.dataUrl)
-    setQrApplied(false)
-    setStep('qr')
+    if (composingSet) return
+    // Design once → the full placement set: the chosen layout + palette
+    // composed in ALL THREE formats from the same source. The picked variant
+    // keeps its exact pixels (including any AI Enhance); the other two formats
+    // are engine-composed fresh from the source photo.
+    setComposingSet(true)
+    try {
+      let img: HTMLImageElement | null = null
+      const src = uploadUrl ?? listing?.heroImage ?? null
+      if (src) { try { img = await loadImage(src, !src.startsWith('data:')) } catch { img = null } }
+      const order: FormatKey[] = [first.fmt, ...(Object.keys(FORMATS) as FormatKey[]).filter((f) => f !== first.fmt)]
+      const set: { fmt: FormatKey; dataUrl: string }[] = []
+      for (const f of order) {
+        set.push({
+          fmt: f,
+          dataUrl: f === first.fmt ? first.dataUrl : composeVariant(img, first.layout, PALETTES[first.palette], overlay, f),
+        })
+        await new Promise((r) => setTimeout(r, 0))
+      }
+      setFinalSet(set)
+      setQrApplied(false)
+      setStep('qr')
+    } catch {
+      toast.error(t('adz.err.compose'))
+    } finally {
+      setComposingSet(false)
+    }
   }
 
   async function onQrUpload(file: File | null) {
@@ -302,11 +332,16 @@ export default function AdDesignerPage() {
   }
 
   async function applyQr() {
-    if (!finalUrl || !qrImage || qrBusy) return
+    if (finalSet.length === 0 || !qrImage || qrBusy) return
     setQrBusy(true)
     try {
-      const stamped = await stampQr(finalUrl, qrImage, qrCorner, qrPct)
-      setFinalUrl(stamped)
+      // The permit QR is compliance — it goes on EVERY placement, not just
+      // the one being previewed.
+      const stamped: { fmt: FormatKey; dataUrl: string }[] = []
+      for (const item of finalSet) {
+        stamped.push({ fmt: item.fmt, dataUrl: await stampQr(item.dataUrl, qrImage, qrCorner, qrPct) })
+      }
+      setFinalSet(stamped)
       setQrApplied(true)
       toast.success(t('adz.qr.applied'))
     } catch {
@@ -351,16 +386,27 @@ export default function AdDesignerPage() {
     a.click()
   }
 
+  const FMT_LABEL: Record<FormatKey, string> = { feed: 'Feed 4:5', square: 'Square 1:1', story: 'Story 9:16' }
+
   async function saveFinal() {
-    if (!finalUrl) return
+    if (finalSet.length === 0 || saving) return
     setSaving(true)
-    const res = await fetch('/api/freehold/drive/save-image', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: `${overlay.headline.slice(0, 60)} — final ad`, dataUrl: finalUrl }),
-    }).catch(() => null)
+    let ok = 0
+    for (const item of finalSet) {
+      const res = await fetch('/api/freehold/drive/save-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: `${overlay.headline.slice(0, 60)} — final ad (${FMT_LABEL[item.fmt]})`, dataUrl: item.dataUrl }),
+      }).catch(() => null)
+      if (res?.ok) ok++
+    }
     setSaving(false)
-    if (res?.ok) toast.success(t('adz.savedFinal'))
+    if (ok === finalSet.length) toast.success(t('adz.savedFinal'))
+    else if (ok > 0) toast.error(t('adz.err.savePartial'))
     else toast.error(t('adz.err.save'))
+  }
+
+  function downloadSet() {
+    finalSet.forEach((item) => download(item.dataUrl, `ad-${item.fmt}.png`))
   }
 
   const stepIndex = STEPS.findIndex((s) => s.key === step)
@@ -397,10 +443,13 @@ export default function AdDesignerPage() {
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('adz.actions.save')}
           </button>
-          <button type="button" onClick={continueToQr} disabled={selected.size === 0}
+          <button type="button" data-close-sheet onClick={continueToQr} disabled={selected.size === 0 || composingSet}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
-            {t('adz.actions.continue')} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            {composingSet ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {composingSet ? t('adz.set.composing') : t('adz.actions.continue')}
+            {!composingSet && <ArrowRight className="h-4 w-4 rtl:rotate-180" />}
           </button>
+          <p className="text-[10px] leading-snug text-slate-500">{t('adz.set.note')}</p>
           <button type="button" onClick={() => setStep('source')}
             className="flex w-full items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
             <ArrowLeft className="h-3 w-3 rtl:rotate-180" /> {t('adz.actions.back')}
@@ -487,7 +536,7 @@ export default function AdDesignerPage() {
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('adz.preview.save')}
           </button>
-          <button type="button" onClick={() => finalUrl && download(finalUrl, 'ad-final.png')}
+          <button type="button" onClick={downloadSet}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30">
             <Download className="h-3.5 w-3.5" /> {t('adz.preview.download')}
           </button>
@@ -495,7 +544,7 @@ export default function AdDesignerPage() {
             className="flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright">
             <Megaphone className="h-4 w-4" /> {t('adz.preview.campaign')}
           </Link>
-          <button type="button" onClick={() => { setStep('source'); setVariants([]); setSelected(new Set()); setFinalUrl(null); setCaption(''); setQrApplied(false) }}
+          <button type="button" onClick={() => { setStep('source'); setVariants([]); setSelected(new Set()); setFinalSet([]); setCaption(''); setQrApplied(false) }}
             className="flex w-full items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
             {t('adz.preview.startOver')}
           </button>
@@ -696,7 +745,7 @@ export default function AdDesignerPage() {
                 </div>
                 <div className="whitespace-pre-wrap px-3 pb-2 text-xs leading-relaxed" dir="auto">{caption.slice(0, 220)}{caption.length > 220 ? '…' : ''}</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={finalUrl} alt="" className="w-full object-cover" />
+                <img src={fmtUrl('feed') ?? undefined} alt="" className="w-full object-cover" />
                 <div className="flex items-center justify-between bg-neutral-100 px-3 py-2.5">
                   <span className="text-[11px] font-semibold text-neutral-600">{listing ? new URL(listing.landingUrl).hostname : BRAND.domain}</span>
                   <span className="rounded-md bg-neutral-200 px-3 py-1.5 text-[11px] font-bold">{t('adz.preview.learnMore')}</span>
@@ -707,8 +756,9 @@ export default function AdDesignerPage() {
             <div>
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('adz.preview.story')}</div>
               <div className="relative mx-auto aspect-[9/16] max-w-[280px] overflow-hidden rounded-3xl border border-line bg-black">
+                {/* The REAL 9:16 rendition — not the feed design cropped. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={finalUrl} alt="" className="h-full w-full object-cover" />
+                <img src={fmtUrl('story') ?? undefined} alt="" className="h-full w-full object-cover" />
                 <div className="absolute inset-x-0 top-0 flex items-center gap-2 bg-gradient-to-b from-black/70 to-transparent p-3">
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-gold text-[10px] font-bold text-ink">F</span>
                   <span className="text-[11px] font-semibold text-white">{brand.name}</span>
@@ -716,6 +766,24 @@ export default function AdDesignerPage() {
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-10 text-center">
                   <span className="rounded-full bg-white px-4 py-1.5 text-[11px] font-bold text-black">{t('adz.preview.learnMore')}</span>
                 </div>
+              </div>
+            </div>
+
+            {/* The full placement set — every format, download each one */}
+            <div className="lg:col-span-2">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('adz.set.title')}</div>
+              <div className="flex flex-wrap gap-4">
+                {finalSet.map((item) => (
+                  <div key={item.fmt} className="w-40">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.dataUrl} alt="" className="w-full rounded-lg border border-line object-cover"
+                      style={{ aspectRatio: `${FORMATS[item.fmt].w} / ${FORMATS[item.fmt].h}` }} />
+                    <button type="button" onClick={() => download(item.dataUrl, `ad-${item.fmt}.png`)}
+                      className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:border-gold/30">
+                      <Download className="h-3 w-3" /> {t(`adz.format.${item.fmt}`)}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

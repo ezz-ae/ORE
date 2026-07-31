@@ -6,6 +6,10 @@ type Dict = Record<string, string>
 export const p_ad_designer: Record<Locale, Dict> = {
   en: {
     'adz.title': 'Ad Designer',
+    'adz.set.title': 'Placement set',
+    'adz.set.note': 'Your pick becomes the full set — Feed 4:5, Square 1:1 and Story 9:16, composed from the same design. QR and Save apply to all three.',
+    'adz.set.composing': 'Composing the set…',
+    'adz.err.savePartial': 'Some formats did not save — try again.',
     'adz.preview.sponsored': 'Sponsored',
     'adz.preview.learnMore': 'Learn more',
     'adz.note': 'Composed at full ad resolution — what you download is what Meta gets.',
@@ -91,6 +95,10 @@ export const p_ad_designer: Record<Locale, Dict> = {
   },
   ar: {
     'adz.title': 'مصمّم الإعلانات',
+    'adz.set.title': 'مجموعة المواضع',
+    'adz.set.note': 'اختيارك يصبح المجموعة الكاملة — فيد 4:5 ومربع 1:1 وستوري 9:16 من التصميم نفسه. رمز QR والحفظ يشملان الثلاثة.',
+    'adz.set.composing': 'جارٍ تركيب المجموعة…',
+    'adz.err.savePartial': 'بعض الصيغ لم تُحفظ — حاول مرة أخرى.',
     'adz.preview.sponsored': 'مموَّل',
     'adz.preview.learnMore': 'اعرف المزيد',
     'adz.note': 'يُركَّب بدقة الإعلان الكاملة — ما تنزّله هو ما يصل إلى ميتا.',
@@ -176,6 +184,10 @@ export const p_ad_designer: Record<Locale, Dict> = {
   },
   ru: {
     'adz.title': 'Дизайнер рекламы',
+    'adz.set.title': 'Набор форматов',
+    'adz.set.note': 'Ваш выбор становится полным набором — Feed 4:5, Square 1:1 и Story 9:16 из одного дизайна. QR и сохранение применяются ко всем трём.',
+    'adz.set.composing': 'Собираем набор…',
+    'adz.err.savePartial': 'Часть форматов не сохранилась — попробуйте ещё раз.',
     'adz.preview.sponsored': 'Реклама',
     'adz.preview.learnMore': 'Подробнее',
     'adz.note': 'Собирается в полном рекламном разрешении — что скачиваете, то и получает Meta.',
