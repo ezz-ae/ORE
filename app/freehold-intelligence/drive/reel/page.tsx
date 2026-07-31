@@ -12,7 +12,7 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
 import { useI18n } from '@/lib/i18n/provider'
 import { fieldClass, Modal } from '@/components/freehold/ui'
-import { PALETTES, FORMATS, loadImage, fmtPrice, ensureAdFonts, type Overlay } from '@/lib/freehold/ad-compose'
+import { PALETTES, FORMATS, loadImage, fmtPrice, ensureAdFonts, type FormatKey, type Overlay } from '@/lib/freehold/ad-compose'
 import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
 import { SUITE_LANGS, type SuiteLang } from '@/lib/freehold/creative-suite'
 import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type ReelOptions } from '@/lib/freehold/reel-compose'
@@ -20,7 +20,8 @@ import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type 
 /**
  * PHOTO REEL — the motion tool of the Creative Suite.
  *
- * Listing photos in, a real 9:16 video out: Ken Burns motion, cross-fades, a
+ * Listing photos in, a real video out in any Meta placement (9:16 story,
+ * 4:5 feed, 1:1 square): Ken Burns motion, cross-fades, a
  * title card and a closing offer card, all in the ad engine's design language
  * so a reel matches the static ads made from the same listing. The preview is
  * the same per-frame renderer the export records, so what you watch IS what
@@ -48,6 +49,11 @@ export default function ReelMakerPage() {
   const [palette, setPalette] = useState(1)
   const [perPhoto, setPerPhoto] = useState(REEL_DEFAULTS.perPhoto)
   const [motion, setMotion] = useState(REEL_DEFAULTS.motion)
+  // Meta's in-feed video is 4:5 and 1:1, not only 9:16 — the engine has always
+  // been format-aware (its anchors are height fractions); the page just never
+  // offered the choice.
+  const [format, setFormat] = useState<FormatKey>('story')
+  const [endCard, setEndCard] = useState(true)
 
   const [playing, setPlaying] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -118,12 +124,12 @@ export default function ReelMakerPage() {
     photos: shots.map((s) => s.img),
     overlay,
     palette: PALETTES[palette] ?? PALETTES[0],
-    format: 'story',
+    format,
     perPhoto,
     motion,
     titleSecs: REEL_DEFAULTS.titleSecs,
-    endSecs: REEL_DEFAULTS.endSecs,
-  }), [shots, overlay, palette, perPhoto, motion])
+    endSecs: endCard ? REEL_DEFAULTS.endSecs : 0,
+  }), [shots, overlay, palette, perPhoto, motion, format, endCard])
 
   const duration = reelDuration(opts)
   const canRender = shots.length > 0 && !!overlay.headline.trim()
@@ -287,7 +293,7 @@ export default function ReelMakerPage() {
     if (!blob) return
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `${(overlay.headline || 'reel').slice(0, 40).replace(/\s+/g, '-').toLowerCase()}.webm`
+    a.download = `${(overlay.headline || 'reel').slice(0, 40).replace(/\s+/g, '-').toLowerCase()}-${format}.webm`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }
@@ -298,7 +304,7 @@ export default function ReelMakerPage() {
     if (!blob) return
     setSaving(true)
     try {
-      const title = `${(overlay.headline || 'Reel').slice(0, 60)} — reel`
+      const title = `${(overlay.headline || 'Reel').slice(0, 60)} — reel (${FORMATS[format].w}×${FORMATS[format].h})`
       const file = new File([blob], `${title.replace(/\s+/g, '-').toLowerCase()}.webm`, { type: blob.type })
       const put = await upload(file.name, file, { access: 'public', handleUploadUrl: '/api/freehold/drive/upload-video' })
       const res = await fetch('/api/freehold/library', {
@@ -456,6 +462,20 @@ export default function ReelMakerPage() {
             {t('reel.kenBurns')}
           </button>
         </div>
+        <button type="button" onClick={() => setEndCard(!endCard)}
+          className={`mt-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition ${endCard ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+          {t('reel.endCard')}
+        </button>
+        <div className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.format')}</div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {(Object.keys(FORMATS) as FormatKey[]).map((f) => (
+            <button key={f} type="button" onClick={() => setFormat(f)}
+              className={`rounded-lg border px-2 py-2 text-center text-[11px] font-semibold transition ${format === f ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+              {t(`adz.format.${f}`)}
+              <span className="block text-[9px] font-normal text-slate-500">{FORMATS[f].w}×{FORMATS[f].h}</span>
+            </button>
+          ))}
+        </div>
         <div className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.palettes')}</div>
         <div className="flex flex-wrap gap-1.5">
           {PALETTES.map((p, pi) => (
@@ -515,13 +535,13 @@ export default function ReelMakerPage() {
           <div className="flex flex-col items-center gap-3">
             <canvas
               ref={canvasRef}
-              width={FORMATS.story.w}
-              height={FORMATS.story.h}
+              width={FORMATS[format].w}
+              height={FORMATS[format].h}
               className="max-h-[74vh] w-auto rounded-2xl border border-line bg-black"
-              style={{ aspectRatio: `${FORMATS.story.w} / ${FORMATS.story.h}` }}
+              style={{ aspectRatio: `${FORMATS[format].w} / ${FORMATS[format].h}` }}
             />
             <p className="text-[11px] text-slate-500">
-              {t('reel.meta', { n: String(shots.length), s: duration.toFixed(1) })}
+              {t('reel.meta', { n: String(shots.length), s: duration.toFixed(1) })} · {FORMATS[format].w}×{FORMATS[format].h}
             </p>
           </div>
         )}
