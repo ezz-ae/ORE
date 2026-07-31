@@ -97,6 +97,62 @@ export const PRESENTER_PERSONAS = [
     description: "Warm, approachable community-living specialist; smart-casual; friendly and relatable for families." },
 ] as const
 
+/* ── Who a presenter IS ──────────────────────────────────────────────────────
+ *
+ * Every persona `description` above is deliberately gender-neutral prose about
+ * STYLE ("polished, elegant, tailored business wear"). Nothing in it says that
+ * Layla is a woman. An image model handed that description alone therefore
+ * picks a gender at random — which is exactly how Layla and Sara came back as
+ * men.
+ *
+ * The identity lives in the structured fields (`gender`, `ethnicity`,
+ * `ageRange`), so it has to be rendered into words on EVERY path that draws a
+ * presenter. This used to be re-implemented per route, and the route that got
+ * it wrong was the one behind the main Generate button. One helper now, used
+ * everywhere — a persona cannot be described inconsistently because there is
+ * only one way to describe it.
+ */
+
+export const GENDER_NOUN: Record<string, string> = {
+  female: "woman",
+  male: "man",
+  "non-binary": "person",
+}
+
+export interface PersonaLike {
+  name?: string
+  gender?: string
+  ethnicity?: string
+  ageRange?: string
+  description?: string
+}
+
+/** The demographic anchor — e.g. "26-35-year-old middle eastern woman". This
+ *  MUST lead any prompt that renders a presenter; a trailing mention is too
+ *  weak to override whatever the rest of the sentence implies. */
+export function personaSubject(p: PersonaLike): string {
+  return [
+    p.ageRange ? `${p.ageRange}-year-old` : "",
+    p.ethnicity ? p.ethnicity.replace(/-/g, " ") : "",
+    GENDER_NOUN[p.gender ?? ""] ?? "person",
+  ].filter(Boolean).join(" ")
+}
+
+/**
+ * The full character sentence: who they are, then how they present. Naming the
+ * character and restating the gender after the style prose is redundant on
+ * purpose — the style clause is long, and without the restatement the model
+ * drifts back to a default by the end of it.
+ */
+export function personaCharacterPrompt(p: PersonaLike): string {
+  const subject = personaSubject(p)
+  const noun = GENDER_NOUN[p.gender ?? ""] ?? "person"
+  const named = p.name ? `${p.name}, a ${subject}` : `a ${subject}`
+  const restate = p.name ? `${p.name} is a ${noun}` : `This character is a ${noun}`
+  return `${named}. ${p.description ?? ""} ${restate} — do not change the gender, age or ethnicity.`
+    .replace(/\s+/g, " ").trim()
+}
+
 export const GENDERS = [
   { value: "female", label: "Female" },
   { value: "male", label: "Male" },

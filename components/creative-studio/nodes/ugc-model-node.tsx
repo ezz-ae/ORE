@@ -117,7 +117,10 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
     if (p) {
       const face = faces[p.id]
       data.onUpdate({
-        ...rest, persona: p.id, gender: p.gender, ethnicity: p.ethnicity, ageRange: p.ageRange, description: p.description,
+        // `name` rides along so the executor can name the character in its
+        // prompt — without it the persona is described but never identified,
+        // and the rendered person stops matching the presenter you picked.
+        ...rest, persona: p.id, name: p.name, gender: p.gender, ethnicity: p.ethnicity, ageRange: p.ageRange, description: p.description,
         // Reuse the saved face for this presenter → same face every video.
         ...(face ? { isLocked: true, lockedImageUrl: face } : {}),
       })
