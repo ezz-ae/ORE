@@ -13,6 +13,10 @@
       "schedule": "0 4 * * *"
     },
     {
+      "path": "/api/cron/ads-machine",
+      "schedule": "0 16 * * *"
+    },
+    {
       "path": "/api/cron/autopilot",
       "schedule": "30 4 * * *"
     },
