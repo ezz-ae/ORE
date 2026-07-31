@@ -21,7 +21,10 @@ export interface CampaignQuality {
   reached: number       // progressed past 'new' (someone actually engaged)
   qualified: number     // qualified or deeper
   won: number           // converted / closed — the real objective event
-  junk: number          // blocked, or lost with an unusable phone
+  junk: number          // blocked, unusable phone on a lost lead, or a duplicate
+  /** Attributed leads that repeat an earlier lead's phone — the same person
+   *  delivered more than once, i.e. spend paid twice. Included in `junk`. */
+  duplicates: number
   /** 0–100, or null when there is no attributed lead yet. */
   score: number | null
   funnel: { key: 'reached' | 'qualified' | 'won' | 'junk'; count: number; pct: number }[]
@@ -73,14 +76,39 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   if (untrusted.size > 0) rows = rows.filter((r) => !untrusted.has(r.id))
 
   const attributed = rows.length
-  let reached = 0, qualified = 0, won = 0, junk = 0
+  let reached = 0, qualified = 0, won = 0
+  // Junk is collected as a SET of lead ids, not a counter, because one lead can
+  // trip several junk signals at once and must only be counted once.
+  const junkIds = new Set<string>()
   for (const r of rows) {
     const s = r.status
     if (s && s !== 'new') reached++
     if (s && QUALIFIED_STATUSES.has(s)) qualified++
     if (s && WON.has(s)) won++
-    if (r.blocked || (s === 'lost' && badPhone(r.phone))) junk++
+    if (r.blocked || (s === 'lost' && badPhone(r.phone))) junkIds.add(r.id)
   }
+
+  // DUPLICATES. A campaign that delivers the same person twice charged you
+  // twice, so it is genuinely worse than its raw lead count suggests — and
+  // nothing was counting that. Same rule the CRM's duplicates view uses:
+  // leads sharing a normalised phone of 7+ digits, highest-intent kept.
+  //
+  // One deliberate difference from that view: it hides LOST leads, because a
+  // merged duplicate gets marked lost and would otherwise reappear. Scoring
+  // must not hide them — the money was spent whether or not someone later
+  // tidied the record — so every attributed row counts here.
+  const byPhone = new Map<string, string[]>()
+  for (const r of rows) {
+    const key = (r.phone ?? '').replace(/\D/g, '')
+    if (key.length < 7) continue
+    byPhone.set(key, [...(byPhone.get(key) ?? []), r.id])
+  }
+  let duplicates = 0
+  for (const ids of byPhone.values()) {
+    if (ids.length < 2) continue
+    for (const id of ids.slice(1)) { duplicates++; junkIds.add(id) }
+  }
+  const junk = junkIds.size
 
   const rate = (n: number) => (attributed > 0 ? n / attributed : 0)
 
@@ -111,5 +139,5 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     { key: 'junk', count: junk, pct: pct(junk) },
   ]
 
-  return { campaignId, attributed, reached, qualified, won, junk, score, funnel, avgBehaviour, behaviourCount }
+  return { campaignId, attributed, reached, qualified, won, junk, duplicates, score, funnel, avgBehaviour, behaviourCount }
 }
