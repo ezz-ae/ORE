@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { CheckCircle, MessageSquare, Zap, User, ArrowUpRight, Bell, Briefcase, Trophy, X } from 'lucide-react'
 import { DealForm, type DealFormValues } from '@/components/deals/deal-form'
 import { useT } from '@/lib/i18n/provider'
+import { LeadValueChips } from '@/components/freehold/lead-value-chips'
 import { useSession } from '@/lib/freehold/use-session'
 
 // Reassigning a lead to another broker is a management action.
@@ -25,6 +26,8 @@ interface QuickActionsProps {
   currentStage: string
   lead?: LeadSnapshot
   existingDeal?: { id: string; status: string } | null
+  /** Current 0–10 human value rating; null = never judged. */
+  valueRating?: number | null
 }
 
 type ActionKey = 'hot' | 'reassign' | 'snooze'
@@ -37,10 +40,11 @@ const DEAL_STATUS_LABEL_KEY: Record<string, string> = {
   closed: 'crm.deal.closedPaid',
 }
 
-export function QuickActions({ leadId, leadName, currentStage, lead, existingDeal }: QuickActionsProps) {
+export function QuickActions({ leadId, leadName, currentStage, lead, existingDeal, valueRating = null }: QuickActionsProps) {
   const t = useT()
   const router = useRouter()
   const [applied, setApplied] = useState<Set<ActionKey>>(new Set())
+  const [rating, setRating] = useState<number | null>(valueRating)
   const [flash, setFlash] = useState<string | null>(null)
   const [dealModal, setDealModal] = useState<null | { closeLead: boolean }>(null)
 
@@ -62,6 +66,14 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
       })
       return res.ok
     } catch { return false }
+  }
+
+  async function rateValue(v: number) {
+    const prev = rating
+    setRating(v)
+    const ok = await patchLead({ value_rating: v })
+    if (ok) { flashMsg(t('crm.value.saved', { v: String(v) })); router.refresh() }
+    else { setRating(prev); flashMsg(t('crm.couldNotUpdate')) }
   }
 
   async function markHot() {
@@ -104,6 +116,20 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
   return (
     <>
       <div className="space-y-2">
+        {/* ── VALUE — the one-click judgment, before anything else ─────────
+            One tap ranks this lead 0–10. The bottom of the scale is not an
+            insult; it is the training signal that teaches the machine what to
+            stop buying. Writes the lead's canonical rating, answers any open
+            Ads-Machine question on this lead, and reaches the shared
+            targeting signals on the nightly fold. */}
+        <div className="rounded-xl border border-line bg-surface-2/60 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('crm.value.label')}</span>
+            {rating !== null && <span className="text-[11px] text-slate-500">{t('crm.value.current', { v: String(rating) })}</span>}
+          </div>
+          <LeadValueChips value={rating} onRate={rateValue} />
+        </div>
+
         {/* Deal: convert once, then show its status */}
         {existingDeal ? (
           <Link

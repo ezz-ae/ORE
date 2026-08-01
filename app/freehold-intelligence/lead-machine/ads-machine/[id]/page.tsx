@@ -844,53 +844,44 @@ export default function MachineDashboardPage() {
                   </div>
                   <p className="mt-2.5 text-sm text-slate-200">{question}</p>
 
-                  {v.questionKind === 'confirm' ? (
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => answerVerdict(v, { verdict: 'yes' })}
-                        className={[
-                          'rounded-full border px-5 py-1.5 text-xs font-semibold transition disabled:opacity-50',
-                          v.suggestedVerdict === 'yes'
-                            ? 'border-emerald-400/50 bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/40'
-                            : 'border-line bg-surface-2 text-slate-300 hover:border-emerald-400/40 hover:text-emerald-300',
-                        ].join(' ')}
-                      >
-                        {t('lm.machine.queue.yes')}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => answerVerdict(v, { verdict: 'no' })}
-                        className={[
-                          'rounded-full border px-5 py-1.5 text-xs font-semibold transition disabled:opacity-50',
-                          v.suggestedVerdict === 'no'
-                            ? 'border-red-400/50 bg-red-400/15 text-red-300 ring-1 ring-red-400/40'
-                            : 'border-line bg-surface-2 text-slate-300 hover:border-red-400/40 hover:text-red-300',
-                        ].join(' ')}
-                      >
-                        {t('lm.machine.queue.no')}
-                      </button>
-                      {v.suggestedVerdict && (
-                        <span className="text-[10px] text-slate-500">{t('lm.machine.queue.suggested')}</span>
-                      )}
+                  {/* ONE SCALE, NO GREEN/RED. Every question — including the
+                      old yes/no kind — is answered with a 0–10 VALUE rating.
+                      The scale ranks the lead's worth: the bottom teaches the
+                      machine what to stop buying (a 0 and a 4 are both "no",
+                      but they are different facts), the top what to buy more
+                      of. Server derives yes/no (≥6 / ≤4) so every existing
+                      condemn/protect consumer keeps working. */}
+                  <div className="mt-3">
+                    <div className="mb-1.5 flex items-center gap-2 text-[10px] text-slate-500">
+                      <span>{t('lm.machine.queue.rate0')}</span>
+                      <span className="ms-auto">{t('lm.machine.queue.rate10')}</span>
                     </div>
-                  ) : (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {Array.from({ length: 11 }, (_, s) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {Array.from({ length: 11 }, (_, sc) => (
                         <button
-                          key={s}
+                          key={sc}
                           type="button"
                           disabled={busy}
-                          onClick={() => answerVerdict(v, { score: s })}
-                          className="h-8 w-8 rounded-lg border border-line bg-surface-2 text-xs font-semibold text-slate-300 transition hover:border-gold/40 hover:text-gold disabled:opacity-50"
+                          onClick={() => answerVerdict(v, { score: sc })}
+                          className={[
+                            'h-8 w-8 rounded-lg border text-xs font-semibold tabular-nums transition disabled:opacity-50',
+                            sc <= 2
+                              ? 'border-line bg-surface-2 text-slate-300 hover:border-red-400/50 hover:text-red-300'
+                              : sc <= 5
+                                ? 'border-line bg-surface-2 text-slate-300 hover:border-amber-400/50 hover:text-amber-300'
+                                : 'border-line bg-surface-2 text-slate-300 hover:border-emerald-400/50 hover:text-emerald-300',
+                          ].join(' ')}
                         >
-                          {s}
+                          {sc}
                         </button>
                       ))}
                     </div>
-                  )}
+                    {v.suggestedVerdict && (
+                      <p className="mt-1.5 text-[10px] text-slate-500">
+                        {t('lm.machine.queue.suggestedValue', { hint: v.suggestedVerdict === 'yes' ? '6+' : '0–4' })}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )
             })}

@@ -43,6 +43,8 @@ export type OpportunityComponentKey =
   | 'areaMomentum'
   | 'provenPerformance'
   | 'developerDepth'
+  | 'scarcity'
+  | 'areaDemand'
 
 export interface OpportunityComponent {
   key: OpportunityComponentKey
@@ -70,20 +72,27 @@ export interface OpportunityScore {
  * components are renormalized to sum 1 (a missing component never drags the
  * score, it just lowers coverage).
  *
- *   priceCompetitiveness 0.20  price vs same-area peers is the buyer's first filter
- *   adReadiness          0.20  spend on an unready listing is wasted
- *   areaMomentum         0.20  demand is moving somewhere — follow it
+ *   priceCompetitiveness 0.15  price vs same-area peers is the buyer's first filter
+ *   adReadiness          0.15  spend on an unready listing is wasted
+ *   areaMomentum         0.15  demand is MOVING somewhere — follow the change
  *   paymentPlanStrength  0.15  the plan is the off-plan ad's strongest hook
  *   provenPerformance    0.15  attributed leads = the machine already works here
- *   developerDepth       0.10  track-record proxy only, so the lightest weight
+ *   developerDepth       0.10  track-record proxy only, so a light weight
+ *   scarcity             0.08  few competing projects in the area = less ad
+ *                              auction pressure and a cleaner story to sell
+ *   areaDemand           0.07  demand LEVEL, distinct from momentum: momentum
+ *                              is the derivative (30d vs prior 30d), this is
+ *                              the absolute funnel volume the area commands
  */
 export const OPPORTUNITY_WEIGHTS: Record<OpportunityComponentKey, number> = {
-  priceCompetitiveness: 0.2,
-  adReadiness: 0.2,
-  areaMomentum: 0.2,
+  priceCompetitiveness: 0.15,
+  adReadiness: 0.15,
+  areaMomentum: 0.15,
   paymentPlanStrength: 0.15,
   provenPerformance: 0.15,
   developerDepth: 0.1,
+  scarcity: 0.08,
+  areaDemand: 0.07,
 }
 
 const COMPONENT_KEYS: OpportunityComponentKey[] = [
@@ -93,6 +102,8 @@ const COMPONENT_KEYS: OpportunityComponentKey[] = [
   'areaMomentum',
   'provenPerformance',
   'developerDepth',
+  'scarcity',
+  'areaDemand',
 ]
 
 export const INSUFFICIENT_DATA_REASON = 'insufficient data'
@@ -366,6 +377,74 @@ function scoreDeveloperDepth(prop: InventoryProperty, ctx: OpportunityContext): 
   }
 }
 
+
+/** How crowded is this project's shelf? Same-area competing projects from the
+ * live catalog — fewer peers means less ad-auction pressure on the same buyer
+ * and a cleaner "why this one" story. 0 peers ⇒ 100, 6 ⇒ ~50, 18 (the
+ * catalog's per-area average) ⇒ ~25. Null only when the area is unknown —
+ * absence of data is never scored as scarce. */
+function scoreScarcity(prop: InventoryProperty, ctx: OpportunityContext): OpportunityComponent {
+  const key = 'scarcity' as const
+  const area = (prop.area || '').trim()
+  if (!area) {
+    return { key, score: null, evidence: 'No area recorded for this project — competing supply cannot be counted.' }
+  }
+  const peers = ctx.props.filter((p) => p.slug !== prop.slug && (p.area || '').trim() === area).length
+  const score = Math.round(100 * (6 / (6 + peers)))
+  return {
+    key,
+    score,
+    evidence: peers > 0
+      ? `${peers} competing project(s) in ${area} in the catalog.`
+      : `Sole project in ${area} in the catalog.`,
+  }
+}
+
+/** Demand LEVEL of the project's area — the absolute funnel volume (attributed
+ * leads 90d + landing views 30d) this area commands, relative to the busiest
+ * area in the catalog. Distinct from areaMomentum, which scores the CHANGE in
+ * demand; a large stable area and a small surging one are different facts and
+ * the engine should see both. Null before any funnel traffic exists anywhere —
+ * an empty catalog is not evidence that every area is dead. */
+// Area funnel volumes are identical for every project in a run — computed once
+// per context. Without this the nightly sweep re-scans the whole catalog per
+// project (~1.2B comparisons at 2,840 projects × 155 areas): a hung cron.
+const areaVolumeCache = new WeakMap<OpportunityContext, { byArea: Map<string, number>; max: number }>()
+function areaVolumes(ctx: OpportunityContext): { byArea: Map<string, number>; max: number } {
+  const hit = areaVolumeCache.get(ctx)
+  if (hit) return hit
+  const byArea = new Map<string, number>()
+  for (const p of ctx.props) {
+    const a = (p.area || '').trim()
+    if (!a) continue
+    const v = (ctx.leadsBySlug.get(p.slug)?.last90 ?? 0) + (ctx.viewsBySlug.get(p.slug)?.recent30 ?? 0)
+    byArea.set(a, (byArea.get(a) ?? 0) + v)
+  }
+  let max = 0
+  for (const v of byArea.values()) max = Math.max(max, v)
+  const out = { byArea, max }
+  areaVolumeCache.set(ctx, out)
+  return out
+}
+
+function scoreAreaDemand(prop: InventoryProperty, ctx: OpportunityContext): OpportunityComponent {
+  const key = 'areaDemand' as const
+  const area = (prop.area || '').trim()
+  if (!area) {
+    return { key, score: null, evidence: 'No area recorded for this project — area demand cannot be attributed.' }
+  }
+  const { byArea, max } = areaVolumes(ctx)
+  if (max === 0) {
+    return { key, score: null, evidence: 'No leads or landing views recorded anywhere yet — area demand has no basis.' }
+  }
+  const vol = byArea.get(area) ?? 0
+  return {
+    key,
+    score: Math.round((100 * vol) / max),
+    evidence: `${area}: ${vol} funnel events (attributed leads 90d + LP views 30d); busiest area has ${max}.`,
+  }
+}
+
 // ─── Assembly ────────────────────────────────────────────────────────────────
 
 function scoreProject(prop: InventoryProperty, ctx: OpportunityContext): OpportunityScore {
@@ -376,6 +455,8 @@ function scoreProject(prop: InventoryProperty, ctx: OpportunityContext): Opportu
     scoreAreaMomentum(prop, ctx),
     scoreProvenPerformance(prop, ctx),
     scoreDeveloperDepth(prop, ctx),
+    scoreScarcity(prop, ctx),
+    scoreAreaDemand(prop, ctx),
   ]
   const present = components.filter((c) => c.score !== null)
   const coverage = present.length / COMPONENT_KEYS.length
