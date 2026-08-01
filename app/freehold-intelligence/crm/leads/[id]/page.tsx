@@ -29,6 +29,7 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
     // selecting so a fresh deploy (no LP submits yet) doesn't 404 every lead.
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS click_intent text`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS duplicate_dismissed_at timestamptz`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
     const queryParams: unknown[] = [id]
     let ownerFilter = ''
     if (ownerKeys && ownerKeys.length) { queryParams.push(ownerKeys); ownerFilter = ' AND assigned_broker_id = ANY($2)' }
@@ -44,12 +45,13 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       purchase_probability: number | null; budget_confidence: string | null;
       click_intent: string | null;
       duplicate_dismissed_at: string | null;
+      value_rating: number | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
               utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text,
               behaviour_score, buyer_intent, purchase_probability, budget_confidence, click_intent,
-              duplicate_dismissed_at::text
+              duplicate_dismissed_at::text, value_rating
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -85,6 +87,7 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
       viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
       leadCode: r.lead_code ?? null, snoozeUntil: r.snooze_until ?? null,
+      valueRating: r.value_rating ?? null,
       behaviourScore: r.behaviour_score, buyerIntent: r.buyer_intent,
       purchaseProbability: r.purchase_probability, budgetConfidence: r.budget_confidence,
       clickIntent: r.click_intent,
@@ -452,6 +455,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 projectInterest: lead.projectInterest,
                 budgetAED: lead.budgetAED,
               }}
+              valueRating={(lead as unknown as { valueRating?: number | null }).valueRating ?? null}
             />
           </div>
 

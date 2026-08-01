@@ -519,6 +519,14 @@ export async function answerLeadVerdict(
 /** Answer a 'score' question (0–10 "how likely would this lead buy"). The
  * yes/no verdict is DERIVED: >=6 → yes, <=4 → no, exactly 5 → neutral (NULL,
  * excluded from yes-ratio numerator AND denominator). */
+/**
+ * Answer ANY verdict question with a 0–10 VALUE rating. Originally restricted
+ * to 'score'-kind rows while 'confirm' rows took only yes/no — two rating
+ * systems for one judgment. One click, one scale now: the derived yes/no
+ * (≥6 yes, ≤4 no, 5 neutral) keeps every existing condemn/protect consumer
+ * working unchanged, while the raw score preserves the GRADIENT — a 0 and a 4
+ * are both "no", but the machine should know the difference.
+ */
 export async function answerLeadScore(
   rowId: string,
   score: number,
@@ -530,7 +538,7 @@ export async function answerLeadScore(
   const rows = await query<Record<string, unknown>>(
     `UPDATE freehold_site_ads_machine_lead_verdicts
      SET score = $2, verdict = $3, verdict_by = $4, answered_at = now()
-     WHERE id = $1 AND answered_at IS NULL AND question_kind = 'score'
+     WHERE id = $1 AND answered_at IS NULL
      RETURNING *`,
     [rowId, s, derived, verdictBy.slice(0, 200)],
   )
@@ -734,9 +742,12 @@ export async function submitVerdictAnswer(params: {
 
   let updated: LeadVerdictRow | null = null
   let detail = ''
-  if (row.questionKind === 'confirm') {
+  // ONE SCALE FOR EVERYTHING: a 0–10 score is accepted on every question kind.
+  // Yes/no on confirm rows still works (older clients), but the value rating
+  // is the primary path — no more green-or-red-only judgments.
+  if (row.questionKind === 'confirm' && params.score === undefined) {
     if (params.verdict !== 'yes' && params.verdict !== 'no') {
-      return { ok: false, error: "This question takes a verdict of 'yes' or 'no'", status: 400 }
+      return { ok: false, error: "Answer with a 0–10 value rating (or yes/no)", status: 400 }
     }
     updated = await answerLeadVerdict(row.id, params.verdict, params.byEmail)
     detail = `${params.byEmail} answered ${params.verdict.toUpperCase()} on lead ${row.leadId}`

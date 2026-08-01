@@ -164,6 +164,9 @@ export async function rebuildSignals(tenantId: string): Promise<void> {
 export async function refreshLiveTenantSignals(): Promise<void> {
   await ensureOnce()
   const liveTenant = `${TENANT_ID}-live`
+  // The rating column arrives lazily with the first one-click rating; ensure
+  // it here so a fresh install's fold doesn't fail on a missing column.
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
   await query(`DELETE FROM entrestate_targeting_signals WHERE tenant_id = $1`, [liveTenant])
   await query(
     `INSERT INTO entrestate_targeting_signals
@@ -173,17 +176,35 @@ export async function refreshLiveTenantSignals(): Promise<void> {
                  WHEN source ILIKE '%meta%' OR source ILIKE '%face%' OR source ILIKE '%insta%' THEN 'meta'
                  ELSE 'other' END,
             '', '', '', '', '',
-            COALESCE(NULLIF(lower(trim(project_interest)), ''), ''),
+            COALESCE(NULLIF(lower(trim(interest)), ''), ''),
             COUNT(*),
-            COUNT(*) FILTER (WHERE priority IN ('hot','priority') OR status IN ('qualified','viewing','negotiation','closed','converted')),
+            COUNT(*) FILTER (WHERE priority IN ('hot','priority')
+                                OR status IN ('qualified','viewing','negotiation','closed','converted')
+                                OR value_rating >= 6),
             COUNT(*) FILTER (WHERE status IN ('closed','converted')),
-            COUNT(*) FILTER (WHERE status = 'lost'),
+            COUNT(*) FILTER (WHERE status = 'lost' OR value_rating <= 2),
             now()
      FROM freehold_site_leads
      GROUP BY 2, 8`,
     [liveTenant],
-  ).catch(() => { /* live CRM table may not exist in a fresh white-label */ })
+  ).catch((e) => {
+    // LOUD. This exact fold failed silently for its whole life: the SQL read a
+    // column named project_interest that never existed (the column is
+    // `interest`), and this catch ate the error — so the "shared brain" was
+    // never actually fed a single live outcome. A fresh white-label without
+    // the CRM table is still tolerated, but the failure is now visible.
+    console.error('[targeting-base] live signal fold failed — the shared brain is NOT being fed:', e)
+  })
 }
+
+/*
+ * VALUE RATINGS IN THE FOLD (the two value_rating terms above): the one-click
+ * 0–10 human judgment teaches the shared signals immediately, without waiting
+ * for a pipeline stage change. ≥6 counts as qualified-grade signal; ≤2 counts
+ * with the negatives — the machine learns what it should stop buying from the
+ * bottom of the scale, which is the entire point of rating downward from 0.
+ * Ratings 3–5 stay neutral: a "maybe" teaches nothing and shouldn't pretend to.
+ */
 
 export interface NetworkBenchmark {
   platform: string

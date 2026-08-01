@@ -68,6 +68,7 @@ interface DbLead {
   duplicate_dismissed_at: string | null
   utm_id: string | null
   utm_campaign: string | null
+  value_rating: number | null
 }
 
 function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
@@ -120,6 +121,8 @@ function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
     snoozeUntil: row.snooze_until ?? null,
     leadCode: row.lead_code ?? null,
     duplicateDismissedAt: row.duplicate_dismissed_at ?? null,
+    /** Human 0–10 value judgment; null = not yet rated. */
+    valueRating: row.value_rating ?? null,
   }
 }
 
@@ -132,6 +135,7 @@ export async function GET() {
   try {
     await ensureLeadsTable()
     await ensureDismissColumn()
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
     const isBroker = user.role === 'broker'
     const ownerKeys = brokerOwnerKeys(user)
 
@@ -140,7 +144,7 @@ export async function GET() {
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
                       snooze_until::text, lead_code, duplicate_dismissed_at::text,
-                      utm_id, utm_campaign
+                      utm_id, utm_campaign, value_rating
                FROM freehold_site_leads`
 
     if (isBroker && ownerKeys.length) {

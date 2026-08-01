@@ -6,6 +6,7 @@ import { query } from '@/lib/db'
 import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 import { notify } from '@/lib/freehold/notifications'
 import { emailLeadMovementToInbox, notifyBrokerOfAssignedLead } from '@/lib/transactional-email'
+import { answerLeadScore } from '@/lib/freehold/ads-machine'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -60,6 +61,9 @@ async function logPatchActivity(leadId: string, body: Record<string, unknown>, a
   }
   if (typeof body.priority === 'string' && body.priority) {
     entries.push({ type: 'note', description: `Priority set to ${body.priority}` })
+  }
+  if ('value_rating' in body) {
+    entries.push({ type: 'note', description: `Value rated ${Number(body.value_rating)}/10` })
   }
   if ('snooze_until' in body && body.snooze_until) {
     const until = new Date(String(body.snooze_until))
@@ -159,6 +163,40 @@ export async function PATCH(
   const ALLOWED_FIELDS = ['status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest', 'message', 'snooze_until', 'archived', 'muted_until', 'blocked', 'duplicate_dismissed_at']
   const updates: string[] = []
   const values: unknown[] = []
+
+  // ── VALUE RATING — one click, one scale ─────────────────────────────────
+  // A 0–10 judgment of what this lead is actually WORTH, replacing the old
+  // binary green/red. The bottom of the scale is the point: a lead rated 0
+  // teaches the machine what it should stop buying, which is exactly as
+  // valuable as knowing what to buy more of. Written canonically on the lead;
+  // if the Ads Machine has an unanswered question about this same lead, the
+  // one click answers that too — nobody rates the same lead twice.
+  if ('value_rating' in body) {
+    const v = Number(body.value_rating)
+    if (!Number.isFinite(v) || v < 0 || v > 10) {
+      return NextResponse.json({ error: 'value_rating must be 0–10' }, { status: 400 })
+    }
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rated_by text`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rated_at timestamptz`).catch(() => undefined)
+    updates.push(`value_rating = $${updates.length + 1}`)
+    values.push(Math.round(v))
+    updates.push(`value_rated_by = $${updates.length + 1}`)
+    values.push(user.email)
+    updates.push(`value_rated_at = now()`)
+    // Bridge into the machine's learning, best-effort: the rating must never
+    // fail because the machine has no question open.
+    void (async () => {
+      try {
+        const rows = await query<{ id: string }>(
+          `SELECT id FROM freehold_site_ads_machine_lead_verdicts
+            WHERE lead_id = $1 AND answered_at IS NULL LIMIT 1`,
+          [id],
+        )
+        if (rows[0]) await answerLeadScore(rows[0].id, Math.round(v), user.email)
+      } catch { /* machine table may not exist yet */ }
+    })()
+  }
 
   for (const field of ALLOWED_FIELDS) {
     if (field in body) {

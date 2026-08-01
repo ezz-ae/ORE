@@ -115,6 +115,9 @@ export type CRMLeadIntelligence = {
       URL). Distinct from buyerIntent, which is derived from observed
       behaviour; null when the visit carried no intent. */
   clickIntent?: string | null
+  /** One-click human 0–10 value judgment. The bottom of the scale is training
+      signal (what the machine should stop buying); null = never judged. */
+  valueRating?: number | null
 }
 
 export type NotebookOutput = {

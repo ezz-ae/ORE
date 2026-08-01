@@ -12,6 +12,7 @@ import {
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { LeadValueBadge } from '@/components/freehold/lead-value-chips'
 import { useT } from '@/lib/i18n/provider'
 import { loadCrmView, saveCrmView } from './_lib/view-prefs'
 
@@ -84,6 +85,11 @@ export default function FreeholdCrmPage() {
   const { leads, loading: leadsLoading, unassigned, total: leadTotal, truncated } = useLiveLeads()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
+  // Rank by VALUE, most unqualified first — the deliberate inversion. The
+  // bottom of the list is not noise to hide; it is the set the machine (and
+  // the team) must explicitly know it does not want. Unrated leads sort after
+  // the rated: unknown is not the same fact as unqualified.
+  const [rankByValue, setRankByValue] = useState(false)
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -155,8 +161,10 @@ export default function FreeholdCrmPage() {
     return leads
       .filter(l => stageFilter === 'all' || l.pipelineStage === stageFilter)
       .filter(l => !q || [l.name, l.projectInterest, l.assignedAgent, l.source].some(f => f.toLowerCase().includes(q)))
-      .sort((a, b) => b.intentScore - a.intentScore)
-  }, [leads, query, stageFilter])
+      .sort((a, b) => rankByValue
+        ? (a.valueRating ?? 99) - (b.valueRating ?? 99)
+        : b.intentScore - a.intentScore)
+  }, [leads, query, stageFilter, rankByValue])
 
   // ── Tile definitions ──
   const TILES = [
@@ -313,6 +321,19 @@ export default function FreeholdCrmPage() {
                 <X className="h-3 w-3" /> {t('crm.clear')}
               </button>
             )}
+            {/* Rank by value, most unqualified first — surfacing the bottom
+                of the book on purpose: that set is what the machine must
+                learn to stop buying. */}
+            <button
+              onClick={() => setRankByValue((v) => !v)}
+              className={`flex items-center gap-1 rounded-lg border px-3 py-2 text-xs transition ${
+                rankByValue
+                  ? 'border-red-400/40 bg-red-400/10 text-red-300'
+                  : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {t('crm.rank.valueWorstFirst')}
+            </button>
           </div>
 
           <div className="mb-1.5 px-0.5 text-xs text-slate-500">
@@ -353,11 +374,12 @@ export default function FreeholdCrmPage() {
                   className="flex items-center gap-3 border-b border-line px-4 py-3 transition last:border-0 hover:bg-surface-2 lg:grid lg:gap-4"
                   style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
                 >
-                  {/* Avatar + name */}
+                  {/* Avatar + name (+ the value judgment at a glance) */}
                   <div className="flex min-w-0 items-center gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-surface-2 text-[10px] font-bold text-slate-400">
                       {initials(lead.name)}
                     </div>
+                    <LeadValueBadge value={lead.valueRating ?? null} />
                     <div className="min-w-0">
                       <Link
                         href={`/freehold-intelligence/crm/leads/${lead.id}`}
