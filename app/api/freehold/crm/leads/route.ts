@@ -16,6 +16,24 @@ const LEAD_LIST_LIMIT = 1000
 
 const MANAGEMENT = ['admin', 'ceo', 'director', 'sales_manager']
 
+const normPhone = (p: string | null) => (p ?? '').replace(/\D/g, '')
+
+/** Normalised phones (7+ digits) that appear on MORE than one non-archived
+ *  lead — the duplicate clusters, computed over the whole table so the flag
+ *  is correct even for rows beyond the list cap. Fail-soft to empty. */
+async function duplicatePhoneSet(): Promise<Set<string>> {
+  try {
+    const rows = await query<{ p: string }>(
+      `SELECT regexp_replace(phone, '\D', '', 'g') AS p
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE AND phone IS NOT NULL
+        GROUP BY 1
+       HAVING length(regexp_replace(phone, '\D', '', 'g')) >= 7 AND COUNT(*) > 1`,
+    )
+    return new Set(rows.map((r) => r.p))
+  } catch { return new Set() }
+}
+
 // Persistent "not a duplicate" dismissals live on the lead row.
 let dismissColEnsured: Promise<void> | null = null
 const ensureDismissColumn = () => {
@@ -52,7 +70,7 @@ interface DbLead {
   utm_campaign: string | null
 }
 
-function dbLeadToCRM(row: DbLead) {
+function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
   const stage = (row.status as string | null) ?? 'new'
   const stageMap: Record<string, string> = {
     new: 'new', contacted: 'contacted', qualified: 'qualified',
@@ -80,8 +98,15 @@ function dbLeadToCRM(row: DbLead) {
     projectInterest: row.interest ?? row.project_slug ?? 'General enquiry',
     intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : temperature === 'warm' ? 55 : 30,
     urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
-    duplicateRisk: false,
-    wrongNumberRisk: false,
+    // REAL now, not hardcoded false. The follow-up queue renders risk badges
+    // and a risk counter from these two flags; with the server pinning them
+    // false, that entire UI was dead weight that could never fire.
+    //   duplicate  = another non-archived lead shares this normalised phone
+    //                (the same rule the Duplicates page clusters by), unless
+    //                the cluster was dismissed as "not a duplicate".
+    //   wrong no.  = phone missing or too short to dial (<7 digits).
+    duplicateRisk: !row.duplicate_dismissed_at && !!dupPhones?.has(normPhone(row.phone)),
+    wrongNumberRisk: normPhone(row.phone).length < 7,
     assignedAgent: row.assigned_broker_id ?? '',
     lastContactAt: row.last_contact_at ?? row.created_at,
     nextBestAction: stage === 'new' ? 'Reach out and qualify' : 'Follow up',
@@ -133,6 +158,7 @@ export async function GET() {
     sql += ` ORDER BY created_at DESC LIMIT ${LEAD_LIST_LIMIT}`
 
     const rows = await query<DbLead>(sql, params)
+    const dupPhones = await duplicatePhoneSet()
 
     // The true count under the SAME filter the list used, so a broker's total
     // matches a broker's list rather than the whole company's.
@@ -161,7 +187,7 @@ export async function GET() {
       unassigned = Number(c?.n) || 0
     }
     return NextResponse.json({
-      leads: rows.map(dbLeadToCRM),
+      leads: rows.map((r) => dbLeadToCRM(r, dupPhones)),
       source: 'db',
       unassigned,
       total,

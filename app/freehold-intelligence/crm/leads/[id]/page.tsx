@@ -28,6 +28,7 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
     // click_intent is written by /api/leads on submit; ensure it exists before
     // selecting so a fresh deploy (no LP submits yet) doesn't 404 every lead.
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS click_intent text`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS duplicate_dismissed_at timestamptz`).catch(() => undefined)
     const queryParams: unknown[] = [id]
     let ownerFilter = ''
     if (ownerKeys && ownerKeys.length) { queryParams.push(ownerKeys); ownerFilter = ' AND assigned_broker_id = ANY($2)' }
@@ -42,16 +43,31 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       behaviour_score: number | null; buyer_intent: string | null;
       purchase_probability: number | null; budget_confidence: string | null;
       click_intent: string | null;
+      duplicate_dismissed_at: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
               utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text,
-              behaviour_score, buyer_intent, purchase_probability, budget_confidence, click_intent
+              behaviour_score, buyer_intent, purchase_probability, budget_confidence, click_intent,
+              duplicate_dismissed_at::text
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
     if (!rows.length) return null
     const r = rows[0]
+    // Real risk flags (were hardcoded false — the detail banner could never
+    // show). Same rules as the list API and the Duplicates page.
+    const digits = (r.phone ?? '').replace(/\D/g, '')
+    let dupCount = 0
+    if (digits.length >= 7 && !r.duplicate_dismissed_at) {
+      const [c] = await query<{ n: string }>(
+        `SELECT COUNT(*)::text AS n FROM freehold_site_leads
+          WHERE archived IS NOT TRUE AND id <> $1
+            AND regexp_replace(phone, '\\D', '', 'g') = $2`,
+        [r.id, digits],
+      ).catch(() => [{ n: '0' }])
+      dupCount = Number(c?.n) || 0
+    }
     const stage = (r.status ?? 'new') as CRMLeadIntelligence['pipelineStage']
     const temperature = (r.priority === 'hot' ? 'hot' : r.priority === 'priority' ? 'priority' : r.priority === 'cold' ? 'cold' : 'warm') as CRMLeadIntelligence['temperature']
     return {
@@ -64,7 +80,7 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       projectInterest: r.interest ?? r.project_slug ?? 'General enquiry',
       intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : 55,
       urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
-      duplicateRisk: false, wrongNumberRisk: false, assignedAgent: r.assigned_broker_id ?? '',
+      duplicateRisk: dupCount > 0, wrongNumberRisk: digits.length < 7, assignedAgent: r.assigned_broker_id ?? '',
       lastContactAt: r.last_contact_at ?? r.created_at, nextBestAction: '', suggestedMessage: '',
       aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
       viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
