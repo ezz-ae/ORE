@@ -145,15 +145,38 @@ async function crmPipelineSnapshot(): Promise<Record<string, number> | null> {
 const BLOCK_TYPES = new Set(['text', 'plan', 'actions', 'color', 'landing', 'media', 'path'])
 const REPHRASE_FALLBACK: ExpertBlock[] = [{ type: 'text', content: 'I lost my train of thought there — ask me that once more and I’ll answer properly.' }]
 
+// A line that is tool-call pseudo-code — `print(agent.tool(...))`, a dotted
+// call, or a bare snake_case invocation. These are instructions the model
+// meant to EXECUTE; rendering them as chat both looks broken and, worse,
+// leaves the metric question unanswered so the next turn fabricates numbers.
+const PSEUDO_CALL_LINE = /^\s*(?:print\s*\()?\s*[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*\([^)]*\)+\s*;?\s*$/i
+
+/** Strip pseudo-call lines out of a text block; null when nothing human remains. */
+function stripPseudoCalls(content: string): string | null {
+  const kept = content.split(/\n/).filter((line) => !PSEUDO_CALL_LINE.test(line))
+  const out = kept.join('\n').trim()
+  return out ? out : null
+}
+
 function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
   if (!parsed || typeof parsed !== 'object') return null
   const obj = parsed as { blocks?: ExpertBlock[]; type?: string }
   if (Array.isArray(obj.blocks) && obj.blocks.length > 0) {
     // Drop blank text blocks — a {"blocks":[{"type":"text","content":""}]}
     // reply otherwise renders as a naked tool-chip bubble with no answer.
-    const arr = obj.blocks.filter((b) =>
-      b && typeof b === 'object' && 'type' in b &&
-      !((b as { type?: string }).type === 'text' && !String((b as { content?: unknown }).content ?? '').trim()))
+    // Text blocks also shed any tool-call pseudo-code lines (see
+    // PSEUDO_CALL_LINE); a block that was ONLY pseudo-code drops entirely,
+    // which lets the rephrase/grounded fallbacks downstream take over.
+    const arr = obj.blocks
+      .map((b) => {
+        if (b && typeof b === 'object' && (b as { type?: string }).type === 'text') {
+          const cleaned = stripPseudoCalls(String((b as { content?: unknown }).content ?? ''))
+          return cleaned === null ? null : ({ ...(b as object), content: cleaned } as ExpertBlock)
+        }
+        return b
+      })
+      .filter((b): b is ExpertBlock => !!b && typeof b === 'object' && 'type' in b &&
+        !((b as { type?: string }).type === 'text' && !String((b as { content?: unknown }).content ?? '').trim()))
     if (arr.length > 0) return arr
   }
   // Tolerate a BARE block (`{"type":"landing",…}`) or a bare array — models
