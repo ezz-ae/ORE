@@ -858,6 +858,30 @@ export function parseToolCall(
     if (knownNames.includes(firstLine) && trimmed.split(/\s+/).every((w) => knownNames.includes(w))) {
       return { name: firstLine, args: {} }
     }
+
+    // 5 — pseudo-calls ANYWHERE in the reply, including inside an otherwise
+    // valid {"blocks":[...]} answer. This is the drift that fabricates: the
+    // model "shows its work" as python lines inside a text block, shape 3's
+    // ^-anchor never fires (the reply starts with '{'), no tool executes, the
+    // code leaks to the user's screen as a message — and the NEXT turn answers
+    // the metric question from nothing, with invented CPL/spend/quality
+    // numbers. Catching the first known-tool call wherever it appears turns
+    // that turn back into a real execution, which is the difference between a
+    // grounded answer and a lie. First known tool wins; the loop's
+    // TOOL_RESULT feedback and duplicate-breaker handle the rest.
+    const nameAlt = knownNames
+      .map((tn) => tn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('|')
+    const anywhere = raw.match(new RegExp(
+      `(?:print\\s*\\(\\s*)?(?:[a-z][a-z0-9_]*\\.)?(${nameAlt})\\s*\\(([^)]*)\\)`, 'i',
+    ))
+    if (anywhere && knownNames.includes(anywhere[1])) {
+      const args: Record<string, unknown> = {}
+      for (const m of anywhere[2].matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:'([^']*)'|"([^"]*)"|(true|false)|(-?\d+(?:\.\d+)?))/g)) {
+        args[m[1]] = m[2] ?? m[3] ?? (m[4] !== undefined ? m[4] === 'true' : Number(m[5]))
+      }
+      return { name: anywhere[1], args }
+    }
   }
   return null
 }
