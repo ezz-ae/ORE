@@ -41,6 +41,9 @@ const NAV_SECTIONS = [
     items: [
       { label: 'settings.tab.security',      href: '/freehold-intelligence/settings/security',                        Icon: ShieldCheck },
       { label: 'settings.tab.dataSecurity',  href: '/freehold-intelligence/settings/data-security',                   Icon: Lock        },
+      // The role/permission matrix + deployed-protections checklist. Fully
+      // built and fully invisible: no link anywhere in the app reached it.
+      { label: 'settings.tab.accessMatrix',  href: '/freehold-intelligence/security',                                 Icon: ShieldCheck },
       { label: 'settings.tab.notifications', href: '/freehold-intelligence/settings/notifications',                   Icon: Bell        },
     ],
   },
@@ -49,6 +52,9 @@ const NAV_SECTIONS = [
     items: [
       { label: 'settings.tab.connect',       href: '/freehold-intelligence/settings/connect',                         Icon: Bot         },
       { label: 'settings.tab.api',           href: '/freehold-intelligence/settings/api',                             Icon: Code        },
+      // Live infra/integration status — same truth as /api/health, human-shaped.
+      // Also fully built and previously unreachable.
+      { label: 'settings.tab.serverStatus',  href: '/freehold-intelligence/server-status',                            Icon: Database    },
     ],
   },
 ]
