@@ -489,7 +489,18 @@ Open the CRM to follow up: ${baseUrl}/crm/leads
 }
 
 export async function getLeadershipLeadRecipients() {
-  const configuredEmails = uniqueValues(
+  // The brand inbox (info@<domain>, per-tenant via NEXT_PUBLIC_BRAND_EMAIL) is
+  // a GUARANTEED recipient of every lead alert — appended to whatever else is
+  // configured, never replacing it. Before this, alert delivery depended
+  // entirely on env vars or leadership rows existing; with neither, a lead
+  // arrived on time and was announced to nobody. The company's own public
+  // inbox is the one address that always exists, so it is the floor.
+  const brandInbox = BRAND.email?.trim() || ""
+
+  // The branch test below must see only the ENV-configured values: if the
+  // brand inbox were mixed in first, this branch would always win and the
+  // leadership-users fallback underneath would silently become dead code.
+  const envEmails = uniqueValues(
     (
       process.env.LEADS_NOTIFICATION_EMAIL ||
       process.env.CRM_NOTIFICATION_EMAIL ||
@@ -500,7 +511,8 @@ export async function getLeadershipLeadRecipients() {
 
   const configuredPhones = uniquePhones((process.env.LEADS_NOTIFICATION_WHATSAPP || "").split(","))
 
-  if (configuredEmails.length || configuredPhones.length) {
+  if (envEmails.length || configuredPhones.length) {
+    const configuredEmails = uniqueValues([...envEmails, brandInbox])
     return {
       emails: configuredEmails,
       whatsappTargets: configuredPhones,
@@ -525,7 +537,9 @@ export async function getLeadershipLeadRecipients() {
   )
 
   return {
-    emails: uniqueValues(recipients.map((row) => row.email)),
+    // Brand inbox stays on the list even when recipients come from the users
+    // table — the guarantee must not depend on which branch resolved.
+    emails: uniqueValues([...recipients.map((row) => row.email), brandInbox]),
     whatsappTargets: uniquePhones(recipients.map((row) => row.phone)),
     recipients,
   }
