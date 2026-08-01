@@ -41,6 +41,9 @@ export type ActivityKind =
   /** The machine as a whole cannot make progress — nothing live, or real spend
    *  with zero leads anywhere. Needs a human; the rotation cannot fix it. */
   | 'machine_stalled'
+  /** A trial's creative is worn out (high frequency). Reported, never
+   *  auto-swapped — replacing a known winner's ad is a human decision. */
+  | 'creative_fatigue'
   | 'error'
 
 let ensured: Promise<void> | null = null
