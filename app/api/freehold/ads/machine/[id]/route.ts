@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
+import { query } from '@/lib/db'
 import { normalizePermit, normalizePermitExpiry, permitDaysLeft, permitState } from '@/lib/freehold/trakheesi'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import {
@@ -93,6 +94,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       })
     : []
 
+  // THE BRAIN'S PULSE. The planner consults the shared targeting signals on
+  // every plan (recommendTargeting → targeting-base), but nothing ever showed
+  // whether the brain is actually FED — and its live fold turned out to have
+  // been silently dead since it was written. Freshness is now on the dashboard
+  // so a starved brain can never hide again. Fail-soft null: a missing signals
+  // table (fresh white-label) renders as "not fed yet", not an error.
+  let brain: { liveSignals: number; lastFold: string | null } | null = null
+  try {
+    const [b] = await query<{ n: string; last: string | null }>(
+      `SELECT COUNT(*)::text AS n, MAX(updated_at)::text AS last
+         FROM entrestate_targeting_signals WHERE tenant_id LIKE '%-live'`,
+    )
+    brain = { liveSignals: Number(b?.n) || 0, lastFold: b?.last ?? null }
+  } catch { brain = null }
+
   return NextResponse.json({
     machine,
     campaigns,
@@ -101,6 +117,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     verdictAggregates,
     starvedTrials,
     permits,
+    brain,
     evidence,
     evidenceAt: latestObservation?.createdAt ?? null,
     budget: {

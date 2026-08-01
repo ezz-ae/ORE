@@ -59,6 +59,9 @@ interface Detail {
     state: PermitState
     activeTrials: number
   }[]
+  /** The shared brain's pulse: live signal rows + when they were last folded.
+   *  The planner reads these signals on every plan — this shows they exist. */
+  brain?: { liveSignals: number; lastFold: string | null } | null
   /** What the engine actually judged each trial on, from its last observation. */
   evidence?: TrialEvidence[]
   evidenceAt?: string | null
@@ -150,6 +153,9 @@ export default function MachineDashboardPage() {
   const [capEditing, setCapEditing] = useState(false)
   const [capValue, setCapValue] = useState('')
   const [answeringId, setAnsweringId] = useState<string | null>(null)
+  // The page was one long activities wall. Tabs make each concern one screen:
+  // Overview (state+alarms+brain) · Trials · Feedback · Activity · Connections.
+  const [tab, setTab] = useState<'overview' | 'trials' | 'feedback' | 'activity' | 'connections'>('overview')
   const [delivery, setDelivery] = useState<Record<string, CampaignDelivery>>({})
   const [deliveryLoading, setDeliveryLoading] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
@@ -505,12 +511,132 @@ export default function MachineDashboardPage() {
         </div>
       </div>
 
+      {/* ── The cockpit tabs ── */}
+      <div className="mt-8 flex flex-wrap gap-1 rounded-[14px] border border-line bg-surface-2/60 p-1">
+        {([
+          ['overview', 'lm.machine.tab.overview'],
+          ['trials', 'lm.machine.tab.trials'],
+          ['feedback', 'lm.machine.tab.feedback'],
+          ['activity', 'lm.machine.tab.activity'],
+          ['connections', 'lm.machine.tab.connections'],
+        ] as const).map(([key, labelKey]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            className={`rounded-[10px] px-3.5 py-1.5 text-xs font-semibold transition ${
+              tab === key ? 'bg-gold/15 text-gold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {t(labelKey)}
+            {key === 'feedback' && verdictQueue.length > 0 && (
+              <span className="ms-1.5 rounded-full bg-amber-400/20 px-1.5 text-[10px] text-amber-300">{verdictQueue.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── THE BRAIN — is the shared intelligence actually fed? ─────────────
+          The planner consults the network targeting signals on every plan.
+          That loop is invisible unless its freshness is on the dashboard —
+          and the live fold was once silently dead for its entire life, which
+          is exactly the failure this card exists to make impossible. */}
+      {tab === 'overview' && data.brain !== undefined && (
+        <section className="mt-6">
+          <div className={`flex items-start gap-3 rounded-[18px] border p-4 ${
+            data.brain && data.brain.liveSignals > 0
+              ? 'border-line bg-surface-2/40'
+              : 'border-amber-400/30 bg-amber-400/[0.07]'
+          }`}>
+            <Bell className={`mt-0.5 h-4 w-4 shrink-0 ${data.brain && data.brain.liveSignals > 0 ? 'text-emerald-400' : 'text-amber-400'}`} />
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold ${data.brain && data.brain.liveSignals > 0 ? 'text-slate-200' : 'text-amber-200'}`}>
+                {data.brain && data.brain.liveSignals > 0
+                  ? t('lm.machine.brain.fed', { n: String(data.brain.liveSignals) })
+                  : t('lm.machine.brain.notFed')}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                {data.brain?.lastFold
+                  ? t('lm.machine.brain.lastFold', { when: relTime(data.brain.lastFold, dateLocale) })
+                  : t('lm.machine.brain.neverFolded')}
+                {' '}{t('lm.machine.brain.how')}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── CONNECTIONS — everything this machine loops with ─────────────────
+          The machine creates lead forms, drives to landing pages, uses
+          creatives, and its results feed optimization + attribution. Those
+          surfaces existed but were reachable only by knowing the URLs; a loop
+          you cannot see is a loop you cannot trust. One card per project. */}
+      {tab === 'connections' && (
+        <section className="mt-6 space-y-3">
+          {machine.plan?.viable && machine.plan.projects.map((p) => (
+            <div key={p.slug} className="rounded-[18px] border border-line bg-surface p-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div className="text-sm font-semibold text-white">{p.listingName}</div>
+                <div className="text-xs text-slate-500">{p.area}</div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(p.landingSlug || p.landingUrl) && (
+                  <Link href={p.landingSlug ? `/lp/${p.landingSlug}` : p.landingUrl} target="_blank"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                    <ArrowUpRight className="h-3 w-3" /> {t('lm.machine.conn.landing')}
+                  </Link>
+                )}
+                {p.landingSlug && (
+                  <Link href={`/freehold-intelligence/lead-machine/landings/${p.landingSlug}/edit`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                    <Pencil className="h-3 w-3" /> {t('lm.machine.conn.editLanding')}
+                  </Link>
+                )}
+                {p.leadFormId && (
+                  <Link href={`/freehold-intelligence/lead-machine/forms/${p.leadFormId}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                    <FileText className="h-3 w-3" /> {t('lm.machine.conn.leadForm')}
+                  </Link>
+                )}
+                <Link href={`/freehold-intelligence/drive/ad-designer`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                  <Pencil className="h-3 w-3" /> {t('lm.machine.conn.creative')}
+                </Link>
+              </div>
+            </div>
+          ))}
+          <div className="rounded-[18px] border border-line bg-surface p-4">
+            <div className="text-sm font-semibold text-white">{t('lm.machine.conn.machineWide')}</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/freehold-intelligence/lead-machine/campaigns/optimize"
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                <RefreshCw className="h-3 w-3" /> {t('lm.machine.conn.optimize')}
+              </Link>
+              <Link href="/freehold-intelligence/lead-machine/campaigns/attribution"
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                <ListChecks className="h-3 w-3" /> {t('lm.machine.conn.attribution')}
+              </Link>
+              <Link href="/freehold-intelligence/crm"
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                <ArrowUpRight className="h-3 w-3" /> {t('lm.machine.conn.crm')}
+              </Link>
+              <Link href="/freehold-intelligence/drive/create"
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
+                <Pencil className="h-3 w-3" /> {t('lm.machine.conn.suite')}
+              </Link>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">{t('lm.machine.conn.note')}</p>
+          </div>
+        </section>
+      )}
+
       {/* ── Trakheesi standing ────────────────────────────────────────────────
           A permit is issued for a fixed window, and the engine stops a
           project's trials the day it lapses. That has to be visible BEFORE it
           happens — a renewal takes days, a stopped campaign is instant. Only
           projects that need attention are listed; a fully-valid plan says
           nothing here rather than adding another green box to scroll past. */}
+{tab === 'overview' && (<>
       {permitAlerts.length > 0 && (
         <section className="mt-8">
           <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.permit.title')}</div>
@@ -544,9 +670,12 @@ export default function MachineDashboardPage() {
           </div>
         </section>
       )}
+</>)}
+
 
       {/* ── Trials ── */}
       {/* ── The plan: what the machine is creating, per project ── */}
+{tab === 'trials' && (<>
       {machine.plan && (
         <section className="mt-12">
           <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.plan.sectionTitle')}</div>
@@ -555,7 +684,10 @@ export default function MachineDashboardPage() {
           </div>
         </section>
       )}
+</>)}
 
+
+{tab === 'trials' && (<>
       <section className="mt-12">
         <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.trials.title')}</div>
         {campaigns.length === 0 ? (
@@ -747,7 +879,10 @@ export default function MachineDashboardPage() {
           </>
         )}
       </section>
+</>)}
 
+
+{tab === 'activity' && (<>
       {/* ── Activity feed ── */}
       <section className="mt-12">
         <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.activity.title')}</div>
@@ -780,7 +915,10 @@ export default function MachineDashboardPage() {
           </div>
         )}
       </section>
+</>)}
 
+
+{tab === 'feedback' && (<>
       {/* ── Verdict queue (admin view) — the accuracy warning comes FIRST ── */}
       <section className="mt-12">
         <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.queue.title')}</div>
@@ -888,7 +1026,10 @@ export default function MachineDashboardPage() {
           </div>
         )}
       </section>
+</>)}
 
+
+{tab === 'feedback' && (<>
       {/* ── Aggregates: who answers, and how the days compare ── */}
       <section className="mt-12">
         <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.machine.agg.title')}</div>
@@ -958,6 +1099,8 @@ export default function MachineDashboardPage() {
           </div>
         )}
       </section>
+</>)}
+
 
       {/* ── Launch review — the "run step" preview with editing options ── */}
       {reviewing && machine.plan?.viable && (
