@@ -6,6 +6,7 @@ import {
   launchFullCampaign, listLeadForms, createLeadForm,
   listCampaignAds, updateAdCreativeContent,
 } from '@/lib/meta/client'
+import { campaignResumeBlock } from '@/lib/freehold/ads-machine-engine'
 import { UAE_INTERESTS } from '@/lib/meta/targeting-catalog'
 import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
 import { getBaseStats, getBaseQuality, getNetworkBenchmarks, TENANT_ID, BASE_TENANT } from '@/lib/entrestate/targeting-base'
@@ -164,6 +165,12 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
     }),
     run: async (args) => {
+      // An ads machine may have stopped this campaign for a reason that
+      // outranks the request — an expired Trakheesi permit makes the ad
+      // illegal, whichever door turns it back on. Refuse with the reason
+      // rather than silently putting an unpermitted ad back on air.
+      const block = await campaignResumeBlock(s(args.campaignId))
+      if (block) return { ok: false, campaignId: s(args.campaignId), refused: block }
       await updateCampaignStatus(s(args.campaignId), 'ACTIVE')
       return { ok: true, campaignId: s(args.campaignId), status: 'ACTIVE' }
     },

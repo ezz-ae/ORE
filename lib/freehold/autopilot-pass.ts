@@ -7,6 +7,7 @@ import {
 import { getAutoEnhanceModes } from '@/lib/meta/campaign-prefs'
 import { saveLibraryItem } from '@/lib/freehold/library'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { allMachineCampaignIds } from '@/lib/freehold/ads-machine'
 
 /**
  * AUTOPILOT PASS (Autonomy Level 3) — one optimization pass over the live
@@ -30,7 +31,44 @@ export async function runAutopilotPass(email: string): Promise<{ applied: Array<
   if (enabled.length === 0) return { applied: [], note: 'No enabled automation rules.' }
 
   const actions: Array<Record<string, unknown>> = []
-  const campaigns = (await listCampaigns()).filter((c) => c.status === 'ACTIVE').slice(0, 10)
+
+  // ── OWNERSHIP: never touch an Ads Machine's campaigns ─────────────────────
+  //
+  // Two autonomous systems write to the same ad account. This pass read EVERY
+  // active campaign, including the machine's own trials, and could:
+  //
+  //   · RESUME one — restarting an ad the machine had stopped, including one
+  //     stopped because its Trakheesi permit expired or because the platform
+  //     rejected it. That puts an unpermitted ad back on air and defeats the
+  //     compliance gate entirely.
+  //   · BUDGET_UP one — raising spend with no knowledge of the machine's hard
+  //     combined daily cap, so the cap silently stops holding.
+  //   · PAUSE one — leaving the machine believing a trial is live.
+  //
+  // None of these were coordinated in any way; the two systems simply did not
+  // know about each other. The machine is the authority for the campaigns it
+  // created. Autopilot governs everything launched outside it.
+  //
+  // FAIL CLOSED. If ownership cannot be read we do nothing at all, because an
+  // empty ownership set reads as "nothing is owned" — exactly the answer that
+  // would let this pass act on every machine trial. A skipped night is
+  // harmless; a resumed unpermitted ad is not.
+  let machineOwned: Set<string>
+  try {
+    machineOwned = await allMachineCampaignIds()
+  } catch (err) {
+    return {
+      applied: [],
+      note: `Skipped: could not confirm which campaigns belong to an Ads Machine (${err instanceof Error ? err.message : 'lookup failed'}). Autopilot does not act while ownership is unknown, so it cannot disturb a machine's trials.`,
+    }
+  }
+
+  const live = (await listCampaigns()).filter((c) => c.status === 'ACTIVE')
+  const skippedForMachine = live.filter((c) => machineOwned.has(c.id))
+  for (const c of skippedForMachine) {
+    actions.push({ campaign: c.name, action: 'skipped', reason: 'managed by an Ads Machine — that machine owns its budget, pausing and permit checks' })
+  }
+  const campaigns = live.filter((c) => !machineOwned.has(c.id)).slice(0, 10)
   // The wizard's per-campaign autopilot policy, persisted at launch:
   // 'off' → skip, 'approval' → record matches without mutating, 'on' → act.
   // Campaigns launched before the policy existed default to 'approval'.
