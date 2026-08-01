@@ -5,6 +5,7 @@ import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
 import { query } from '@/lib/db'
 import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 import { notify } from '@/lib/freehold/notifications'
+import { emailLeadMovementToInbox, notifyBrokerOfAssignedLead } from '@/lib/transactional-email'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,20 +26,36 @@ const ensureDismissColumn = () => {
 // history. Failures never break the update itself.
 async function logPatchActivity(leadId: string, body: Record<string, unknown>, actor: string) {
   const entries: Array<{ type: string; description: string }> = []
+  // Lead name for human-readable movement emails (best-effort).
+  const leadRow = await query<{ name: string | null }>(
+    `SELECT name FROM freehold_site_leads WHERE id = $1 LIMIT 1`, [leadId],
+  ).catch(() => [] as { name: string | null }[])
+  const leadRef = { id: leadId, name: leadRow[0]?.name ?? null }
+
   if (typeof body.status === 'string' && body.status) {
     entries.push({ type: 'stage', description: `Stage changed to ${body.status}` })
+    // Movement feed: the brand inbox tracks every step, not just arrivals.
+    void emailLeadMovementToInbox('stage', leadRef, `stage changed to ${body.status}`)
   }
   if ('assigned_broker_id' in body) {
     entries.push({
       type: 'assignment',
       description: body.assigned_broker_id ? `Assigned to ${body.assigned_broker_id}` : 'Unassigned',
     })
-    // Real notification straight to the assignee (best-effort).
     if (body.assigned_broker_id) {
+      // In-app notification straight to the assignee (best-effort)…
       notify('lead_assigned', { lead: leadId }, {
         recipient: String(body.assigned_broker_id),
         href: `/freehold-intelligence/crm/leads/${leadId}`,
       }).catch(() => {})
+      // …and the EMAIL. The assign API and the automation engine both emailed
+      // the broker; this route — the one behind the CRM's own assignment UI —
+      // only pinged in-app, so a broker away from the dashboard missed exactly
+      // the assignments made by hand. notifyBrokerOfAssignedLead also feeds
+      // the movement note to the brand inbox, so one call covers both.
+      void notifyBrokerOfAssignedLead(String(body.assigned_broker_id), leadId)
+    } else {
+      void emailLeadMovementToInbox('unassigned', leadRef, 'unassigned — nobody owns this lead now')
     }
   }
   if (typeof body.priority === 'string' && body.priority) {

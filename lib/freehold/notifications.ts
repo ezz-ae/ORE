@@ -21,7 +21,7 @@ async function ensure() {
   ensured = true
 }
 
-export type NotificationType = 'lead_new' | 'lead_assigned' | 'deal_approved'
+export type NotificationType = 'lead_new' | 'lead_assigned' | 'deal_approved' | 'management_alert'
 
 /** Fire-and-forget emit — a notification failure must never fail the action. */
 export async function notify(type: NotificationType, meta: Record<string, unknown>, opts?: { recipient?: string | null; href?: string }) {
