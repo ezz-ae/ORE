@@ -10,7 +10,8 @@ import { query } from '@/lib/db'
  * 1. No linked session, no numbers — nulls, not defaults.
  * 2. purchaseProbability is a documented, fixed-weight HEURISTIC, not a
  *    model trained on outcomes — there isn't yet enough closed-deal volume
- *    to calibrate one. Never describe this field as outcome-trained.
+ *    to calibrate one. Never describe this field as trained on outcomes
+ *    (that claim is gated by scripts/guards.ts until real cycles exist).
  */
 
 export interface LeadIntelligence {
