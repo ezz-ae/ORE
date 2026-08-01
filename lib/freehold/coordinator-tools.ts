@@ -1,5 +1,6 @@
 import { BRAND } from '@/lib/freehold/brand'
 import { getSiteUrl } from '@/lib/site'
+import { sendSystemEmail } from '@/lib/transactional-email'
 import {
   listCampaigns, getCampaign, getCampaignInsights,
   updateCampaignStatus, updateAdSet, listAdSets, getAdSet,
@@ -757,6 +758,32 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       if (!title || !content) return { error: 'title and content are required' }
       const item = await saveLibraryItem(ctx.email, { kind: 'note', title, content })
       return item ? { ok: true, libraryId: item.id } : { error: 'Could not save' }
+    },
+  },
+  // ── Every agent: close the loop by email ───────────────────────────────────
+  {
+    name: 'email_me', agent: 'research_agent',
+    description: 'Email the signed-in user a summary of what was just done (e.g. "campaign setup complete", a report, next steps). Use this to keep the promise "I will email you once I finish" — call it AFTER the work is done, with the real outcome.',
+    params: '{ "subject": string, "summary": string, "linkPath"?: string }', roles: EVERYONE,
+    schema: z.object({
+      subject: z.string(),
+      summary: z.string(),
+      linkPath: z.string().optional().describe('in-app path to link, e.g. /freehold-intelligence/lead-machine/campaigns'),
+    }),
+    run: async (args, ctx) => {
+      const subject = s(args.subject); const summary = s(args.summary)
+      if (!subject || !summary) return { error: 'subject and summary are required' }
+      const linkPath = s(args.linkPath)
+      const result = await sendSystemEmail({
+        to: [ctx.email],
+        subject,
+        headline: subject,
+        lines: summary.split('\n').filter(Boolean).slice(0, 20),
+        ...(linkPath && linkPath.startsWith('/') ? { ctaLabel: 'Open in the platform', ctaUrl: `${getSiteUrl()}${linkPath}` } : {}),
+      })
+      return result.sent
+        ? { ok: true, emailedTo: ctx.email }
+        : { ok: false, error: 'Email is not configured on this deployment (RESEND_API_KEY missing) — tell the user plainly instead of pretending it sent.' }
     },
   },
 ]

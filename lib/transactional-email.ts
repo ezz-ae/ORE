@@ -221,6 +221,11 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
     ).catch(() => [])
     const lead = leadRows[0]
     if (!lead) return { sent: false as const }
+    // The movement feed: the brand inbox learns about every assignment the
+    // moment the broker does. Fire-and-forget — the broker's email is the one
+    // that must not fail silently here.
+    void emailLeadMovementToInbox("assigned", { id: leadId, name: lead.name },
+      `assigned to ${brokerRows[0]?.name || to}`)
     return await sendLeadAssignedEmail(to, brokerRows[0]?.name ?? "", {
       id: leadId,
       name: lead.name,
@@ -486,6 +491,96 @@ Open the CRM to follow up: ${baseUrl}/crm/leads
   }
 
   return { sent: true as const }
+}
+
+
+/* ── System-alive layer ───────────────────────────────────────────────────────
+ * One generic branded sender that every automated notification goes through,
+ * plus the lead-movement feed to the brand inbox. The platform produced these
+ * events all along; this is the layer that makes it SPEAK.
+ */
+
+export async function sendSystemEmail(input: {
+  to: string[]
+  subject: string
+  headline: string
+  lines?: string[]
+  ctaLabel?: string
+  ctaUrl?: string
+}) {
+  const to = uniqueValues(input.to)
+  if (!resendApiKey || !to.length) return { sent: false, reason: "missing-config" as const }
+  const lines = (input.lines ?? []).filter(Boolean)
+  const text = `${input.headline}
+
+${lines.join("\n")}
+${input.ctaUrl ? `\n${input.ctaLabel || "Open"}: ${input.ctaUrl}` : ""}
+
+${BRAND.company}`
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p><strong>${input.headline}</strong></p>
+      ${lines.length ? `<ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
+      ${input.ctaUrl ? `<p><a href="${input.ctaUrl}" style="color:#B8860B">${input.ctaLabel || "Open"} →</a></p>` : ""}
+      <p style="color:#6b7280">${BRAND.company}</p>
+    </div>`
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: fromEmail, to, subject: input.subject, text, html }),
+  })
+  if (!response.ok) {
+    console.error("[email] system email error", await response.text().catch(() => ""))
+    return { sent: false, reason: "provider-error" as const }
+  }
+  return { sent: true as const }
+}
+
+/**
+ * Lead-movement feed: every step of a lead's life lands in the brand inbox
+ * (info@<domain>), so the company has one running record of new / assigned /
+ * reassigned / stage changes without anyone watching a dashboard.
+ * Best-effort; never throws into the mutation that triggered it.
+ */
+export async function emailLeadMovementToInbox(
+  kind: "assigned" | "unassigned" | "stage" | "priority",
+  lead: { id: string; name?: string | null },
+  detail: string,
+) {
+  try {
+    const inbox = BRAND.email?.trim()
+    if (!inbox) return { sent: false as const }
+    const who = lead.name?.trim() || "Lead"
+    return await sendSystemEmail({
+      to: [inbox],
+      subject: `Lead update: ${who} — ${detail}`,
+      headline: `${who}: ${detail}`,
+      ctaLabel: "Open the lead",
+      ctaUrl: `${baseUrl}/freehold-intelligence/crm/leads/${lead.id}`,
+    })
+  } catch (err) {
+    console.error("[email] lead movement failed", err)
+    return { sent: false as const }
+  }
+}
+
+/** "Your design is ready" — sent to whoever exported a design/brochure, with
+ *  the way back to it. A creator should not have to remember where it went. */
+export async function sendDesignReadyEmail(to: string, title: string, directUrl?: string | null) {
+  try {
+    if (!to) return { sent: false as const }
+    return await sendSystemEmail({
+      to: [to],
+      subject: `Your design is ready: ${title}`,
+      headline: `“${title}” has been saved to your Drive.`,
+      lines: directUrl && /^https:\/\//.test(directUrl) ? [`Direct download: ${directUrl}`] : [],
+      ctaLabel: "Open your Drive library",
+      ctaUrl: `${baseUrl}/freehold-intelligence/drive/library`,
+    })
+  } catch (err) {
+    console.error("[email] design ready failed", err)
+    return { sent: false as const }
+  }
 }
 
 export async function getLeadershipLeadRecipients() {
