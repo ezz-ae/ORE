@@ -550,10 +550,46 @@ export default function MetaIntegrationPage() {
           </div>
         </section>
       )}
+      {/* TWO CONNECTIONS, ONE PAGE.
+          Everything above and below comes from a token held in THIS BROWSER —
+          it enumerates /me/adaccounts and shows whatever it can reach. The
+          green banner reports something different: the SERVER's launch
+          connection, which is what the campaigns page, the Ads Machine,
+          autopilot and lead sync all actually use.
+          When those two point at different ad accounts, this page shows real
+          spend and real campaigns while every other page shows nothing — and
+          before this warning, nothing on screen said they were not the same
+          account. That single gap explains an entire night of "the integration
+          page shows everything but the ads don't". */}
+      {serverConn?.configured && accounts.length > 0 && !accounts.some((a) => a.id === serverConn.adAccountId) && (
+        <section className="mb-6 rounded-[14px] border border-red-400/30 bg-red-400/[0.07] px-4 py-3.5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-red-200">{t('pintmeta.mismatchTitle')}</div>
+              <p className="mt-1 text-xs leading-relaxed text-red-200/85">
+                {t('pintmeta.mismatchBody', {
+                  server: serverConn.adAccountId ?? '—',
+                  n: String(accounts.length),
+                  visible: accounts.map((a) => a.id).join(', '),
+                })}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {serverConn?.configured && (
-        <section className="mb-6 flex flex-wrap items-center gap-2 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-4 py-3">
-          <CheckCircle className="h-4 w-4 text-emerald-400" />
-          <span className="text-sm text-emerald-300 font-medium">{t('pintmeta.launchActive')}</span>
+        <section className={[
+          'mb-6 flex flex-wrap items-center gap-2 rounded-[14px] border px-4 py-3',
+          accounts.length > 0 && !accounts.some((a) => a.id === serverConn.adAccountId)
+            ? 'border-amber-400/25 bg-amber-400/[0.05]'
+            : 'border-emerald-400/20 bg-emerald-400/[0.05]',
+        ].join(' ')}>
+          <CheckCircle className={`h-4 w-4 ${accounts.length > 0 && !accounts.some((a) => a.id === serverConn.adAccountId) ? 'text-amber-400' : 'text-emerald-400'}`} />
+          <span className={`text-sm font-medium ${accounts.length > 0 && !accounts.some((a) => a.id === serverConn.adAccountId) ? 'text-amber-300' : 'text-emerald-300'}`}>
+            {t('pintmeta.launchActive')}
+          </span>
           <span className="font-mono text-xs text-slate-400">{serverConn.adAccountId}</span>
           <span className="text-xs text-slate-500">· {serverConn.source === 'env' ? t('pintmeta.srcEnv') : t('pintmeta.srcDb')}</span>
         </section>
