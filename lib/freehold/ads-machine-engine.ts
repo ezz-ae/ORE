@@ -80,6 +80,7 @@ import {
   type QuestionKind,
 } from '@/lib/freehold/ads-machine'
 import { META_MIN_TRIAL_BUDGET_AED, type MachinePlan, type MachineProjectPlan, type MachineTrialPlan } from '@/lib/freehold/ads-machine-planner'
+import { getMachineDeliveryMap, type CampaignDelivery } from '@/lib/freehold/campaign-delivery'
 import {
   appendPermitToText,
   normalizePermitExpiry,
@@ -110,6 +111,18 @@ const QUALITY_SIBLING_AT_LEAST = 60      // … while a sibling holds ≥ 60
 // instead of only concentrating budget — bounded hard so arms can't multiply.
 const EXPLORE_PREFIX = 'Explore'         // trial-label prefix for minted arms
 const MAX_EXPLORE_ARMS_PER_PROJECT = 2   // lifetime cap on minted arms per project
+// Delivery policy. A brand-new campaign legitimately reads as not-delivering
+// for a while (review, processing, ramp), so acting on that state instantly
+// would kill healthy trials at birth. Rejection is different — it is terminal
+// until the ad itself changes — so it needs no grace at all.
+const DELIVERY_GRACE_HOURS = 24          // not_delivering must persist this long before we stop it
+const REVIEW_ALARM_HOURS = 48            // in-review beyond this is called out (never auto-paused)
+// Machine-wide zero-lead alarm: spending this many times the DAILY cap with
+// not one lead anywhere means the problem is upstream of ad rotation.
+const ZERO_LEAD_ALARM_CAP_MULTIPLE = 3
+/** Delivery states in which the platform IS serving (and therefore spending). */
+const SERVING_STATES: ReadonlySet<CampaignDelivery['state']> =
+  new Set<CampaignDelivery['state']>(['delivering', 'learning', 'learning_limited', 'limited'])
 
 export interface CycleResult {
   machineId: string
@@ -123,6 +136,10 @@ export interface CycleResult {
   /** LIVE campaigns stopped because their project's permit expired while they
    *  were running — compliance, not performance. */
   permitStopped: string[]
+  /** Campaigns stopped because the PLATFORM is not serving them (rejected,
+   *  ended, externally paused, or persistently not delivering). Nothing to do
+   *  with performance — these were holding budget without running. */
+  deliveryStopped: string[]
   googleDraftsPrepared: string[]
   observed: number
   verdictRequestsCreated: number
@@ -166,6 +183,10 @@ interface TrialState {
   qualityScore: number | null
   attributed: number
   verdicts: TrialVerdictStats | null
+  /** What the PLATFORM says about this trial's delivery. Recorded on every
+   *  observation so a zero-lead trial can be read correctly: "nobody converted"
+   *  and "the ad never ran" look identical in the numbers alone. */
+  delivery: CampaignDelivery | null
 }
 
 const trialChannel = (t: MachineTrialPlan): MachineChannel => t.channel ?? 'meta'
@@ -181,7 +202,7 @@ async function setPlatformStatus(row: MachineCampaign, running: boolean): Promis
 
 const emptyResult = (machineId: string, status: AdsMachine['status'], ran: boolean): CycleResult => ({
   machineId, status, ran,
-  launched: [], capSkipped: [], permitBlocked: [], permitStopped: [], googleDraftsPrepared: [],
+  launched: [], capSkipped: [], permitBlocked: [], permitStopped: [], deliveryStopped: [], googleDraftsPrepared: [],
   observed: 0, verdictRequestsCreated: 0,
   paused: [], budgetShifts: [], errors: [],
 })
@@ -711,6 +732,116 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
     campaigns = await listMachineCampaigns(machineId)
   }
 
+  // ── DELIVERY (running only) ───────────────────────────────────────────────
+  //
+  // The machine could not see whether its ads were actually RUNNING. "Active"
+  // is our own control flag; it says nothing about whether the platform is
+  // serving the ad. A campaign the platform rejected — or one that quietly
+  // ended, or that we paused outside the app — spends nothing and produces no
+  // leads, and every rotation branch is built on spend and leads:
+  //
+  //   · the spend gate needs spend ≥ 3× daily budget → never true at 0 spend
+  //   · the CPL branch needs ≥3 leads on both sides → never true
+  //   · the quality branch needs a CRM score, which needs attributed leads
+  //   · the verdict branch needs leads to ask humans about
+  //
+  // So a rejected trial was never condemned, never paused, and kept its daily
+  // budget COMMITTED against the hard cap indefinitely — starving trials that
+  // could actually run of headroom. The delivery state was already computed,
+  // honestly and per-platform, for the dashboard; the decision-maker simply
+  // never read it. It does now.
+  const deliveryByCampaign: Record<string, CampaignDelivery> = machine.status === 'running'
+    ? await getMachineDeliveryMap(campaigns.filter((c) => c.status === 'active' || c.status === 'paused')).catch(() => ({}))
+    : {}
+
+  if (machine.status === 'running') {
+    for (const row of campaigns) {
+      if (row.status !== 'active') continue
+      const d = deliveryByCampaign[row.campaignId]
+      if (!d) continue
+      const ageHours = (now.getTime() - Date.parse(row.createdAt)) / 3_600_000
+      const detail = d.detail ? ` (${d.detail})` : ''
+
+      // Terminal on the platform → stop paying attention to it and, more to
+      // the point, stop reserving its budget. `needsPlatformPause` is false
+      // for states that are ALREADY not running: calling pause on those would
+      // be a pointless API round-trip that can fail and block the bookkeeping.
+      let reason: string | null = null
+      let needsPlatformPause = true
+      if (d.state === 'rejected') {
+        reason = `the platform rejected it${detail}. It cannot serve until the ad is changed and resubmitted`
+      } else if (d.state === 'ended') {
+        reason = 'the platform reports it as ended/archived'
+        needsPlatformPause = false
+      } else if (d.state === 'paused') {
+        // Drift: paused on the platform, active in our records. The machine
+        // was counting budget for something that has not been running.
+        reason = 'the platform reports it as paused, but this machine still had it running — reconciled'
+        needsPlatformPause = false
+      } else if (d.state === 'not_delivering' && ageHours >= DELIVERY_GRACE_HOURS) {
+        reason = `it is not delivering${detail} — ${Math.round(ageHours)}h after launch`
+      }
+
+      if (!reason) {
+        // Not terminal, but worth saying out loud while there is time to act.
+        if (d.state === 'in_review' && ageHours >= REVIEW_ALARM_HOURS) {
+          await logActivity({
+            machineId, kind: 'delivery_blocked',
+            detail: `"${row.trialLabel}" (${row.projectSlug}) has been awaiting platform review for ${Math.round(ageHours)}h${detail}. It is holding AED ${row.dailyBudgetAed}/day of the cap without serving. Not paused — review can still clear.`,
+            campaignId: row.campaignId,
+            data: { projectSlug: row.projectSlug, state: d.state, ageHours: Math.round(ageHours) },
+          })
+        }
+        continue
+      }
+
+      if (needsPlatformPause) {
+        try {
+          await setPlatformStatus(row, false)
+        } catch (e) {
+          await logActivity({
+            machineId, kind: 'error',
+            detail: `Wanted to stop "${row.trialLabel}" (${row.projectSlug}) because ${reason}, but the ${row.channel === 'google' ? 'Google' : 'Meta'} pause failed: ${errMsg(e)}. Its budget is still committed.`,
+            campaignId: row.campaignId,
+          })
+          result.errors.push(`delivery:${row.campaignId}`)
+          continue
+        }
+      }
+      await updateMachineCampaign(row.id, { status: 'paused' })
+      await logActivity({
+        machineId,
+        kind: 'delivery_blocked',
+        detail: `Stopped "${row.trialLabel}" (${row.projectSlug}): ${reason}. AED ${row.dailyBudgetAed}/day is no longer committed and can fund a trial that runs.`,
+        campaignId: row.campaignId,
+        data: { projectSlug: row.projectSlug, state: d.state, detail: d.detail ?? null, freedAed: row.dailyBudgetAed },
+      })
+      result.deliveryStopped.push(row.campaignId)
+    }
+    if (result.deliveryStopped.length > 0) campaigns = await listMachineCampaigns(machineId)
+
+    // The SAME drift in the opposite direction, which is the dangerous one.
+    // A trial this machine stopped but the platform is still serving spends
+    // real money that `activeSpendAed` does not count — so the hard daily cap,
+    // the one guarantee this whole engine is built to keep, silently stops
+    // being true. Reported, never auto-corrected: re-pausing would override an
+    // operator who deliberately re-enabled it on the platform, and marking it
+    // active here would quietly reverse a condemnation the machine made on
+    // evidence. Both are the operator's call; being told is not.
+    for (const row of campaigns) {
+      if (row.status !== 'paused') continue
+      const d = deliveryByCampaign[row.campaignId]
+      if (!d || !SERVING_STATES.has(d.state)) continue
+      await logActivity({
+        machineId,
+        kind: 'delivery_blocked',
+        detail: `"${row.trialLabel}" (${row.projectSlug}) is stopped in this machine but the platform reports it as ${d.state}${d.spendTodayAed ? `, having spent AED ${d.spendTodayAed} today` : ''}. That spend is NOT counted against the AED ${machine.dailyCapAed}/day cap. Either pause it on the platform or turn the trial back on here so the cap covers it.`,
+        campaignId: row.campaignId,
+        data: { projectSlug: row.projectSlug, state: d.state, spendTodayAed: d.spendTodayAed ?? null, drift: 'serving_while_stopped' },
+      })
+    }
+  }
+
   // ── EVALUATE (running or paused) ──────────────────────────────────────────
   // Both channels: local Google drafts (status 'draft') are excluded — they
   // have no live campaign to read and never spend.
@@ -791,6 +922,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       qualityScore,
       attributed,
       verdicts: verdictStats.get(row.campaignId) ?? null,
+      delivery: deliveryByCampaign[row.campaignId] ?? null,
     })
   }
 
@@ -842,6 +974,9 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           qualityScore: s.qualityScore,
           attributed: s.attributed,
           verdicts: s.verdicts,
+          deliveryState: s.delivery?.state ?? null,
+          deliveryDetail: s.delivery?.detail ?? null,
+          spendTodayAed: s.delivery?.spendTodayAed ?? null,
         })),
       },
     })
@@ -1182,6 +1317,47 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         })
         result.errors.push(`realloc-raise:${survivor.row.campaignId}`)
       }
+    }
+  }
+
+  // ── HEALTH (running only) ─────────────────────────────────────────────────
+  //
+  // The machine had no way to say "I am running but nothing is happening".
+  // Every branch above acts on ONE trial; none of them ever stood back and
+  // asked whether the machine as a whole is still making progress. Two ways it
+  // can be alive and useless, both of which look completely normal on the
+  // dashboard — a green "running" pill either way:
+  //
+  //   · every trial has been stopped (condemned, permit, or not delivering),
+  //     so there is nothing live and no spend, and the machine will sit there
+  //     indefinitely because launching more needs a plan it has exhausted;
+  //   · trials ARE live and spending real money, but the whole machine has
+  //     produced zero leads. No rotation branch can fire on this: the CPL and
+  //     quality branches both compare against a sibling that has leads, and if
+  //     nobody has any there is no comparison to make. It would spend to the
+  //     cap forever.
+  //
+  // Neither is something the machine can fix by itself — that is exactly why
+  // it has to escalate rather than keep quiet.
+  if (machine.status === 'running' && states.length > 0) {
+    const liveNow = campaigns.filter((c) => c.status === 'active').length
+    const totalSpend = states.reduce((s, x) => s + x.spendAed, 0)
+    const totalLeads = states.reduce((s, x) => s + x.leads + x.attributed, 0)
+
+    if (liveNow === 0) {
+      await logActivity({
+        machineId,
+        kind: 'machine_stalled',
+        detail: `Nothing is running. All ${states.length} trial(s) are stopped, so this machine is spending nothing and cannot learn anything more on its own. Review the stopped trials above, then either re-plan, add a project, or stop the machine.`,
+        data: { reason: 'no_active_trials', trials: states.length },
+      })
+    } else if (totalLeads === 0 && totalSpend >= ZERO_LEAD_ALARM_CAP_MULTIPLE * machine.dailyCapAed) {
+      await logActivity({
+        machineId,
+        kind: 'machine_stalled',
+        detail: `AED ${Math.round(totalSpend)} spent across ${liveNow} live trial(s) and not one lead has arrived. The rotation cannot resolve this by itself — its CPL and quality tests both compare a trial against a sibling that HAS leads, and none do. Check that the landing pages and instant forms actually submit, that lead sync is running, then re-plan or stop the machine.`,
+        data: { reason: 'zero_leads', spendAed: Math.round(totalSpend), liveTrials: liveNow },
+      })
     }
   }
 
