@@ -1581,15 +1581,42 @@ export async function subscribeAllPagesToLeadgen(): Promise<{
  * exist and collect leads on Meta while nothing ever reaches us because
  * this subscription silently lapsed.
  */
-export async function getLeadgenSubscriptionStatus(): Promise<{ subscribed: boolean }> {
-  const { pageId } = await creds()
-  const res = await apiFetch<{ data?: { subscribed_fields?: string[] }[] }>(
-    `/${pageId}/subscribed_apps`, undefined, { fields: 'subscribed_fields' },
-  )
-  const apps = Array.isArray((res as { data?: unknown }).data)
-    ? (res as { data: { subscribed_fields?: string[] }[] }).data
-    : []
-  return { subscribed: apps.some((a) => (a.subscribed_fields ?? []).includes('leadgen')) }
+export async function getLeadgenSubscriptionStatus(): Promise<{
+  subscribed: boolean
+  /** Pages with leadgen push live, out of every accessible Page. */
+  subscribedPages: number
+  totalPages: number
+  /** Named Pages that are NOT pushing — the ones whose forms go quiet. */
+  unsubscribed: { pageId: string; pageName: string | null }[]
+}> {
+  // Checked across EVERY accessible Page, because that is what we subscribe.
+  // Reading only the configured Page made this badge structurally unable to
+  // report the failure it exists to catch: a second Page whose forms collect
+  // leads while nothing pushes would still have shown a green "real-time on".
+  const pages = await listAccessiblePages()
+  const results = await Promise.all(pages.map(async (page) => {
+    try {
+      const res = await apiFetch<{ data?: { subscribed_fields?: string[] }[] }>(
+        `/${page.id}/subscribed_apps`, undefined, { fields: 'subscribed_fields' }, page.token,
+      )
+      const apps = Array.isArray(res.data) ? res.data : []
+      return { page, ok: apps.some((a) => (a.subscribed_fields ?? []).includes('leadgen')) }
+    } catch {
+      // Unreadable is not subscribed — this gate must fail closed, or it goes
+      // back to reassuring the operator about a Page it cannot actually see.
+      return { page, ok: false }
+    }
+  }))
+  const unsubscribed = results.filter((r) => !r.ok).map((r) => ({ pageId: r.page.id, pageName: r.page.name }))
+  const subscribedPages = results.length - unsubscribed.length
+  return {
+    // Green only when EVERY Page pushes. Partial coverage is a real defect for
+    // the Pages left out, so it must not read as healthy.
+    subscribed: results.length > 0 && unsubscribed.length === 0,
+    subscribedPages,
+    totalPages: results.length,
+    unsubscribed,
+  }
 }
 
 // The rich read set — everything the builder writes that Meta lets us read
