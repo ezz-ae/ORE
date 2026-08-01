@@ -23,6 +23,7 @@ export function FormsSyncControls() {
   const [error, setError] = useState<string | null>(null)
   const [failed, setFailed] = useState<string[]>([])
   const [skipped, setSkipped] = useState(0)
+  const [pageCoverage, setPageCoverage] = useState<{ on: number; total: number; names: string[] } | null>(null)
 
   useEffect(() => {
     fetch('/api/meta/forms/sync', { cache: 'no-store' })
@@ -31,6 +32,16 @@ export function FormsSyncControls() {
         if (!d) return
         setConnected(d.connected !== false)
         setSubscribed(typeof d.subscribed === 'boolean' ? d.subscribed : null)
+        // Which Pages are NOT pushing. "Real-time off" alone doesn't say
+        // whether that's all Pages or one of four — and only the second case
+        // tells you where to go fix it.
+        setPageCoverage(
+          typeof d.totalPages === 'number' && d.totalPages > 0
+            ? { on: Number(d.subscribedPages) || 0, total: d.totalPages,
+                names: (Array.isArray(d.unsubscribed) ? d.unsubscribed : [])
+                  .map((p: { pageId: string; pageName: string | null }) => p.pageName || p.pageId) }
+            : null,
+        )
       })
       .catch(() => {})
   }, [])
@@ -82,7 +93,22 @@ export function FormsSyncControls() {
         <span className={`inline-flex items-center gap-1.5 text-xs ${subscribed ? 'text-emerald-400' : 'text-amber-400'}`}>
           <Radio className="h-3.5 w-3.5" />
           {subscribed ? t('lm.forms.sync.realtimeOn') : t('lm.forms.sync.realtimeOff')}
+          {/* Partial coverage is the dangerous middle state: some Pages push,
+              some don't, and the forms on the silent ones look identical. */}
+          {pageCoverage && pageCoverage.total > 1 && (
+            <span className="text-slate-500">
+              ({t('lm.forms.sync.pageCoverage', { on: String(pageCoverage.on), total: String(pageCoverage.total) })})
+            </span>
+          )}
         </span>
+      )}
+
+      {pageCoverage && pageCoverage.names.length > 0 && (
+        <div className="w-full rounded-lg border border-amber-400/25 bg-amber-400/[0.07] px-3 py-2">
+          <p className="text-[11px] leading-relaxed text-amber-200">
+            {t('lm.forms.sync.pagesNotPushing', { pages: pageCoverage.names.join(', ') })}
+          </p>
+        </div>
       )}
 
       {result && <span className="text-xs text-slate-300">{result}</span>}

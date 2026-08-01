@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
-  RefreshCw, ChevronRight, Users, Plus,
+  RefreshCw, ChevronRight, Users, Plus, AlertCircle,
 } from 'lucide-react'
 import { EmptyState } from '@/components/freehold/ui/empty-state'
 import {
@@ -61,7 +61,7 @@ function fmtAedShort(n: number): string {
 
 export default function FreeholdCrmPage() {
   const t = useT()
-  const { leads, loading: leadsLoading } = useLiveLeads()
+  const { leads, loading: leadsLoading, unassigned } = useLiveLeads()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
@@ -172,6 +172,30 @@ export default function FreeholdCrmPage() {
             </Link>
           </div>
 
+
+          {/* ── Leads that belong to NOBODY ────────────────────────────────
+              The end of the ingestion chain, and the last place a lead can go
+              missing after arriving perfectly. Auto-distribution only runs when
+              distribution is set to 'auto'; otherwise a Meta-form or landing
+              lead keeps no owner — which every broker's list filters out
+              entirely, and which management sees as an ordinary row. Unworked
+              and unnoticed is the same outcome as never arriving. */}
+          {unassigned > 0 && (
+            <Link
+              href="/freehold-intelligence/crm/assignment"
+              className="mb-5 flex items-start gap-3 rounded-[18px] border border-amber-400/30 bg-amber-400/[0.07] p-4 transition hover:border-amber-400/50"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-amber-200">
+                  {t('crm.unassigned.title', { n: String(unassigned) })}
+                </p>
+                <p className="mt-0.5 text-xs leading-relaxed text-amber-200/80">
+                  {t('crm.unassigned.body')}
+                </p>
+              </div>
+            </Link>
+          )}
 
           {/* Empty pipeline → one clean state instead of a wall of zeros. */}
           {!leadsLoading && leads.length === 0 ? (

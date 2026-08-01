@@ -121,7 +121,23 @@ export async function GET() {
     sql += ` ORDER BY created_at DESC LIMIT 200`
 
     const rows = await query<DbLead>(sql, params)
-    return NextResponse.json({ leads: rows.map(dbLeadToCRM), source: 'db' })
+
+    // UNOWNED LEADS. Auto-distribution only runs when the workspace is in
+    // 'auto' mode; otherwise a lead that arrives from a Meta form or a landing
+    // page keeps assigned_broker_id = NULL. Brokers are filtered to their own
+    // leads, so an unowned lead is invisible to every broker and merely
+    // unremarkable to management — it looks like a normal row while in fact
+    // nobody is working it. That is indistinguishable, from the floor, from
+    // "the lead never arrived". Managers get the count so it can be acted on.
+    let unassigned = 0
+    if (!isBroker) {
+      const [c] = await query<{ n: string }>(
+        `SELECT COUNT(*)::text AS n FROM freehold_site_leads
+          WHERE assigned_broker_id IS NULL AND status = 'new'`,
+      ).catch(() => [{ n: '0' }])
+      unassigned = Number(c?.n) || 0
+    }
+    return NextResponse.json({ leads: rows.map(dbLeadToCRM), source: 'db', unassigned })
   } catch (err) {
     console.error('[crm/leads] query failed', err)
     return NextResponse.json({ leads: [], source: 'error' }, { status: 500 })
