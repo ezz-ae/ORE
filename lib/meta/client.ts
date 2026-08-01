@@ -277,7 +277,9 @@ export async function getCampaign(campaignId: string): Promise<MetaCampaign> {
 
 export async function getCampaignInsights(campaignId: string): Promise<MetaInsights | null> {
   const res = await apiFetch<{ data: MetaInsights[] }>(`/${campaignId}/insights`, undefined, {
-    fields: 'impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm',
+    // frequency/reach are what make creative fatigue detectable at all —
+    // without them a decaying winner is indistinguishable from a healthy one.
+    fields: 'impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm,frequency,reach',
     date_preset: 'this_month',
   })
   return res.data?.[0] ?? null

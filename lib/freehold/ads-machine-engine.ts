@@ -128,6 +128,11 @@ const ZERO_LEAD_ALARM_CAP_MULTIPLE = 3
 const GROW_STEP_FRACTION = 0.5           // at most +50% of the trial's current daily budget per cycle
 const GROW_MAX_PLAN_MULTIPLE = 3         // never beyond 3× what the plan approved for that trial
 const MIN_GROW_AED = 10                  // below this, leave it alone
+// Creative fatigue. Frequency is the average number of times the SAME person
+// was shown the ad over the window; as it climbs, spend increasingly goes on
+// re-showing an ad to people who already ignored it. Meta-only — Google search
+// has no comparable notion, and pretending otherwise would be a fake signal.
+const FATIGUE_FREQUENCY = 3.0
 /** Delivery states in which the platform IS serving (and therefore spending). */
 const SERVING_STATES: ReadonlySet<CampaignDelivery['state']> =
   new Set<CampaignDelivery['state']>(['delivering', 'learning', 'learning_limited', 'limited'])
@@ -191,6 +196,9 @@ interface TrialState {
   qualityScore: number | null
   attributed: number
   verdicts: TrialVerdictStats | null
+  /** Meta frequency for the window — average times one person saw this ad.
+   *  null on Google, where the concept does not apply. */
+  frequency: number | null
   /** What the PLATFORM says about this trial's delivery. Recorded on every
    *  observation so a zero-lead trial can be read correctly: "nobody converted"
    *  and "the ad never ran" look identical in the numbers alone. */
@@ -881,11 +889,14 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
     let spendAed = 0
     let metaLeads = 0
+    let frequency: number | null = null
     if (row.channel === 'meta') {
       try {
         const insights = await getCampaignInsights(row.campaignId)
         spendAed = Number(insights?.spend) || 0
         metaLeads = leadsFromInsights(insights?.actions)
+        const f = Number(insights?.frequency)
+        frequency = Number.isFinite(f) && f > 0 ? f : null
       } catch (e) {
         await logActivity({ machineId, kind: 'error', detail: `Insights read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
         result.errors.push(`insights:${row.campaignId}`)
@@ -930,6 +941,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       qualityScore,
       attributed,
       verdicts: verdictStats.get(row.campaignId) ?? null,
+      frequency,
       delivery: deliveryByCampaign[row.campaignId] ?? null,
     })
   }
@@ -982,6 +994,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           qualityScore: s.qualityScore,
           attributed: s.attributed,
           verdicts: s.verdicts,
+          frequency: s.frequency,
           deliveryState: s.delivery?.state ?? null,
           deliveryDetail: s.delivery?.detail ?? null,
           spendTodayAed: s.delivery?.spendTodayAed ?? null,
@@ -1367,6 +1380,10 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       // verdict against it. Missing evidence is never treated as good news.
       const proven = group
         .filter((s) => {
+          // Never scale INTO fatigue. Raising budget on a worn-out creative
+          // buys more impressions for the same people who already ignored it,
+          // which spends the increase faster and makes the decline steeper.
+          if (s.frequency !== null && s.frequency >= FATIGUE_FREQUENCY) return false
           if (s.spendAed < SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed) return false
           if (s.cplAed === null || s.leads < MIN_LEADS_FOR_CPL) return false
           if (s.qualityScore !== null && s.qualityScore < QUALITY_CONDEMN_BELOW) return false
@@ -1444,6 +1461,32 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   //
   // Neither is something the machine can fix by itself — that is exactly why
   // it has to escalate rather than keep quiet.
+  // CREATIVE FATIGUE. The machine explores TARGETING — Explore arms broaden a
+  // winner's audience — but the ad itself never changes after launch, and the
+  // engine had no way to notice. Frequency is the honest signal: when the same
+  // person has seen the ad 3+ times, additional spend is largely buying repeat
+  // impressions from people who already scrolled past.
+  //
+  // Reported, not auto-fixed. Swapping the creative on a working campaign
+  // resets Meta's learning phase and replaces a KNOWN performer with an
+  // unknown one — a decision that can wipe out the very winner it means to
+  // rescue. The machine has evidence that a refresh is needed; it has none
+  // about whether any particular replacement is better. So it says so and
+  // leaves the swap to a human with the Creative Suite.
+  if (machine.status === 'running') {
+    for (const s of states) {
+      if (s.row.status !== 'active' || s.frequency === null) continue
+      if (s.frequency < FATIGUE_FREQUENCY) continue
+      await logActivity({
+        machineId,
+        kind: 'creative_fatigue',
+        detail: `"${s.row.trialLabel}" (${s.row.projectSlug}) has a frequency of ${s.frequency.toFixed(1)} — the average person in this audience has now seen the same ad ${s.frequency.toFixed(1)} times. Spend is increasingly going on repeat impressions rather than new people. Refresh the image and copy in the Creative Suite; the machine will not scale this trial further until frequency comes down.`,
+        campaignId: s.row.campaignId,
+        data: { projectSlug: s.row.projectSlug, frequency: s.frequency, threshold: FATIGUE_FREQUENCY },
+      })
+    }
+  }
+
   if (machine.status === 'running' && states.length > 0) {
     const liveNow = campaigns.filter((c) => c.status === 'active').length
     const totalSpend = states.reduce((s, x) => s + x.spendAed, 0)

@@ -69,6 +69,11 @@ export interface MetaInsights {
   cpc?: string
   cpm?: string
   cpp?: string
+  /** Average times the SAME person saw this ad over the window. The creative
+   *  fatigue signal: as it climbs, the audience is being re-shown an ad it has
+   *  already ignored. */
+  frequency?: string
+  reach?: string
   date_start: string
   date_stop: string
 }
