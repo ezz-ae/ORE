@@ -121,6 +121,13 @@ const REVIEW_ALARM_HOURS = 48            // in-review beyond this is called out 
 // Machine-wide zero-lead alarm: spending this many times the DAILY cap with
 // not one lead anywhere means the problem is upstream of ad rotation.
 const ZERO_LEAD_ALARM_CAP_MULTIPLE = 3
+// Growth policy — the only branch that spends MORE on evidence alone, so it is
+// bounded three ways: a step size, a ceiling relative to the budget the
+// operator approved in the plan, and a floor below which a raise is not worth
+// a live budget mutation.
+const GROW_STEP_FRACTION = 0.5           // at most +50% of the trial's current daily budget per cycle
+const GROW_MAX_PLAN_MULTIPLE = 3         // never beyond 3× what the plan approved for that trial
+const MIN_GROW_AED = 10                  // below this, leave it alone
 /** Delivery states in which the platform IS serving (and therefore spending). */
 const SERVING_STATES: ReadonlySet<CampaignDelivery['state']> =
   new Set<CampaignDelivery['state']>(['delivering', 'learning', 'learning_limited', 'limited'])
@@ -983,6 +990,11 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
     })
   }
 
+  // Projects where a trial was condemned this cycle. Those already have their
+  // freed budget reallocated by ROTATE; GROW must not also raise them in the
+  // same pass, or the same headroom would be committed twice.
+  const pausedProjects = new Set<string>()
+
   // ── ROTATE (running only; deterministic; ≤1 pause per project per cycle) ──
   if (machine.status === 'running') {
     const activeStates = states.filter((s) => s.row.status === 'active')
@@ -1056,6 +1068,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       const target = candidates[0]
       if (!target) continue
+      pausedProjects.add(projectSlug)
 
       const reasons: string[] = []
       if (verdictCondemned(target)) reasons.push(`human verdicts condemned it (yes-ratio ${(100 * (yesRatio(target) ?? 0)).toFixed(0)}% < ${CONDEMN_YES_RATIO * 100}%)`)
@@ -1317,6 +1330,97 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           campaignId: survivor.row.campaignId,
         })
         result.errors.push(`realloc-raise:${survivor.row.campaignId}`)
+      }
+    }
+  }
+
+  // ── GROW (running only) ───────────────────────────────────────────────────
+  //
+  // Everything in ROTATE lives behind `if (!target) continue` — the whole
+  // reallocation, explore-arm and budget-raise machinery only runs once a
+  // trial has been CONDEMNED. So a machine whose trials are all performing
+  // well did nothing at all: it never scaled the winner, never minted an
+  // explore arm, and left the unspent difference between committed budget and
+  // the daily cap sitting idle, cycle after cycle. The machine could react to
+  // failure but never press an advantage, which is half of what running ads
+  // actually is.
+  //
+  // Growth is deliberately the most conservative branch in the engine. It
+  // spends MORE money on evidence alone, so every gate the condemn branches
+  // use to be careful applies here in the positive direction, plus a hard
+  // ceiling relative to what the operator originally approved for that trial.
+  if (machine.status === 'running') {
+    const byProjectNow = new Map<string, TrialState[]>()
+    for (const s of states) {
+      if (s.row.status !== 'active' || pausedProjects.has(s.row.projectSlug)) continue
+      // Only a trial the platform is actually serving deserves more money.
+      const d = deliveryByCampaign[s.row.campaignId]
+      if (d && !SERVING_STATES.has(d.state)) continue
+      const list = byProjectNow.get(s.row.projectSlug)
+      if (list) list.push(s)
+      else byProjectNow.set(s.row.projectSlug, [s])
+    }
+
+    for (const [projectSlug, group] of byProjectNow) {
+      // A winner must have EARNED the raise: enough spend for its numbers to
+      // mean anything, real leads, CRM quality that is not bad, and no human
+      // verdict against it. Missing evidence is never treated as good news.
+      const proven = group
+        .filter((s) => {
+          if (s.spendAed < SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed) return false
+          if (s.cplAed === null || s.leads < MIN_LEADS_FOR_CPL) return false
+          if (s.qualityScore !== null && s.qualityScore < QUALITY_CONDEMN_BELOW) return false
+          const r = s.verdicts?.yesRatio ?? null
+          const decisive = s.verdicts?.decisive ?? 0
+          if (decisive >= MIN_DECISIVE_VERDICTS && r !== null && r < CONDEMN_YES_RATIO) return false
+          return true
+        })
+        .sort((a, b) => (a.cplAed as number) - (b.cplAed as number))[0]
+      if (!proven) continue
+
+      // The ceiling is expressed against the budget the OPERATOR approved for
+      // this trial in the plan, not against whatever it has already grown to —
+      // otherwise repeated raises compound and the plan stops meaning anything.
+      const planned = proven.planTrial?.dailyBudgetAed ?? proven.row.dailyBudgetAed
+      const ceiling = Math.floor(planned * GROW_MAX_PLAN_MULTIPLE)
+      if (proven.row.dailyBudgetAed >= ceiling) continue
+
+      // Fresh cap read immediately before the raise — same discipline as every
+      // launch, because other branches above may have committed budget since.
+      const headroom = machine.dailyCapAed - await activeSpendAed(machineId)
+      const increase = Math.floor(Math.min(
+        headroom,
+        proven.row.dailyBudgetAed * GROW_STEP_FRACTION,
+        ceiling - proven.row.dailyBudgetAed,
+      ))
+      if (increase < MIN_GROW_AED) continue
+
+      const newBudget = proven.row.dailyBudgetAed + increase
+      try {
+        if (proven.row.channel === 'google') {
+          await googleUpdateCampaignBudget(proven.row.campaignId, newBudget)
+        } else {
+          const adSets = await listAdSets(proven.row.campaignId)
+          const adSet = adSets[0]
+          if (!adSet) throw new Error('campaign has no ad set to raise')
+          await updateAdSet(adSet.id, { dailyBudgetAED: newBudget })
+        }
+        await updateMachineCampaign(proven.row.id, { dailyBudgetAed: newBudget })
+        await logActivity({
+          machineId,
+          kind: 'budget_shift',
+          detail: `Scaled "${proven.row.trialLabel}" (${projectSlug}, ${proven.row.channel}) from AED ${proven.row.dailyBudgetAed} to AED ${newBudget}/day using idle cap headroom — nothing was paused to fund this. Evidence: CPL AED ${proven.cplAed!.toFixed(0)} on ${proven.leads} ${proven.leadBasis === 'meta-reported' ? 'Meta-reported' : 'CRM-attributed'} lead(s), spend AED ${Math.round(proven.spendAed)}${proven.qualityScore !== null ? `, CRM quality ${proven.qualityScore}` : ''}. Ceiling for this trial is AED ${ceiling}/day (${GROW_MAX_PLAN_MULTIPLE}× the planned AED ${planned}).`,
+          campaignId: proven.row.campaignId,
+          data: { projectSlug, amountAed: increase, fromAed: proven.row.dailyBudgetAed, toAed: newBudget, ceilingAed: ceiling, reason: 'grow_on_evidence' },
+        })
+        result.budgetShifts.push(proven.row.campaignId)
+      } catch (e) {
+        await logActivity({
+          machineId, kind: 'error',
+          detail: `Wanted to scale "${proven.row.trialLabel}" (${proven.row.channel}) to AED ${newBudget}/day on its own evidence, but the budget update failed: ${errMsg(e)}. Nothing changed.`,
+          campaignId: proven.row.campaignId,
+        })
+        result.errors.push(`grow:${proven.row.campaignId}`)
       }
     }
   }
