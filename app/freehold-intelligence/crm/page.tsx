@@ -57,6 +57,26 @@ function fmtAedShort(n: number): string {
   return `AED ${Math.round(n).toLocaleString()}`
 }
 
+
+/**
+ * Where the lead came from, in words a human uses. The raw `source` is a
+ * machine string ("meta_form:1203…", "Direct", a landing slug) and was only
+ * ever used as a hidden search key — never shown. Knowing a lead came from a
+ * paid Meta ad rather than the website changes how it is worked and what it
+ * cost, so it belongs on the row.
+ */
+function sourceLabel(raw: string): string {
+  const s = (raw || '').trim()
+  if (!s) return '—'
+  if (s.startsWith('meta_form:')) return 'Meta lead form'
+  if (/^meta|facebook|instagram/i.test(s)) return 'Meta'
+  if (/^google/i.test(s)) return 'Google'
+  if (/^whatsapp/i.test(s)) return 'WhatsApp'
+  if (/^direct$/i.test(s)) return 'Direct'
+  if (/^lp[:/]|^landing/i.test(s)) return 'Landing page'
+  return s.length > 24 ? `${s.slice(0, 24)}…` : s
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeholdCrmPage() {
@@ -366,10 +386,11 @@ export default function FreeholdCrmPage() {
                     </span>
                   </div>
 
-                  {/* Project + budget */}
+                  {/* Project + budget + where it came from */}
                   <div className="hidden min-w-0 lg:block">
                     <div className="truncate text-xs text-slate-400">{lead.projectInterest}</div>
                     <div className="text-xs font-medium text-gold/65">{lead.budgetAED}</div>
+                    <div className="truncate text-[11px] text-slate-500">{sourceLabel(lead.source)}</div>
                   </div>
 
                   {/* Agent */}

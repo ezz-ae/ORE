@@ -5,6 +5,11 @@ import { getFormLeads, listAccessiblePages } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
 import { handleNewLead } from '@/lib/automation/engine'
+import {
+  getLeadershipLeadRecipients,
+  sendInternalLeadAlertEmail,
+  sendLeadWhatsAppAlert,
+} from '@/lib/transactional-email'
 
 const FIELD_ALIASES: Record<string, 'name' | 'phone' | 'email'> = {
   full_name: 'name',
@@ -113,9 +118,71 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
       await handleNewLead(inserted[0].id).catch((error) => {
         console.error('[meta-leads] automation handoff failed', error)
       })
+      // TELL SOMEBODY. A lead arriving from the website triggers an internal
+      // email and a WhatsApp alert (see app/api/leads). A lead arriving from a
+      // Meta ad — the channel this company actually spends money on — landed in
+      // the table and notified nobody. Same lead, same urgency, same team; only
+      // the door differed. The alerting was fully built and simply never
+      // reached from this path.
+      //
+      // Fire-and-forget: an alert failure must never cost us the lead we have
+      // already stored, and never break the rest of the sweep.
+      void alertTeamOfLead({
+        name: contact.name || 'Meta lead',
+        email: contact.email ?? null,
+        phone: contact.phone ?? null,
+        source: `meta_form:${formId}`,
+      })
     }
   }
   return { synced, skipped }
+}
+
+
+/**
+ * Internal notification for a newly synced lead: the same email + WhatsApp
+ * alert the website intake sends, on the same recipient configuration.
+ *
+ * Deliberately INTERNAL only. The website path also emails an acknowledgement
+ * to the lead themselves; that is not replicated here, because messaging a
+ * consumer is a business decision with its own consent and tone considerations
+ * and should be turned on knowingly rather than inherited by a code change.
+ */
+async function alertTeamOfLead(lead: {
+  name: string
+  email: string | null
+  phone: string | null
+  source: string
+}): Promise<void> {
+  try {
+    const recipients = await getLeadershipLeadRecipients()
+    const tasks: Promise<unknown>[] = []
+    if (recipients.emails.length) {
+      tasks.push(
+        sendInternalLeadAlertEmail({
+          to: recipients.emails,
+          subject: 'New lead from a Meta ad',
+          headline: 'New lead from a Meta ad',
+          lead: { ...lead, projectSlug: null, message: null },
+          projects: [],
+        }).catch((e) => console.error('[meta-leads] internal email failed', e)),
+      )
+    }
+    if (recipients.whatsappTargets.length) {
+      tasks.push(
+        sendLeadWhatsAppAlert({
+          recipients: recipients.recipients.map((r) => ({
+            name: r.name, email: r.email, phone: r.phone, orgTitle: r.orgTitle,
+          })),
+          lead: { ...lead, projectSlug: null, message: null },
+          projects: [],
+        }).catch((e) => console.error('[meta-leads] whatsapp alert failed', e)),
+      )
+    }
+    await Promise.allSettled(tasks)
+  } catch (e) {
+    console.error('[meta-leads] lead alert failed', e)
+  }
 }
 
 /**
