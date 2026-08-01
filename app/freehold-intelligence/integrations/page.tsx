@@ -41,7 +41,13 @@ function liveToIntegration(l: { id: string; name: string; state: string; note: s
   return {
     id: l.id,
     name: l.name,
-    status: l.state === 'connected' ? 'connected' : l.state === 'partial' ? 'partial' : 'not_connected',
+    // 'error' = credentials saved but the platform rejects them. Folding that
+    // into 'not_connected' would send someone to re-enter a token that is
+    // already correct; folding it into 'connected' is what hid the problem in
+    // the first place. It gets its own state.
+    status: l.state === 'connected' ? 'connected'
+      : l.state === 'error' ? 'needs_access'
+      : l.state === 'partial' ? 'partial' : 'not_connected',
     description: l.note,
   }
 }
@@ -74,7 +80,7 @@ function statusCfg(status: string) {
   switch (status) {
     case 'connected':       return { label: 'Connected',     dot: 'bg-emerald-400', text: 'text-emerald-300' }
     case 'partial':         return { label: 'Partial',       dot: 'bg-amber-400',   text: 'text-amber-300'   }
-    case 'needs_access':    return { label: 'Needs access',  dot: 'bg-orange-400',  text: 'text-orange-200' }
+    case 'needs_access':    return { label: 'Rejected',      dot: 'bg-orange-400',  text: 'text-orange-200' }
     case 'blocked':
     case 'disconnected':
     case 'not_connected':   return { label: 'Not connected', dot: 'bg-red-400',     text: 'text-red-300'    }

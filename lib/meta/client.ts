@@ -90,6 +90,60 @@ export async function isMetaConfigured(): Promise<boolean> {
   try { await creds(); return true } catch { return false }
 }
 
+/**
+ * Turn a Graph error into something the person reading it can ACT on.
+ *
+ * This used to exist only on the write path (apiPost). Every READ — the
+ * campaigns list, insights, forms, the Ads Machine's whole evaluate step —
+ * threw Meta's raw text straight at the operator, e.g.
+ *
+ *   "(#200) Ad account owner has NOT grant ads_management or ads_read
+ *    permission, refer to https://developers.facebook.com/docs/marketing-api/…"
+ *
+ * That is a developer's sentence on a business owner's screen: it names no
+ * button, no page, and links to API reference documentation. Reads are what
+ * people hit constantly, so the friendlier half was on exactly the wrong side.
+ * One translator now serves both.
+ */
+interface GraphError {
+  message: string
+  code: number
+  type: string
+  fbtrace_id?: string
+  error_subcode?: number
+  error_user_msg?: string
+  error_user_title?: string
+}
+
+// Keyed by Graph error_subcode — the most specific signal when present.
+const ACTIONABLE_SUBCODE: Record<number, string> = {
+  1885183:
+    'Your Meta developer app is in Development Mode, so Meta blocks live ad creation. In developers.facebook.com open the app that issued your access token, complete Settings → Basic (privacy policy URL), switch the app to Live, then launch again. — subcode 1885183',
+  1341012:
+    'The connected access token cannot use this Facebook Page. Fix it in Meta Business Settings: (1) add the Page to the same Business that owns the ad account, (2) give the token owner (the person or system user who connected Meta) an Admin or Advertiser role on that Page, and (3) confirm META_PAGE_ID is that Page’s ID. Then reconnect and launch again. — subcode 1341012',
+}
+
+// Keyed by top-level Graph error code, for the blockers that stop READS.
+const ACTIONABLE_CODE: Record<number, string> = {
+  200:
+    'Meta is refusing to share this ad account’s data: the account has not granted the connected login permission to read or manage its ads. Fix it in business.facebook.com → Business Settings → Users → pick the person (or system user) who connected Meta → Assigned assets → Ad accounts → add this ad account and tick "Manage campaigns" (or at least "View performance"). If the connection uses a system-user token, regenerate that token afterwards with the ads_read and ads_management scopes. Then reconnect under Integrations → Meta Ads. Nothing is wrong with this app or your campaigns — Meta simply will not return them until that access is granted. — code 200',
+  190:
+    'The connected Meta access token is no longer valid — it has expired, or the password/permissions behind it changed. Reconnect under Integrations → Meta Ads to issue a fresh one. — code 190',
+  10:
+    'Meta denied this action for the connected login. The app or the token is missing a permission this call requires. Check the token owner’s asset access in business.facebook.com → Business Settings, then reconnect under Integrations → Meta Ads. — code 10',
+  4:
+    'Meta is rate-limiting this ad account right now (too many API calls in a short window). Nothing is broken — wait a few minutes and reload. — code 4',
+  17:
+    'Meta is rate-limiting the connected user right now (too many API calls in a short window). Nothing is broken — wait a few minutes and reload. — code 17',
+}
+
+function metaErrorDetail(e: GraphError): string {
+  return (e.error_subcode && ACTIONABLE_SUBCODE[e.error_subcode])
+    || ACTIONABLE_CODE[e.code]
+    || [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
+        .filter(Boolean).join(' — ')
+}
+
 async function apiFetch<T>(
   path: string,
   options?: RequestInit,
@@ -114,8 +168,8 @@ async function apiFetch<T>(
   const json = (await res.json()) as MetaApiResponse<T> & T
 
   if ('error' in json && json.error) {
-    const e = json.error
-    throw new MetaApiError(e.message, e.code, e.type, e.fbtrace_id)
+    const e = json.error as GraphError
+    throw new MetaApiError(metaErrorDetail(e), e.code, e.type, e.fbtrace_id)
   }
 
   return json as T
@@ -162,19 +216,9 @@ async function apiPost<T>(path: string, body: Record<string, unknown>, tokenOver
 
   const json = (await res.json()) as MetaApiResponse<T> & T
   if ('error' in json && json.error) {
-    const e = json.error as { message: string; code: number; type: string; fbtrace_id?: string; error_subcode?: number; error_user_msg?: string; error_user_title?: string }
-    // Account-configuration blockers get an actionable message instead of
-    // Meta's raw jargon — the fix is a dashboard step, not a system problem.
-    const ACTIONABLE: Record<number, string> = {
-      1885183:
-        'Your Meta developer app is in Development Mode, so Meta blocks live ad creation. In developers.facebook.com open the app that issued your access token, complete Settings → Basic (privacy policy URL), switch the app to Live, then launch again. — subcode 1885183',
-      1341012:
-        'The connected access token cannot use this Facebook Page. Fix it in Meta Business Settings: (1) add the Page to the same Business that owns the ad account, (2) give the token owner (the person or system user who connected Meta) an Admin or Advertiser role on that Page, and (3) confirm META_PAGE_ID is that Page’s ID. Then reconnect and launch again. — subcode 1341012',
-    }
-    const detail = (e.error_subcode && ACTIONABLE[e.error_subcode])
-      || [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
-          .filter(Boolean).join(' — ')
-    throw new MetaApiError(detail, e.code, e.type, e.fbtrace_id)
+    const e = json.error as GraphError
+    // Same translator as the read path — one place to teach, both sides learn.
+    throw new MetaApiError(metaErrorDetail(e), e.code, e.type, e.fbtrace_id)
   }
   return json as T
 }
@@ -199,6 +243,30 @@ export async function ingestImageFromUrl(url: string): Promise<string | null> {
 }
 
 // ─── Campaigns ───────────────────────────────────────────────────────────────
+
+/**
+ * Can we actually READ this ad account right now?
+ *
+ * "Connected" has meant "someone saved a token" — presence, never capability.
+ * A token can be present, well-formed and stored, while Meta refuses every
+ * call because the ad account never granted it ads_read/ads_management. That
+ * is the state where the Integrations page shows green and the campaigns page
+ * shows nothing, which is exactly as confusing as it sounds.
+ *
+ * One cheap field read against the configured ad account. Never throws — the
+ * failure IS the answer, and it arrives already translated into instructions.
+ */
+export async function probeAdAccountAccess(): Promise<{ ok: boolean; message?: string; accountName?: string }> {
+  try {
+    const { adAccountId } = await creds()
+    const acct = await apiFetch<{ id: string; name?: string }>(`/${adAccountId}`, undefined, { fields: 'id,name' })
+    return { ok: true, accountName: acct?.name }
+  } catch (e) {
+    if (e instanceof MetaConfigError) return { ok: false, message: e.message }
+    if (e instanceof MetaApiError) return { ok: false, message: e.message }
+    return { ok: false, message: e instanceof Error ? e.message : 'Meta could not be reached' }
+  }
+}
 
 export async function listCampaigns(): Promise<MetaCampaign[]> {
   const { adAccountId } = await creds()
