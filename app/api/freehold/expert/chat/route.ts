@@ -366,6 +366,7 @@ SCREEN TRUTH: before presenting any entity (an ad, campaign, lead, form) as "thi
 YOU ARE THE MARKETING COORDINATOR AGENT. You can execute REAL tools via your specialist agents. To call one, respond with ONLY this JSON (no blocks, no prose):
 {"tool_call": {"name": "<tool_name>", "args": { ... }}}
 After each call the conversation gains a TOOL_RESULT message; then either call another tool (max 5 per turn) or give your final answer in the normal {"blocks":[...]} format, grounded in the real results. NEVER invent or guess a tool result. NEVER repeat a call you already made this turn — its result is already in the conversation.
+CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling.
 METRIC QUESTIONS REQUIRE A TOOL CALL: when the user asks about leads, lead quality, campaign performance, spend, CPL, or any other figure that is not already in your context JSON, your FIRST response must be the tool call that fetches it — never a direct answer. Answering a metric question with numbers that came from neither context nor a tool result is fabrication and strictly forbidden; if no tool covers it, say you don't have that data and where it lives.
 DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. Need an ad set id? List the ad sets. Need the current budget? Read it from the listing or the page. Asking the user "please provide the ad set ID" when you have a list tool is a failure.
 If the target is unambiguous — the campaign has exactly one ad set, or the page shows exactly one campaign — act on it directly; do not ask "which one".
@@ -383,6 +384,7 @@ Your tools:${renderToolDocs(tools)}`
     const sdkToolGuidance = tools.length === 0 ? '' : `
 
 YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
+CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling.
 METRIC QUESTIONS REQUIRE A TOOL CALL: when the user asks about leads, lead quality, campaign performance, spend, CPL, or any other figure not already in your context JSON, call the tool that fetches it BEFORE answering — numbers that came from neither context nor a tool result are fabrication and strictly forbidden; if no tool covers it, say you don't have that data and where it lives.
 DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. If the target is unambiguous (one ad set, one campaign on the page), act on it directly. For a directional ask without a number ("spend more"), read the current value and propose ONE concrete change (~20–30%, floor AED 50) as a one-click confirmation showing current → new — never ask the user to supply the number.
 SCREEN TRUTH: before presenting any entity's details as "this ad/campaign/lead", verify they MATCH context.pageContent — the screen is ground truth. A mismatch means you fetched the wrong entity: re-list and pick the one that matches. If the user corrects you, re-resolving is YOUR job — never ask them for an identifier.
@@ -490,6 +492,32 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     }
 
     let blocks = parseBlocks(raw ?? '')
+
+    // ── FABRICATED-ACTION TRIPWIRE ────────────────────────────────────────────
+    // Screenshot-verified failure: asked to import historical CRM leads (a
+    // capability that does not exist), the model answered "I am initiating the
+    // one-time import… runs securely in the background… may take several
+    // hours." No tool ran. Nothing was initiated. The user walked away
+    // believing a multi-hour job was working for them.
+    //
+    // A claim of STARTED WORK is only ever true here if a mutating tool
+    // executed this turn — the assistant has no other way to start anything.
+    // So: first-person initiation/background-process language + zero
+    // destructive tools executed = fabrication, and the claim is replaced with
+    // an honest correction rather than delivered. English-pattern only (the
+    // model's own drift is overwhelmingly English) — a partial net that
+    // catches the observed lie beats a perfect net that ships never.
+    const FABRICATED_ACTION = /\b(?:i(?:\s+(?:am|have|will\s+now)|['’]ve)\s+(?:now\s+)?(?:initiat\w*|start\w*|begun|beginn\w*|queu\w*|kick\w*\s+off|import\w*|migrat\w*|sync\w*)|(?:runs?|running)\s+(?:securely\s+)?in\s+the\s+background|may\s+take\s+(?:several|a\s+few)\s+(?:hours|minutes))\b/i
+    const destructiveRan = toolsUsed.some((name) => tools.find((tl) => tl.name === name)?.destructive)
+    if (tools.length > 0 && !destructiveRan) {
+      const claimsAction = blocks.some((b) => b.type === 'text' && FABRICATED_ACTION.test(String((b as { content?: unknown }).content ?? '')))
+      if (claimsAction) {
+        blocks = [{
+          type: 'text',
+          content: 'I have to correct myself: I did not actually start anything — no action ran just now, and I have no background-import capability. What I can genuinely do here: search and update the leads already in the CRM, and manage campaigns. For importing or syncing CRM data, use Integrations → HubSpot (Sync) in the platform — that is a real import, visible and verifiable.',
+        }]
+      }
+    }
     // Never end a turn with tool chips and no answer: if the model executed
     // real tools but produced no meaningful text, answer with what actually
     // happened (real results — never invented) and invite a follow-up.
