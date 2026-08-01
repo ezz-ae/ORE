@@ -61,7 +61,7 @@ function fmtAedShort(n: number): string {
 
 export default function FreeholdCrmPage() {
   const t = useT()
-  const { leads, loading: leadsLoading, unassigned } = useLiveLeads()
+  const { leads, loading: leadsLoading, unassigned, total: leadTotal, truncated } = useLiveLeads()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
@@ -162,6 +162,14 @@ export default function FreeholdCrmPage() {
               <h1 className="text-[17px] font-semibold text-white">{t('crm.commandCentre')}</h1>
               <p className="mt-0.5 text-xs text-slate-500">
                 {t('crm.leadsPipelineStages', { leads: leads.length, stages: STAGES.length })}
+                {/* The dashboard counter counts every row while this list is
+                    capped, so an account with more leads than the page size saw
+                    a total that its own list never reached. Say which it is. */}
+                {truncated && (
+                  <span className="ms-1 text-amber-300/90">
+                    {t('crm.showingOf', { shown: String(leads.length), total: String(leadTotal) })}
+                  </span>
+                )}
               </p>
             </div>
             <Link

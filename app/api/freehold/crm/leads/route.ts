@@ -10,6 +10,10 @@ import { notify } from '@/lib/freehold/notifications'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+/** Page size for the CRM list. Generous enough that a normal account is
+ *  never truncated; bounded so the query stays sane as the table grows. */
+const LEAD_LIST_LIMIT = 1000
+
 const MANAGEMENT = ['admin', 'ceo', 'director', 'sales_manager']
 
 // Persistent "not a duplicate" dismissals live on the lead row.
@@ -118,9 +122,28 @@ export async function GET() {
       sql += ` WHERE assigned_broker_id = ANY($1)`
       params.push(ownerKeys)
     }
-    sql += ` ORDER BY created_at DESC LIMIT 200`
+    // The list was capped at 200 with nothing saying so, while the dashboard
+    // counter counts every row — so an account with 443 leads showed "443" next
+    // to a list that simply stopped at 200. Indistinguishable, from the outside,
+    // from leads having gone missing.
+    //
+    // The cap itself is worth keeping (an unbounded SELECT on a growing table
+    // is how a page dies later), but it has to be BOTH generous enough that
+    // ordinary accounts are never truncated, and honest when it does bite.
+    sql += ` ORDER BY created_at DESC LIMIT ${LEAD_LIST_LIMIT}`
 
     const rows = await query<DbLead>(sql, params)
+
+    // The true count under the SAME filter the list used, so a broker's total
+    // matches a broker's list rather than the whole company's.
+    let total = rows.length
+    try {
+      const countSql = `SELECT COUNT(*)::text AS n FROM freehold_site_leads${
+        isBroker && ownerKeys.length ? ' WHERE assigned_broker_id = ANY($1)' : ''
+      }`
+      const [c] = await query<{ n: string }>(countSql, isBroker && ownerKeys.length ? [ownerKeys] : [])
+      total = Number(c?.n) || rows.length
+    } catch { /* fall back to the page size — never break the list over a count */ }
 
     // UNOWNED LEADS. Auto-distribution only runs when the workspace is in
     // 'auto' mode; otherwise a lead that arrives from a Meta form or a landing
@@ -137,7 +160,14 @@ export async function GET() {
       ).catch(() => [{ n: '0' }])
       unassigned = Number(c?.n) || 0
     }
-    return NextResponse.json({ leads: rows.map(dbLeadToCRM), source: 'db', unassigned })
+    return NextResponse.json({
+      leads: rows.map(dbLeadToCRM),
+      source: 'db',
+      unassigned,
+      total,
+      /** True when the list is a window onto a larger set — the UI must say so. */
+      truncated: total > rows.length,
+    })
   } catch (err) {
     console.error('[crm/leads] query failed', err)
     return NextResponse.json({ leads: [], source: 'error' }, { status: 500 })

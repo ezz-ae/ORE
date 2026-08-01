@@ -348,7 +348,16 @@ export async function getCampaignInsights(campaignId: string): Promise<MetaInsig
     // frequency/reach are what make creative fatigue detectable at all —
     // without them a decaying winner is indistinguishable from a healthy one.
     fields: 'impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm,frequency,reach',
-    date_preset: 'this_month',
+    // ROLLING 30 DAYS, not this_month. A calendar window silently erases every
+    // trial's history at midnight on the 1st: spend and leads both read ~zero,
+    // so the Ads Machine's spend gate cannot fire, its CPL and quality branches
+    // have nothing to compare, and GROW cannot identify a winner. The machine
+    // was therefore frozen for the first days of EVERY month — unable to
+    // condemn or to scale — no matter how much evidence the previous 30 days
+    // had produced. It also made this page read as "everything is dead" on the
+    // 1st. A rolling window is what an ads operator means by recent
+    // performance, and it never resets.
+    date_preset: 'last_30d',
   })
   return res.data?.[0] ?? null
 }

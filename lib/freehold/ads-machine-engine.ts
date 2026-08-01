@@ -12,7 +12,7 @@ import { BRAND } from '@/lib/freehold/brand'
  *              When Google isn't connected (GoogleConfigError) the trial
  *              degrades honestly to a local PAUSED draft + a
  *              'google_draft_prepared' activity — the machine still runs Meta.
- *   EVALUATE — per campaign: real platform metrics (Meta insights this_month;
+ *   EVALUATE — per campaign: real platform metrics (Meta insights last_30d;
  *              Google campaign metrics), CRM quality, verdict stats; creates
  *              per-lead feedback questions for brokers; ONE aggregated
  *              'observation' activity per machine per cycle.
@@ -868,13 +868,15 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
   // Google metrics come from ONE listCampaigns read (it already carries
   // cost_micros/clicks/conversions per campaign), indexed by id. Scoped to
-  // THIS_MONTH so Google spend is like-for-like with the Meta side (which
-  // reads this_month) — otherwise a Google trial's LIFETIME cost would be
-  // compared against a Meta this-month cost in the rotation's spend gate.
+  // LAST_30_DAYS so Google spend is like-for-like with the Meta side (which
+  // reads last_30d) — otherwise a Google trial's LIFETIME cost would be
+  // compared against a Meta 30-day cost in the rotation's spend gate. Both
+  // moved off calendar-month windows together: a month boundary reset every
+  // trial's evidence to zero and froze the machine for days.
   let googleMetricsById: Map<string, GoogleCampaign> | null = null
   if (evalCampaigns.some((c) => c.channel === 'google')) {
     try {
-      googleMetricsById = new Map((await listGoogleCampaigns('THIS_MONTH')).map((c) => [c.id, c]))
+      googleMetricsById = new Map((await listGoogleCampaigns('LAST_30_DAYS')).map((c) => [c.id, c]))
     } catch (e) {
       await logActivity({ machineId, kind: 'error', detail: `Google metrics read failed: ${errMsg(e)}` })
       result.errors.push('google:metrics')
@@ -985,7 +987,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           spendAed: s.spendAed,
           leads: s.leads,
           // Per-channel CPL basis, recorded so the numbers never lie:
-          // 'meta-reported' = Meta lead actions (this_month insights window);
+          // 'meta-reported' = Meta lead actions (rolling last_30d window);
           // 'crm-attributed' = real CRM leads matched by utm (Google spend is
           // the campaign's lifetime cost from the Google Ads API).
           leadBasis: s.leadBasis,

@@ -15,11 +15,17 @@ export function useLiveLeads(): {
    *  to nobody: invisible to every broker (they are filtered to their own
    *  leads) and just another row to management. Zero for broker sessions. */
   unassigned: number
+  /** Rows that exist under the same filter, which may exceed those returned. */
+  total: number
+  /** True when the list is a window onto a larger set. */
+  truncated: boolean
 } {
   const [leads, setLeads] = useState<CRMLeadIntelligence[]>([])
   const [source, setSource] = useState<'db' | 'empty'>('empty')
   const [loading, setLoading] = useState(true)
   const [unassigned, setUnassigned] = useState(0)
+  const [total, setTotal] = useState(0)
+  const [truncated, setTruncated] = useState(false)
   const done = useRef(false)
 
   useEffect(() => {
@@ -33,10 +39,12 @@ export function useLiveLeads(): {
           setSource(d.leads.length > 0 ? 'db' : 'empty')
         }
         if (typeof d?.unassigned === 'number') setUnassigned(d.unassigned)
+        if (typeof d?.total === 'number') setTotal(d.total)
+        setTruncated(Boolean(d?.truncated))
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
-  return { leads, source, loading, unassigned }
+  return { leads, source, loading, unassigned, total, truncated }
 }
