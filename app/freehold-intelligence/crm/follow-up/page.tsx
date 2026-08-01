@@ -7,6 +7,7 @@ import type { CRMFollowUpItem } from '@/src/features/freehold-intelligence/serve
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { LeadValueChips } from '@/components/freehold/lead-value-chips'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
 
@@ -65,7 +66,7 @@ const urgencyActiveStyle: Record<Urgency, string> = {
   Low:      'border-line-strong bg-surface-2 text-slate-300',
 }
 
-type QueueItem = CRMFollowUpItem & { snoozeUntil: string | null; slaBreachMinutes: number | null }
+type QueueItem = CRMFollowUpItem & { snoozeUntil: string | null; slaBreachMinutes: number | null; valueRating?: number | null }
 
 // The response-time clock, as served by /api/freehold/crm/response-clock.
 type ResponseClock = { leadId: string; assignedAt: string; firstResponseAt: string | null; responseMinutes: number | null }
@@ -79,6 +80,19 @@ export default function FollowUpQueuePage() {
   // Optimistic snooze overrides keyed by lead id (ISO string or null = cleared)
   const [snoozeOverrides, setSnoozeOverrides] = useState<Record<string, string | null>>({})
   const [flash, setFlash] = useState<string | null>(null)
+  // One-click value rating from the queue — optimistic; same PATCH the Lead
+  // 360 chips use, so it writes the canonical rating, answers any open
+  // machine question, and reaches the shared brain on the nightly fold.
+  const [ratings, setRatings] = useState<Record<string, number>>({})
+  async function rateLead(leadId: string, v: number) {
+    setRatings((prev) => ({ ...prev, [leadId]: v }))
+    try {
+      await fetch(`/api/freehold/crm/leads/${leadId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value_rating: v }),
+      })
+    } catch { /* optimistic; the canonical value reloads with the page */ }
+  }
   // Response-time clock: SLA target (null = no target set) + per-lead clocks.
   const [slaMinutes, setSlaMinutes] = useState<number | null>(null)
   const [clocks, setClocks] = useState<Map<string, ResponseClock>>(new Map())
@@ -141,6 +155,7 @@ export default function FollowUpQueuePage() {
           nextBestAction: l.nextBestAction,
           duplicateRisk: l.duplicateRisk,
           wrongNumberRisk: l.wrongNumberRisk,
+          valueRating:   l.valueRating ?? null,
           snoozeUntil:   effectiveSnooze(l.id, l.snoozeUntil ?? null),
           slaBreachMinutes: breachMinutesOf(l.id),
         } satisfies QueueItem
@@ -345,6 +360,12 @@ export default function FollowUpQueuePage() {
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-col sm:items-end">
+                        {/* Rate where leads are actually worked — one tap. */}
+                        <LeadValueChips
+                          size="sm"
+                          value={ratings[item.leadId] ?? item.valueRating ?? null}
+                          onRate={(v) => rateLead(item.leadId, v)}
+                        />
                         <button
                           onClick={() => markDone(item.leadId)}
                           className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-4 py-2 text-xs font-medium text-gold transition hover:border-emerald-400/50 hover:bg-gold/10"

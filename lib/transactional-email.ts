@@ -209,8 +209,8 @@ ${BRAND.company}`
 export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: string) {
   if (!brokerId || !leadId) return { sent: false as const }
   try {
-    const brokerRows = await query<{ name: string | null; email: string | null }>(
-      `SELECT name, email FROM freehold_site_users WHERE id::text = $1 OR lower(email) = lower($1) LIMIT 1`,
+    const brokerRows = await query<{ name: string | null; email: string | null; phone: string | null }>(
+      `SELECT name, email, phone FROM freehold_site_users WHERE id::text = $1 OR lower(email) = lower($1) LIMIT 1`,
       [brokerId],
     ).catch(() => [])
     const to = brokerRows[0]?.email
@@ -226,6 +226,23 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
     // that must not fail silently here.
     void emailLeadMovementToInbox("assigned", { id: leadId, name: lead.name },
       `assigned to ${brokerRows[0]?.name || to}`)
+    // WhatsApp the lead's details straight to the assigned broker's phone —
+    // email reaches the desk; WhatsApp reaches the person. Fail-soft on every
+    // branch: no phone, or WhatsApp not configured, degrades to email-only.
+    const brokerPhone = (brokerRows[0]?.phone || "").replace(/[^\d+]/g, "")
+    if (brokerPhone.length >= 7) {
+      const waLines = [
+        `New lead assigned to you: ${lead.name?.trim() || "Lead"}`,
+        lead.phone ? `Phone: ${lead.phone}` : "",
+        (lead.interest ?? lead.project_slug) ? `Interest: ${lead.interest ?? lead.project_slug}` : "",
+        lead.source ? `Source: ${lead.source}` : "",
+        `${baseUrl}/freehold-intelligence/crm/leads/${leadId}`,
+        "Respond fast — speed-to-lead wins deals.",
+      ].filter(Boolean)
+      void import("@/lib/whatsapp/client")
+        .then(({ sendText }) => sendText({ to: brokerPhone, body: waLines.join("\n") }))
+        .catch((e) => console.error("[notify] broker whatsapp failed", e))
+    }
     return await sendLeadAssignedEmail(to, brokerRows[0]?.name ?? "", {
       id: leadId,
       name: lead.name,
