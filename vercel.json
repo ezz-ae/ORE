@@ -33,6 +33,10 @@
       "schedule": "30 4 * * *"
     },
     {
+      "path": "/api/cron/refresh-signals",
+      "schedule": "45 2 * * *"
+    },
+    {
       "path": "/api/cron/opportunity",
       "schedule": "30 3 * * *"
     },

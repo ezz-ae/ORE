@@ -36,6 +36,9 @@ jobs:
       - name: i18n parity
         run: pnpm i18n
 
+      - name: Invariant guards (copy rules + auth matrix)
+        run: pnpm guards
+
       - name: Build
         run: pnpm build
         env:
