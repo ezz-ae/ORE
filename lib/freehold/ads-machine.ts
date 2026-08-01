@@ -325,6 +325,40 @@ export async function listMachineCampaigns(machineId: string): Promise<MachineCa
   return rows.map(campaignRow)
 }
 
+/**
+ * Every campaign id owned by ANY ads machine, in any state.
+ *
+ * Ownership matters because two autonomous systems write to the same ad
+ * account: this machine, and the rules-based autopilot. Autopilot must not
+ * touch a machine's campaigns — see runAutopilotPass. Paused ones are included
+ * deliberately and are the whole point: a trial the machine stopped for an
+ * expired Trakheesi permit or a platform rejection must never be resumed by
+ * something that does not know why it was stopped.
+ *
+ * Throws rather than returning an empty set on failure. An empty set here
+ * reads as "no campaign is owned", which is precisely the answer that would
+ * let autopilot act on all of them — the caller must fail closed instead.
+ */
+export async function allMachineCampaignIds(): Promise<Set<string>> {
+  await ensure()
+  const rows = await query<{ campaign_id: string }>(
+    `SELECT DISTINCT campaign_id FROM freehold_site_ads_machine_campaigns`,
+  )
+  return new Set(rows.map((r) => String(r.campaign_id)))
+}
+
+/** The machine trial behind a platform campaign id, if any machine owns it. */
+export async function findMachineCampaignByCampaignId(
+  campaignId: string,
+): Promise<MachineCampaign | null> {
+  await ensure()
+  const rows = await query<Record<string, unknown>>(
+    `SELECT * FROM freehold_site_ads_machine_campaigns WHERE campaign_id = $1 LIMIT 1`,
+    [campaignId],
+  )
+  return rows[0] ? campaignRow(rows[0]) : null
+}
+
 export async function addMachineCampaign(params: {
   machineId: string
   channel: MachineChannel

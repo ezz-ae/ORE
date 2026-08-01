@@ -67,6 +67,7 @@ import {
   setMachinePlan,
   logActivity,
   listMachineCampaigns,
+  findMachineCampaignByCampaignId,
   addMachineCampaign,
   updateMachineCampaign,
   activeSpendAed,
@@ -1394,6 +1395,38 @@ async function releaseAdvisoryLock(key: number): Promise<void> {
  * Google — is paused on its own platform, then the machine stops
  * launching/rotating. A platform pause failure is logged but does not block
  * pausing the rest. */
+/**
+ * May this platform campaign be switched ON right now?
+ *
+ * The machine's own switch (setTrialRunning) already refuses to resume a trial
+ * whose Trakheesi permit has expired. But the same campaign can be turned on
+ * through other doors — the AI coordinator's ads_resume_campaign, and the
+ * rules autopilot — and neither knew the machine had stopped it, let alone
+ * why. Resuming an unpermitted ad is illegal in Dubai regardless of which
+ * button did it, so the check has to live where every door can reach it.
+ *
+ * Returns a human-readable reason to REFUSE, or null when there is no
+ * objection. Campaigns no machine owns are never objected to.
+ */
+export async function campaignResumeBlock(campaignId: string): Promise<string | null> {
+  try {
+    const row = await findMachineCampaignByCampaignId(campaignId)
+    if (!row) return null
+    const machine = await getMachine(row.machineId)
+    if (!machine) return null
+    const expiredOn = expiredPermitFor(machine, row.projectSlug)
+    if (expiredOn) {
+      return `"${row.trialLabel}" is managed by the ads machine "${machine.name}", which stopped it because the Trakheesi advertising permit for ${row.projectSlug} expired on ${expiredOn}. A Dubai property ad may not run without a valid permit. Renew it and update the expiry in the machine's plan, then the machine will restart this trial itself.`
+    }
+    return null
+  } catch {
+    // Unknown ownership must not block an operator's explicit action on a
+    // campaign that probably isn't the machine's — the permit gate inside the
+    // machine's own cycle remains the backstop either way.
+    return null
+  }
+}
+
 export async function pauseMachine(machineId: string): Promise<{ paused: number; failed: string[] }> {
   const campaigns = await listMachineCampaigns(machineId)
   let paused = 0
