@@ -17,7 +17,7 @@ import { toast } from 'sonner'
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowLeftRight, ArrowUpRight, Bell,
   Check, Eye, FileText, ListChecks, Loader2, Pause, Pencil, Play, RefreshCw,
-  Rocket, Shield, ShieldAlert, Square, X,
+  Rocket, Shield, ShieldAlert, Square, X, EyeOff,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
@@ -109,6 +109,8 @@ const KIND_META: Record<ActivityKind, { Icon: typeof Rocket; color: string; bg: 
   cap_enforced:          { Icon: Shield,         color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.cap_enforced' },
   permit_blocked:        { Icon: Shield,         color: 'text-orange-300', bg: 'bg-orange-400/10', labelKey: 'lm.machine.kind.permit_blocked' },
   permit_warning:        { Icon: ShieldAlert,    color: 'text-amber-300',  bg: 'bg-amber-400/10',  labelKey: 'lm.machine.kind.permit_warning' },
+  delivery_blocked:      { Icon: EyeOff,         color: 'text-orange-300', bg: 'bg-orange-400/10', labelKey: 'lm.machine.kind.delivery_blocked' },
+  machine_stalled:       { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.machine_stalled' },
   error:                 { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.error' },
   google_draft_prepared: { Icon: FileText,       color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.google_draft_prepared' },
   planned:               { Icon: ListChecks,     color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.planned' },

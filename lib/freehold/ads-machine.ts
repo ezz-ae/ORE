@@ -35,6 +35,12 @@ export type ActivityKind =
   /** Permit renewal notice — raised while ads are still running, so the permit
    *  can be renewed before the machine has to stop them. */
   | 'permit_warning'
+  /** The PLATFORM is not serving a campaign we believed was live — rejected,
+   *  ended, externally paused, or stuck. Budget, not performance. */
+  | 'delivery_blocked'
+  /** The machine as a whole cannot make progress — nothing live, or real spend
+   *  with zero leads anywhere. Needs a human; the rotation cannot fix it. */
+  | 'machine_stalled'
   | 'error'
 
 let ensured: Promise<void> | null = null
