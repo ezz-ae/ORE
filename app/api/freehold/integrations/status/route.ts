@@ -21,6 +21,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
-  const summary = await getIntegrationStatusSummary()
+  // This page exists to answer "is it actually working?", so it pays for the
+  // real check. Presence-only status is what let a rejected Meta token read as
+  // green here while every campaign call failed.
+  const summary = await getIntegrationStatusSummary({ probe: true })
   return NextResponse.json(summary)
 }

@@ -2,17 +2,32 @@
  * Live integration status — reports the REAL configuration state of each
  * external integration by inspecting environment variables on the server.
  *
- * This replaces guesswork: a "connected" status here means the credentials
- * are actually present in the runtime, so the corresponding client (Meta,
- * Google, WhatsApp, Vertex, Neon) can make live calls. No secrets are ever
- * returned — only booleans and which env keys are missing.
+ * A "connected" status means the credentials are PRESENT in the runtime. That
+ * is not the same as working, and the difference was actively misleading: a
+ * Meta token can be stored and well-formed while the ad account has never
+ * granted it permission, so this page showed green while every campaign read
+ * failed. Pass { probe: true } to make one real call per integration that
+ * supports it and report 'error' with the platform's own reason instead.
+ *
+ * Probing is opt-in because /api/health, the agent summary and the MCP tools
+ * all call this on hot paths where an extra round-trip per integration is not
+ * worth it — they only need to know whether anything is configured at all.
+ *
+ * No secrets are ever returned — only booleans and which env keys are missing.
  */
 
 import { getStoredMetaCreds, getStoredCreds, type WhatsAppStoredCreds } from '@/lib/freehold/integration-credentials'
+import { probeAdAccountAccess } from '@/lib/meta/client'
 import type { GoogleStoredCreds } from '@/lib/google/client'
 import type { HubspotStoredCreds } from '@/lib/hubspot/client'
 
-export type IntegrationState = 'connected' | 'partial' | 'disconnected'
+export type IntegrationState =
+  | 'connected'
+  | 'partial'
+  | 'disconnected'
+  /** Credentials are present, but the platform rejected them when asked. Only
+   *  reachable when probing is enabled — presence alone can never prove this. */
+  | 'error'
 
 export interface LiveIntegrationStatus {
   id: string
@@ -46,7 +61,9 @@ function evaluate(
   return { state: 'disconnected', missing }
 }
 
-export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatus[]> {
+export async function getLiveIntegrationStatuses(
+  opts: { probe?: boolean } = {},
+): Promise<LiveIntegrationStatus[]> {
   // ── Meta Ads ──────────────────────────────────────────────────────────────
   const metaKeys = ['META_ACCESS_TOKEN', 'META_AD_ACCOUNT_ID', 'META_PAGE_ID']
   let meta = evaluate(metaKeys)
@@ -59,6 +76,19 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
     if (stored?.accessToken && stored?.adAccountId && stored?.pageId) {
       meta = { state: 'connected', missing: [] }
       metaSource = 'db'
+    }
+  }
+
+  // Presence proved nothing about capability. When asked to, make ONE real
+  // read against the configured ad account: a token can be stored, valid in
+  // shape, and still rejected because the account never granted it access.
+  // That state showed green here while the campaigns page showed nothing.
+  let metaProbeError: string | null = null
+  if (opts.probe && meta.state === 'connected') {
+    const probe = await probeAdAccountAccess().catch(() => ({ ok: false, message: 'Meta could not be reached' }))
+    if (!probe.ok) {
+      metaProbeError = probe.message ?? 'Meta rejected the connected credentials.'
+      meta = { state: 'error', missing: [] }
     }
   }
 
@@ -128,7 +158,9 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
       requiredKeys: metaKeys,
       missingKeys: meta.missing,
       note:
-        meta.state === 'connected'
+        meta.state === 'error'
+          ? `The credentials are saved, but Meta refuses them. ${metaProbeError ?? ''}`.trim()
+          : meta.state === 'connected'
           ? (metaSource === 'db' ? 'Live (connected in-app) — campaigns can launch. ' : 'Live — campaigns can launch. ') +
             (metaPixel ? 'Pixel tracking is configured.' : 'Add META_PIXEL_ID for conversion tracking.')
           : `Add ${meta.missing.join(', ')} in Vercel, or connect in Integrations → Meta Ads, to launch live campaigns.`,
@@ -211,13 +243,16 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
 }
 
 /** Compact summary for dashboards: counts by state. */
-export async function getIntegrationStatusSummary() {
-  const all = await getLiveIntegrationStatuses()
+export async function getIntegrationStatusSummary(opts: { probe?: boolean } = {}) {
+  const all = await getLiveIntegrationStatuses(opts)
   return {
     total: all.length,
     connected: all.filter((i) => i.state === 'connected').length,
     partial: all.filter((i) => i.state === 'partial').length,
     disconnected: all.filter((i) => i.state === 'disconnected').length,
+    /** Credentials saved but rejected by the platform — only ever non-zero
+     *  when probing; that is the whole point of probing. */
+    error: all.filter((i) => i.state === 'error').length,
     statuses: all,
   }
 }
