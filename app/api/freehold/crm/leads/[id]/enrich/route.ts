@@ -22,13 +22,24 @@ async function authorize(id: string) {
   if (!user) return { res: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   if (user.role === 'broker') {
     const ownerKeys = brokerOwnerKeys(user)
-    const rows = await query<{ assigned_broker_id: string | null }>(
-      `SELECT assigned_broker_id FROM freehold_site_leads WHERE id = $1`,
-      [id],
-    ).catch(() => [])
-    if (!rows.length) return { res: NextResponse.json({ error: 'Not found' }, { status: 404 }) }
-    if (!ownerKeys.includes(rows[0].assigned_broker_id ?? '')) {
-      return { res: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    // A broker with no owner keys owns nothing — deny before touching the DB.
+    if (!ownerKeys.length) return { res: NextResponse.json({ error: 'Not found' }, { status: 404 }) }
+    let rows: { assigned_broker_id: string | null }[]
+    try {
+      rows = await query<{ assigned_broker_id: string | null }>(
+        `SELECT assigned_broker_id FROM freehold_site_leads WHERE id = $1`,
+        [id],
+      )
+    } catch {
+      // A DB outage is 503, not "not found" — don't turn infra failure into a
+      // misleading 404 (the sibling lead routes return 503 too).
+      return { res: NextResponse.json({ error: 'DB unavailable' }, { status: 503 }) }
+    }
+    // Uniform 404 whether the lead is absent OR simply not this broker's —
+    // a 403-only-when-it-exists response is an existence oracle. Matches the
+    // lead GET route, which filters ownership in SQL and 404s either way.
+    if (!rows.length || !ownerKeys.includes(rows[0].assigned_broker_id ?? '')) {
+      return { res: NextResponse.json({ error: 'Not found' }, { status: 404 }) }
     }
   }
   return { user }

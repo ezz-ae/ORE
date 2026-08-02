@@ -37,14 +37,31 @@ export async function geminiGenerate(apiKey: string, contents: unknown, generati
     const config = model.startsWith("gemini-2.5")
       ? { ...((generationConfig as Record<string, unknown>) ?? {}), thinkingConfig: { thinkingBudget: 0 } }
       : generationConfig
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents, generationConfig: config, ...(tools ? { tools } : {}) }),
-      },
-    )
+    // Per-model timeout so one hung model can't consume the whole serverless
+    // budget and get the function killed with a non-JSON body (which the caller
+    // would then fail to parse). 45s leaves room to fall through to another
+    // model within a 120s route budget.
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 45_000)
+    let res: Response
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          // Key travels as a header, not a URL query param — a URL key leaks
+          // into proxy/edge access logs.
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify({ contents, generationConfig: config, ...(tools ? { tools } : {}) }),
+          signal: ctrl.signal,
+        },
+      )
+    } catch (e) {
+      last = e instanceof Error && e.name === "AbortError" ? `timeout after 45s on ${model}` : String(e)
+      continue // try the next model
+    } finally {
+      clearTimeout(timer)
+    }
     if (res.ok) return (await res.json()) as GeminiResponse
     last = await res.text().catch(() => String(res.status))
     const retryable = res.status === 404 || res.status === 429 || /NOT_FOUND|RESOURCE_EXHAUSTED/i.test(last)

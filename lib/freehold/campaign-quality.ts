@@ -64,18 +64,33 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
       [campaignId || '', campaignName || ''],
     )
   } catch {
-    // Never let a schema/DB hiccup break the campaign surface. (Also the
-    // fallback when behaviour_score / value_rating don't exist yet — those
-    // columns arrive lazily with the first scored lead / first rating.)
+    // behaviour_score and value_rating are created lazily by two DIFFERENT
+    // features. If only one is missing, the old fallback nulled BOTH — so a
+    // tenant whose brokers HAVE rated leads (but never ran landing-behaviour
+    // scoring) reported "nobody rated" and the ads_campaign_quality tool then
+    // told the user something false. Ensure both columns, then retry with the
+    // REAL data; only if that still fails do we degrade to nulls.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS behaviour_score int`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
     try {
       rows = await query<Row>(
-        `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating
+        `SELECT id, status, blocked, phone, behaviour_score, value_rating
            FROM freehold_site_leads
           WHERE archived IS NOT TRUE
             AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
         [campaignId || '', campaignName || ''],
       )
-    } catch { rows = [] }
+    } catch {
+      try {
+        rows = await query<Row>(
+          `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating
+             FROM freehold_site_leads
+            WHERE archived IS NOT TRUE
+              AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
+          [campaignId || '', campaignName || ''],
+        )
+      } catch { rows = [] }
+    }
   }
 
   // Layer 10 — a lead caught in a queue-purge burst (see training-integrity.ts)

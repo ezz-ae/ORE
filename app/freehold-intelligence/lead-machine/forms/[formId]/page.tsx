@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText, Gauge, Megaphone } from 'lucide-react'
 import { isMetaConfigErrorMessage } from '@/lib/meta/error-messages'
@@ -64,6 +64,18 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   // Local overlay of ratings clicked on THIS page, so a chip press paints
   // immediately without waiting for a full analysis refetch.
   const [ratings, setRatings] = useState<Record<string, number>>({})
+  const [rateError, setRateError] = useState<string | null>(null)
+  // Monotonic token so a slow analysis refetch can't overwrite the result of a
+  // later, faster one (two quick ratings would otherwise race the panel).
+  const analysisSeq = useRef(0)
+
+  async function loadAnalysis(id: string) {
+    const seq = ++analysisSeq.current
+    const aRes = await fetch(`/api/meta/forms/${id}/analysis`)
+    if (!aRes.ok) return
+    const next = (await aRes.json()).analysis ?? null
+    if (seq === analysisSeq.current) setAnalysis(next)
+  }
 
   useEffect(() => {
     params.then(({ formId: id }) => setFormId(id))
@@ -110,8 +122,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
       const res  = await fetch(`/api/meta/forms/${formId}/leads`)
       const data = await res.json()
       if (res.ok) setLeads(data.leads ?? [])
-      const aRes = await fetch(`/api/meta/forms/${formId}/analysis`)
-      if (aRes.ok) setAnalysis((await aRes.json()).analysis ?? null)
+      await loadAnalysis(formId)
     } finally {
       setLoadingLeads(false)
     }
@@ -122,23 +133,27 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   // scale the Ads Machine and the shared brain learn from.
   async function rateLead(crmId: string, metaLeadId: string, v: number) {
     setRatings((r) => ({ ...r, [metaLeadId]: v }))
+    setRateError(null)
     try {
       const res = await fetch(`/api/freehold/crm/leads/${crmId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value_rating: v }),
       })
-      if (!res.ok) throw new Error()
-      // Refresh the aggregates quietly so the verdict/distribution follow.
-      if (formId) {
-        const aRes = await fetch(`/api/meta/forms/${formId}/analysis`)
-        if (aRes.ok) setAnalysis((await aRes.json()).analysis ?? null)
+      if (!res.ok) {
+        const msg = await res.json().then((d) => d?.error).catch(() => '')
+        throw new Error(msg || t('pforms.rate.failed'))
       }
-    } catch {
+      // Refresh the aggregates so the verdict/distribution follow — race-guarded.
+      if (formId) await loadAnalysis(formId)
+    } catch (e) {
+      // Roll the optimistic chip back AND tell the user, instead of a silent
+      // revert that reads as "the rating didn't stick" with no reason.
       setRatings((r) => {
         const { [metaLeadId]: _dropped, ...rest } = r
         return rest
       })
+      setRateError(e instanceof Error ? e.message : t('pforms.rate.failed'))
     }
   }
 
@@ -410,6 +425,11 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
             </div>
           </div>
 
+          {rateError && (
+            <div className="mb-3 flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-400/[0.06] px-4 py-2.5 text-xs text-red-300">
+              <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" /> {rateError}
+            </div>
+          )}
           {leads.length === 0 ? (
             <div className="rounded-[22px] border border-line bg-surface px-6 py-12 text-center">
               <Users className="mx-auto h-8 w-8 text-slate-700 mb-3" />

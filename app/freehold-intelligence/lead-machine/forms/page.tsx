@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
 import { MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
@@ -121,6 +125,15 @@ async function getCrmStatsByForm(): Promise<{ perForm: Map<string, FormCrmStats>
 }
 
 export default async function FormsPage() {
+  // Server-side gate: this page runs live DB + Meta queries and streams every
+  // form's lead counts and value stats in the RSC payload. The app's layout
+  // guard is client-only (redirects after render), so without this check an
+  // unauthenticated or broker request would receive that data before any
+  // redirect fired. Operators only — the forms tab is a marketing surface.
+  const sessionUser = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+  const operatorRoles = new Set<string>([...MANAGEMENT_ROLES, 'marketing'])
+  if (!sessionUser || !operatorRoles.has(sessionUser.role)) redirect('/freehold-intelligence')
+
   const { t }         = await getServerT()
   const data          = await getForms()
   const crmStats      = await getCrmStatsByForm()

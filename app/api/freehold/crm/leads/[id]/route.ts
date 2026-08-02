@@ -179,9 +179,16 @@ export async function PATCH(
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rated_by text`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rated_at timestamptz`).catch(() => undefined)
-    updates.push(`value_rating = $${updates.length + 1}`)
+    // Placeholders MUST be numbered by values.length, not updates.length —
+    // `value_rated_at = now()` (and `updated_at = now()` below) add to `updates`
+    // without a bound value, so numbering by updates.length desyncs every
+    // later placeholder. A combined PATCH like {value_rating, status} then
+    // pointed `status` and the WHERE id at the same $-index and left one
+    // parameter unreferenced (Postgres 500). Numbering by values.length is
+    // correct because only value-bearing clauses advance it.
+    updates.push(`value_rating = $${values.length + 1}`)
     values.push(Math.round(v))
-    updates.push(`value_rated_by = $${updates.length + 1}`)
+    updates.push(`value_rated_by = $${values.length + 1}`)
     values.push(user.email)
     updates.push(`value_rated_at = now()`)
     // Bridge into the machine's learning, best-effort: the rating must never
