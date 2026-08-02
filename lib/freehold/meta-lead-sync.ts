@@ -75,6 +75,13 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
   // invisible to campaign quality and the Ads Machine feedback loop.
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
 
+  // AD attribution, one level below the campaign: which exact ad produced this
+  // lead. The per-form analysis groups leads (and their value ratings) by ad —
+  // "the same form fed by ad A averages 7, fed by ad B averages 2" is the ad
+  // setup insight, and it is only computable if the ad id survives the sync.
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_id text`)
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_adset_id text`)
+
   let synced = 0
   let skipped = 0
   for (const lead of leads) {
@@ -91,9 +98,11 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
     }
     const inserted = await query<{ id: string }>(
       `INSERT INTO freehold_site_leads (
-         id, name, phone, email, source, status, meta_lead_id, meta_form_id, utm_id, created_at, updated_at
+         id, name, phone, email, source, status, meta_lead_id, meta_form_id, utm_id,
+         meta_ad_id, meta_adset_id, created_at, updated_at
        )
-       SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, NULLIF($9, ''), COALESCE($8::timestamptz, now()), now()
+       SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, NULLIF($9, ''),
+              NULLIF($10, ''), NULLIF($11, ''), COALESCE($8::timestamptz, now()), now()
        WHERE NOT EXISTS (
          SELECT 1 FROM freehold_site_leads WHERE meta_lead_id = $6
        )
@@ -108,11 +117,24 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
         formId,
         lead.created_time || null,
         lead.campaign_id || '',
+        lead.ad_id || '',
+        lead.adset_id || '',
       ],
     ).catch((error) => {
       console.error('[meta-leads] CRM sync insert failed', error)
       return [] as { id: string }[]
     })
+    // Self-healing backfill: leads synced before the ad-id columns existed sit
+    // in the CRM with no ad attribution. Every sweep quietly repairs them from
+    // Meta's payload, so the per-ad analysis converges to complete on its own.
+    if (!inserted.length && lead.ad_id) {
+      await query(
+        `UPDATE freehold_site_leads
+            SET meta_ad_id = $2, meta_adset_id = NULLIF($3, ''), utm_id = COALESCE(utm_id, NULLIF($4, ''))
+          WHERE meta_lead_id = $1 AND meta_ad_id IS NULL`,
+        [lead.id, lead.ad_id, lead.adset_id || '', lead.campaign_id || ''],
+      ).catch((error) => console.error('[meta-leads] ad-id backfill failed', error))
+    }
     if (inserted.length) {
       synced += 1
       await handleNewLead(inserted[0].id).catch((error) => {

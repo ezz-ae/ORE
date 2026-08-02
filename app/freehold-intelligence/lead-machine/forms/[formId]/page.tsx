@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText } from 'lucide-react'
+import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText, Gauge, Megaphone } from 'lucide-react'
 import { isMetaConfigErrorMessage } from '@/lib/meta/error-messages'
 import { contactLabelKey } from '@/lib/meta/form-templates'
 import { useT } from '@/lib/i18n/provider'
+import { LeadValueChips } from '@/components/freehold/lead-value-chips'
+import type { FormAnalysis } from '@/lib/freehold/form-analysis'
+import { FormAudienceBuilder } from '../_audience'
 
 interface FormQuestion {
   type: string
@@ -57,6 +60,10 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
   const [loadingLeads, setLoadingLeads] = useState(false)
+  const [analysis, setAnalysis] = useState<FormAnalysis | null>(null)
+  // Local overlay of ratings clicked on THIS page, so a chip press paints
+  // immediately without waiting for a full analysis refetch.
+  const [ratings, setRatings] = useState<Record<string, number>>({})
 
   useEffect(() => {
     params.then(({ formId: id }) => setFormId(id))
@@ -66,9 +73,10 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
     setLoading(true)
     setError(null)
     try {
-      const [formRes, leadsRes] = await Promise.all([
+      const [formRes, leadsRes, analysisRes] = await Promise.all([
         fetch(`/api/meta/forms/${id}`),
         fetch(`/api/meta/forms/${id}/leads`),
+        fetch(`/api/meta/forms/${id}/analysis`),
       ])
       const formData  = await formRes.json()
       const leadsData = await leadsRes.json()
@@ -78,6 +86,11 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
       setForm(formData.form)
       setLeads(leadsData.leads ?? [])
+      // Analysis is additive — its failure must not take down the form page.
+      if (analysisRes.ok) {
+        const a = await analysisRes.json()
+        setAnalysis(a.analysis ?? null)
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
       setError(isMetaConfigErrorMessage(msg) ? t('lm.meta.notConnectedHint') : msg || t('pforms.error.unexpected'))
@@ -97,8 +110,35 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
       const res  = await fetch(`/api/meta/forms/${formId}/leads`)
       const data = await res.json()
       if (res.ok) setLeads(data.leads ?? [])
+      const aRes = await fetch(`/api/meta/forms/${formId}/analysis`)
+      if (aRes.ok) setAnalysis((await aRes.json()).analysis ?? null)
     } finally {
       setLoadingLeads(false)
+    }
+  }
+
+  // One click writes the lead's canonical 0–10 value — the same PATCH the CRM
+  // and follow-up queue use, so rating from the form page feeds the identical
+  // scale the Ads Machine and the shared brain learn from.
+  async function rateLead(crmId: string, metaLeadId: string, v: number) {
+    setRatings((r) => ({ ...r, [metaLeadId]: v }))
+    try {
+      const res = await fetch(`/api/freehold/crm/leads/${crmId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value_rating: v }),
+      })
+      if (!res.ok) throw new Error()
+      // Refresh the aggregates quietly so the verdict/distribution follow.
+      if (formId) {
+        const aRes = await fetch(`/api/meta/forms/${formId}/analysis`)
+        if (aRes.ok) setAnalysis((await aRes.json()).analysis ?? null)
+      }
+    } catch {
+      setRatings((r) => {
+        const { [metaLeadId]: _dropped, ...rest } = r
+        return rest
+      })
     }
   }
 
@@ -205,6 +245,142 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         ))}
       </div>
 
+      {/* ── Lead analysis — what this form PRODUCED, judged by value ──────── */}
+      {analysis && (
+        <section className="mt-8">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <Gauge className="h-3.5 w-3.5 text-gold/60" /> {t('pforms.an.title')}
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
+            {/* Verdict — the learnable summary. Unrated forms get no verdict. */}
+            {(() => {
+              const v = analysis.verdict
+              const tone = v === 'valuable' ? 'border-emerald-400/25 bg-emerald-400/[0.06]'
+                : v === 'poor' ? 'border-red-400/25 bg-red-400/[0.06]'
+                : v === 'mixed' ? 'border-amber-400/20 bg-amber-400/[0.05]'
+                : 'border-line bg-surface'
+              const text = v === 'valuable' ? 'text-emerald-300' : v === 'poor' ? 'text-red-300' : v === 'mixed' ? 'text-amber-300' : 'text-slate-400'
+              return (
+                <div className={`rounded-[20px] border p-5 ${tone}`}>
+                  <div className={`text-sm font-semibold ${text}`}>{t(`pforms.an.verdict.${v}`)}</div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    {analysis.value.rated > 0
+                      ? t('pforms.an.verdictDetail', {
+                          avg: (analysis.value.avg ?? 0).toFixed(1),
+                          rated: String(analysis.value.rated),
+                          total: String(analysis.crm.total),
+                        })
+                      : t('pforms.an.verdictUnrated')}
+                    {analysis.value.rated > 0 && !analysis.value.decisive && ` ${t('pforms.an.earlySignal')}`}
+                  </p>
+                  {/* Value distribution bar: red 0–2 / amber 3–5 / emerald 6–10 / gray unrated */}
+                  {analysis.crm.total > 0 && (
+                    <div className="mt-3">
+                      <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                        {[
+                          { n: analysis.value.avoid, cls: 'bg-red-400/70' },
+                          { n: analysis.value.mid, cls: 'bg-amber-400/70' },
+                          { n: analysis.value.valuable, cls: 'bg-emerald-400/70' },
+                          { n: analysis.value.unrated, cls: 'bg-slate-700' },
+                        ].map((seg, i) => seg.n > 0 && (
+                          <div key={i} className={seg.cls} style={{ width: `${(seg.n / analysis.crm.total) * 100}%` }} />
+                        ))}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                        <span><span className="text-red-300">{analysis.value.avoid}</span> {t('pforms.an.zoneAvoid')}</span>
+                        <span><span className="text-amber-300">{analysis.value.mid}</span> {t('pforms.an.zoneMid')}</span>
+                        <span><span className="text-emerald-300">{analysis.value.valuable}</span> {t('pforms.an.zoneValuable')}</span>
+                        <span><span className="text-slate-400">{analysis.value.unrated}</span> {t('pforms.an.zoneUnrated')}</span>
+                      </div>
+                    </div>
+                  )}
+                  <p className="mt-3 text-[10px] leading-relaxed text-slate-600">{t('pforms.an.feedsBrain')}</p>
+                </div>
+              )
+            })()}
+
+            {/* CRM overview — the pipeline truth for this form's leads */}
+            <div className="rounded-[20px] border border-line bg-surface p-5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.an.overview')}</div>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {[
+                  { label: t('pforms.an.inCrm'),      value: analysis.crm.total,       cls: 'text-white' },
+                  { label: t('pforms.an.unassigned'), value: analysis.crm.unassigned,  cls: analysis.crm.unassigned > 0 ? 'text-amber-300' : 'text-white' },
+                  { label: t('pforms.an.last7d'),     value: analysis.recency.d7,      cls: 'text-white' },
+                  { label: t('pforms.an.last30d'),    value: analysis.recency.d30,     cls: 'text-white' },
+                  { label: t('pforms.an.wrongNumber'), value: analysis.crm.wrongNumber, cls: analysis.crm.wrongNumber > 0 ? 'text-red-300' : 'text-white' },
+                  { label: t('pforms.an.duplicates'), value: analysis.crm.duplicates,  cls: analysis.crm.duplicates > 0 ? 'text-amber-300' : 'text-white' },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div className={`text-lg font-semibold leading-none tabular-nums ${s.cls}`}>{s.value}</div>
+                    <div className="mt-1 text-[11px] text-slate-500">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              {analysis.crm.stages.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {analysis.crm.stages.map((s) => (
+                    <span key={s.stage} className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">
+                      {s.stage} · {s.n}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Ad setup — which ad fed which value. The same form fed by two ads
+              can produce a 7-average and a 2-average; this is where it shows. */}
+          {analysis.ads.length > 0 && (
+            <div className="mt-4 overflow-hidden rounded-[20px] border border-line bg-surface">
+              <div className="flex items-center gap-2 border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <Megaphone className="h-3.5 w-3.5 text-gold/60" /> {t('pforms.an.adSetup')}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-start text-[10px] uppercase tracking-wider text-slate-600">
+                      <th className="px-5 py-2 text-start font-medium">{t('pforms.an.ad')}</th>
+                      <th className="px-3 py-2 text-end font-medium">{t('pforms.an.metaLeads')}</th>
+                      <th className="px-3 py-2 text-end font-medium">{t('pforms.an.inCrm')}</th>
+                      <th className="px-3 py-2 text-end font-medium">{t('pforms.an.rated')}</th>
+                      <th className="px-5 py-2 text-end font-medium">{t('pforms.an.avgValue')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {analysis.ads.map((row) => (
+                      <tr key={row.adId}>
+                        <td className="px-5 py-2.5">
+                          {row.adId === 'organic'
+                            ? <span className="text-slate-400">{t('pforms.an.noAd')}</span>
+                            : <span className="font-mono text-slate-300">{row.adId.slice(0, 14)}</span>}
+                          {row.campaignId && (
+                            <span className="ms-2 font-mono text-[10px] text-slate-600">{t('pforms.an.campaign')} {row.campaignId.slice(0, 12)}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-end tabular-nums text-slate-300">{row.metaLeads}</td>
+                        <td className="px-3 py-2.5 text-end tabular-nums text-slate-300">{row.inCrm}</td>
+                        <td className="px-3 py-2.5 text-end tabular-nums text-slate-400">{row.rated}</td>
+                        <td className="px-5 py-2.5 text-end">
+                          {row.avgValue === null ? (
+                            <span className="text-slate-600">—</span>
+                          ) : (
+                            <span className={`font-semibold tabular-nums ${row.avgValue >= 6 ? 'text-emerald-300' : row.avgValue <= 2.5 ? 'text-red-300' : 'text-amber-300'}`}>
+                              {row.avgValue.toFixed(1)}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_280px]">
 
         {/* Leads table */}
@@ -271,6 +447,20 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                             .map((f) => <span key={f.name}>{f.name}: {f.values[0] ?? '—'}</span>)
                           }
                         </div>
+                        {/* Rate the lead HERE — same canonical 0–10 the CRM
+                            writes, so judging leads never requires leaving the
+                            form you are analysing. Only for synced leads: an
+                            unsynced lead has no CRM row to rate. */}
+                        {(() => {
+                          const join = analysis?.leadJoin[lead.id]
+                          if (!join) return null
+                          const current = ratings[lead.id] ?? join.valueRating
+                          return (
+                            <div className="mt-2">
+                              <LeadValueChips size="sm" value={current} onRate={(v) => rateLead(join.crmId, lead.id, v)} />
+                            </div>
+                          )
+                        })()}
                       </div>
                       <div className="shrink-0 flex items-center gap-1 text-xs text-slate-500">
                         <Clock className="h-3 w-3" />
@@ -286,6 +476,18 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
         {/* Sidebar */}
         <aside className="space-y-4">
+          {/* The sellable click: this form's leads → Custom Audience → ready
+              lookalike. Counts come from the analysis, gates are honest. */}
+          {analysis && (
+            <FormAudienceBuilder
+              formId={form.id}
+              formName={form.name}
+              contactable={analysis.audience.contactable}
+              qualified={analysis.audience.qualified}
+              compact
+            />
+          )}
+
           {/* Form type — only when Meta actually returned the flag. */}
           {typeof form.is_optimized_for_quality === 'boolean' && (
             <div className="rounded-[20px] border border-line bg-surface p-5">

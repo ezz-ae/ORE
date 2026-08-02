@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { getFormLeads, MetaApiError, MetaConfigError } from '@/lib/meta/client'
+import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { syncLeadsToCrm } from '@/lib/freehold/meta-lead-sync'
+import { getFormLeadsSmart } from '@/lib/freehold/form-analysis'
 
 export async function GET(
   _req: NextRequest,
@@ -11,7 +12,9 @@ export async function GET(
   if ('res' in __auth) return __auth.res
   try {
     const { formId } = await params
-    const leads = await getFormLeads(formId)
+    // Owner-Page token fallback — the same per-Page rule the cron sweep uses,
+    // so a Page-owned form's leads load here too instead of erroring.
+    const leads = await getFormLeadsSmart(formId)
     const { synced, skipped } = await syncLeadsToCrm(formId, leads).catch((error) => {
       console.error('[meta-leads] CRM sync failed', error)
       return { synced: 0, skipped: 0 }
