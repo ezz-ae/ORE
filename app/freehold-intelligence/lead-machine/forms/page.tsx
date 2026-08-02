@@ -7,6 +7,7 @@ import { getServerT } from '@/lib/i18n/server'
 import { query } from '@/lib/db'
 import { DemoNotice } from '@/components/freehold/demo-badge'
 import { FormsSyncControls } from './_sync'
+import { FormAudienceBuilder } from './_audience'
 
 interface FormsResponse {
   forms: MetaLeadForm[]
@@ -43,31 +44,78 @@ function statusConfig(s: string): { dot: string; text: string; badge: string; la
 }
 
 /**
- * How many leads from each Meta form actually made it into the CRM. The forms
- * page only ever showed Meta's own `leads_count`, so a form could report 47
- * captured leads while the CRM held zero of them and nothing on screen
- * disagreed. This is the number that makes the gap visible.
+ * Per-form CRM truth: how many of each Meta form's leads made it into the CRM,
+ * how many a human has value-rated, and the average value — the form's RATE,
+ * visible from outside without opening it. Plus the portfolio totals that
+ * power the all-forms audience builder.
  */
-async function getCrmCountsByForm(): Promise<Map<string, number>> {
+interface FormCrmStats { n: number; rated: number; avg: number | null }
+interface AllFormsStats { n: number; rated: number; avg: number | null; contactable: number; qualified: number }
+
+const CONTACTABLE_SQL =
+  `(length(regexp_replace(coalesce(phone, ''), '\\D', '', 'g')) >= 7 OR (email IS NOT NULL AND position('@' in email) > 0))`
+
+async function getCrmStatsByForm(): Promise<{ perForm: Map<string, FormCrmStats>; all: AllFormsStats }> {
+  const empty: AllFormsStats = { n: 0, rated: 0, avg: null, contactable: 0, qualified: 0 }
   try {
-    const rows = await query<{ meta_form_id: string; n: string }>(
-      `SELECT meta_form_id, COUNT(*)::text AS n
+    const rows = await query<{ meta_form_id: string; n: string; rated: string; avg: string | null }>(
+      `SELECT meta_form_id, COUNT(*)::text AS n,
+              COUNT(value_rating)::text AS rated,
+              AVG(value_rating)::text AS avg
          FROM freehold_site_leads
         WHERE meta_form_id IS NOT NULL AND archived IS NOT TRUE
         GROUP BY meta_form_id`,
     )
-    return new Map(rows.map((r) => [r.meta_form_id, Number(r.n) || 0]))
+    const [totals] = await query<{ n: string; rated: string; avg: string | null; contactable: string; qualified: string }>(
+      `SELECT COUNT(*)::text AS n,
+              COUNT(value_rating)::text AS rated,
+              AVG(value_rating)::text AS avg,
+              COUNT(*) FILTER (WHERE ${CONTACTABLE_SQL})::text AS contactable,
+              COUNT(*) FILTER (WHERE value_rating >= 6 AND ${CONTACTABLE_SQL})::text AS qualified
+         FROM freehold_site_leads
+        WHERE meta_form_id IS NOT NULL AND archived IS NOT TRUE`,
+    )
+    return {
+      perForm: new Map(rows.map((r) => [r.meta_form_id, {
+        n: Number(r.n) || 0,
+        rated: Number(r.rated) || 0,
+        avg: r.avg === null ? null : Number(r.avg),
+      }])),
+      all: totals
+        ? {
+            n: Number(totals.n) || 0,
+            rated: Number(totals.rated) || 0,
+            avg: totals.avg === null ? null : Number(totals.avg),
+            contactable: Number(totals.contactable) || 0,
+            qualified: Number(totals.qualified) || 0,
+          }
+        : empty,
+    }
   } catch {
-    // The column may not exist until the first sync — an empty map degrades to
-    // "0 in CRM", never to a crashed page.
-    return new Map()
+    // value_rating / meta columns may not exist before the first sync or the
+    // first rating — degrade to counts-only, never to a crashed page.
+    try {
+      const rows = await query<{ meta_form_id: string; n: string }>(
+        `SELECT meta_form_id, COUNT(*)::text AS n
+           FROM freehold_site_leads
+          WHERE meta_form_id IS NOT NULL AND archived IS NOT TRUE
+          GROUP BY meta_form_id`,
+      )
+      return {
+        perForm: new Map(rows.map((r) => [r.meta_form_id, { n: Number(r.n) || 0, rated: 0, avg: null }])),
+        all: { ...empty, n: rows.reduce((s, r) => s + (Number(r.n) || 0), 0) },
+      }
+    } catch {
+      return { perForm: new Map(), all: empty }
+    }
   }
 }
 
 export default async function FormsPage() {
   const { t }         = await getServerT()
   const data          = await getForms()
-  const crmByForm     = await getCrmCountsByForm()
+  const crmStats      = await getCrmStatsByForm()
+  const crmByForm     = new Map([...crmStats.perForm.entries()].map(([id, s]) => [id, s.n]))
   const isConfigError = data.demo === true
   const forms         = data.forms
   const active        = forms.filter((f) => f.status === 'ACTIVE').length
@@ -152,6 +200,44 @@ export default async function FormsPage() {
         </div>
       )}
 
+      {/* Portfolio value + the all-forms audience action. The whole form
+          estate judged on one line — and one click to turn every rated lead
+          across every form into a Custom Audience / ready lookalike. */}
+      {!isConfigError && crmStats.all.n > 0 && (
+        <section className="mt-6 grid gap-4 sm:grid-cols-[1fr_340px]">
+          <div className="rounded-[20px] border border-line bg-surface p-5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.forms.portfolioTitle')}</div>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: t('lm.forms.portfolioInCrm'), value: String(crmStats.all.n), cls: 'text-white' },
+                { label: t('lm.forms.portfolioRated'), value: String(crmStats.all.rated), cls: crmStats.all.rated > 0 ? 'text-white' : 'text-slate-500' },
+                {
+                  label: t('lm.forms.portfolioAvg'),
+                  value: crmStats.all.avg === null ? '—' : crmStats.all.avg.toFixed(1),
+                  cls: crmStats.all.avg === null ? 'text-slate-500'
+                    : crmStats.all.avg >= 6 ? 'text-emerald-300'
+                    : crmStats.all.avg <= 3.5 ? 'text-red-300' : 'text-amber-300',
+                },
+                { label: t('lm.forms.portfolioQualified'), value: String(crmStats.all.qualified), cls: crmStats.all.qualified > 0 ? 'text-emerald-300' : 'text-slate-500' },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.cls}`}>{s.value}</div>
+                  <div className="mt-1.5 text-[11px] text-slate-500">{s.label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-slate-500">{t('lm.forms.portfolioNote')}</p>
+          </div>
+          <FormAudienceBuilder
+            formId={null}
+            formName={t('lm.forms.portfolioSeedName')}
+            contactable={crmStats.all.contactable}
+            qualified={crmStats.all.qualified}
+            compact
+          />
+        </section>
+      )}
+
       {/* Demo data must never read as real forms/leads. */}
       {isConfigError && forms.length > 0 && (
         <DemoNotice badge={t('lm.demo.badge')} note={t('lm.demo.note')} />
@@ -195,6 +281,24 @@ export default async function FormsPage() {
                           </span>
                         ) : (
                           <span className="text-slate-500">{t('lm.forms.inCrm', { n: String(inCrm) })}</span>
+                        )
+                      })()}
+                      {/* The form's RATE, visible without opening it: average
+                          value of its rated leads, coloured by zone. Unrated
+                          forms say so — never an invented number. */}
+                      {(() => {
+                        const s = crmStats.perForm.get(form.id)
+                        if (!s || s.n === 0) return null
+                        if (s.rated === 0 || s.avg === null) {
+                          return <span className="text-slate-600">{t('lm.forms.valueUnrated')}</span>
+                        }
+                        const cls = s.avg >= 6 ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                          : s.avg <= 3.5 ? 'border-red-400/40 bg-red-400/10 text-red-300'
+                          : 'border-amber-400/40 bg-amber-400/10 text-amber-300'
+                        return (
+                          <span className={`rounded-full border px-2 py-0.5 font-semibold tabular-nums ${cls}`}>
+                            {t('lm.forms.valueAvg', { v: s.avg.toFixed(1), n: String(s.rated) })}
+                          </span>
                         )
                       })()}
                       {form.follow_up_action_url && (
