@@ -8,9 +8,12 @@ import type { ProfileFact } from '@/lib/freehold/lead-profile'
 /**
  * The smart profile — dynamic cells, honest by construction. A cell exists
  * only because the research agent FOUND that fact on the public web with a
- * source; a lead with no findable workplace simply has no workplace cell.
- * Every cell shows its source link and confidence, so a broker can judge the
- * fact before trusting it in a conversation.
+ * recorded source; a lead with no findable workplace simply has no workplace
+ * cell. Each cell shows its evidence sentence and a confidence dot; the source
+ * URL is recorded on the fact server-side but not rendered here (the raw
+ * grounding URLs are opaque redirects, so the evidence line is the readable
+ * proof). A fact whose VALUE is a social/profile link renders as a link —
+ * that link is the fact itself.
  */
 const KEY_LABEL: Record<string, string> = {
   workplace: 'crm.profile.k.workplace',
@@ -27,9 +30,21 @@ const KEY_LABEL: Record<string, string> = {
   age_range: 'crm.profile.k.ageRange',
 }
 
-/** A value that IS a link (a social/LinkedIn profile) stays clickable — that
- *  is the fact itself, not a citation. */
-const URL_VALUE = /^https?:\/\//i
+// A value that IS a social/profile link stays clickable — but ONLY for the
+// profile-link keys AND only to a known social host. This prevents a
+// prompt-injected fact from planting an arbitrary clickable phishing URL in
+// the broker's CRM: any other URL-looking value renders as inert text.
+const LINK_KEYS = new Set(['linkedin', 'social_profile'])
+const SOCIAL_HOSTS = /(^|\.)(linkedin\.com|instagram\.com|facebook\.com|fb\.com|twitter\.com|x\.com|t\.me|threads\.net|tiktok\.com|youtube\.com|behance\.net|github\.com)$/i
+function safeProfileLink(key: string, value: string): string | null {
+  if (!LINK_KEYS.has(key) || !/^https?:\/\//i.test(value)) return null
+  try {
+    const u = new URL(value)
+    return (u.protocol === 'https:' || u.protocol === 'http:') && SOCIAL_HOSTS.test(u.hostname) ? value : null
+  } catch {
+    return null
+  }
+}
 
 const CONF_DOT: Record<string, string> = {
   high: 'bg-emerald-400',
@@ -50,7 +65,9 @@ export function SmartProfile({ leadId, initialFacts }: { leadId: string; initial
     setError(null)
     try {
       const res = await fetch(`/api/freehold/crm/leads/${leadId}/enrich`, { method: 'POST' })
-      const data = await res.json()
+      // Safe parse: a platform timeout returns a non-JSON body, and a raw
+      // res.json() would surface "Unexpected token 'A'…" to the broker.
+      const data = await res.json().catch(() => ({} as { facts?: ProfileFact[]; note?: string; error?: string }))
       if (!res.ok) throw new Error(data.note || data.error || t('crm.profile.failed'))
       setFacts(data.facts ?? [])
       setNote(data.note ?? null)
@@ -92,18 +109,21 @@ export function SmartProfile({ leadId, initialFacts }: { leadId: string; initial
                 <span className={`h-1.5 w-1.5 rounded-full ${CONF_DOT[f.confidence] ?? CONF_DOT.low}`} title={t(`crm.profile.conf.${f.confidence}`)} />
                 {f.factKey === 'other' && f.factLabel ? f.factLabel : t(KEY_LABEL[f.factKey] ?? 'crm.profile.k.other')}
               </div>
-              {URL_VALUE.test(f.factValue) ? (
-                <a
-                  href={f.factValue}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 block truncate text-sm text-gold/90 transition hover:text-gold"
-                >
-                  {f.factValue.replace(/^https?:\/\/(www\.)?/, '')}
-                </a>
-              ) : (
-                <div className="mt-1 break-words text-sm text-white">{f.factValue}</div>
-              )}
+              {(() => {
+                const link = safeProfileLink(f.factKey, f.factValue)
+                return link ? (
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="mt-1 block truncate text-sm text-gold/90 transition hover:text-gold"
+                  >
+                    {link.replace(/^https?:\/\/(www\.)?/, '')}
+                  </a>
+                ) : (
+                  <div className="mt-1 break-words text-sm text-white">{f.factValue}</div>
+                )
+              })()}
               {f.evidence && <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{f.evidence}</p>}
             </div>
           ))}

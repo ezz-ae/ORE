@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { query, withTransaction } from '@/lib/db'
 
 // ─── The network targeting base ───────────────────────────────────────────────
 // The system's shared brain. Every tenant (Entrestate's own historical data,
@@ -160,78 +160,97 @@ export async function rebuildSignals(tenantId: string): Promise<void> {
   )
 }
 
-/** Fold the CURRENT tenant's live CRM leads into its signals (auto table). */
+/** Fold the CURRENT tenant's live CRM leads into its signals (auto table).
+ *
+ * Called from the nightly cron, the data-import route, AND every campaign plan
+ * (recommendTargeting). Those overlap, so the DELETE + INSERTs run inside ONE
+ * transaction under a per-tenant advisory lock: concurrent runs serialize
+ * instead of interleaving into a primary-key collision and a torn, half-empty
+ * signals table. The whole rebuild commits atomically or not at all — a reader
+ * never sees zero live rows mid-refresh.
+ */
 export async function refreshLiveTenantSignals(): Promise<void> {
   await ensureOnce()
   const liveTenant = `${TENANT_ID}-live`
   // The rating column arrives lazily with the first one-click rating; ensure
   // it here so a fresh install's fold doesn't fail on a missing column.
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
-  await query(`DELETE FROM entrestate_targeting_signals WHERE tenant_id = $1`, [liveTenant])
-  await query(
-    `INSERT INTO entrestate_targeting_signals
-       (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
-     SELECT $1,
-            CASE WHEN source ILIKE '%google%' THEN 'google'
-                 WHEN source ILIKE '%meta%' OR source ILIKE '%face%' OR source ILIKE '%insta%' THEN 'meta'
-                 ELSE 'other' END,
-            '', '', '', '', '',
-            COALESCE(NULLIF(lower(trim(interest)), ''), ''),
-            COUNT(*),
-            COUNT(*) FILTER (WHERE priority IN ('hot','priority')
-                                OR status IN ('qualified','viewing','negotiation','closed','converted')
-                                OR value_rating >= 6),
-            COUNT(*) FILTER (WHERE status IN ('closed','converted')),
-            COUNT(*) FILTER (WHERE status = 'lost' OR value_rating <= 2),
-            now()
-     FROM freehold_site_leads
-     GROUP BY 2, 8`,
-    [liveTenant],
-  ).catch((e) => {
-    // LOUD. This exact fold failed silently for its whole life: the SQL read a
-    // column named project_interest that never existed (the column is
-    // `interest`), and this catch ate the error — so the "shared brain" was
-    // never actually fed a single live outcome. A fresh white-label without
-    // the CRM table is still tolerated, but the failure is now visible.
-    console.error('[targeting-base] live signal fold failed — the shared brain is NOT being fed:', e)
-  })
 
-  // SMART-PROFILE FACTS join the fold. The research agent verifies facts like
-  // industry, role, city and age range per lead; folded against outcomes they
-  // become targetable knowledge: "leads who work in finance rate 6+" is a
-  // signal the planner can act on. Aggregate counts only — privacy by schema
-  // holds. Deliberately EXCLUDED: nationality, family, education, social
-  // links — not ad-targetable dimensions and too close to the person.
-  await query(
-    `INSERT INTO entrestate_targeting_signals
-       (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
-     SELECT $1, '', '', '', '',
-            CASE WHEN f.fact_key = 'age_range' THEN left(lower(trim(f.fact_value)), 20) ELSE '' END,
-            CASE WHEN f.fact_key = 'location_city' THEN left(lower(trim(f.fact_value)), 60) ELSE '' END,
-            CASE f.fact_key
-              WHEN 'company_industry'   THEN left('industry: ' || lower(trim(f.fact_value)), 80)
-              WHEN 'job_title'          THEN left('role: '     || lower(trim(f.fact_value)), 80)
-              WHEN 'business_interests' THEN left('interest: ' || lower(trim(f.fact_value)), 80)
-              ELSE '' END,
-            COUNT(*),
-            COUNT(*) FILTER (WHERE l.priority IN ('hot','priority')
-                                OR l.status IN ('qualified','viewing','negotiation','closed','converted')
-                                OR l.value_rating >= 6),
-            COUNT(*) FILTER (WHERE l.status IN ('closed','converted')),
-            COUNT(*) FILTER (WHERE l.status = 'lost' OR l.value_rating <= 2),
-            now()
-     FROM freehold_lead_profile_facts f
-     JOIN freehold_site_leads l ON l.id = f.lead_id
-     WHERE f.fact_key IN ('age_range','location_city','company_industry','job_title','business_interests')
-     GROUP BY 6, 7, 8`,
-    [liveTenant],
-  ).catch((e) => {
-    // The facts table only exists after the first enrichment — that absence is
-    // normal and quiet; any OTHER failure is a fed-brain gap and must be loud.
-    if (!/does not exist/i.test(String(e))) {
-      console.error('[targeting-base] profile-fact fold failed — researched facts are not reaching the brain:', e)
-    }
-  })
+  // Does the profile-facts table exist yet? Checked OUTSIDE the transaction so
+  // its absence (no enrichment has ever run) simply skips that INSERT — rather
+  // than throwing inside the transaction and rolling back the live fold too.
+  // This replaces a broad `/does not exist/` catch that also swallowed real
+  // column errors, hiding exactly the fed-brain failure this code guards against.
+  let hasFactTable = false
+  try {
+    const [r] = await query<{ reg: string | null }>(`SELECT to_regclass('freehold_lead_profile_facts')::text AS reg`)
+    hasFactTable = Boolean(r?.reg)
+  } catch { hasFactTable = false }
+
+  try {
+    await withTransaction(async (q) => {
+      // Serialize refreshes for this tenant; the lock releases at COMMIT/ROLLBACK.
+      await q(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`targeting-refresh:${liveTenant}`])
+      await q(`DELETE FROM entrestate_targeting_signals WHERE tenant_id = $1`, [liveTenant])
+      await q(
+        `INSERT INTO entrestate_targeting_signals
+           (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
+         SELECT $1,
+                CASE WHEN source ILIKE '%google%' THEN 'google'
+                     WHEN source ILIKE '%meta%' OR source ILIKE '%face%' OR source ILIKE '%insta%' THEN 'meta'
+                     ELSE 'other' END,
+                '', '', '', '', '',
+                COALESCE(NULLIF(lower(trim(interest)), ''), ''),
+                COUNT(*),
+                COUNT(*) FILTER (WHERE priority IN ('hot','priority')
+                                    OR status IN ('qualified','viewing','negotiation','closed','converted')
+                                    OR value_rating >= 6),
+                COUNT(*) FILTER (WHERE status IN ('closed','converted')),
+                COUNT(*) FILTER (WHERE status = 'lost' OR value_rating <= 2),
+                now()
+         FROM freehold_site_leads
+         GROUP BY 2, 8`,
+        [liveTenant],
+      )
+
+      // SMART-PROFILE FACTS join the fold. Verified facts (industry, role, city,
+      // age range) folded against outcomes become targetable knowledge —
+      // "leads who work in finance rate 6+". Aggregate counts only; privacy by
+      // schema holds. Deliberately EXCLUDED: nationality, family, education,
+      // social links — not ad-targetable and too close to the person.
+      if (hasFactTable) {
+        await q(
+          `INSERT INTO entrestate_targeting_signals
+             (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
+           SELECT $1, '', '', '', '',
+                  CASE WHEN f.fact_key = 'age_range' THEN left(lower(trim(f.fact_value)), 20) ELSE '' END,
+                  CASE WHEN f.fact_key = 'location_city' THEN left(lower(trim(f.fact_value)), 60) ELSE '' END,
+                  CASE f.fact_key
+                    WHEN 'company_industry'   THEN left('industry: ' || lower(trim(f.fact_value)), 80)
+                    WHEN 'job_title'          THEN left('role: '     || lower(trim(f.fact_value)), 80)
+                    WHEN 'business_interests' THEN left('interest: ' || lower(trim(f.fact_value)), 80)
+                    ELSE '' END,
+                  COUNT(*),
+                  COUNT(*) FILTER (WHERE l.priority IN ('hot','priority')
+                                      OR l.status IN ('qualified','viewing','negotiation','closed','converted')
+                                      OR l.value_rating >= 6),
+                  COUNT(*) FILTER (WHERE l.status IN ('closed','converted')),
+                  COUNT(*) FILTER (WHERE l.status = 'lost' OR l.value_rating <= 2),
+                  now()
+           FROM freehold_lead_profile_facts f
+           JOIN freehold_site_leads l ON l.id = f.lead_id
+           WHERE f.fact_key IN ('age_range','location_city','company_industry','job_title','business_interests')
+           GROUP BY 6, 7, 8`,
+          [liveTenant],
+        )
+      }
+    })
+  } catch (e) {
+    // LOUD. This fold failed silently for its whole life once (a wrong column
+    // name eaten by a bare catch), so the failure is now always visible. A
+    // fresh white-label with no CRM table is the one tolerated case.
+    console.error('[targeting-base] live signal fold failed — the shared brain is NOT being fed:', e)
+  }
 }
 
 /*

@@ -185,6 +185,7 @@ const en: Dict = {
   'pforms.aud.viewAudiences': 'View audiences',
   'pforms.aud.pickForms': 'Forms feeding this audience (qualified/contactable)',
   'pforms.aud.selectedForms': '{n} selected forms',
+  'pforms.rate.failed': 'Could not save the rating — please try again.',
   'pforms.sidebar.introCard': 'Intro card',
   'pforms.detail.button': 'Button',
 
@@ -472,6 +473,7 @@ const ar: Dict = {
   'pforms.aud.viewAudiences': 'عرض الجماهير',
   'pforms.aud.pickForms': 'النماذج المغذية لهذا الجمهور (مؤهل/قابل للتواصل)',
   'pforms.aud.selectedForms': '{n} نماذج محددة',
+  'pforms.rate.failed': 'تعذّر حفظ التقييم — يرجى المحاولة مرة أخرى.',
   'pforms.sidebar.introCard': 'البطاقة التعريفية',
   'pforms.detail.button': 'الزر',
 
@@ -748,6 +750,7 @@ const ru: Dict = {
   'pforms.aud.viewAudiences': 'Смотреть аудитории',
   'pforms.aud.pickForms': 'Формы, питающие эту аудиторию (качественные/с контактами)',
   'pforms.aud.selectedForms': 'Выбрано форм: {n}',
+  'pforms.rate.failed': 'Не удалось сохранить оценку — попробуйте ещё раз.',
   'pforms.sidebar.introCard': 'Вступительная карточка',
   'pforms.detail.button': 'Кнопка',
 

@@ -63,6 +63,34 @@ export interface SyncOutcome { synced: number; skipped: number }
  * assignment / distribution rules) — a synced lead with no owner sits just
  * as invisibly as one that never arrived.
  */
+// Once-per-instance: collapse any duplicate meta_lead_id rows a pre-index race
+// already produced (keep the earliest), then enforce uniqueness going forward.
+// Failure is tolerated — the WHERE NOT EXISTS guard still catches the common
+// case; the index only upgrades the concurrent case from "duplicate row" to
+// "caught insert error".
+let metaLeadUniqueEnsured: Promise<void> | null = null
+function ensureMetaLeadUnique(): Promise<void> {
+  if (!metaLeadUniqueEnsured) {
+    metaLeadUniqueEnsured = (async () => {
+      await query(
+        `DELETE FROM freehold_site_leads a
+          USING freehold_site_leads b
+          WHERE a.meta_lead_id IS NOT NULL
+            AND a.meta_lead_id = b.meta_lead_id
+            AND (a.created_at > b.created_at OR (a.created_at = b.created_at AND a.ctid > b.ctid))`,
+      )
+      await query(
+        `CREATE UNIQUE INDEX IF NOT EXISTS freehold_site_leads_meta_lead_id_uidx
+           ON freehold_site_leads (meta_lead_id) WHERE meta_lead_id IS NOT NULL`,
+      )
+    })().catch((e) => {
+      metaLeadUniqueEnsured = null // let a later sweep retry
+      console.error('[meta-leads] could not enforce meta_lead_id uniqueness (dedupe still applies per-row)', e)
+    })
+  }
+  return metaLeadUniqueEnsured
+}
+
 export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Promise<SyncOutcome> {
   if (!leads.length) return { synced: 0, skipped: 0 }
   await ensureLeadsTable()
@@ -81,6 +109,15 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
   // setup insight, and it is only computable if the ad id survives the sync.
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_id text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_adset_id text`)
+
+  // The dedupe guarantee. `INSERT ... WHERE NOT EXISTS` is not atomic: the cron
+  // sweep and the on-view sync can both pass the check for the same Meta lead
+  // and both insert — duplicate CRM rows, doubled broker assignment, doubled
+  // alerts. A partial unique index makes the second insert fail instead (caught
+  // below, counted as "already there"), which is the real fix. Best-effort and
+  // once per instance: dedupe any rows an earlier race already created, then
+  // build the index (it would refuse to build over existing duplicates).
+  await ensureMetaLeadUnique()
 
   let synced = 0
   let skipped = 0

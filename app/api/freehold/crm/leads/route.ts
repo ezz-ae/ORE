@@ -24,11 +24,15 @@ const normPhone = (p: string | null) => (p ?? '').replace(/\D/g, '')
 async function duplicatePhoneSet(): Promise<Set<string>> {
   try {
     const rows = await query<{ p: string }>(
-      `SELECT regexp_replace(phone, '\D', '', 'g') AS p
+      // '\\D' in a JS string reaches Postgres as \D (non-digit). Written as
+      // '\D' the JS layer cooks it to the bare letter "D", so the query would
+      // strip only "D" and group by raw formatted phones — every duplicate/
+      // wrong-number flag computed off it was wrong.
+      `SELECT regexp_replace(phone, '\\D', '', 'g') AS p
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE AND phone IS NOT NULL
         GROUP BY 1
-       HAVING length(regexp_replace(phone, '\D', '', 'g')) >= 7 AND COUNT(*) > 1`,
+       HAVING length(regexp_replace(phone, '\\D', '', 'g')) >= 7 AND COUNT(*) > 1`,
     )
     return new Set(rows.map((r) => r.p))
   } catch { return new Set() }

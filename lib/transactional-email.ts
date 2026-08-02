@@ -38,6 +38,13 @@ const whatsappWebhookUrl =
   process.env.CRM_WHATSAPP_WEBHOOK_URL?.trim() ||
   ""
 
+// Escape user/web-sourced text before it goes into email HTML. Lead names and
+// especially researched profile facts are third-party content (scraped from
+// arbitrary web pages); interpolating them raw into <li>/<strong> is HTML
+// injection into internal mail.
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;")
+
 const uniqueValues = (values: Array<string | null | undefined>) =>
   Array.from(
     new Set(
@@ -185,12 +192,12 @@ Respond fast — speed-to-lead wins deals.
 ${BRAND.company}`
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-      <p>${brokerName ? `Hi ${brokerName},` : "Hi,"}</p>
-      <p><strong>${who}</strong> has been assigned to you.</p>
-      ${lines.length ? `<ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
+      <p>${brokerName ? `Hi ${escapeHtml(brokerName)},` : "Hi,"}</p>
+      <p><strong>${escapeHtml(who)}</strong> has been assigned to you.</p>
+      ${lines.length ? `<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>` : ""}
       <p><a href="${leadUrl}">Open the lead →</a></p>
       <p style="color:#6b7280">Respond fast — speed-to-lead wins deals.</p>
-      <p>${BRAND.company}</p>
+      <p>${escapeHtml(BRAND.company)}</p>
     </div>`
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -209,6 +216,21 @@ ${BRAND.company}`
  * Resolve a broker (assigned_broker_id may be a user id, email, or slug) and
  * email them that a lead is now theirs. Best-effort; never throws.
  */
+// Soft per-instance rate limit for assignment-triggered enrichment: at most
+// 20 grounded research calls per rolling 10 minutes. A bulk distribution of
+// 100 leads enriches the first 20 now; the rest stay one click away on their
+// lead pages. Serverless instances each get their own window — this is a
+// cost brake, not an exact quota.
+const autoEnrichTimes: number[] = []
+function takeAutoEnrichSlot(): boolean {
+  const now = Date.now()
+  const windowStart = now - 10 * 60 * 1000
+  while (autoEnrichTimes.length && autoEnrichTimes[0] < windowStart) autoEnrichTimes.shift()
+  if (autoEnrichTimes.length >= 20) return false
+  autoEnrichTimes.push(now)
+  return true
+}
+
 export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: string) {
   if (!brokerId || !leadId) return { sent: false as const }
   try {
@@ -218,8 +240,8 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
     ).catch(() => [])
     const to = brokerRows[0]?.email
     if (!to) return { sent: false as const, reason: "no-broker-email" }
-    const leadRows = await query<{ name: string | null; phone: string | null; interest: string | null; project_slug: string | null; source: string | null }>(
-      `SELECT name, phone, interest, project_slug, source FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
+    const leadRows = await query<{ name: string | null; phone: string | null; email: string | null; interest: string | null; project_slug: string | null; source: string | null }>(
+      `SELECT name, phone, email, interest, project_slug, source FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
       [leadId],
     ).catch(() => [])
     const lead = leadRows[0]
@@ -239,9 +261,31 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
       const facts = await listProfileFacts(leadId)
       knownFacts = facts
         .filter((f) => FACT_IN_ALERT[f.factKey])
+        // Confidence filter: a low-confidence guess must NOT be pushed to a
+        // broker's WhatsApp as a flat "Known: …" statement about a real person,
+        // stripped of its source. Only corroborated facts travel in a message.
+        .filter((f) => f.confidence === "high" || f.confidence === "medium")
         .slice(0, 4)
+        // Raw here — this list feeds both the plain-text WhatsApp and the HTML
+        // email; the email escapes at its render point (see sendLeadAssignedEmail).
         .map((f) => `${FACT_IN_ALERT[f.factKey]}: ${f.factValue}`)
-      if (facts.length === 0) {
+      // Auto-enrich only when the profile has NEVER been researched. `facts
+      // .length === 0` alone re-fires forever on leads where research found
+      // nothing (it writes no rows, only stamps profile_enriched_at) — every
+      // reassignment would burn another grounded call. Gate on the stamp.
+      // Also require a RESEARCHABLE lead (real multi-word name or email — a
+      // phone-only "Meta lead" finds nothing) and a free rate-limit slot so a
+      // bulk assignment sweep can't become hundreds of Gemini calls at once.
+      let everEnriched = true
+      try {
+        const [er] = await query<{ at: string | null }>(
+          `SELECT profile_enriched_at::text AS at FROM freehold_site_leads WHERE id = $1`,
+          [leadId],
+        )
+        everEnriched = Boolean(er?.at)
+      } catch { /* column may not exist yet → treat as never enriched */ everEnriched = false }
+      const researchable = (lead.name || "").trim().split(/\s+/).length >= 2 || Boolean(lead.email)
+      if (facts.length === 0 && !everEnriched && researchable && takeAutoEnrichSlot()) {
         void enrichLeadProfile(leadId, "system:assignment").catch((e) =>
           console.error("[notify] auto-enrich on assignment failed", e))
       }

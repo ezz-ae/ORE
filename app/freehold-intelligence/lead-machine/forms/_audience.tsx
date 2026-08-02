@@ -142,8 +142,11 @@ export function FormAudienceBuilder({
       {/* Scope: which leads seed the audience */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         {([
-          { key: 'qualified' as const, count: qualified, labelKey: 'pforms.aud.scopeQualified' },
-          { key: 'all' as const, count: contactable, labelKey: 'pforms.aud.scopeAll' },
+          // Counts must reflect the CURRENT form selection, not the full
+          // portfolio — otherwise the tile shows one seed size while the gates
+          // and the confirm button act on the (smaller) selected subset.
+          { key: 'qualified' as const, count: effQualified, labelKey: 'pforms.aud.scopeQualified' },
+          { key: 'all' as const, count: effContactable, labelKey: 'pforms.aud.scopeAll' },
         ]).map((s) => (
           <button
             key={s.key}
