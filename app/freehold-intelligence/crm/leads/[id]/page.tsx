@@ -95,6 +95,8 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
   } catch { return null }
 }
 import { QuickActions } from './_components/LeadClientActions'
+import { SmartProfile } from './_components/SmartProfile'
+import { listProfileFacts } from '@/lib/freehold/lead-profile'
 import { LeadViewingsCard } from './_components/LeadViewingsCard'
 
 function urgencyTone(u: string) {
@@ -147,6 +149,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     : lead.pipelineStage === 'qualified'
     ? t('crm.nba.bookViewing')
     : t('crm.nba.followUp')
+
+  // Smart-profile facts the research agent has verified for this lead — an
+  // empty array renders the "complete profile" invitation, never fake cells.
+  const profileFacts = await listProfileFacts(lead.id).catch(() => [])
 
   // Activity timeline: real logged events for this lead (no seed log).
   const activityRows = await getLeadActivity(lead.id).catch(() => [])
@@ -266,6 +272,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </div>
             </div>
           </div>
+
+          {/* Smart profile — the research agent's verified findings. Cells are
+              dynamic: a fact not found does not exist here, and every fact
+              carries its public source. */}
+          <SmartProfile leadId={lead.id} initialFacts={profileFacts} />
 
           {/* Risk warnings */}
           {(lead.duplicateRisk || lead.wrongNumberRisk) && (

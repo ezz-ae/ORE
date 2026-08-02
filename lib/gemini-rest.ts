@@ -11,7 +11,17 @@ export function geminiModelCandidates(): string[] {
   return Array.from(new Set([configured, ...FALLBACK_MODELS].filter(Boolean) as string[]))
 }
 
-export type GeminiResponse = { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+export type GeminiResponse = {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> }
+    /** Present when the call ran with the google_search tool and the model
+     *  actually grounded its answer — absent means NO search happened. */
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>
+      webSearchQueries?: string[]
+    }
+  }>
+}
 
 /**
  * POST to the Gemini REST generateContent endpoint, trying current models when
@@ -19,7 +29,7 @@ export type GeminiResponse = { candidates?: Array<{ content?: { parts?: Array<{ 
  * buckets are PER MODEL, so the next model usually still serves). Returns the
  * parsed response, or throws with the last error detail.
  */
-export async function geminiGenerate(apiKey: string, contents: unknown, generationConfig?: unknown): Promise<GeminiResponse> {
+export async function geminiGenerate(apiKey: string, contents: unknown, generationConfig?: unknown, tools?: unknown): Promise<GeminiResponse> {
   let last = ""
   for (const model of geminiModelCandidates()) {
     // 2.5-family models think by default and can burn the whole token budget
@@ -32,7 +42,7 @@ export async function geminiGenerate(apiKey: string, contents: unknown, generati
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents, generationConfig: config }),
+        body: JSON.stringify({ contents, generationConfig: config, ...(tools ? { tools } : {}) }),
       },
     )
     if (res.ok) return (await res.json()) as GeminiResponse
