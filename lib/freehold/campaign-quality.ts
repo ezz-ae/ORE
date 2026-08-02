@@ -32,6 +32,16 @@ export interface CampaignQuality {
    *  attributed leads that HAVE one, and how many that is. null/0 when none. */
   avgBehaviour: number | null
   behaviourCount: number
+  /** The one-click human judgment: how many attributed leads are value-rated,
+   *  their 0–10 average, and the zone counts. null avg = nobody judged yet. */
+  valueRated: number
+  avgValue: number | null
+  valueValuable: number   // rated ≥ 6 — "buy more of this"
+  valueAvoid: number      // rated ≤ 2 — "stop buying this"
+  /** WHO this campaign actually brings — researched smart-profile facts over
+   *  the attributed leads, aggregated to counts (industry/role/city/interests).
+   *  Empty when no profiles exist; never guessed. */
+  whoTheyAre: Array<{ kind: string; value: string; n: number }>
 }
 
 /** CRM statuses that count as "qualified or deeper" — shared with the Ads
@@ -43,11 +53,11 @@ const WON = new Set(['converted', 'closed'])
 export const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
 
 export async function getCampaignQuality(campaignId: string, campaignName: string): Promise<CampaignQuality> {
-  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null }
+  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null; value_rating: number | null }
   let rows: Row[] = []
   try {
     rows = await query<Row>(
-      `SELECT id, status, blocked, phone, behaviour_score
+      `SELECT id, status, blocked, phone, behaviour_score, value_rating
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
           AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
@@ -55,11 +65,11 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     )
   } catch {
     // Never let a schema/DB hiccup break the campaign surface. (Also the
-    // fallback when behaviour_score doesn't exist yet — that column is added
-    // by the landing intake route on first scored lead.)
+    // fallback when behaviour_score / value_rating don't exist yet — those
+    // columns arrive lazily with the first scored lead / first rating.)
     try {
       rows = await query<Row>(
-        `SELECT id, status, blocked, phone, NULL::int AS behaviour_score
+        `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating
            FROM freehold_site_leads
           WHERE archived IS NOT TRUE
             AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
@@ -125,11 +135,49 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     ? ((avgBehaviour - 50) / 50) * 10
     : 0
 
+  // THE HUMAN JUDGMENT — one-click 0–10 value ratings on the attributed leads.
+  // Direct answer to "does this campaign generate good leads": funnel outcomes
+  // take weeks, a broker's rating lands the same day. Bounded ±15 adjustment
+  // with ≥3 ratings (stronger than behaviour because it IS a judgment, still
+  // never the sole driver — outcomes stay dominant).
+  const rated = rows.filter((r) => typeof r.value_rating === 'number' && r.value_rating !== null)
+  const valueRated = rated.length
+  const avgValue = valueRated > 0
+    ? Math.round((rated.reduce((s, r) => s + (r.value_rating as number), 0) / valueRated) * 10) / 10
+    : null
+  const valueValuable = rated.filter((r) => (r.value_rating as number) >= 6).length
+  const valueAvoid = rated.filter((r) => (r.value_rating as number) <= 2).length
+  const valueAdj = valueRated >= 3 && avgValue !== null
+    ? ((avgValue - 5) / 5) * 15
+    : 0
+
   // Weighted toward the real objective event (won), then qualification, then
   // basic reachability; junk drags it down. Clamped 0–100.
   const score = attributed === 0 ? null : Math.max(0, Math.min(100, Math.round(
-    rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20 + behaviourAdj,
+    rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20 + behaviourAdj + valueAdj,
   )))
+
+  // WHO THEY ARE — the researched smart-profile facts over this campaign's
+  // leads, aggregated to counts. "Campaign X brings finance directors in
+  // Business Bay, campaign Y brings students" is the good-leads answer no
+  // funnel number can give. Counts only; absent table (no enrichment run yet)
+  // degrades to an empty list, never an error.
+  let whoTheyAre: CampaignQuality['whoTheyAre'] = []
+  if (rows.length > 0) {
+    try {
+      const factRows = await query<{ fact_key: string; v: string; n: string }>(
+        `SELECT fact_key, lower(trim(fact_value)) AS v, COUNT(*)::text AS n
+           FROM freehold_lead_profile_facts
+          WHERE lead_id = ANY($1)
+            AND fact_key IN ('company_industry','job_title','location_city','business_interests','workplace')
+          GROUP BY fact_key, lower(trim(fact_value))
+          ORDER BY COUNT(*) DESC, fact_key
+          LIMIT 12`,
+        [rows.map((r) => r.id)],
+      )
+      whoTheyAre = factRows.map((f) => ({ kind: f.fact_key, value: f.v, n: Number(f.n) || 0 }))
+    } catch { /* profile table not created yet — nothing to aggregate */ }
+  }
 
   const pct = (n: number) => (attributed > 0 ? Math.round((n / attributed) * 100) : 0)
   const funnel: CampaignQuality['funnel'] = [
@@ -139,5 +187,9 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     { key: 'junk', count: junk, pct: pct(junk) },
   ]
 
-  return { campaignId, attributed, reached, qualified, won, junk, duplicates, score, funnel, avgBehaviour, behaviourCount }
+  return {
+    campaignId, attributed, reached, qualified, won, junk, duplicates, score, funnel,
+    avgBehaviour, behaviourCount,
+    valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
+  }
 }

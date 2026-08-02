@@ -139,7 +139,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   },
   {
     name: 'ads_campaign_quality', agent: 'ads_agent',
-    description: 'The live lead-quality score (0–100) for a campaign, computed from its REAL CRM leads (wrong numbers, duplicates, funnel progress). Null score = not enough signal yet.',
+    description: 'THE tool for "does this campaign generate good leads?". Live quality from the campaign\'s REAL CRM leads: 0–100 score (funnel outcomes + junk/duplicates), the human 0–10 value ratings (avgValue, valuable ≥6 vs avoid ≤2 counts), and whoTheyAre — researched smart-profile aggregates (industries, roles, cities) of the people this campaign actually brings. Null score / null avgValue = not enough signal yet, say so honestly.',
     params: '{ "campaignId": string, "campaignName": string }', roles: ADS_READERS,
     schema: z.object({ campaignId: z.string(), campaignName: z.string() }),
     run: async (args) => getCampaignQuality(s(args.campaignId), s(args.campaignName)),
