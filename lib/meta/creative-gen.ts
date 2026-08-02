@@ -115,9 +115,19 @@ export async function geminiCreatives(p: GenerateCreativePayload): Promise<Gener
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return null
   const price = fmtPrice(p.startingPrice)
+  // Language directive — without it the model always writes English, so an
+  // Arabic/Russian campaign got English captions regardless of the selection.
+  const LANG_NAME: Record<string, string> = { ar: 'Arabic', ru: 'Russian', en: 'English' }
+  const langName = LANG_NAME[p.language ?? 'en'] ?? 'English'
+  const langLine = langName === 'Arabic'
+    ? `Write ALL copy (primaryText, headline, description) in ARABIC, in natural Gulf-market real-estate voice. Numbers/prices may stay in Latin digits. Do NOT write any English.`
+    : langName === 'Russian'
+      ? `Write ALL copy (primaryText, headline, description) in RUSSIAN, natural and idiomatic. Do NOT write any English.`
+      : `Write all copy in English.`
   const prompt = `You are a senior Meta (Facebook/Instagram) ads copywriter for Dubai freehold real estate.
 Write ad creative for: "${p.listingName}" by ${p.developer} in ${p.area}, Dubai.
 Angle: ${p.angle}. Tone: ${p.tone}. Starting price ${price}.${p.paymentPlan ? ` Payment plan: ${p.paymentPlan}.` : ''}
+LANGUAGE: ${langLine}
 ${Array.isArray(p.sources) && p.sources.length ? `SOURCE MATERIAL supplied by the operator (brochure extracts, links, notes) — ground the copy in these facts and never contradict them:\n${p.sources.slice(0, 8).map((s) => `- ${String(s).slice(0, 1200)}`).join('\n')}\n` : ''}
 Produce exactly 3 distinct variants. Each: primaryText (1-3 short sentences, line breaks ok), headline (MAX 40 characters), description (MAX 30 characters).
 Return ONLY JSON, no markdown:

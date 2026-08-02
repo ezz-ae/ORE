@@ -535,6 +535,9 @@ export default function NewCampaignPage() {
   // Full placements wall — one popup showing the ad across every surface.
   const [placementsOpen, setPlacementsOpen] = useState(false)
   const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
+  // Language the AI writes the copy IN. Without this the generator always
+  // produced English even for an Arabic/Russian campaign.
+  const [genLanguage, setGenLanguage] = useState<'en' | 'ar' | 'ru'>('en')
   const [variants, setVariants] = useState<GeneratedCreativeVariant[]>([])
   const [genLoading, setGenLoading] = useState(false)
   const CREATIVE_ANGLES = ['investor', 'urgency', 'lifestyle', 'yield', 'golden_visa', 'end_user'] as const
@@ -548,7 +551,7 @@ export default function NewCampaignPage() {
         body: JSON.stringify({
           listingId: listing.id, listingName: listing.projectName, area: listing.area,
           developer: BRAND.company, startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
-          angle: genAngle, tone: 'direct', cta: form.cta,
+          angle: genAngle, tone: 'direct', cta: form.cta, language: genLanguage,
           // Ground the copy in the operator's source material (brochure
           // extracts, links) — decisive for new launches with no landing page.
           sources: campaignSources.map((s) => s.text),
@@ -2054,6 +2057,16 @@ export default function NewCampaignPage() {
                     <button key={a} type="button" onClick={() => setGenAngle(a)}
                       className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${genAngle === a ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400'}`}>
                       {t(`lm.newCampaign.s3.angle.${a}`)}
+                    </button>
+                  ))}
+                </div>
+                {/* Copy language — the AI writes the captions in this language. */}
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s3.copyLanguage')}</span>
+                  {LEAD_LANGUAGE_OPTIONS.map((l) => (
+                    <button key={l.code} type="button" onClick={() => setGenLanguage(l.code as 'en' | 'ar' | 'ru')}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${genLanguage === l.code ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400'}`}>
+                      {t(l.labelKey)}
                     </button>
                   ))}
                 </div>
