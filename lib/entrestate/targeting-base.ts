@@ -195,6 +195,43 @@ export async function refreshLiveTenantSignals(): Promise<void> {
     // the CRM table is still tolerated, but the failure is now visible.
     console.error('[targeting-base] live signal fold failed — the shared brain is NOT being fed:', e)
   })
+
+  // SMART-PROFILE FACTS join the fold. The research agent verifies facts like
+  // industry, role, city and age range per lead; folded against outcomes they
+  // become targetable knowledge: "leads who work in finance rate 6+" is a
+  // signal the planner can act on. Aggregate counts only — privacy by schema
+  // holds. Deliberately EXCLUDED: nationality, family, education, social
+  // links — not ad-targetable dimensions and too close to the person.
+  await query(
+    `INSERT INTO entrestate_targeting_signals
+       (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
+     SELECT $1, '', '', '', '',
+            CASE WHEN f.fact_key = 'age_range' THEN left(lower(trim(f.fact_value)), 20) ELSE '' END,
+            CASE WHEN f.fact_key = 'location_city' THEN left(lower(trim(f.fact_value)), 60) ELSE '' END,
+            CASE f.fact_key
+              WHEN 'company_industry'   THEN left('industry: ' || lower(trim(f.fact_value)), 80)
+              WHEN 'job_title'          THEN left('role: '     || lower(trim(f.fact_value)), 80)
+              WHEN 'business_interests' THEN left('interest: ' || lower(trim(f.fact_value)), 80)
+              ELSE '' END,
+            COUNT(*),
+            COUNT(*) FILTER (WHERE l.priority IN ('hot','priority')
+                                OR l.status IN ('qualified','viewing','negotiation','closed','converted')
+                                OR l.value_rating >= 6),
+            COUNT(*) FILTER (WHERE l.status IN ('closed','converted')),
+            COUNT(*) FILTER (WHERE l.status = 'lost' OR l.value_rating <= 2),
+            now()
+     FROM freehold_lead_profile_facts f
+     JOIN freehold_site_leads l ON l.id = f.lead_id
+     WHERE f.fact_key IN ('age_range','location_city','company_industry','job_title','business_interests')
+     GROUP BY 6, 7, 8`,
+    [liveTenant],
+  ).catch((e) => {
+    // The facts table only exists after the first enrichment — that absence is
+    // normal and quiet; any OTHER failure is a fed-brain gap and must be loud.
+    if (!/does not exist/i.test(String(e))) {
+      console.error('[targeting-base] profile-fact fold failed — researched facts are not reaching the brain:', e)
+    }
+  })
 }
 
 /*

@@ -711,7 +711,31 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       const q = s(args.q)
       if (!q) return { error: 'q is required' }
       const asRole = ctx.role === 'sales_agent' ? 'broker' as const : 'admin' as const
-      return searchCrmLeads(q, asRole, ctx.brokerId ?? undefined, 10)
+      const rows = await searchCrmLeads(q, asRole, ctx.brokerId ?? undefined, 10)
+      // Exactly one match (the attached-lead case): include the researched
+      // smart profile so the expert answers from verified facts — each fact
+      // already carries its source and confidence, so the model can cite them
+      // instead of guessing who the person is.
+      if (rows.length === 1) {
+        try {
+          const { listProfileFacts } = await import('@/lib/freehold/lead-profile')
+          const facts = await listProfileFacts(rows[0].id)
+          if (facts.length) {
+            return {
+              lead: rows[0],
+              smartProfile: facts.map((f) => ({
+                fact: f.factKey === 'other' && f.factLabel ? f.factLabel : f.factKey,
+                value: f.factValue,
+                source: f.sourceUrl,
+                confidence: f.confidence,
+              })),
+            }
+          }
+        } catch (e) {
+          console.error('[coordinator] profile attach failed', e)
+        }
+      }
+      return rows
     },
   },
 

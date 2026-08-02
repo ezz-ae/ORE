@@ -1676,12 +1676,18 @@ export async function searchCrmLeads(
   const trimmed = term.trim()
   if (trimmed) {
     values.push(`%${trimmed}%`)
+    const like = values.length
+    // Exact-id match FIRST: the expert chat attaches a lead by its id and is
+    // told to look it up with that exact id — without this arm, an attached
+    // lead could never be found (ids don't ILIKE-match any contact field).
+    values.push(trimmed)
     whereClause += ` AND (
-      l.name ILIKE $${values.length}
-      OR COALESCE(l.email, '') ILIKE $${values.length}
-      OR COALESCE(l.phone, '') ILIKE $${values.length}
-      OR COALESCE(l.project_slug, '') ILIKE $${values.length}
-      OR COALESCE(l.source, '') ILIKE $${values.length}
+      l.id = $${values.length}
+      OR l.name ILIKE $${like}
+      OR COALESCE(l.email, '') ILIKE $${like}
+      OR COALESCE(l.phone, '') ILIKE $${like}
+      OR COALESCE(l.project_slug, '') ILIKE $${like}
+      OR COALESCE(l.source, '') ILIKE $${like}
     )`
   }
 
