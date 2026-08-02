@@ -183,6 +183,8 @@ const en: Dict = {
   'pforms.aud.doneCustom': 'Custom Audience created.',
   'pforms.aud.doneDetail': '“{name}” — {n} hashed contacts uploaded. Saved to your audiences, ready to attach to any campaign.',
   'pforms.aud.viewAudiences': 'View audiences',
+  'pforms.aud.pickForms': 'Forms feeding this audience (qualified/contactable)',
+  'pforms.aud.selectedForms': '{n} selected forms',
   'pforms.sidebar.introCard': 'Intro card',
   'pforms.detail.button': 'Button',
 
@@ -468,6 +470,8 @@ const ar: Dict = {
   'pforms.aud.doneCustom': 'تم إنشاء الجمهور المخصص.',
   'pforms.aud.doneDetail': '«{name}» — تم رفع {n} جهة اتصال مشفّرة. حُفظ ضمن جماهيرك وجاهز للربط بأي حملة.',
   'pforms.aud.viewAudiences': 'عرض الجماهير',
+  'pforms.aud.pickForms': 'النماذج المغذية لهذا الجمهور (مؤهل/قابل للتواصل)',
+  'pforms.aud.selectedForms': '{n} نماذج محددة',
   'pforms.sidebar.introCard': 'البطاقة التعريفية',
   'pforms.detail.button': 'الزر',
 
@@ -742,6 +746,8 @@ const ru: Dict = {
   'pforms.aud.doneCustom': 'Custom Audience создана.',
   'pforms.aud.doneDetail': '«{name}» — загружено {n} хешированных контактов. Сохранено в ваших аудиториях, готово к подключению к любой кампании.',
   'pforms.aud.viewAudiences': 'Смотреть аудитории',
+  'pforms.aud.pickForms': 'Формы, питающие эту аудиторию (качественные/с контактами)',
+  'pforms.aud.selectedForms': 'Выбрано форм: {n}',
   'pforms.sidebar.introCard': 'Вступительная карточка',
   'pforms.detail.button': 'Кнопка',
 

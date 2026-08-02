@@ -17,6 +17,7 @@ export function FormAudienceBuilder({
   formName,
   contactable,
   qualified,
+  forms,
   compact = false,
 }: {
   /** null = every Meta-form lead in the CRM, combined. */
@@ -24,6 +25,9 @@ export function FormAudienceBuilder({
   formName: string
   contactable: number
   qualified: number
+  /** When given, the builder offers a per-form selection — "lookalike from
+   *  THESE forms" instead of all-or-nothing. Counts come per form. */
+  forms?: Array<{ id: string; name: string; contactable: number; qualified: number }>
   compact?: boolean
 }) {
   const t = useT()
@@ -34,9 +38,25 @@ export function FormAudienceBuilder({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<{ name: string; uploaded: number; lookalike: boolean } | null>(null)
+  // Selection: all forms in by default; unticking narrows the seed.
+  const [selected, setSelected] = useState<Set<string>>(() => new Set((forms ?? []).map((f) => f.id)))
 
-  const seedCount = scope === 'qualified' ? qualified : contactable
+  const allSelected = !forms || selected.size === forms.length
+  const picked = forms?.filter((f) => selected.has(f.id)) ?? null
+  const effContactable = forms && !allSelected ? picked!.reduce((s, f) => s + f.contactable, 0) : contactable
+  const effQualified = forms && !allSelected ? picked!.reduce((s, f) => s + f.qualified, 0) : qualified
+  const seedCount = scope === 'qualified' ? effQualified : effContactable
   const lookalikeBlocked = lookalike && seedCount < 100
+
+  function toggleForm(id: string) {
+    setArmed(false)
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   async function create() {
     if (!armed) { setArmed(true); return }
@@ -46,7 +66,14 @@ export function FormAudienceBuilder({
       const res = await fetch('/api/meta/forms/audience', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId, formName, scope, lookalike, ratio, country: 'AE', confirm: true }),
+        body: JSON.stringify({
+          formId,
+          // Explicit subset → send the ids; full selection keeps the broad
+          // mode (formId / null) so unknown forms are still included.
+          formIds: forms && !allSelected ? [...selected] : undefined,
+          formName: forms && !allSelected ? t('pforms.aud.selectedForms', { n: String(selected.size) }) : formName,
+          scope, lookalike, ratio, country: 'AE', confirm: true,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t('pforms.aud.failed'))
@@ -87,6 +114,30 @@ export function FormAudienceBuilder({
         <Users2 className="h-3.5 w-3.5 text-gold/60" /> {t('pforms.aud.title')}
       </div>
       {!compact && <p className="mt-2 text-xs leading-relaxed text-slate-500">{t('pforms.aud.desc')}</p>}
+
+      {/* Which forms feed the seed — tick exactly the ones you want. */}
+      {forms && forms.length > 1 && (
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span>{t('pforms.aud.pickForms')}</span>
+            <span className="tabular-nums">{selected.size}/{forms.length}</span>
+          </div>
+          <div className="mt-1.5 max-h-36 space-y-1 overflow-y-auto pe-1">
+            {forms.map((f) => (
+              <label key={f.id} className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-[11px] text-slate-300 hover:bg-surface-2">
+                <input
+                  type="checkbox"
+                  checked={selected.has(f.id)}
+                  onChange={() => toggleForm(f.id)}
+                  className="h-3 w-3 accent-[#c9a557]"
+                />
+                <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                <span className="shrink-0 tabular-nums text-slate-500">{f.qualified}/{f.contactable}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Scope: which leads seed the audience */}
       <div className="mt-3 grid grid-cols-2 gap-2">

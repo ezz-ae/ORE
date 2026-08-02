@@ -46,7 +46,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Confirmation required before uploading contact data to Meta.' }, { status: 400 })
   }
 
+  // An explicit selection of forms beats the single-form and all-forms modes:
+  // "lookalike from THESE three forms" is a deliberate seed choice.
+  const formIds = Array.isArray(body.formIds)
+    ? (body.formIds as unknown[]).filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim()).slice(0, 100)
+    : null
   const formId = typeof body.formId === 'string' && body.formId.trim() ? body.formId.trim() : null
+  const target: string | string[] | null = formIds && formIds.length ? formIds : formId
   const scope: 'qualified' | 'all' = body.scope === 'qualified' ? 'qualified' : 'all'
   const wantLookalike = body.lookalike === true
   const country = typeof body.country === 'string' && /^[A-Z]{2}$/.test(String(body.country)) ? String(body.country) : 'AE'
@@ -55,9 +61,10 @@ export async function POST(req: NextRequest) {
   // Label only — the seed rows come from OUR database, never from the client.
   const formName = typeof body.formName === 'string' && body.formName.trim()
     ? body.formName.trim().slice(0, 80)
+    : Array.isArray(target) ? `${target.length} selected forms`
     : formId ? `Form ${formId.slice(0, 12)}` : 'All Meta forms'
 
-  const contacts = await formSeedContacts(formId, scope)
+  const contacts = await formSeedContacts(target, scope)
   if (contacts.length < MIN_SEED) {
     return NextResponse.json(
       { error: scope === 'qualified'

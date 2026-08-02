@@ -49,7 +49,7 @@ function statusConfig(s: string): { dot: string; text: string; badge: string; la
  * visible from outside without opening it. Plus the portfolio totals that
  * power the all-forms audience builder.
  */
-interface FormCrmStats { n: number; rated: number; avg: number | null }
+interface FormCrmStats { n: number; rated: number; avg: number | null; contactable: number; qualified: number }
 interface AllFormsStats { n: number; rated: number; avg: number | null; contactable: number; qualified: number }
 
 const CONTACTABLE_SQL =
@@ -58,10 +58,12 @@ const CONTACTABLE_SQL =
 async function getCrmStatsByForm(): Promise<{ perForm: Map<string, FormCrmStats>; all: AllFormsStats }> {
   const empty: AllFormsStats = { n: 0, rated: 0, avg: null, contactable: 0, qualified: 0 }
   try {
-    const rows = await query<{ meta_form_id: string; n: string; rated: string; avg: string | null }>(
+    const rows = await query<{ meta_form_id: string; n: string; rated: string; avg: string | null; contactable: string; qualified: string }>(
       `SELECT meta_form_id, COUNT(*)::text AS n,
               COUNT(value_rating)::text AS rated,
-              AVG(value_rating)::text AS avg
+              AVG(value_rating)::text AS avg,
+              COUNT(*) FILTER (WHERE ${CONTACTABLE_SQL})::text AS contactable,
+              COUNT(*) FILTER (WHERE value_rating >= 6 AND ${CONTACTABLE_SQL})::text AS qualified
          FROM freehold_site_leads
         WHERE meta_form_id IS NOT NULL AND archived IS NOT TRUE
         GROUP BY meta_form_id`,
@@ -80,6 +82,8 @@ async function getCrmStatsByForm(): Promise<{ perForm: Map<string, FormCrmStats>
         n: Number(r.n) || 0,
         rated: Number(r.rated) || 0,
         avg: r.avg === null ? null : Number(r.avg),
+        contactable: Number(r.contactable) || 0,
+        qualified: Number(r.qualified) || 0,
       }])),
       all: totals
         ? {
@@ -95,15 +99,20 @@ async function getCrmStatsByForm(): Promise<{ perForm: Map<string, FormCrmStats>
     // value_rating / meta columns may not exist before the first sync or the
     // first rating — degrade to counts-only, never to a crashed page.
     try {
-      const rows = await query<{ meta_form_id: string; n: string }>(
-        `SELECT meta_form_id, COUNT(*)::text AS n
+      const rows = await query<{ meta_form_id: string; n: string; contactable: string }>(
+        `SELECT meta_form_id, COUNT(*)::text AS n,
+                COUNT(*) FILTER (WHERE ${CONTACTABLE_SQL})::text AS contactable
            FROM freehold_site_leads
           WHERE meta_form_id IS NOT NULL AND archived IS NOT TRUE
           GROUP BY meta_form_id`,
       )
       return {
-        perForm: new Map(rows.map((r) => [r.meta_form_id, { n: Number(r.n) || 0, rated: 0, avg: null }])),
-        all: { ...empty, n: rows.reduce((s, r) => s + (Number(r.n) || 0), 0) },
+        perForm: new Map(rows.map((r) => [r.meta_form_id, { n: Number(r.n) || 0, rated: 0, avg: null, contactable: Number(r.contactable) || 0, qualified: 0 }])),
+        all: {
+          ...empty,
+          n: rows.reduce((s, r) => s + (Number(r.n) || 0), 0),
+          contactable: rows.reduce((s, r) => s + (Number(r.contactable) || 0), 0),
+        },
       }
     } catch {
       return { perForm: new Map(), all: empty }
@@ -233,6 +242,12 @@ export default async function FormsPage() {
             formName={t('lm.forms.portfolioSeedName')}
             contactable={crmStats.all.contactable}
             qualified={crmStats.all.qualified}
+            forms={forms
+              .filter((f) => (crmStats.perForm.get(f.id)?.n ?? 0) > 0)
+              .map((f) => {
+                const s = crmStats.perForm.get(f.id)!
+                return { id: f.id, name: f.name, contactable: s.contactable, qualified: s.qualified }
+              })}
             compact
           />
         </section>
@@ -297,7 +312,7 @@ export default async function FormsPage() {
                           : 'border-amber-400/40 bg-amber-400/10 text-amber-300'
                         return (
                           <span className={`rounded-full border px-2 py-0.5 font-semibold tabular-nums ${cls}`}>
-                            {t('lm.forms.valueAvg', { v: s.avg.toFixed(1), n: String(s.rated) })}
+                            {t('lm.forms.valueAvg', { v: s.avg.toFixed(1), n: String(s.rated), total: String(s.n) })}
                           </span>
                         )
                       })()}
