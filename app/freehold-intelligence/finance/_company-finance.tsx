@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Wallet, Plus, Loader2, Check, Trash2, Banknote } from 'lucide-react'
+import { Wallet, Plus, Loader2, Check, Trash2, Banknote, Pencil, X } from 'lucide-react'
 import { Section, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { FINANCE_CATEGORIES, type FinanceCategory, type FinanceEntry, type CompanyFinanceSummary } from '@/lib/finance-shared'
 import { useT } from '@/lib/i18n/provider'
@@ -96,6 +96,37 @@ export function CompanyFinance() {
   async function remove(id: string) {
     const res = await fetch(`/api/freehold/finance/entries/${id}`, { method: 'DELETE' })
     if (res.ok) load(); else toast.error(t('finance.company.deleteFailed'))
+  }
+
+  // Inline edit — correct an entry's category/amount/payee/reason in place
+  // instead of delete-and-re-add. `editId` is the row being edited.
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{ category: FinanceCategory; amountAed: string; payee: string; description: string }>({
+    category: 'expense', amountAed: '', payee: '', description: '',
+  })
+
+  function startEdit(e: FinanceEntry) {
+    setEditId(e.id)
+    setEditForm({ category: e.category, amountAed: String(e.amountAed ?? ''), payee: e.payee || '', description: e.description || '' })
+  }
+
+  async function saveEdit(id: string) {
+    const amount = Number(editForm.amountAed)
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error(t('finance.company.enterValidAmount')); return }
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/freehold/finance/entries/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: editForm.category, amountAed: amount, payee: editForm.payee, description: editForm.description }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || t('finance.company.updateFailed'))
+      toast.success(t('finance.company.entryUpdated'))
+      setEditId(null)
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('finance.company.updateFailed'))
+    } finally { setBusy(false) }
   }
 
   async function recordPayout(p: Payout) {
@@ -202,7 +233,24 @@ export function CompanyFinance() {
         <div className="divide-y divide-line md:hidden">
           {entries.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-slate-500">{t('finance.company.noEntries')}</div>
-          ) : entries.map((e) => (
+          ) : entries.map((e) => editId === e.id ? (
+            <div key={e.id} className="space-y-2 bg-surface-2 px-4 py-3.5">
+              <select value={editForm.category} onChange={(ev) => setEditForm((f) => ({ ...f, category: ev.target.value as FinanceCategory }))} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-2 text-sm text-white outline-none focus:border-gold/40">
+                {FINANCE_CATEGORIES.map((c) => <option key={c.key} value={c.key} className="bg-surface">{t(CAT_KEY[c.key])}</option>)}
+              </select>
+              <input type="number" min={0} value={editForm.amountAed} onChange={(ev) => setEditForm((f) => ({ ...f, amountAed: ev.target.value }))} placeholder={t('finance.company.amountPlaceholder')} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input value={editForm.payee} onChange={(ev) => setEditForm((f) => ({ ...f, payee: ev.target.value }))} placeholder={t('finance.company.payeePlaceholder')} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input value={editForm.description} onChange={(ev) => setEditForm((f) => ({ ...f, description: ev.target.value }))} placeholder={t('finance.company.descriptionPlaceholder')} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <div className="flex items-center gap-2">
+                <button onClick={() => saveEdit(e.id)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/20 disabled:opacity-50">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} {t('finance.company.save')}
+                </button>
+                <button onClick={() => setEditId(null)} className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-3 py-1.5 text-xs text-slate-400 transition hover:text-white">
+                  <X className="h-3.5 w-3.5" /> {t('finance.cancel')}
+                </button>
+              </div>
+            </div>
+          ) : (
             <div key={e.id} className="px-4 py-3.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="truncate text-sm text-slate-300">{e.description || '—'}</span>
@@ -214,7 +262,8 @@ export function CompanyFinance() {
                 <button onClick={() => toggleStatus(e)} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${e.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
                   {e.status === 'paid' ? <Check className="h-3 w-3" /> : null}{e.status === 'paid' ? t('finance.status.paid') : t('finance.status.pending')}
                 </button>
-                <button onClick={() => remove(e.id)} className="ms-auto text-slate-500 transition hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => startEdit(e)} className="ms-auto text-slate-500 transition hover:text-gold" title={t('finance.company.edit')}><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => remove(e.id)} className="text-slate-500 transition hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             </div>
           ))}
@@ -238,7 +287,33 @@ export function CompanyFinance() {
             <tbody className="divide-y divide-line">
               {entries.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">{t('finance.company.noEntries')}</td></tr>
-              ) : entries.map((e) => (
+              ) : entries.map((e) => editId === e.id ? (
+                <tr key={e.id} className="bg-surface-2">
+                  <td className="px-4 py-3">
+                    <select value={editForm.category} onChange={(ev) => setEditForm((f) => ({ ...f, category: ev.target.value as FinanceCategory }))} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-1.5 text-xs text-white outline-none focus:border-gold/40">
+                      {FINANCE_CATEGORIES.map((c) => <option key={c.key} value={c.key} className="bg-surface">{t(CAT_KEY[c.key])}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <input value={editForm.description} onChange={(ev) => setEditForm((f) => ({ ...f, description: ev.target.value }))} placeholder={t('finance.company.descriptionPlaceholder')} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input value={editForm.payee} onChange={(ev) => setEditForm((f) => ({ ...f, payee: ev.target.value }))} placeholder={t('finance.company.payeePlaceholder')} className="w-full rounded-lg border border-line-strong bg-surface px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input type="number" min={0} value={editForm.amountAed} onChange={(ev) => setEditForm((f) => ({ ...f, amountAed: ev.target.value }))} className="w-28 rounded-lg border border-line-strong bg-surface px-2 py-1.5 text-xs text-white outline-none focus:border-gold/40" />
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{e.status === 'paid' ? t('finance.status.paid') : t('finance.status.pending')}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <button onClick={() => saveEdit(e.id)} disabled={busy} className="inline-flex items-center gap-1 rounded-lg border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-medium text-gold transition hover:bg-gold/20 disabled:opacity-50">
+                        {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} {t('finance.company.save')}
+                      </button>
+                      <button onClick={() => setEditId(null)} className="text-slate-500 transition hover:text-white"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
                 <tr key={e.id} className="hover:bg-surface-2">
                   <td className="px-4 py-3"><span className="rounded-full border border-line-strong bg-surface px-2 py-0.5 text-xs text-slate-300">{t(CAT_KEY[e.category])}</span></td>
                   <td className="px-4 py-3 text-slate-300">{e.description || '—'}</td>
@@ -250,7 +325,10 @@ export function CompanyFinance() {
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => remove(e.id)} className="text-slate-500 transition hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <div className="inline-flex items-center gap-2">
+                      <button onClick={() => startEdit(e)} className="text-slate-500 transition hover:text-gold" title={t('finance.company.edit')}><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => remove(e.id)} className="text-slate-500 transition hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -152,6 +152,34 @@ export async function setFinanceEntryStatus(id: string, status: FinanceEntryStat
   return rows[0] ? mapRow(rows[0]) : null
 }
 
+/** Edit an entry's real fields (category / amount / payee / reason). Only the
+ *  fields provided are changed; the rest keep their stored values via COALESCE.
+ *  This is what makes an expense correctable instead of delete-and-re-add. */
+export async function updateFinanceEntry(
+  id: string,
+  patch: { category?: FinanceCategory; amountAed?: number; payee?: string; description?: string; status?: FinanceEntryStatus },
+): Promise<FinanceEntry | null> {
+  await ensureSchemaOnce()
+  const category = patch.category !== undefined ? normCategory(patch.category) : null
+  const amount = patch.amountAed !== undefined && Number.isFinite(patch.amountAed) ? num(patch.amountAed) : null
+  const payee = patch.payee !== undefined ? patch.payee : null
+  const description = patch.description !== undefined ? patch.description : null
+  const status = patch.status === "paid" ? "paid" : patch.status === "pending" ? "pending" : null
+  const rows = await query<Record<string, unknown>>(
+    `UPDATE freehold_site_finance_entries
+        SET category    = COALESCE($2, category),
+            amount_aed  = COALESCE($3, amount_aed),
+            payee       = COALESCE($4, payee),
+            description = COALESCE($5, description),
+            status      = COALESCE($6, status),
+            updated_at  = now()
+      WHERE id = $1
+      RETURNING ${SELECT}`,
+    [id, category, amount, payee, description, status],
+  )
+  return rows[0] ? mapRow(rows[0]) : null
+}
+
 export async function deleteFinanceEntry(id: string): Promise<boolean> {
   await ensureSchemaOnce()
   await query(`DELETE FROM freehold_site_finance_entries WHERE id = $1`, [id])
