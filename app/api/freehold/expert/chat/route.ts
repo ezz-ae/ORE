@@ -205,6 +205,58 @@ function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
   return null
 }
 
+// ── LINK TRUTH: no fabricated deep links (they 404) ────────────────────────
+// The model emits hrefs freely; a static app page is fine, but a deep RECORD
+// link (a specific lead / form / project / property / landing / campaign) is
+// only real if its id/slug actually came back from a tool this turn. Anything
+// else the model invented, and the user lands on a 404 — the exact "every link
+// from the chat is 404" report. hrefAllowed lets static routes through and
+// requires record ids to be tool-sourced.
+const RECORD_COLLECTIONS = /\/(leads|forms|projects|properties|landing|landing-pages|ads-machine|campaigns|deals|audiences)\/([^/?#]+)/i
+function hrefAllowed(href: unknown, seen: string): boolean {
+  if (typeof href !== 'string') return false
+  const h = href.trim()
+  if (!h.startsWith('/')) return false // internal paths only — no off-site links
+  const path = h.split('?')[0].split('#')[0]
+  const m = path.match(RECORD_COLLECTIONS)
+  if (m) {
+    const id = decodeURIComponent(m[2] || '').toLowerCase()
+    // 'new', 'launch', 'attribution' etc. are static sub-pages, not records.
+    if (['new', 'launch', 'attribution', 'create'].includes(id)) return true
+    return id.length > 0 && seen.toLowerCase().includes(id)
+  }
+  // A trailing id-looking segment on any other route must also be tool-sourced.
+  const seg = (path.split('/').filter(Boolean).pop() || '').toLowerCase()
+  if (/^[0-9a-f]{8,}$/i.test(seg) || /^\d{6,}$/.test(seg) || /^[0-9a-f][0-9a-f-]{19,}$/i.test(seg)) {
+    return seen.toLowerCase().includes(seg)
+  }
+  return true // a normal static app route
+}
+
+/** Strip fabricated hrefs: a `path` block with a bad link becomes plain text
+ *  (its words are kept, the 404 link is not); a navigate action with a bad
+ *  link becomes a normal chat-prompt button instead of a dead link. */
+function sanitizeBlockHrefs(blocks: ExpertBlock[], seen: string): ExpertBlock[] {
+  return blocks.map((b) => {
+    if (b.type === 'path') {
+      if (hrefAllowed(b.href, seen)) return b
+      const text = [b.label, b.description].filter(Boolean).join(' — ')
+      return { type: 'text', content: text || b.label || '' } as ExpertBlock
+    }
+    if (b.type === 'actions') {
+      return {
+        type: 'actions',
+        actions: b.actions.map((a) =>
+          a.kind === 'navigate' && !hrefAllowed(a.href, seen)
+            ? { label: a.label, kind: 'prompt' as const, prompt: a.prompt || a.label, style: a.style }
+            : a,
+        ),
+      } as ExpertBlock
+    }
+    return b
+  })
+}
+
 function parseBlocks(raw: string): ExpertBlock[] {
   const trimmed = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
   try {
@@ -366,7 +418,7 @@ SCREEN TRUTH: before presenting any entity (an ad, campaign, lead, form) as "thi
 YOU ARE THE MARKETING COORDINATOR AGENT. You can execute REAL tools via your specialist agents. To call one, respond with ONLY this JSON (no blocks, no prose):
 {"tool_call": {"name": "<tool_name>", "args": { ... }}}
 After each call the conversation gains a TOOL_RESULT message; then either call another tool (max 5 per turn) or give your final answer in the normal {"blocks":[...]} format, grounded in the real results. NEVER invent or guess a tool result. NEVER repeat a call you already made this turn — its result is already in the conversation.
-CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling.
+CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling. You CANNOT create landing pages, listings, or brochures from chat — there is no tool for it, so NEVER say you created, built, published, generated or set one up. If asked, say plainly it must be done in the platform's builder, offer to draft the copy/sections as text instead, and never link to a specific page/record whose id did not come from a tool this turn (that link would 404).
 METRIC QUESTIONS REQUIRE A TOOL CALL: when the user asks about leads, lead quality, campaign performance, spend, CPL, or any other figure that is not already in your context JSON, your FIRST response must be the tool call that fetches it — never a direct answer. Answering a metric question with numbers that came from neither context nor a tool result is fabrication and strictly forbidden; if no tool covers it, say you don't have that data and where it lives.
 DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. Need an ad set id? List the ad sets. Need the current budget? Read it from the listing or the page. Asking the user "please provide the ad set ID" when you have a list tool is a failure.
 If the target is unambiguous — the campaign has exactly one ad set, or the page shows exactly one campaign — act on it directly; do not ask "which one".
@@ -384,7 +436,7 @@ Your tools:${renderToolDocs(tools)}`
     const sdkToolGuidance = tools.length === 0 ? '' : `
 
 YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
-CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling.
+CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling. You CANNOT create landing pages, listings, or brochures from chat — there is no tool for it, so NEVER say you created, built, published, generated or set one up. If asked, say plainly it must be done in the platform's builder, offer to draft the copy/sections as text instead, and never link to a specific page/record whose id did not come from a tool this turn (that link would 404).
 METRIC QUESTIONS REQUIRE A TOOL CALL: when the user asks about leads, lead quality, campaign performance, spend, CPL, or any other figure not already in your context JSON, call the tool that fetches it BEFORE answering — numbers that came from neither context nor a tool result are fabrication and strictly forbidden; if no tool covers it, say you don't have that data and where it lives.
 DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. If the target is unambiguous (one ad set, one campaign on the page), act on it directly. For a directional ask without a number ("spend more"), read the current value and propose ONE concrete change (~20–30%, floor AED 50) as a one-click confirmation showing current → new — never ask the user to supply the number.
 SCREEN TRUTH: before presenting any entity's details as "this ad/campaign/lead", verify they MATCH context.pageContent — the screen is ground truth. A mismatch means you fetched the wrong entity: re-list and pick the one that matches. If the user corrects you, re-resolving is YOUR job — never ask them for an identifier.
@@ -397,6 +449,11 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     // Human-readable one-liners of real tool results this turn — shared by the
     // legacy loop's limit reply AND the grounded never-empty fallback below.
     const resultNotes: string[] = []
+    // Raw tool-result text for THIS turn. A deep link the model emits (a lead,
+    // form, project or landing record) is only trustworthy if its id/slug
+    // actually appeared in a tool result — otherwise the model invented the
+    // link and it 404s. sanitizeBlockHrefs (below) checks hrefs against this.
+    let toolResultsText = ''
     let sdkError: string | null = null
 
     if (process.env.EXPERT_USE_AI_SDK === '1' && sessionUser) {
@@ -467,7 +524,9 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
           const result = await runCoordinatorTool(tools, call, toolCtx)
           toolsUsed.push(call.name)
           resultNotes.push(`• ${call.name}: ${summarizeToolResult(result)}`)
-          observation = `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}`
+          const resultJson = JSON.stringify(result)
+          toolResultsText += ' ' + resultJson
+          observation = `TOOL_RESULT ${call.name}: ${resultJson.slice(0, 6000)}`
         }
         loopHistory = [
           ...(loopHistory ?? []),
@@ -492,6 +551,11 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     }
 
     let blocks = parseBlocks(raw ?? '')
+
+    // ── LINK TRUTH ────────────────────────────────────────────────────────────
+    // Strip any deep record link whose id/slug did not come from a tool this
+    // turn — the fabricated links that produced "every chat link is 404".
+    blocks = sanitizeBlockHrefs(blocks, toolResultsText)
 
     // ── FABRICATED-ACTION TRIPWIRE ────────────────────────────────────────────
     // Screenshot-verified failure: asked to import historical CRM leads (a
