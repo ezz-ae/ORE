@@ -93,7 +93,8 @@ function normPhone(p: string | null): string {
   return (p || '').replace(/\D/g, '')
 }
 
-async function crmRowsForForm(formId: string | null): Promise<CrmRow[]> {
+/** target: one form id, an explicit set of form ids, or null = every Meta form. */
+async function crmRowsForForm(target: string | string[] | null): Promise<CrmRow[]> {
   await ensureLeadsTable()
   // Lazy columns, same pattern as the writers: analysis must not crash on a
   // tenant that has never rated a lead or synced with ad attribution.
@@ -102,13 +103,16 @@ async function crmRowsForForm(formId: string | null): Promise<CrmRow[]> {
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_id text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_lead_id text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
+  const clause = target === null
+    ? 'meta_form_id IS NOT NULL'
+    : Array.isArray(target) ? 'meta_form_id = ANY($1)' : 'meta_form_id = $1'
   return query<CrmRow>(
     `SELECT id, meta_lead_id, phone, email, status, assigned_broker_id,
             value_rating, meta_ad_id, utm_id, created_at::text AS created_at
        FROM freehold_site_leads
       WHERE archived IS NOT TRUE
-        AND ${formId ? 'meta_form_id = $1' : 'meta_form_id IS NOT NULL'}`,
-    formId ? [formId] : [],
+        AND ${clause}`,
+    target === null ? [] : [target],
   )
 }
 
@@ -232,10 +236,10 @@ export async function analyzeFormLeads(formId: string, metaLeads: MetaFormLead[]
  * sellable seed: a lookalike of the leads a human judged worth buying more of.
  */
 export async function formSeedContacts(
-  formId: string | null,
+  target: string | string[] | null,
   scope: 'qualified' | 'all',
 ): Promise<Array<{ email: string | null; phone: string | null }>> {
-  const rows = await crmRowsForForm(formId)
+  const rows = await crmRowsForForm(target)
   return rows
     .filter(isContactable)
     .filter((r) => scope === 'all' || (typeof r.value_rating === 'number' && (r.value_rating as number) >= 6))

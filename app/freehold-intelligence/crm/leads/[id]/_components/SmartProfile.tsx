@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, ExternalLink, AlertCircle } from 'lucide-react'
+import { Sparkles, AlertCircle } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { ProfileFact } from '@/lib/freehold/lead-profile'
 
@@ -23,8 +23,13 @@ const KEY_LABEL: Record<string, string> = {
   education: 'crm.profile.k.education',
   business_interests: 'crm.profile.k.interests',
   family: 'crm.profile.k.family',
+  marital_status: 'crm.profile.k.maritalStatus',
   age_range: 'crm.profile.k.ageRange',
 }
+
+/** A value that IS a link (a social/LinkedIn profile) stays clickable — that
+ *  is the fact itself, not a citation. */
+const URL_VALUE = /^https?:\/\//i
 
 const CONF_DOT: Record<string, string> = {
   high: 'bg-emerald-400',
@@ -87,19 +92,19 @@ export function SmartProfile({ leadId, initialFacts }: { leadId: string; initial
                 <span className={`h-1.5 w-1.5 rounded-full ${CONF_DOT[f.confidence] ?? CONF_DOT.low}`} title={t(`crm.profile.conf.${f.confidence}`)} />
                 {f.factKey === 'other' && f.factLabel ? f.factLabel : t(KEY_LABEL[f.factKey] ?? 'crm.profile.k.other')}
               </div>
-              <div className="mt-1 break-words text-sm text-white">{f.factValue}</div>
-              {f.evidence && <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{f.evidence}</p>}
-              {f.sourceUrl && (
+              {URL_VALUE.test(f.factValue) ? (
                 <a
-                  href={f.sourceUrl}
+                  href={f.factValue}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] text-gold/70 transition hover:text-gold"
+                  className="mt-1 block truncate text-sm text-gold/90 transition hover:text-gold"
                 >
-                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">{f.sourceUrl.replace(/^https?:\/\//, '').slice(0, 60)}</span>
+                  {f.factValue.replace(/^https?:\/\/(www\.)?/, '')}
                 </a>
+              ) : (
+                <div className="mt-1 break-words text-sm text-white">{f.factValue}</div>
               )}
+              {f.evidence && <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{f.evidence}</p>}
             </div>
           ))}
         </div>

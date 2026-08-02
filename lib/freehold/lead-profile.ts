@@ -35,6 +35,7 @@ export const PROFILE_FACT_KEYS = [
   'education',
   'business_interests',
   'family',
+  'marital_status',
   'age_range',
   'other',
 ] as const
@@ -166,15 +167,20 @@ export async function enrichLeadProfile(leadId: string, byEmail: string): Promis
 
 ${identity}
 
+Search BOTH sides of their life:
+1. Professional — employer, role, industry, education, business interests.
+2. Personal & social — their public profiles (LinkedIn, Instagram, Facebook, X: put the profile URL as the value of a "linkedin"/"social_profile" fact), marital status (married/unmarried), family, where they live. A salesperson preparing the first call needs the person, not just the job title — search their name with the city, with the employer, with "wedding", "wife", "husband", "family" where appropriate.
+
 Return a JSON array (and nothing else). Each element:
 {"key": one of ${JSON.stringify(PROFILE_FACT_KEYS)}, "label": short label ONLY when key is "other", "value": the fact, "evidence": one sentence saying what the source shows, "source_url": the URL it came from, "confidence": "high"|"medium"|"low"}
 
-ABSOLUTE RULES:
+ABSOLUTE RULES — a single false fact on this profile destroys trust in the whole system:
 - A fact with no real source from your search results must NOT be included. No source, no fact.
-- NEVER infer nationality, religion, family, or age from a name or a photo. Those keys require an explicit written source.
+- NEVER infer nationality, religion, marital status, family, or age from a name or a photo. Those keys require an explicit written source that states it.
 - If you cannot confidently match this exact person (common name, no distinguishing link to the email/phone/domain), return [] — an empty profile is correct, a wrong person's profile is a disaster.
+- If two candidate people both partially match, include ONLY facts that hold for the one anchored to the given email/phone/employer domain — or return [].
 - Do not include facts already given above (name, email, phone).
-- Maximum 10 facts. Values under 200 characters.`
+- Maximum 12 facts. Values under 200 characters.`
 
   let resp
   try {
@@ -214,7 +220,7 @@ ABSOLUTE RULES:
     .filter((f) => f.value.length > 0 && !JUNK_VALUE.test(f.value))
     // No source, no fact — the rule the prompt states, enforced in code.
     .filter((f) => f.sourceUrl.length > 0)
-    .slice(0, 10)
+    .slice(0, 12)
 
   await ensureProfileTable()
   for (const f of clean) {
