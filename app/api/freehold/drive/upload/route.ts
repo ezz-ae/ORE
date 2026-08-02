@@ -36,8 +36,9 @@ export async function POST(req: NextRequest) {
 
   const base64 = String(body.data ?? '')
   if (!base64) return NextResponse.json({ error: 'No file data' }, { status: 400 })
-  // ~7MB base64 ceiling.
-  if (base64.length > 7_000_000) return NextResponse.json({ error: 'File too large (5MB max).' }, { status: 413 })
+  // ~16.5MB base64 (~12MB file) — brochures are large; still within Gemini's
+  // inline-extraction request ceiling.
+  if (base64.length > 16_500_000) return NextResponse.json({ error: 'File too large (12MB max).' }, { status: 413 })
 
   const isImage = mimeType.startsWith('image/')
   const isPdf = mimeType === 'application/pdf' || /\.pdf$/i.test(name)
