@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'kind and a base64 data URL are required' }, { status: 400 })
   }
   const mimeType = header.replace(/;base64$/i, '').split(';')[0].trim() || 'application/octet-stream'
-  // ~8 MB base64 cap — enough for a voice note or a screenshot frame.
-  if (base64.length > 8_000_000) return NextResponse.json({ error: 'File too large (8MB max).' }, { status: 413 })
+  // ~16.5 MB base64 (~12 MB file) — real estate brochures are large; this
+  // stays within Gemini's inline-extraction request ceiling.
+  if (base64.length > 16_500_000) return NextResponse.json({ error: 'File too large (12MB max).' }, { status: 413 })
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return NextResponse.json({ unavailable: true })

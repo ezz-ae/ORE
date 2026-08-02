@@ -306,7 +306,7 @@ export default function NewCampaignPage() {
       setCampaignSources((prev) => [...prev, { label: name, text: `Attached file "${name}" (content not extracted — treat as a reference the operator can quote).` }])
       return
     }
-    if (file.size > 6_000_000) { setSrcError(t('lm.newCampaign.src.tooLarge')); return }
+    if (file.size > 12_000_000) { setSrcError(t('lm.newCampaign.src.tooLarge')); return }
     setSrcBusy(true)
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
