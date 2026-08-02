@@ -161,7 +161,7 @@ ${BRAND.company}`
 export async function sendLeadAssignedEmail(
   to: string,
   brokerName: string,
-  lead: { id: string; name?: string | null; phone?: string | null; interest?: string | null; source?: string | null },
+  lead: { id: string; name?: string | null; phone?: string | null; interest?: string | null; source?: string | null; knownFacts?: string[] },
 ) {
   if (!resendApiKey || !to) return { sent: false, reason: "missing-config" as const }
   const leadUrl = `${baseUrl}/freehold-intelligence/crm/leads/${lead.id}`
@@ -170,6 +170,9 @@ export async function sendLeadAssignedEmail(
     lead.phone ? `Phone: ${lead.phone}` : "",
     lead.interest ? `Interest: ${lead.interest}` : "",
     lead.source ? `Source: ${lead.source}` : "",
+    // Researched, source-backed facts from the smart profile — talking points
+    // the broker gets BEFORE the first call, not after.
+    ...(lead.knownFacts ?? []).map((f) => `Known: ${f}`),
   ].filter(Boolean)
   const text = `${brokerName ? `Hi ${brokerName},` : "Hi,"}
 
@@ -221,6 +224,30 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
     ).catch(() => [])
     const lead = leadRows[0]
     if (!lead) return { sent: false as const }
+    // Smart profile at the assignment moment. If the research agent has
+    // verified facts, the broker's alert carries the professional ones as
+    // talking points; if the profile is still empty, kick a fire-and-forget
+    // enrichment now — by the time the broker opens the lead, the profile is
+    // there. Only professional/geographic facts travel in a message; the
+    // sensitive keys stay on the lead page with their sources.
+    const FACT_IN_ALERT: Record<string, string> = {
+      workplace: "Works at", job_title: "Role", company_industry: "Industry", location_city: "City",
+    }
+    let knownFacts: string[] = []
+    try {
+      const { listProfileFacts, enrichLeadProfile } = await import("@/lib/freehold/lead-profile")
+      const facts = await listProfileFacts(leadId)
+      knownFacts = facts
+        .filter((f) => FACT_IN_ALERT[f.factKey])
+        .slice(0, 4)
+        .map((f) => `${FACT_IN_ALERT[f.factKey]}: ${f.factValue}`)
+      if (facts.length === 0) {
+        void enrichLeadProfile(leadId, "system:assignment").catch((e) =>
+          console.error("[notify] auto-enrich on assignment failed", e))
+      }
+    } catch (e) {
+      console.error("[notify] profile lookup failed", e)
+    }
     // The movement feed: the brand inbox learns about every assignment the
     // moment the broker does. Fire-and-forget — the broker's email is the one
     // that must not fail silently here.
@@ -236,6 +263,7 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
         lead.phone ? `Phone: ${lead.phone}` : "",
         (lead.interest ?? lead.project_slug) ? `Interest: ${lead.interest ?? lead.project_slug}` : "",
         lead.source ? `Source: ${lead.source}` : "",
+        ...knownFacts.map((f) => `Known: ${f}`),
         `${baseUrl}/freehold-intelligence/crm/leads/${leadId}`,
         "Respond fast — speed-to-lead wins deals.",
       ].filter(Boolean)
@@ -249,6 +277,7 @@ export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: strin
       phone: lead.phone,
       interest: lead.interest ?? lead.project_slug,
       source: lead.source,
+      knownFacts,
     })
   } catch (err) {
     console.error("[notify] broker assignment failed", err)
