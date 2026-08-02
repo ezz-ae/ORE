@@ -493,6 +493,9 @@ export interface GenerateCreativePayload {
   cta: MetaCta
   /** Extra source material (links, brochure text, notes) to ground the copy. */
   sources?: string[]
+  /** Language the ad copy must be WRITTEN in — 'ar' produces Arabic captions,
+   *  'ru' Russian. Defaults to English when omitted. */
+  language?: 'en' | 'ar' | 'ru'
 }
 
 export interface GeneratedCreativeVariant {
