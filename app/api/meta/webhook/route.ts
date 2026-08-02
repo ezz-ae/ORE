@@ -7,8 +7,18 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const VERIFY_TOKEN = process.env.META_LEADGEN_WEBHOOK_VERIFY_TOKEN ?? 'freehold_verify_token'
-// Accept both spellings — Meta's dashboard calls it the (Facebook) App Secret.
-const APP_SECRET = (process.env.META_APP_SECRET ?? process.env.FACEBOOK_APP_SECRET ?? '').trim()
+// Accept both spellings AND both casings — Meta's dashboard calls it the
+// (Facebook) App Secret, and it's easy to add it to the host lowercase; env
+// names are case-sensitive, so a lowercase var would otherwise be invisible
+// here and silently disable webhook signature verification (→ every real-time
+// lead push rejected with 401 → leads only arrive via the slow cron).
+const APP_SECRET = (
+  process.env.META_APP_SECRET ??
+  process.env.FACEBOOK_APP_SECRET ??
+  process.env.meta_app_secret ??
+  process.env.facebook_app_secret ??
+  ''
+).trim()
 
 // Same signature scheme as the WhatsApp webhook (app/api/whatsapp/webhook) —
 // Meta signs every webhook product with the app secret the same way.
