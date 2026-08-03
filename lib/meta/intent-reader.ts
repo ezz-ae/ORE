@@ -1,4 +1,5 @@
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
+import { geminiApiKey } from "@/lib/gemini-rest"
 
 // Layer 2, the intent reader. Turns a broker's FREEFORM ask ("more leads for
 // TowerD, my old ad's dead") into the structured signals the guardrail router
@@ -91,7 +92,7 @@ function extractJson(raw: string): string {
  * (clarifies instead of guessing). Falls back to a deterministic parse.
  */
 export async function readCampaignIntent(text: string, ctx: ReaderContext): Promise<ReadIntent> {
-  const key = process.env.GEMINI_API_KEY
+  const key = geminiApiKey()
   const clean = (text || '').trim()
   if (!key || !clean) return fallbackRead(clean)
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { requireSession } from '@/lib/freehold/api-auth'
 import type { GenerateRsaPayload, GeneratedRsaVariant } from '@/lib/google/types'
 import { geminiGenerate } from '@/lib/gemini-rest'
@@ -190,7 +191,7 @@ function buildRsaVariants(p: GenerateRsaPayload): GeneratedRsaVariant[] {
 // Live Gemini RSA generation. Returns null on no-key / error / bad output so the
 // caller falls back to the deterministic template (button always works).
 async function geminiRsa(p: GenerateRsaPayload): Promise<GeneratedRsaVariant[] | null> {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return null
   const price = fmtPrice(p.startingPrice)
   const prompt = `You are a senior Google Ads copywriter for Dubai freehold real estate.

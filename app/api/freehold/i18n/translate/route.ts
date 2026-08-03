@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { LOCALES, LOCALE_LABELS, normalizeLocale, type Locale } from "@/lib/i18n/config"
-import { geminiGenerate, geminiText } from "@/lib/gemini-rest"
+import { geminiGenerate, geminiText, geminiApiKey } from "@/lib/gemini-rest"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 })
   if (text.length > 5000) return NextResponse.json({ error: "text too long" }, { status: 413 })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) {
     return NextResponse.json({ text, to, source: "fallback", translated: false })
   }

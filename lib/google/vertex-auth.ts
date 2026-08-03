@@ -133,6 +133,43 @@ export async function vertexGenerateText(opts: VertexGenerateOptions): Promise<s
 }
 
 /**
+ * Raw Vertex `generateContent` — accepts arbitrary `contents` (so multimodal
+ * parts like inlineData PDFs/images survive), optional tools, and returns the
+ * SAME shape as the AI-Studio REST response so `geminiGenerate` can fall back
+ * to Vertex transparently. Tries the configured model then normalizes to a
+ * Vertex-available 2.5 model on 404.
+ */
+export async function vertexGenerateContent(
+  contents: unknown,
+  generationConfig?: unknown,
+  tools?: unknown,
+  model?: string,
+): Promise<{ candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; groundingMetadata?: unknown }> }> {
+  const headers = await getVertexAuthHeaders()
+  const project = resolveVertexProject()
+  const m = normalizeVertexModel(model || process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+  const url =
+    `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${project}` +
+    `/locations/${VERTEX_LOCATION}/publishers/google/models/${m}:generateContent`
+
+  const genConfig: Record<string, unknown> = { ...((generationConfig as Record<string, unknown>) ?? {}) }
+  if (m.includes('2.5') && m.includes('flash') && !('thinkingConfig' in genConfig)) {
+    genConfig.thinkingConfig = { thinkingBudget: 0 }
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents, generationConfig: genConfig, ...(tools ? { tools } : {}) }),
+  })
+  if (!res.ok) {
+    const err = await res.text().catch(() => `HTTP ${res.status}`)
+    throw new Error(`Vertex generateContent error (${res.status}): ${err}`)
+  }
+  return (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+}
+
+/**
  * Map any Gemini model id to a model available in this Vertex project.
  * Only the 2.5 family is enabled here (2.0 / 1.5 ids return 404), so every
  * request resolves to a 2.5 model — keeping older Studio ids from 404-ing.

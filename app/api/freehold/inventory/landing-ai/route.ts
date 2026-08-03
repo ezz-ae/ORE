@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { requireSession } from '@/lib/freehold/api-auth'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const prompt = String(body.prompt ?? '').trim()
   if (!prompt) return NextResponse.json({ error: 'A prompt is required' }, { status: 400 })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ unavailable: true })
 
   const instruction = `You are a senior Dubai real-estate landing-page copywriter.

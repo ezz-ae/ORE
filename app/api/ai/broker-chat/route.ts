@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { aiConfigured } from "@/lib/gemini-rest"
 import { BRAND, brandName } from "@/lib/freehold/brand"
 
 export const runtime = "nodejs"
@@ -357,7 +358,7 @@ export async function POST(req: NextRequest) {
     const accessRole = resolveAccessRole(sessionUser.role)
     const brokerId = accessRole === "broker" ? sessionUser.id : undefined
     const hasGeminiKey =
-      Boolean(process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY || process.env.google_api_key)
+      aiConfigured()
 
     let action = heuristicAction(message)
     if (hasGeminiKey) {

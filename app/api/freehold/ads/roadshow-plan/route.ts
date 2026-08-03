@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
-import { geminiGenerate, geminiText } from "@/lib/gemini-rest"
+import { geminiGenerate, geminiText, geminiApiKey } from "@/lib/gemini-rest"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ error: "Planning needs GEMINI_API_KEY." }, { status: 400 })
 
   let body: Record<string, unknown>

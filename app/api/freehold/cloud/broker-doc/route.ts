@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { put } from '@vercel/blob'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   const rl = await checkRateLimit(`broker-doc:${auth.user.email}`, { limit: 10, windowSec: 60 })
   if (!rl.ok) return NextResponse.json({ error: 'Slow down a moment.' }, { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ error: 'Document generation needs the AI key — set it under Integrations → AI.' }, { status: 503 })
 
   const body = await req.json().catch(() => ({})) as { kind?: string; folder?: string; projectName?: string; notes?: string }

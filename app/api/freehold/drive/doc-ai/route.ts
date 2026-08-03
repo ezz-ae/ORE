@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { requireSession } from '@/lib/freehold/api-auth'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 import { userSafeAiError } from '@/lib/freehold/ai-errors'
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   const content = String(body.content ?? '').trim()
   if (!content) return NextResponse.json({ error: 'content is required' }, { status: 400 })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ unavailable: true, content: '' })
 
   const mode = body.mode as Mode | undefined

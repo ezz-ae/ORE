@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { aiConfigured } from "@/lib/gemini-rest"
 import { PDFParse } from "pdf-parse"
 import { DEFAULT_GEMINI_MODELS, getGeminiModelByName } from "@/lib/gemini"
 
@@ -22,7 +23,7 @@ const extractJson = (value: string) => {
 
 export async function POST(req: NextRequest) {
   try {
-    const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY || process.env.google_api_key)
+    const hasGeminiKey = aiConfigured()
     if (!hasGeminiKey) {
       return NextResponse.json({ error: "Gemini API key is not configured." }, { status: 400 })
     }
