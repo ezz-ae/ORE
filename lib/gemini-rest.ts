@@ -40,9 +40,17 @@ export function aiConfigured(): boolean {
   return geminiApiKey() !== ""
 }
 
+// The 1.0/1.5 families are fully retired and now 404 on every project, so a
+// deployment whose GEMINI_MODEL still points at one (e.g. gemini-1.5-flash-latest)
+// otherwise burns a failed round-trip on EVERY call before falling through.
+// Drop them from the candidate list entirely.
+const RETIRED_MODEL = /gemini-1\.[05]/i
+
 export function geminiModelCandidates(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim()
-  return Array.from(new Set([configured, ...FALLBACK_MODELS].filter(Boolean) as string[]))
+  const ordered = [configured, ...FALLBACK_MODELS].filter(Boolean) as string[]
+  const live = ordered.filter((m) => !RETIRED_MODEL.test(m))
+  return Array.from(new Set(live.length ? live : FALLBACK_MODELS))
 }
 
 export type GeminiResponse = {
