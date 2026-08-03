@@ -967,7 +967,17 @@ export async function runCoordinatorTool(
   ctx: ToolCtx,
 ): Promise<unknown> {
   const tool = tools.find((t) => t.name === call.name)
-  if (!tool) return { error: `Unknown tool "${call.name}" — use only the tools listed for you.` }
+  if (!tool) {
+    // Observed drift: the model calls an agent GROUP name ("creative_agent")
+    // as if it were a tool, gets a bare "unknown tool", then flails until the
+    // turn budget dies. Answer with that agent's real tool list so it
+    // self-corrects on the next round instead.
+    const agentTools = tools.filter((t) => t.agent === call.name).map((t) => t.name)
+    if (agentTools.length) {
+      return { error: `"${call.name}" is an agent group, not a tool. Call one of its tools directly: ${agentTools.join(', ')}.` }
+    }
+    return { error: `Unknown tool "${call.name}" — use only the tools listed for you.` }
+  }
 
   const confirmed = call.args.confirm === true
   if (tool.destructive && !confirmed) {
