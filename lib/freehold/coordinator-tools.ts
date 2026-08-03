@@ -19,7 +19,7 @@ import {
   RULE_METRICS, RULE_OPERATORS, RULE_ACTIONS,
   type RuleMetric, type RuleOperator, type RuleAction,
 } from '@/lib/freehold/campaign-rules'
-import { getLandingPagesForDashboard, getLandingPageForEditor } from '@/lib/landing-pages'
+import { getLandingPagesForDashboard, getLandingPageForEditor, createLandingPage } from '@/lib/landing-pages'
 import { getInventoryPropertyBySlug, getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
@@ -698,6 +698,43 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       const page = await getLandingPageForEditor(s(args.slug))
       if (!page) return { error: `No landing page with slug "${s(args.slug)}"` }
       return page
+    },
+  },
+  {
+    name: 'landing_create', agent: 'landing_agent',
+    description: 'Create a NEW landing page for an existing catalog project and return its REAL slug + editor URL. The page is created as a DRAFT: surface editUrl (works now) and tell the user to review & PUBLISH — the public /lp/<slug> link only goes live AFTER publishing. This is the ONLY way to create a landing page; never claim one was created without calling this, and never hand out the public link as live until it is published.',
+    params: '{ "project": string, "campaignName"?: string, "template"?: string }',
+    roles: ['owner', 'admin', 'marketing', 'sales_manager'],
+    schema: z.object({
+      project: z.string().describe('project slug or exact name from the catalog'),
+      campaignName: z.string().optional().describe('short campaign label, e.g. "golden-visa" or "q3-launch"'),
+      template: z.string().optional().describe('template key (classic/luxury/investor/…); defaults to classic'),
+    }),
+    run: async (args, ctx) => {
+      const ref = s(args.project)
+      if (!ref) return { error: 'project is required (slug or exact project name)' }
+      // Resolve the project the same way listing_get does: slug first, then name.
+      let prop = await getInventoryPropertyBySlug(ref)
+      if (!prop) {
+        const all = await getInventoryPropertiesFromDB()
+        prop = all.find((p) => p.name.toLowerCase() === ref.toLowerCase()) ?? null
+      }
+      if (!prop) return { error: `No catalog project matching "${ref}". Create the project in Inventory first, then a landing page for it.` }
+      const result = await createLandingPage({
+        projectSlug: prop.slug,
+        campaignName: s(args.campaignName) || undefined,
+        template: s(args.template) || undefined,
+        createdBy: ctx.brokerId ?? undefined,
+      })
+      if ('error' in result) return result
+      return {
+        created: true,
+        slug: result.slug,
+        status: result.status,
+        editUrl: result.editUrl,
+        publicUrl: result.url,
+        note: `Draft landing page created for ${result.projectName}. Open editUrl to review and PUBLISH it — the public link (${result.url}) goes live ONLY after publishing. Do not tell the user the public link works until it is published.`,
+      }
     },
   },
 
