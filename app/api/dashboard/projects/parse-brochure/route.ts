@@ -4,12 +4,14 @@ import { PDFParse } from "pdf-parse"
 import { requireSession } from "@/lib/freehold/api-auth"
 
 export const runtime = "nodejs"
+// Files-API upload + PROCESSING poll + vision call need headroom.
+export const maxDuration = 60
 
 // Hard ceiling for brochures arriving via the Blob-URL path. Small files
 // (≤4.3MB) still POST multipart directly; anything larger is uploaded by the
 // browser straight to Vercel Blob (the platform rejects request bodies over
 // ~4.5MB before this handler runs) and referenced here as JSON {url}.
-const MAX_BROCHURE_BYTES = 12 * 1024 * 1024
+const MAX_BROCHURE_BYTES = 30 * 1024 * 1024
 
 const extractJson = (value: string) => {
   const start = value.indexOf("{")
@@ -21,6 +23,42 @@ const extractJson = (value: string) => {
   } catch {
     return null
   }
+}
+
+/**
+ * Upload a large PDF to the Gemini Files API and wait for it to become
+ * ACTIVE, returning its file URI (or null on any failure). Only used for
+ * image-only brochures too big for inline base64. Not available on the
+ * Vertex sentinel path — callers fall back to an honest error there.
+ */
+async function uploadPdfToGeminiFiles(buffer: Buffer, key: string): Promise<string | null> {
+  if (!key || key === "__vertex_sa__") return null
+  try {
+    const up = await fetch("https://generativelanguage.googleapis.com/upload/v1beta/files", {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": key,
+        "X-Goog-Upload-Protocol": "raw",
+        "Content-Type": "application/pdf",
+      },
+      body: new Uint8Array(buffer),
+    })
+    if (!up.ok) return null
+    const meta = (await up.json()) as { file?: { uri?: string; name?: string; state?: string } }
+    let uri = meta.file?.uri || null
+    const name = meta.file?.name
+    let state = meta.file?.state || "ACTIVE"
+    // PDFs briefly sit in PROCESSING; poll until ACTIVE (bounded).
+    for (let i = 0; i < 10 && name && state === "PROCESSING"; i++) {
+      await new Promise((r) => setTimeout(r, 1500))
+      const st = await fetch(`https://generativelanguage.googleapis.com/v1beta/${name}`, { headers: { "x-goog-api-key": key } })
+      if (!st.ok) break
+      const j = (await st.json()) as { uri?: string; state?: string }
+      state = j.state || state
+      uri = j.uri || uri
+    }
+    return state === "ACTIVE" || state === "SUCCEEDED" ? uri : null
+  } catch { return null }
 }
 
 export async function POST(req: NextRequest) {
@@ -67,7 +105,7 @@ export async function POST(req: NextRequest) {
       }
       buffer = Buffer.from(await fetched.arrayBuffer())
       if (buffer.byteLength > MAX_BROCHURE_BYTES) {
-        return NextResponse.json({ error: "This PDF is over the 12 MB limit — compress it and try again." }, { status: 413 })
+        return NextResponse.json({ error: "This PDF is over the 30 MB limit — compress it and try again." }, { status: 413 })
       }
     } else {
       const formData = await req.formData()
@@ -123,8 +161,21 @@ ${imageOnly ? "The brochure follows as an attached PDF — read it visually (it 
     // ladder, the 5 key-alias spellings, and the Vertex fallback — the same
     // client every other AI feature uses (the old SDK wrapper here had its own
     // narrower key handling and no vision support).
+    // Inline base64 rides inside the generateContent request, which Gemini
+    // caps around 20 MB total — safe up to ~14 MB of raw PDF. Bigger
+    // image-only brochures go through the Files API instead (upload once,
+    // reference by URI), which is how 14–30 MB brochures stay readable.
+    const INLINE_PDF_LIMIT = 14 * 1024 * 1024
     const parts: unknown[] = []
-    if (imageOnly) parts.push({ inlineData: { mimeType: "application/pdf", data: buffer.toString("base64") } })
+    if (imageOnly && buffer.byteLength > INLINE_PDF_LIMIT) {
+      const fileUri = await uploadPdfToGeminiFiles(buffer, geminiApiKey())
+      if (!fileUri) {
+        return NextResponse.json({ error: "This brochure has no readable text layer and is too large for direct AI reading — compress it under 14 MB and retry." }, { status: 502 })
+      }
+      parts.push({ fileData: { mimeType: "application/pdf", fileUri } })
+    } else if (imageOnly) {
+      parts.push({ inlineData: { mimeType: "application/pdf", data: buffer.toString("base64") } })
+    }
     parts.push({ text: prompt })
     let responseText = ""
     try {
