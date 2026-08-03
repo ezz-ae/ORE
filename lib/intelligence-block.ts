@@ -1,7 +1,6 @@
-import postgres from "postgres"
+import { query, runWithDefaultSchema } from "@/lib/db"
 
-const DB_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL
-const sql = DB_URL ? postgres(DB_URL) : null
+const DB_CONFIGURED = Boolean(process.env.NEON_DATABASE_URL || process.env.DATABASE_URL)
 
 type TrendingRow = { name: string; slug: string; area: string; developer_name: string; price_from_aed: number; rental_yield: string | null; market_score: string | null; golden_visa_eligible: boolean; hero_image: string | null; pf_url: string | null; sort_score: string | null; safe_yield: string | null; flip: string | null; hotness: string | null }
 type BelowMarketRow = { name: string; slug: string; area: string; price_from_aed: number; rental_yield: string | null; hero_image: string | null; vs_cohort: number | null; psf: number | null }
@@ -15,9 +14,13 @@ const EMPTY_RESULT = {
 }
 
 export async function getIntelligenceBlockData() {
-  if (!sql) return EMPTY_RESULT
-  const [trending, bestAreas, pulse, belowMarket] = await Promise.all([
-    sql`
+  if (!DB_CONFIGURED) return EMPTY_RESULT
+  // Public market widget: always reads the shared catalogue, even when the
+  // request comes in on a tenant host. Pinning the schema here also means no
+  // request-header lookup, so static prerenders of the homepage stay static.
+  return runWithDefaultSchema(async () => {
+    const [trending, bestAreas, pulse, belowMarket] = await Promise.all([
+      query<TrendingRow>(`
       SELECT name, slug, area, developer_name,
              price_from_aed,
              COALESCE(
@@ -37,16 +40,16 @@ export async function getIntelligenceBlockData() {
         AND price_from_aed > 0
       ORDER BY COALESCE(market_score, NULLIF(payload->>'sortScore', '')::float) DESC NULLS LAST
       LIMIT 6
-    `,
-    sql`
+    `),
+      query(`
       SELECT name, slug, area_type, avg_yield, avg_score,
-             project_count, payload->>'heroVideo' AS video
+             project_count, image, payload->>'heroVideo' AS video
       FROM freehold_site_area_profiles
       WHERE avg_yield > 4 AND project_count >= 5
       ORDER BY avg_yield DESC
       LIMIT 4
-    `,
-    sql`
+    `),
+      query(`
       SELECT
         COUNT(*)                                               AS total_projects,
         COUNT(DISTINCT area)                                   AS area_count,
@@ -63,8 +66,8 @@ export async function getIntelligenceBlockData() {
             'propertyfinder-cdn','offplan-dubai-cdn','developer-cdn'
           ) THEN 1 END)                                        AS verified_listings
       FROM freehold_site_projects
-    `,
-    sql`
+    `),
+      query<BelowMarketRow>(`
       SELECT name, slug, area, price_from_aed,
              COALESCE(
                rental_yield,
@@ -80,14 +83,15 @@ export async function getIntelligenceBlockData() {
         AND hero_image IS NOT NULL
       ORDER BY (payload->'priceIntelligence'->>'vsCohortPct')::float ASC
       LIMIT 4
-    `,
-  ])
+    `),
+    ])
 
-  return {
-    trending: trending.map((r) => ({ ...r as TrendingRow, price_from_aed: Number(r.price_from_aed) })),
-    best_areas: bestAreas,
-    pulse: pulse[0],
-    below_market: belowMarket.map((r) => ({ ...r as BelowMarketRow, price_from_aed: Number(r.price_from_aed) })),
-    generated_at: new Date().toISOString(),
-  }
+    return {
+      trending: trending.map((r) => ({ ...r, price_from_aed: Number(r.price_from_aed) })),
+      best_areas: bestAreas,
+      pulse: pulse[0],
+      below_market: belowMarket.map((r) => ({ ...r, price_from_aed: Number(r.price_from_aed) })),
+      generated_at: new Date().toISOString(),
+    }
+  })
 }
