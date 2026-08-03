@@ -3,14 +3,13 @@ import { cookies } from "next/headers"
 import { randomUUID } from "node:crypto"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { MANAGEMENT_ROLES, type Role } from "@/lib/freehold/session-types"
-import { query } from "@/lib/db"
+import { ensureOnce as dbEnsureOnce, query } from "@/lib/db"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const KINDS = ["area", "developer", "topic", "page", "listing"]
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_web_content (
@@ -26,7 +25,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_web_content', ensure)
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 

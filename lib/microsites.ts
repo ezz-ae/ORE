@@ -1,4 +1,4 @@
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -86,8 +86,6 @@ const slugify = (s: string) =>
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-let ensurePromise: Promise<void> | null = null
-
 const ensureSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_project_microsites (
@@ -110,12 +108,7 @@ const ensureSchema = async () => {
   }
 }
 
-const ensureSchemaOnce = async () => {
-  if (!ensurePromise) {
-    ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
-  }
-  await ensurePromise
-}
+const ensureSchemaOnce = () => ensureOnce("freehold_site_project_microsites", ensureSchema)
 
 // ─── Project lookup (shared shape with landing pages) ───────────────────────────
 

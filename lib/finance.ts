@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 import { getFinanceTotals } from "@/lib/deals"
 import {
   FINANCE_CATEGORIES,
@@ -41,8 +41,6 @@ const normCategory = (v: unknown): FinanceCategory => {
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-let ensurePromise: Promise<void> | null = null
-
 const ensureSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_finance_entries (
@@ -69,12 +67,7 @@ const ensureSchema = async () => {
   }
 }
 
-const ensureSchemaOnce = async () => {
-  if (!ensurePromise) {
-    ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
-  }
-  await ensurePromise
-}
+const ensureSchemaOnce = () => ensureOnce("freehold_site_finance_entries", ensureSchema)
 
 // ─── Mapping ────────────────────────────────────────────────────────────────────
 

@@ -187,9 +187,39 @@ function runDbFunnel(): void {
   if (hits === 0) ok('db-funnel: all data access goes through lib/db')
 }
 
+// ── 4. Schema-keyed DDL memos ─────────────────────────────────────────────────
+//
+// Lazy CREATE TABLE IF NOT EXISTS is memoised per (schema, key) via
+// ensureOnce() in lib/db.ts. A module-level memo variable is process-global:
+// under schema-per-tenant, the first tenant a warm process touches would mark
+// the DDL "done" for every other tenant, and the second tenant crashes on a
+// missing table. This guard keeps the old pattern from coming back.
+
+const ENSURE_MEMO = /let\s+(ensured\w*|ensure\w*Promise\w*)\s*(:|=)/
+
+function runEnsureMemos(): void {
+  let hits = 0
+  for (const dir of ['app', 'lib', 'components', 'src']) {
+    const abs = path.join(ROOT, dir)
+    if (!fs.existsSync(abs)) continue
+    for (const file of walk(abs)) {
+      if (!/\.tsx?$/.test(file)) continue
+      const rel = path.relative(ROOT, file)
+      if (rel.split(path.sep).join('/') === 'lib/db.ts') continue // hosts ensureOnce itself
+      const src = fs.readFileSync(file, 'utf-8')
+      if (ENSURE_MEMO.test(src)) {
+        hits++
+        fail(`ensure-memo: ${rel} keeps a module-level ensure memo — use ensureOnce from @/lib/db so DDL runs once per tenant schema, not once per process`)
+      }
+    }
+  }
+  if (hits === 0) ok('ensure-memo: no process-global DDL memos outside lib/db')
+}
+
 runCopyRules()
 runAuthMatrix()
 runDbFunnel()
+runEnsureMemos()
 
 if (failures > 0) {
   console.error(`\n${failures} guard failure(s).`)

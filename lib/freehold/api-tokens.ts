@@ -12,7 +12,7 @@
 // at mint time and never again.
 
 import { createHash, randomBytes } from 'node:crypto'
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 import type { Role } from '@/lib/freehold/session-types'
 
 export interface ApiToken {
@@ -34,27 +34,26 @@ export interface ApiTokenPrincipal {
 const TOKEN_BYTES = 32
 const hashToken = (raw: string) => createHash('sha256').update(raw).digest('hex')
 
-let ensured = false
 async function ensure() {
-  if (ensured) return
-  await query(`
-    CREATE TABLE IF NOT EXISTS freehold_api_tokens (
-      id          text PRIMARY KEY,
-      user_email  text NOT NULL,
-      user_name   text NOT NULL,
-      role        text NOT NULL,
-      broker_id   text,
-      name        text NOT NULL,
-      prefix      text NOT NULL,
-      token_hash  text NOT NULL UNIQUE,
-      created_at  timestamptz NOT NULL DEFAULT now(),
-      last_used_at timestamptz,
-      revoked_at  timestamptz
-    )
-  `)
-  await query(`CREATE INDEX IF NOT EXISTS freehold_api_tokens_hash_idx ON freehold_api_tokens (token_hash) WHERE revoked_at IS NULL`)
-  await query(`CREATE INDEX IF NOT EXISTS freehold_api_tokens_email_idx ON freehold_api_tokens (user_email)`)
-  ensured = true
+  await ensureOnce('freehold_api_tokens', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_api_tokens (
+        id          text PRIMARY KEY,
+        user_email  text NOT NULL,
+        user_name   text NOT NULL,
+        role        text NOT NULL,
+        broker_id   text,
+        name        text NOT NULL,
+        prefix      text NOT NULL,
+        token_hash  text NOT NULL UNIQUE,
+        created_at  timestamptz NOT NULL DEFAULT now(),
+        last_used_at timestamptz,
+        revoked_at  timestamptz
+      )
+    `)
+    await query(`CREATE INDEX IF NOT EXISTS freehold_api_tokens_hash_idx ON freehold_api_tokens (token_hash) WHERE revoked_at IS NULL`)
+    await query(`CREATE INDEX IF NOT EXISTS freehold_api_tokens_email_idx ON freehold_api_tokens (user_email)`)
+  })
 }
 
 /**

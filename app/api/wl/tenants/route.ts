@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SAAS_TENANCY } from '@/lib/tenancy/config'
 import { wlAdminSecret } from '@/lib/whitelabel/config'
 import { createTenant, listTenants } from '@/lib/tenancy/store'
+import { provisionTenantSchema } from '@/lib/tenancy/provision'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -49,5 +50,12 @@ export async function POST(req: NextRequest) {
 
   if (!result) return NextResponse.json({ error: 'Could not reach the tenant store.' }, { status: 502 })
   if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 400 })
-  return NextResponse.json({ tenant: result.tenant })
+
+  // Seed the tenant's private catalogue copy. Non-fatal: lazy DDL covers the
+  // rest, and provisioning is idempotent, so a retry can finish the job.
+  const provisioned = await provisionTenantSchema(result.tenant.schemaName)
+    .then(() => true)
+    .catch(() => false)
+
+  return NextResponse.json({ tenant: result.tenant, provisioned })
 }

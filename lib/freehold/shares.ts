@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { query } from '@/lib/db'
+import { ensureOnce as dbEnsureOnce, query } from '@/lib/db'
 
 // ─── Share center ─────────────────────────────────────────────────────────────
 // Turn any Drive/Cloud file into a public link anyone can open — no login. A
@@ -16,7 +16,6 @@ export interface ShareRow {
   createdAt: string
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_shares (
@@ -33,7 +32,7 @@ const ensure = async () => {
   `)
   await query(`CREATE INDEX IF NOT EXISTS freehold_shares_user_idx ON freehold_shares (user_email, created_at DESC)`)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_shares', ensure)
 
 const newToken = () => randomBytes(12).toString('hex') // 24 hex chars, unguessable
 

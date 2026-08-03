@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 
 // Public agent "bio-link" profiles — a shareable page (/a/<handle>) an agent
 // can put in their Instagram/WhatsApp bio: selected projects, contact buttons,
@@ -27,7 +27,6 @@ export interface AgentProfileInput {
   projectSlugs?: string[]
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_agent_profiles (
@@ -44,7 +43,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_agent_profiles', ensure)
 
 const slugify = (s: string): string =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)

@@ -1,24 +1,23 @@
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 
 // Real notifications — one table, self-migrating like the repo's other stores.
 // `recipient` null = visible to all management users; otherwise the user id or
 // email (leads key brokers by either). Text is NOT stored — a `type` + meta
 // render through i18n on the client so feeds are trilingual.
 
-let ensured = false
 async function ensure() {
-  if (ensured) return
-  await query(`
-    CREATE TABLE IF NOT EXISTS freehold_site_notifications (
-      id BIGSERIAL PRIMARY KEY,
-      type TEXT NOT NULL,
-      recipient TEXT,
-      meta JSONB NOT NULL DEFAULT '{}'::jsonb,
-      href TEXT,
-      read_by TEXT[] NOT NULL DEFAULT '{}',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-    )`)
-  ensured = true
+  await ensureOnce('freehold_site_notifications', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_site_notifications (
+        id BIGSERIAL PRIMARY KEY,
+        type TEXT NOT NULL,
+        recipient TEXT,
+        meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+        href TEXT,
+        read_by TEXT[] NOT NULL DEFAULT '{}',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`)
+  })
 }
 
 export type NotificationType = 'lead_new' | 'lead_assigned' | 'deal_approved' | 'management_alert'

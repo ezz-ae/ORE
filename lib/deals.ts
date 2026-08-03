@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -246,8 +246,6 @@ export function computeCommission(input: {
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-let ensureDealsSchemaPromise: Promise<void> | null = null
-
 const ensureDealsSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_deals (
@@ -323,15 +321,7 @@ const ensureDealsSchema = async () => {
   }
 }
 
-const ensureDealsSchemaOnce = async () => {
-  if (!ensureDealsSchemaPromise) {
-    ensureDealsSchemaPromise = ensureDealsSchema().catch((error) => {
-      ensureDealsSchemaPromise = null
-      throw error
-    })
-  }
-  await ensureDealsSchemaPromise
-}
+const ensureDealsSchemaOnce = () => ensureOnce("freehold_site_deals", ensureDealsSchema)
 
 // ─── Row mapping ───────────────────────────────────────────────────────────────
 

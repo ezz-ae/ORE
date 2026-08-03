@@ -8,7 +8,7 @@
  * sends it to the site home rather than inventing a destination).
  */
 import { randomBytes } from 'node:crypto'
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -20,10 +20,9 @@ export interface ShortLink {
   createdAt: string
 }
 
-let ensured: Promise<void> | null = null
 function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = query(`
+  return ensureOnce('freehold_short_links', async () => {
+    await query(`
       CREATE TABLE IF NOT EXISTS freehold_short_links (
         code       text PRIMARY KEY,
         target_url text NOT NULL,
@@ -31,9 +30,8 @@ function ensure(): Promise<void> {
         clicks     integer NOT NULL DEFAULT 0,
         created_at timestamptz NOT NULL DEFAULT now()
       )
-    `).then(() => undefined)
-  }
-  return ensured
+    `)
+  })
 }
 
 function genCode(len = 6): string {

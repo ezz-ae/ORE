@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 
 /**
  * Per-broker Lead-Machine permission maps. The permissions page used to fake its
@@ -6,17 +6,16 @@ import { query } from '@/lib/db'
  * Bronze default. This is the real store behind it.
  */
 
-let ensured = false
 async function ensureTable(): Promise<void> {
-  if (ensured) return
-  await query(`
-    CREATE TABLE IF NOT EXISTS freehold_broker_permissions (
-      broker_id text PRIMARY KEY,
-      perms jsonb NOT NULL DEFAULT '{}'::jsonb,
-      updated_at timestamptz DEFAULT now()
-    )
-  `)
-  ensured = true
+  await ensureOnce('freehold_broker_permissions', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_broker_permissions (
+        broker_id text PRIMARY KEY,
+        perms jsonb NOT NULL DEFAULT '{}'::jsonb,
+        updated_at timestamptz DEFAULT now()
+      )
+    `)
+  })
 }
 
 /** All stored broker permission maps, keyed by broker id. */

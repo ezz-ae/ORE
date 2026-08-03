@@ -2,7 +2,7 @@ import { getGlobalPixels, mergePixels } from '@/lib/freehold/tracking-pixels'
 import { BRAND } from '@/lib/freehold/brand'
 
 import { randomUUID } from "node:crypto"
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 import { normalizePaymentPlan } from "@/lib/payment-plan"
 // Local bindings (the block below only RE-exports these, which doesn't bind them
 // for use inside this module) — needed by createLandingPage().
@@ -11,7 +11,6 @@ import { landingTemplate as landingTemplateMeta, isLandingTemplateKey as isLandi
 type JsonValue = Record<string, unknown> | Array<unknown> | string | number | boolean | null
 
 type LandingPageRow = Record<string, unknown>
-let ensureLandingSchemaPromise: Promise<void> | null = null
 
 type ProjectRow = {
   id: string
@@ -650,15 +649,7 @@ const ensureLandingPagesSchema = async () => {
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS template text`)
 }
 
-const ensureLandingPagesSchemaOnce = async () => {
-  if (!ensureLandingSchemaPromise) {
-    ensureLandingSchemaPromise = ensureLandingPagesSchema().catch((error) => {
-      ensureLandingSchemaPromise = null
-      throw error
-    })
-  }
-  await ensureLandingSchemaPromise
-}
+const ensureLandingPagesSchemaOnce = () => ensureOnce("freehold_site_project_landing_pages", ensureLandingPagesSchema)
 
 const normalizeSections = (
   sectionsRaw: unknown,

@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 
 // Lightweight fixed-window rate limiter backed by Postgres, so the limit is
 // shared across all serverless instances (an in-memory counter would reset per
@@ -15,7 +15,6 @@ export interface RateLimitResult {
   retryAfterSec: number
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_rate_limits (
@@ -25,7 +24,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_rate_limits', ensure)
 
 /**
  * Count one hit against `key` and report whether it's within `limit` per

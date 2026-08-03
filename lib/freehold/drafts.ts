@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { ensureOnce as dbEnsureOnce, query } from '@/lib/db'
 
 // ─── Draft-everything ─────────────────────────────────────────────────────────
 // Any in-progress work — a document being typed, a landing being edited, an
@@ -24,7 +24,6 @@ export interface DraftFull extends DraftRow {
 
 const MAX_PAYLOAD = 300_000 // ~300KB of JSON — plenty for text/form state, not media blobs.
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_drafts (
@@ -40,7 +39,7 @@ const ensure = async () => {
   `)
   await query(`CREATE INDEX IF NOT EXISTS freehold_drafts_user_idx ON freehold_drafts (user_email, updated_at DESC)`)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_drafts', ensure)
 
 // Deterministic id so autosaving the same editor instance upserts one row.
 const draftId = (email: string, kind: string, refKey: string) =>

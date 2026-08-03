@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 
 // The Library — one place for everything the workspace produces or collects:
@@ -26,7 +26,6 @@ export interface LibraryItem {
 
 const isMgmt = (role?: Role | string | null) => MANAGEMENT_ROLES.includes(role as Role)
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_library (
@@ -41,7 +40,7 @@ const ensure = async () => {
   `)
   await query(`ALTER TABLE freehold_site_library ADD COLUMN IF NOT EXISTS folder text`)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_library', ensure)
 
 const mapRow = (r: Record<string, unknown>): LibraryItem => ({
   id: String(r.id),

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { ensureOnce as dbEnsureOnce, query } from '@/lib/db'
 import type { ExpertBlock } from '@/lib/freehold/expert-blocks'
 
 // Durable Expert conversations — the session memory behind the docked chat
@@ -27,7 +27,6 @@ export interface ExpertSession extends ExpertSessionSummary {
   messages: ExpertTurnMessage[]
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_expert_sessions (
@@ -40,7 +39,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_expert_sessions', ensure)
 
 // A line that is nothing but snake_case identifiers is a leaked tool name
 // ("ads_campaign_insights"), never a human answer. Conversations saved before

@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { randomUUID } from 'node:crypto'
 import type { SpendRule } from '@/lib/meta/spend-authority'
 
@@ -8,7 +8,6 @@ import type { SpendRule } from '@/lib/meta/spend-authority'
 // with no rule, the spend governor blocks all autonomous spend (see
 // spend-authority.ts). A failed read must never crash the ads surface.
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_spend_rules (
@@ -25,7 +24,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_spend_rules', ensure)
 
 type Row = {
   id: string; enabled: boolean; scope: string
