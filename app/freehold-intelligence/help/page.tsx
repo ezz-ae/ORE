@@ -102,6 +102,10 @@ const SECTIONS: QASection[] = [
       { q: 'help.ads.q16', a: 'help.ads.a16', links: [{ label: 'help.ads.l16', href: `${FI}/integrations` }] },
       { q: 'help.ads.q17', a: 'help.ads.a17', links: [{ label: 'help.ads.l17', href: `${FI}/lead-machine/campaigns` }] },
       { q: 'help.ads.q18', a: 'help.ads.a18', links: [{ label: 'help.ads.l18', href: `${FI}/crm/inbox` }] },
+      { q: 'help.ads.q19', a: 'help.ads.a19', roles: MGMT_MKT },
+      { q: 'help.ads.q20', a: 'help.ads.a20', roles: MGMT_MKT },
+      { q: 'help.ads.q21', a: 'help.ads.a21', links: [{ label: 'help.ads.l21', href: `${FI}/ads-live` }] },
+      { q: 'help.ads.q22', a: 'help.ads.a22', roles: MGMT_MKT },
     ],
   },
   {
@@ -112,6 +116,8 @@ const SECTIONS: QASection[] = [
       { q: 'help.inventory.q1', a: 'help.inventory.a1', links: [{ label: 'help.inventory.l1', href: `${FI}/inventory/projects` }] },
       { q: 'help.inventory.q2', a: 'help.inventory.a2', flow: 'advertise-project' },
       { q: 'help.inventory.q3', a: 'help.inventory.a3', links: [{ label: 'help.inventory.l3', href: `${FI}/inventory/data-quality` }] },
+      { q: 'help.inventory.q4', a: 'help.inventory.a4', links: [{ label: 'help.inventory.l4', href: `${FI}/inventory/new` }] },
+      { q: 'help.inventory.q5', a: 'help.inventory.a5' },
     ],
   },
   {
@@ -124,6 +130,7 @@ const SECTIONS: QASection[] = [
       { q: 'help.finance.q3', a: 'help.finance.a3', links: [{ label: 'help.finance.l3', href: `${FI}/management/deals` }], roles: MGMT },
       { q: 'help.finance.q4', a: 'help.finance.a4', links: [{ label: 'help.finance.l4', href: `${FI}/finance/credits` }], roles: MGMT },
       { q: 'help.finance.q5', a: 'help.finance.a5', links: [{ label: 'help.finance.l5', href: `${FI}/finance/payments` }], roles: MGMT },
+      { q: 'help.finance.q6', a: 'help.finance.a6', links: [{ label: 'help.finance.l6', href: `${FI}/finance` }], roles: MGMT },
     ],
   },
   {
