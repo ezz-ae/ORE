@@ -158,7 +158,7 @@ function SectionPanel({
   )
 }
 
-export function GenerateClient({ prop }: { prop: InventoryProperty }) {
+export function GenerateClient({ prop, fromLandings = false }: { prop: InventoryProperty; fromLandings?: boolean }) {
   const t = useT()
   const [config, setConfig] = useState<LandingConfig>(() => buildConfig(prop))
   const [open, setOpen] = useState<Section>('hero' as Section)
@@ -279,11 +279,14 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
     <div className="mx-auto max-w-[1200px] px-5 pb-20 pt-7 sm:px-8">
 
       <div className="mb-7">
+        {/* Path memory: return to where the operator actually came from — the
+            Ads → Landing Pages list, or the Inventory project — instead of
+            always dumping them into Inventory (the reported nav loop). */}
         <Link
-          href={`/freehold-intelligence/inventory/${prop.id}`}
+          href={fromLandings ? '/freehold-intelligence/lead-machine/landings' : `/freehold-intelligence/inventory/${prop.id}`}
           className="mb-4 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-400"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> {t('inv.gen.back', { name: prop.name })}
+          <ArrowLeft className="h-3.5 w-3.5" /> {fromLandings ? t('inv.gen.backToLandings') : t('inv.gen.back', { name: prop.name })}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

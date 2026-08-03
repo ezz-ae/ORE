@@ -349,6 +349,7 @@ const en: Dict = {
   // generate route property-not-found
   'inv.gen.notFound': 'Property not found.',
   'inv.gen.backToInventory': 'Back to Inventory',
+  'inv.gen.backToLandings': 'Back to Landing Pages',
 
   // Opportunity Engine (Layer 3)
   'inv.col.opportunity': 'Opportunity',
@@ -714,6 +715,7 @@ const ar: Dict = {
   'inv.gen.preview.email': 'البريد الإلكتروني',
   'inv.gen.notFound': 'العقار غير موجود.',
   'inv.gen.backToInventory': 'العودة إلى المخزون',
+  'inv.gen.backToLandings': 'العودة إلى صفحات الهبوط',
 
   // Opportunity Engine (Layer 3)
   'inv.col.opportunity': 'الفرصة',
@@ -1079,6 +1081,7 @@ const ru: Dict = {
   'inv.gen.preview.email': 'Эл. почта',
   'inv.gen.notFound': 'Объект не найден.',
   'inv.gen.backToInventory': 'Назад в Каталог',
+  'inv.gen.backToLandings': 'Назад к лендингам',
 
   // Opportunity Engine (Layer 3)
   'inv.col.opportunity': 'Возможность',
