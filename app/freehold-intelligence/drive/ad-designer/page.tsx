@@ -7,6 +7,7 @@ import QRCode from 'qrcode'
 import {
   Loader2, Upload, Sparkles, Check, Download, QrCode, MessageSquareText,
   Monitor, ArrowRight, ArrowLeft, RefreshCw, Save, ExternalLink, Megaphone, FolderOpen, FileText,
+  ImagePlus, LayoutGrid, ChevronDown, Building2,
 } from 'lucide-react'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
@@ -233,7 +234,11 @@ export default function AdDesignerPage() {
 
   // "From brochure": the third source from the spec — a developer PDF goes
   // through the real brochure parser and its facts fill the overlay fields.
+  // The parsed name/area are kept beyond the overlay: they ground the AI
+  // imagery prompts below, so a brochure with no photo still gets real frames
+  // of ITS project, not a generic tower.
   const [brochureBusy, setBrochureBusy] = useState(false)
+  const brochureFacts = useRef<{ name?: string; area?: string }>({})
   const brochureRef = useRef<HTMLInputElement>(null)
   async function onBrochure(file: File | null) {
     if (!file || brochureBusy) return
@@ -245,6 +250,7 @@ export default function AdDesignerPage() {
       const d = await res.json().catch(() => ({}))
       const b = d?.data as { name?: string; area?: string; developer?: string; priceFrom?: number | null; paymentPlan?: string } | undefined
       if (!res.ok || !b) { toast.error(d?.error || t('adz.source.brochureFail')); return }
+      brochureFacts.current = { name: b.name || undefined, area: b.area || undefined }
       // Fill only fields the user hasn't typed — same contract as the listing
       // prefill: an upload must never overwrite written copy.
       setOverlay((prev) => ({
@@ -259,6 +265,57 @@ export default function AdDesignerPage() {
     } catch { toast.error(t('adz.source.brochureFail')) } finally { setBrochureBusy(false) }
   }
 
+  // ── AI imagery: generated frames as a fourth source ──
+  // Two grounded generations per tap — a golden-hour exterior and a designer
+  // interior of the ACTUAL project (listing pick, parsed brochure, or the
+  // typed headline as a last resort). Each success lands as a pickable frame;
+  // a failure degrades honestly (the server's message is shown, whatever
+  // succeeded stays usable). The route saves every generation to the Library
+  // itself, so frames also appear in Drive.
+  const [frames, setFrames] = useState<{ id: string; url: string }[]>([])
+  const [framesBusy, setFramesBusy] = useState(false)
+  const [framesNote, setFramesNote] = useState('')
+  const frameSeq = useRef(0)
+
+  async function generateFrames() {
+    if (framesBusy) return
+    const name = listing?.name || brochureFacts.current.name || overlay.headline.trim()
+    const area = listing?.area || brochureFacts.current.area || ''
+    if (!name) { toast.info(t('adz.frames.needFacts')); return }
+    setFramesBusy(true)
+    setFramesNote('')
+    const site = `${name}${area ? `, ${area}` : ''}, Dubai`
+    const prompts = [
+      `Photorealistic golden-hour exterior of ${site} — a luxury residence. Ultra-high-end real-estate marketing photo, cinematic light, no text, no watermarks, no people.`,
+      `Bright designer living interior of a residence at ${site} — floor-to-ceiling windows, city view. Ultra-high-end real-estate marketing photo, no text, no watermarks, no people.`,
+    ]
+    let made = 0
+    let lastErr = ''
+    for (const p of prompts) {
+      try {
+        const res = await fetch('/api/freehold/creative-studio/generate-image', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: p, aspectRatio: '9:16', title: `${name} — ad frame`.slice(0, 80) }),
+        })
+        const d = await res.json().catch(() => null)
+        if (!res.ok || !d?.url) throw new Error(d?.error || t('adz.frames.err'))
+        setFrames((prev) => [...prev, { id: `frame-${++frameSeq.current}`, url: d.url }])
+        made++
+      } catch (err) {
+        lastErr = err instanceof Error ? err.message.slice(0, 160) : t('adz.frames.err')
+      }
+    }
+    if (made === 0) { setFramesNote(lastErr); toast.error(lastErr) }
+    else if (lastErr) { setFramesNote(lastErr); toast.success(t('adz.frames.partial')) }
+    else toast.success(t('adz.frames.done'))
+    setFramesBusy(false)
+  }
+
+  // Unlike a Drive pick, choosing a frame KEEPS the listing selection — the
+  // frame replaces only the photo; the listing's facts still ground the
+  // caption and the campaign link.
+  const pickFrame = (url: string) => setUploadUrl(url)
+
   // A photo is optional now: without one the engine draws a styled placeholder
   // ground, and Enhance (img2img) can paint a real scene over it.
   const hasImage = !!listingId || !!uploadUrl
@@ -267,6 +324,31 @@ export default function AdDesignerPage() {
   // The fit measurement is only meaningful once the ad face has resolved.
   const [fontsReady, setFontsReady] = useState(false)
   useEffect(() => { ensureAdFonts().then(() => setFontsReady(true)) }, [])
+
+  // ── Live stage preview ──
+  // The center canvas is never empty: the CURRENT design (first enabled
+  // layout + palette, current format, current copy and photo) is composed
+  // live by the same engine that exports — at half scale, debounced, so
+  // typing stays smooth. With no photo yet the engine's styled ghost ground
+  // makes the layout readable instead of showing a blank form.
+  const [livePreview, setLivePreview] = useState<string | null>(null)
+  useEffect(() => {
+    if (step !== 'source') return
+    let cancelled = false
+    const timer = window.setTimeout(async () => {
+      try {
+        let img: HTMLImageElement | null = null
+        const src = uploadUrl ?? listing?.heroImage ?? null
+        if (src) { try { img = await loadImage(src, !src.startsWith('data:')) } catch { img = null } }
+        if (cancelled) return
+        const layout = LAYOUTS.find((l) => layoutsOn.has(l)) ?? 'heroPrice'
+        const pi = PALETTES.findIndex((_, i) => palettesOn.has(i))
+        setLivePreview(composeVariant(img, layout, PALETTES[pi === -1 ? 0 : pi], overlay, format, 0.5))
+      } catch { /* the preview is a nicety — composing the real set still reports errors */ }
+    }, 250)
+    return () => { cancelled = true; window.clearTimeout(timer) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, uploadUrl, listingId, overlay, format, layoutsOn, palettesOn, fontsReady, frames])
 
   // Truthful truncation warning: the SAME measurement the renderer uses, run
   // against every selected layout, so the editor can say which design will cut
@@ -387,36 +469,73 @@ export default function AdDesignerPage() {
     return ok > 0
   }
 
+  // Design once → the full placement set: the chosen layout + palette
+  // composed in ALL formats the engine knows, from the same source. The picked
+  // variant keeps its exact pixels (including any AI Enhance); the other
+  // formats are engine-composed fresh from the source photo.
+  async function composeSet(first: Variant): Promise<{ fmt: FormatKey; dataUrl: string }[]> {
+    await ensureAdFonts()
+    let img: HTMLImageElement | null = null
+    const src = uploadUrl ?? listing?.heroImage ?? null
+    if (src) { try { img = await loadImage(src, !src.startsWith('data:')) } catch { img = null } }
+    const order: FormatKey[] = [first.fmt, ...(Object.keys(FORMATS) as FormatKey[]).filter((f) => f !== first.fmt)]
+    const set: { fmt: FormatKey; dataUrl: string }[] = []
+    for (const f of order) {
+      set.push({
+        fmt: f,
+        dataUrl: f === first.fmt ? first.dataUrl : composeVariant(img, first.layout, PALETTES[first.palette], overlay, f),
+      })
+      await new Promise((r) => setTimeout(r, 0))
+    }
+    return set
+  }
+
   async function continueToQr() {
     const first = variants.find((v) => selected.has(v.id))
     if (!first) { toast.info(t('adz.pickFirst')); return }
     if (composingSet) return
-    // Design once → the full placement set: the chosen layout + palette
-    // composed in ALL THREE formats from the same source. The picked variant
-    // keeps its exact pixels (including any AI Enhance); the other two formats
-    // are engine-composed fresh from the source photo.
     setComposingSet(true)
     try {
-      await ensureAdFonts()
-      let img: HTMLImageElement | null = null
-      const src = uploadUrl ?? listing?.heroImage ?? null
-      if (src) { try { img = await loadImage(src, !src.startsWith('data:')) } catch { img = null } }
-      const order: FormatKey[] = [first.fmt, ...(Object.keys(FORMATS) as FormatKey[]).filter((f) => f !== first.fmt)]
-      const set: { fmt: FormatKey; dataUrl: string }[] = []
-      for (const f of order) {
-        set.push({
-          fmt: f,
-          dataUrl: f === first.fmt ? first.dataUrl : composeVariant(img, first.layout, PALETTES[first.palette], overlay, f),
-        })
-        await new Promise((r) => setTimeout(r, 0))
-      }
-      setFinalSet(set)
+      setFinalSet(await composeSet(first))
       setQrApplied(false)
       setStep('qr')
     } catch {
       toast.error(t('adz.err.compose'))
     } finally {
       setComposingSet(false)
+    }
+  }
+
+  // "Generate full set" — the one-tap outcome: the picked design composed in
+  // EVERY placement format, each saved to the Library, then straight to the
+  // preview grid where each PNG has its own download. QR and caption stay one
+  // Back away for anyone who needs them.
+  const [fullSetBusy, setFullSetBusy] = useState(false)
+  async function generateFullSet() {
+    const first = variants.find((v) => selected.has(v.id))
+    if (!first) { toast.info(t('adz.pickFirst')); return }
+    if (fullSetBusy || composingSet) return
+    setFullSetBusy(true)
+    try {
+      const set = await composeSet(first)
+      setFinalSet(set)
+      setQrApplied(false)
+      let ok = 0
+      for (const item of set) {
+        const res = await fetch('/api/freehold/drive/save-image', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: `${overlay.headline.slice(0, 60)} — final ad (${FMT_LABEL[item.fmt]})`, dataUrl: item.dataUrl }),
+        }).catch(() => null)
+        if (res?.ok) ok++
+      }
+      if (ok === set.length) toast.success(t('adz.fullset.saved'))
+      else if (ok > 0) toast.error(t('adz.err.savePartial'))
+      else toast.error(t('adz.err.save'))
+      setStep('preview')
+    } catch {
+      toast.error(t('adz.err.compose'))
+    } finally {
+      setFullSetBusy(false)
     }
   }
 
@@ -519,6 +638,168 @@ export default function AdDesignerPage() {
 
   const stepIndex = STEPS.findIndex((s) => s.key === step)
 
+  // ── Left rail: SOURCES as visual cards + the filmstrip ────────────────────
+  const [projOpen, setProjOpen] = useState(false)
+  const activeSrc = uploadUrl ?? listing?.heroImage ?? null
+  const filmstrip = Array.from(new Set(
+    [listing?.heroImage, uploadUrl, ...frames.map((f) => f.url)].filter(Boolean) as string[],
+  ))
+
+  const sourcesRail = (
+    <div className="space-y-3">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.sources.title')}</div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <SourceCard Icon={Building2} label={t('adz.source.project')} active={!!listingId}
+          onClick={() => setProjOpen((o) => !o)} />
+        <SourceCard Icon={FileText} label={t('adz.source.brochure')} busy={brochureBusy}
+          active={!!brochureFacts.current.name} onClick={() => brochureRef.current?.click()} />
+        <SourceCard Icon={Upload} label={t('adz.source.upload')}
+          active={!!uploadUrl && !frames.some((f) => f.url === uploadUrl)}
+          onClick={() => fileRef.current?.click()} />
+        <SourceCard Icon={FolderOpen} label={t('adz.source.drive')} onClick={openDrivePicker} />
+        <div className="col-span-2">
+          <SourceCard Icon={ImagePlus} label={t('adz.frames.cta')} busy={framesBusy}
+            active={frames.length > 0} onClick={generateFrames} wide />
+        </div>
+      </div>
+      {projOpen && (
+        <select value={listingId} onChange={(e) => { setListingId(e.target.value); if (e.target.value) setUploadUrl(null) }} className={fieldClass('sm')}>
+          <option value="">—</option>
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      )}
+      <p className="text-[10px] leading-relaxed text-slate-500">{t('adz.frames.note')}</p>
+      {framesNote && <p className="text-[10px] leading-relaxed text-amber-300">{framesNote}</p>}
+      {filmstrip.length > 0 && (
+        <div className="border-t border-line pt-3">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.filmstrip.title')}</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {filmstrip.map((url) => (
+              <button key={url} type="button"
+                onClick={() => setUploadUrl(url === listing?.heroImage ? null : url)}
+                className={`relative aspect-square overflow-hidden rounded-lg border transition ${activeSrc === url ? 'border-gold ring-2 ring-gold/40' : 'border-line opacity-80 hover:opacity-100'}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <p className="text-[11px] leading-relaxed text-slate-500">{t('adz.source.hint')}</p>
+    </div>
+  )
+
+  // ── Right inspector: Copy · Design · Output ───────────────────────────────
+  const inspector = (
+    <div className="space-y-3">
+      <InspectorSection label={t('adz.insp.copy')}>
+        <div className="space-y-3">
+          <div>
+            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.describe.title')}</span>
+              <div className="flex gap-1">
+                {(['en', 'ar', 'ru'] as SuiteLang[]).map((l) => (
+                  <button key={l} type="button" onClick={() => setAdLang(l)}
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold transition ${adLang === l ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-500 hover:text-slate-300'}`}>
+                    {t(`suite.tpl.lang.${l}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea value={describe} onChange={(e) => setDescribe(e.target.value)}
+              placeholder={t('adz.describe.ph')} rows={3} maxLength={BRIEF_MAX}
+              className={fieldClass('sm', 'resize-y leading-relaxed')} dir="auto" />
+            <button type="button" onClick={writeCopy} disabled={!describe.trim() || describeBusy}
+              className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+              {describeBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {describeBusy ? t('adz.describe.working') : t('adz.describe.cta')}
+            </button>
+            <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">{t('adz.describe.note')}</p>
+          </div>
+          <label className="block">
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium text-slate-300">{t('adz.field.eyebrow')}</span>
+              <span className="text-[11px] tabular-nums text-slate-500">{overlay.eyebrow.length}/40</span>
+            </span>
+            <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })}
+              placeholder={t('adz.field.eyebrowPh')} className={fieldClass('sm')} dir="auto" />
+          </label>
+          <label className="block">
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium text-slate-300">{t('adz.field.headline')}</span>
+              <span className="text-[11px] tabular-nums text-slate-500">{overlay.headline.length}/60</span>
+            </span>
+            <textarea value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })}
+              placeholder={t('adz.field.headlinePh')} rows={2}
+              className={fieldClass('sm', 'resize-y font-semibold leading-snug')} dir="auto" />
+            {headlineWarning && (
+              <span className="mt-1 block text-[10px] leading-snug text-amber-300">{headlineWarning}</span>
+            )}
+          </label>
+          <div className="flex gap-1.5">
+            <label className="block min-w-0 flex-1">
+              <span className="mb-1 block text-[11px] font-medium text-slate-300">{t('adz.field.price')}</span>
+              <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })}
+                placeholder={t('adz.field.pricePh')} className={fieldClass('sm')} dir="auto" />
+            </label>
+            <label className="block w-20 shrink-0">
+              <span className="mb-1 block truncate text-[11px] font-medium text-slate-300">{t('adz.field.unit')}</span>
+              <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })}
+                className={fieldClass('sm', 'text-center')} dir="auto" />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+              <span className="text-[11px] font-medium text-slate-300">{t('adz.field.footnote')}</span>
+              <span className="text-[11px] tabular-nums text-slate-500">{overlay.footnote.length}/48</span>
+            </span>
+            <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })}
+              placeholder={t('adz.field.footnotePh')} className={fieldClass('sm')} dir="auto" />
+          </label>
+        </div>
+      </InspectorSection>
+
+      <InspectorSection label={t('adz.insp.design')}>
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.layouts')}</div>
+        <div className="flex flex-wrap gap-1.5">
+          {LAYOUTS.map((l) => {
+            const on = layoutsOn.has(l)
+            return (
+              <button key={l} type="button"
+                onClick={() => setLayoutsOn((prev) => { const n = new Set(prev); if (n.has(l)) { if (n.size > 1) n.delete(l) } else n.add(l); return n })}
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+                {t(`adz.layout.${l}`)}
+              </button>
+            )
+          })}
+        </div>
+        <div className="mb-2 mt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.palettes')}</div>
+        <div className="flex flex-wrap gap-2">
+          {PALETTES.map((p, pi) => {
+            const on = palettesOn.has(pi)
+            return (
+              <button key={pi} type="button" title={t(`adz.pal.${pi}`)} aria-label={t(`adz.pal.${pi}`)} aria-pressed={on}
+                onClick={() => setPalettesOn((prev) => { const n = new Set(prev); if (n.has(pi)) { if (n.size > 1) n.delete(pi) } else n.add(pi); return n })}
+                className={`h-7 w-7 rounded-full border transition ${on ? 'border-gold ring-2 ring-gold/40' : 'border-line-strong opacity-70 hover:opacity-100'}`}
+                style={{ background: `linear-gradient(135deg, ${p.bg} 55%, ${p.accent} 55%)` }} />
+            )
+          })}
+        </div>
+      </InspectorSection>
+
+      <InspectorSection label={t('adz.insp.output')}>
+        <button type="button" data-close-sheet onClick={generate} disabled={!canGenerate || generating}
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('adz.generate.cta')}
+        </button>
+        {!hasImage && canGenerate && (
+          <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{t('adz.noImageHint')}</p>
+        )}
+        <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{t('adz.source.desc')}</p>
+      </InspectorSection>
+    </div>
+  )
+
   // ── Tool rail (per step) ───────────────────────────────────────────────────
   const toolRail = (
     <div className="space-y-4">
@@ -537,25 +818,37 @@ export default function AdDesignerPage() {
         })}
       </div>
 
-      {/* The source step's form lives in the CENTER canvas where there is real
-          room to write — the rail only carries the stepper + a hint here. */}
       {step === 'source' && (
-        <p className="text-[11px] leading-relaxed text-slate-500">{t('adz.source.hint')}</p>
+        <>
+          {sourcesRail}
+          {/* Below xl the right inspector column is hidden — the same
+              inspector mounts here so tablet and the mobile sheet keep every
+              control. Inputs are controlled, so both copies stay in sync. */}
+          <div className="border-t border-line pt-3 xl:hidden">{inspector}</div>
+        </>
       )}
 
       {step === 'generate' && (
         <div className="space-y-2.5">
           <p className="text-[11px] leading-relaxed text-slate-500">{t('adz.select.hint')}</p>
           <div className="text-xs font-semibold text-slate-200">{t('adz.select.count', { n: selected.size })}</div>
+          {/* The one-tap outcome is the PRIMARY action: pick → every placement
+              composed, saved to Drive, downloadable from the tray. */}
+          <button type="button" data-close-sheet onClick={generateFullSet} disabled={selected.size === 0 || fullSetBusy || composingSet}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
+            {fullSetBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LayoutGrid className="h-4 w-4" />}
+            {fullSetBusy ? t('adz.fullset.working') : t('adz.fullset.cta')}
+          </button>
+          <p className="text-[10px] leading-snug text-slate-500">{t('adz.fullset.note')}</p>
+          <button type="button" data-close-sheet onClick={continueToQr} disabled={selected.size === 0 || composingSet || fullSetBusy}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+            {composingSet ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {composingSet ? t('adz.set.composing') : t('adz.actions.continue')}
+            {!composingSet && <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />}
+          </button>
           <button type="button" onClick={() => saveSelected()} disabled={saving || selected.size === 0}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('adz.actions.save')}
-          </button>
-          <button type="button" data-close-sheet onClick={continueToQr} disabled={selected.size === 0 || composingSet}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
-            {composingSet ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {composingSet ? t('adz.set.composing') : t('adz.actions.continue')}
-            {!composingSet && <ArrowRight className="h-4 w-4 rtl:rotate-180" />}
           </button>
           <p className="text-[10px] leading-snug text-slate-500">{t('adz.set.note')}</p>
           <button type="button" onClick={() => setStep('source')}
@@ -665,26 +958,43 @@ export default function AdDesignerPage() {
   const genStages = [t('adz.gen.s1'), t('adz.gen.s2'), t('adz.gen.s3'), t('adz.gen.s4')]
 
   return (
-    <DriveEditorFrame type="image" title={t('adz.title')} statusNote={t('adz.note')} toolRail={toolRail}>
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+    <DriveEditorFrame type="image" title={t('adz.title')} statusNote={t('adz.note')} toolRail={toolRail}
+      aiRail={step === 'source' ? inspector : undefined}>
+      {/* The hidden pickers mount ONCE at the frame level — the rail renders
+          twice (desktop aside + mobile sheet), and duplicated file inputs
+          would leave the refs pointing at an unmounted copy. */}
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
+      <input ref={brochureRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { onBrochure(e.target.files?.[0] ?? null); e.target.value = '' }} />
 
-        {step === 'source' && (
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-            {/* Left: the source image (or drop hint) + what this tool does */}
-            <div>
-              {(uploadUrl || listing?.heroImage) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={uploadUrl ?? listing?.heroImage ?? ''} alt="" className="max-h-[56vh] w-full rounded-2xl border border-line object-cover" />
-              ) : (
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  className="grid h-72 w-full place-items-center rounded-2xl border border-dashed border-line-strong text-sm text-slate-500 transition hover:border-gold/30 hover:text-slate-300">
-                  {t('adz.source.empty')}
-                </button>
-              )}
-              <p className="mt-4 text-sm leading-relaxed text-slate-400">{t('adz.source.desc')}</p>
-              {generating && (
-                <div className="mt-6">
-                  <div className="flex justify-between text-[11px] text-slate-500">
+      {step === 'source' && (
+        /* THE STAGE — the live design is the hero. Same engine, half-scale,
+           debounced; the format pills float above it and switch the frame. */
+        <div className="relative flex min-h-full flex-col items-center justify-center gap-4 px-4 py-8 sm:px-8">
+          <div aria-hidden className="pointer-events-none absolute inset-0"
+            style={{ background: 'radial-gradient(60% 50% at 50% 45%, rgba(212,175,55,0.06), transparent 70%)' }} />
+          <div className="relative z-10 inline-flex rounded-full border border-line bg-surface/80 p-1 shadow-lg shadow-black/30 backdrop-blur">
+            {(Object.keys(FORMATS) as FormatKey[]).map((f) => (
+              <button key={f} type="button" onClick={() => setFormat(f)}
+                className={`rounded-full px-3.5 py-1.5 text-[11px] font-semibold transition ${format === f ? 'bg-gold text-ink' : 'text-slate-400 hover:text-slate-200'}`}>
+                {t(`adz.format.${f}`)}
+              </button>
+            ))}
+          </div>
+          <div className="relative z-10">
+            {livePreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={livePreview} alt="" className="max-h-[62vh] w-auto max-w-full rounded-2xl border border-line shadow-2xl shadow-black/60" />
+            ) : (
+              /* Same footprint as the composed frame — no layout jump when it lands. */
+              <div className="grid animate-pulse place-items-center rounded-2xl border border-line bg-surface-2"
+                style={{ height: '62vh', aspectRatio: `${FORMATS[format].w} / ${FORMATS[format].h}` }}>
+                <Loader2 className="h-6 w-6 animate-spin text-slate-600" />
+              </div>
+            )}
+            {generating && (
+              <div className="absolute inset-0 z-20 grid place-items-center rounded-2xl bg-black/70 backdrop-blur-sm">
+                <div className="w-[min(80%,280px)]">
+                  <div className="flex justify-between text-[10px] text-slate-400">
                     {genStages.map((s, i) => (
                       <span key={s} className={i < genStage ? 'text-emerald-300' : i === genStage ? 'text-gold' : ''}>{s}</span>
                     ))}
@@ -693,169 +1003,15 @@ export default function AdDesignerPage() {
                     <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${(genStage / 4) * 100}%` }} />
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Right: the real form, with room to write */}
-            <div className="rounded-2xl border border-line bg-surface p-5">
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.listing')}</div>
-              <select value={listingId} onChange={(e) => { setListingId(e.target.value); if (e.target.value) setUploadUrl(null) }} className={fieldClass('lg')}>
-                <option value="">—</option>
-                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-              <div className="mt-2.5 grid grid-cols-3 gap-2">
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-2.5 text-[13px] font-semibold text-slate-200 transition hover:border-gold/30">
-                  <Upload className="h-4 w-4 shrink-0" /> {t('adz.source.upload')}
-                </button>
-                <button type="button" onClick={openDrivePicker}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-2.5 text-[13px] font-semibold text-slate-200 transition hover:border-gold/30">
-                  <FolderOpen className="h-4 w-4 shrink-0" /> {t('adz.source.drive')}
-                </button>
-                <button type="button" onClick={() => brochureRef.current?.click()} disabled={brochureBusy}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-2.5 text-[13px] font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-60">
-                  {brochureBusy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <FileText className="h-4 w-4 shrink-0" />} {t('adz.source.brochure')}
-                </button>
               </div>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
-              <input ref={brochureRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { onBrochure(e.target.files?.[0] ?? null); e.target.value = '' }} />
-
-              {/* Describe the ad in your own words — the AI writes the copy */}
-              <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.describe.title')}</span>
-                  <div className="flex gap-1">
-                    {(['en', 'ar', 'ru'] as SuiteLang[]).map((l) => (
-                      <button key={l} type="button" onClick={() => setAdLang(l)}
-                        className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold transition ${adLang === l ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-500 hover:text-slate-300'}`}>
-                        {t(`suite.tpl.lang.${l}`)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <textarea
-                  value={describe}
-                  onChange={(e) => setDescribe(e.target.value)}
-                  placeholder={t('adz.describe.ph')}
-                  rows={3}
-                  maxLength={BRIEF_MAX}
-                  className={fieldClass('lg', 'resize-y leading-relaxed')}
-                  dir="auto"
-                />
-                <button type="button" onClick={writeCopy} disabled={!describe.trim() || describeBusy}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
-                  {describeBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  {describeBusy ? t('adz.describe.working') : t('adz.describe.cta')}
-                </button>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500">{t('adz.describe.note')}</p>
-              </div>
-
-              {/* The words that go ON the image — labelled, sized for real copy */}
-              <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.source.overlay')}</div>
-                <div className="space-y-3.5">
-                  <label className="block">
-                    <span className="mb-1 flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-300">{t('adz.field.eyebrow')}</span>
-                      <span className="text-[11px] tabular-nums text-slate-500">{overlay.eyebrow.length}/40</span>
-                    </span>
-                    <input value={overlay.eyebrow} onChange={(e) => setOverlay({ ...overlay, eyebrow: e.target.value })}
-                      placeholder={t('adz.field.eyebrowPh')} className={fieldClass('lg')} dir="auto" />
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-1 flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-300">{t('adz.field.headline')}</span>
-                      <span className="text-[11px] tabular-nums text-slate-500">{overlay.headline.length}/60</span>
-                    </span>
-                    {/* The headline IS the ad — it gets room to be written and
-                        read, not a single-word-looking box. */}
-                    <textarea value={overlay.headline} onChange={(e) => setOverlay({ ...overlay, headline: e.target.value })}
-                      placeholder={t('adz.field.headlinePh')} rows={2}
-                      className={fieldClass('lg', 'resize-y text-[15px] font-semibold leading-snug')} dir="auto" />
-                    {headlineWarning && (
-                      <span className="mt-1 block text-[10px] leading-snug text-amber-300">{headlineWarning}</span>
-                    )}
-                  </label>
-
-                  {/* Wrappers own the widths — fieldClass bakes in w-full, which
-                      otherwise fights a width utility and collapses the row. */}
-                  <div className="flex gap-2">
-                    <label className="block min-w-0 flex-1">
-                      <span className="mb-1 block text-[11px] font-medium text-slate-300">{t('adz.field.price')}</span>
-                      <input value={overlay.price} onChange={(e) => setOverlay({ ...overlay, price: e.target.value })}
-                        placeholder={t('adz.field.pricePh')} className={fieldClass('lg')} dir="auto" />
-                    </label>
-                    <label className="block w-24 shrink-0">
-                      <span className="mb-1 block truncate text-[11px] font-medium text-slate-300">{t('adz.field.unit')}</span>
-                      <input value={overlay.priceUnit} onChange={(e) => setOverlay({ ...overlay, priceUnit: e.target.value })}
-                        className={fieldClass('lg', 'text-center')} dir="auto" />
-                    </label>
-                  </div>
-
-                  <label className="block">
-                    <span className="mb-1 flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-300">{t('adz.field.footnote')}</span>
-                      <span className="text-[11px] tabular-nums text-slate-500">{overlay.footnote.length}/48</span>
-                    </span>
-                    <input value={overlay.footnote} onChange={(e) => setOverlay({ ...overlay, footnote: e.target.value })}
-                      placeholder={t('adz.field.footnotePh')} className={fieldClass('lg')} dir="auto" />
-                  </label>
-                </div>
-              </div>
-
-              {/* Options: format + which layouts/colors to compose */}
-              <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.format')}</div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(Object.keys(FORMATS) as FormatKey[]).map((f) => (
-                    <button key={f} type="button" onClick={() => setFormat(f)}
-                      className={`rounded-lg border px-2 py-2 text-center text-[11px] font-semibold transition ${format === f ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
-                      {t(`adz.format.${f}`)}
-                      <span className="block text-[9px] font-normal text-slate-500">{FORMATS[f].w}×{FORMATS[f].h}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.layouts')}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {LAYOUTS.map((l) => {
-                    const on = layoutsOn.has(l)
-                    return (
-                      <button key={l} type="button"
-                        onClick={() => setLayoutsOn((prev) => { const n = new Set(prev); if (n.has(l)) { if (n.size > 1) n.delete(l) } else n.add(l); return n })}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
-                        {t(`adz.layout.${l}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.palettes')}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {PALETTES.map((p, pi) => {
-                    const on = palettesOn.has(pi)
-                    return (
-                      <button key={pi} type="button"
-                        onClick={() => setPalettesOn((prev) => { const n = new Set(prev); if (n.has(pi)) { if (n.size > 1) n.delete(pi) } else n.add(pi); return n })}
-                        className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
-                        <span className="h-3 w-3 rounded-full border border-black/20" style={{ background: p.bg }} />
-                        {t(`adz.pal.${pi}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <button type="button" onClick={generate} disabled={!canGenerate || generating}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gold px-4 py-3 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
-                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('adz.generate.cta')}
-              </button>
-              {!hasImage && canGenerate && (
-                <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-500">{t('adz.noImageHint')}</p>
-              )}
-            </div>
+            )}
           </div>
-        )}
+          <p className="relative z-10 text-[11px] text-slate-500">{t('adz.stage.note')} · {FORMATS[format].w}×{FORMATS[format].h}</p>
+        </div>
+      )}
 
+      {step !== 'source' && (
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {step === 'generate' && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {variants.map((v) => {
@@ -942,18 +1098,23 @@ export default function AdDesignerPage() {
               </div>
             </div>
 
-            {/* The full placement set — every format, download each one */}
+            {/* Deliverables tray — every placement as a framed card */}
             <div className="lg:col-span-2">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('adz.set.title')}</div>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex gap-4 overflow-x-auto pb-2">
                 {finalSet.map((item) => (
-                  <div key={item.fmt} className="w-40">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.dataUrl} alt="" className="w-full rounded-lg border border-line object-cover"
-                      style={{ aspectRatio: `${FORMATS[item.fmt].w} / ${FORMATS[item.fmt].h}` }} />
+                  <div key={item.fmt} className="group w-44 shrink-0 overflow-hidden rounded-xl border border-line bg-surface shadow-lg shadow-black/20 transition hover:border-gold/40">
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.dataUrl} alt="" className="w-full object-cover"
+                        style={{ aspectRatio: `${FORMATS[item.fmt].w} / ${FORMATS[item.fmt].h}` }} />
+                      <span className="absolute start-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+                        {t(`adz.format.${item.fmt}`)}
+                      </span>
+                    </div>
                     <button type="button" onClick={() => download(item.dataUrl, `ad-${item.fmt}.png`)}
-                      className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:border-gold/30">
-                      <Download className="h-3 w-3" /> {t(`adz.format.${item.fmt}`)}
+                      className="flex w-full items-center justify-center gap-1.5 border-t border-line px-2 py-2 text-[11px] font-semibold text-slate-200 transition hover:bg-gold/10 hover:text-gold">
+                      <Download className="h-3 w-3" /> {t('adz.preview.download')}
                     </button>
                   </div>
                 ))}
@@ -962,6 +1123,7 @@ export default function AdDesignerPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* From Drive — pick media made in the editors / Creative Studio */}
       <Modal open={driveOpen} onClose={() => setDriveOpen(false)} title={t('adz.source.drive')} maxWidth="max-w-2xl">
@@ -985,5 +1147,38 @@ export default function AdDesignerPage() {
         )}
       </Modal>
     </DriveEditorFrame>
+  )
+}
+
+// ── Studio primitives ────────────────────────────────────────────────────────
+
+/** Collapsible inspector section with an uppercase micro-label. */
+function InspectorSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <details open className="group border-t border-line pt-3 first:border-t-0 first:pt-0">
+      <summary className="flex cursor-pointer select-none list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-500 transition hover:text-slate-300 [&::-webkit-details-marker]:hidden">
+        {label}
+        <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
+      </summary>
+      <div className="mt-2.5">{children}</div>
+    </details>
+  )
+}
+
+/** A source as a visual card — icon over label, gold when active. */
+function SourceCard({ Icon, label, active, busy, wide, onClick }: {
+  Icon: React.ElementType
+  label: string
+  active?: boolean
+  busy?: boolean
+  wide?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button type="button" onClick={onClick} disabled={busy}
+      className={`flex w-full items-center justify-center gap-1.5 rounded-xl border p-2.5 text-center transition ${wide ? '' : 'flex-col'} ${active ? 'border-gold/50 bg-gold/10 text-gold' : 'border-line bg-surface-2/60 text-slate-300 hover:border-gold/30'} disabled:opacity-60`}>
+      {busy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Icon className="h-4 w-4 shrink-0" />}
+      <span className="text-[10px] font-semibold leading-tight">{label}</span>
+    </button>
   )
 }
