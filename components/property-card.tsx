@@ -48,7 +48,10 @@ export function PropertyCard({ property, compact = false, layout = "grid", displ
   const roiLabel = formatRoiLabel(property.roi ?? property.investmentMetrics.roi)
   const rentalYield =
     typeof property.rentalYield === "number" ? property.rentalYield : property.investmentMetrics.rentalYield
-  const projectUrl = `/properties/${property.slug}`
+  // Guard a missing slug: without it the link becomes "/properties/undefined",
+  // which 404s (part of the public-site "filter → 404" reports). Fall back to
+  // the listing index, matching ProjectCard's behaviour.
+  const projectUrl = property.slug ? `/properties/${property.slug}` : "/properties"
   const isList = layout === "list"
   const typeLabel =
     property.type === "off-plan" ? "Off-Plan" : property.type === "secondary" ? "Secondary" : "Commercial"
