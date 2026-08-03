@@ -152,6 +152,83 @@ export default function ReelMakerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId])
 
+  // ── VIDEO AD AUTOPILOT ──────────────────────────────────────────────────
+  // Arrive with ?project=<slug>&auto=1[&lang=ar] and the reel builds itself,
+  // Meta-Advantage+-style, with REAL staged progress (each tick is an actual
+  // completed call, never a fake timer): 1) the grounded ad-copy writer
+  // scripts the overlay text; 2) the image engine generates two frames to
+  // join the project's hero photo; 3) the assembled reel autoplays in the
+  // editor, fully editable and exportable like any hand-built reel.
+  type AutoStep = 'idle' | 'script' | 'frames' | 'assemble' | 'done' | 'error'
+  const [autoStep, setAutoStep] = useState<AutoStep>('idle')
+  const [autoErr, setAutoErr] = useState('')
+  const [autoNote, setAutoNote] = useState('')
+  const autoStartedRef = useRef(false)
+
+  useEffect(() => {
+    if (autoStartedRef.current) return
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get('auto') !== '1') return
+    const slug = (sp.get('project') || '').trim()
+    if (!slug) return
+    const proj = projects.find((p) => p.id === slug)
+    if (!proj) return // projects still loading — effect re-runs when they land
+    autoStartedRef.current = true
+    const lang: SuiteLang = (SUITE_LANGS as string[]).includes(sp.get('lang') || '')
+      ? (sp.get('lang') as SuiteLang) : adLang
+    setAdLang(lang)
+    setListingId(slug) // existing effect fills overlay defaults + hero shot
+    ;(async () => {
+      // 1 — script
+      setAutoStep('script')
+      try {
+        const written = await writeAdCopy({
+          brief: `${proj.name} in ${proj.area}, Dubai. Short punchy video-ad overlay for property buyers.`,
+          lang,
+          facts: { project: proj.name, area: proj.area, price: proj.priceAED ? fmtPrice(proj.priceAED) : undefined, priceUnit: 'AED', paymentPlan: proj.paymentPlan ?? undefined },
+        })
+        setOverlay((prev) => ({
+          ...prev,
+          eyebrow: written.eyebrow || prev.eyebrow,
+          headline: written.headline || prev.headline,
+          footnote: written.footnote || prev.footnote,
+        }))
+      } catch { /* overlay keeps the listing defaults — honest, not blocking */ }
+      // 2 — frames (join the hero; a failed generation degrades, never dies)
+      setAutoStep('frames')
+      const prompts = [
+        `Photorealistic golden-hour exterior of ${proj.name}, a luxury residence in ${proj.area}, Dubai. Ultra-high-end real-estate marketing photo, cinematic light, no text, no watermarks, no people.`,
+        `Bright designer living interior of a residence at ${proj.name}, ${proj.area}, Dubai — floor-to-ceiling windows, city view. Ultra-high-end real-estate marketing photo, no text, no watermarks, no people.`,
+      ]
+      let generated = 0
+      for (const p of prompts) {
+        try {
+          const res = await fetch('/api/freehold/creative-studio/generate-image', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: p, aspectRatio: '9:16', title: `${proj.name} — auto reel frame` }),
+          })
+          const data = await res.json().catch(() => null)
+          if (!res.ok || !data?.url) throw new Error(data?.error || 'generation failed')
+          const img = await loadImage(data.url, false)
+          setShots((prev) => [...prev, { id: nextShotId(), url: data.url, img }])
+          generated++
+        } catch (err) {
+          setAutoNote(err instanceof Error ? err.message.slice(0, 160) : 'frame generation failed')
+        }
+      }
+      if (generated === 0 && !proj.heroImage) {
+        setAutoErr(t('reel.auto.errNoFrames'))
+        setAutoStep('error')
+        return
+      }
+      // 3 — assemble: the preview IS the deliverable; autoplay it
+      setAutoStep('assemble')
+      setPlaying(true)
+      setAutoStep('done')
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects])
+
   // ── Preview: the SAME renderer the export records ──
   const paint = useCallback((tSec: number) => {
     const canvas = canvasRef.current
@@ -518,6 +595,40 @@ export default function ReelMakerPage() {
 
   return (
     <DriveEditorFrame type="video" title={t('reel.title')} statusNote={t('reel.note')} toolRail={toolRail}>
+      {/* Autopilot progress — every tick is a really-completed step. */}
+      {autoStep !== 'idle' && (
+        <div className="pointer-events-auto fixed inset-x-0 top-20 z-30 mx-auto w-[min(92%,420px)] rounded-2xl border border-gold/25 bg-surface/95 p-4 shadow-xl backdrop-blur">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold">
+              <Sparkles className="h-3.5 w-3.5" /> {t('reel.auto.title')}
+            </div>
+            {(autoStep === 'done' || autoStep === 'error') && (
+              <button onClick={() => setAutoStep('idle')} className="text-xs text-slate-500 hover:text-slate-300">{t('reel.auto.close')}</button>
+            )}
+          </div>
+          <ol className="mt-3 space-y-2">
+            {([['script', t('reel.auto.step.script')], ['frames', t('reel.auto.step.frames')], ['assemble', t('reel.auto.step.assemble')]] as const).map(([step, label]) => {
+              const order = { script: 0, frames: 1, assemble: 2 } as const
+              const cur = autoStep === 'done' ? 3 : autoStep === 'error' ? 3 : order[autoStep as 'script' | 'frames' | 'assemble'] ?? -1
+              const done = order[step] < cur
+              const active = order[step] === cur && autoStep !== 'done' && autoStep !== 'error'
+              return (
+                <li key={step} className="flex items-center gap-2.5 text-sm">
+                  {done
+                    ? <span className="grid h-5 w-5 place-items-center rounded-full bg-gold text-[10px] font-bold text-ink">✓</span>
+                    : active
+                      ? <Loader2 className="h-5 w-5 animate-spin text-gold" />
+                      : <span className="h-5 w-5 rounded-full border border-line" />}
+                  <span className={done || active ? 'text-slate-100' : 'text-slate-500'}>{label}</span>
+                </li>
+              )
+            })}
+          </ol>
+          {autoStep === 'done' && <p className="mt-3 text-xs text-gold">{t('reel.auto.done')}</p>}
+          {autoStep === 'error' && <p className="mt-3 text-xs text-red-300">{autoErr}</p>}
+          {autoNote && autoStep !== 'error' && <p className="mt-1.5 text-[11px] text-slate-500">{t('reel.auto.partial')}</p>}
+        </div>
+      )}
       <div className="flex h-full w-full items-center justify-center overflow-y-auto p-4 sm:p-6">
         {shots.length === 0 ? (
           <div className="max-w-sm text-center">

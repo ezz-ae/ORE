@@ -10,6 +10,7 @@ import {
   Megaphone,
   BadgeCheck,
   CircleDashed,
+  Clapperboard,
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getProjectDealActivity } from '@/lib/deals'
@@ -168,6 +169,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           ) : (
             <Link
               href={`/freehold-intelligence/inventory/${prop.id}/generate`}
+              data-anchor="generate-lp"
               className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright"
             >
               <Sparkles className="h-4 w-4" /> {t('inv.detail.generateLandingPage')}
@@ -179,6 +181,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-5 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/[0.14]"
             >
               <Megaphone className="h-4 w-4" /> {t('inv.detail.createAdCampaign')}
+            </Link>
+          )}
+          {canLaunchAds && (
+            <Link
+              href={`/freehold-intelligence/drive/reel?project=${encodeURIComponent(prop.id)}&auto=1`}
+              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-5 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/[0.14]"
+            >
+              <Clapperboard className="h-4 w-4" /> {t('inv.detail.autoVideoAd')}
             </Link>
           )}
         </div>
