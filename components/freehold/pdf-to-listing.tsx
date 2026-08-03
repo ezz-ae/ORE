@@ -53,6 +53,10 @@ export function PdfToListing({ onCreated }: { onCreated?: (slug: string) => void
     e.target.value = '' // allow re-picking the same file
     if (!file) return
     if (file.type !== 'application/pdf') { toast.error(t('lm.pdf.notPdf')); return }
+    // The hosting platform hard-rejects request bodies over ~4.5 MB before our
+    // code runs, which surfaced as a mystery "couldn't read" — fail here with
+    // the real reason instead.
+    if (file.size > 4_300_000) { toast.error(t('lm.pdf.tooLarge')); return }
     setFileName(file.name)
     setParsing(true)
     try {
@@ -61,11 +65,16 @@ export function PdfToListing({ onCreated }: { onCreated?: (slug: string) => void
       const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
       const data = await res.json().catch(() => null)
       if (!res.ok || !data) throw new Error(data?.error || t('lm.pdf.parseFailed'))
+      // The route wraps the extraction as { data: {...} } — reading the flat
+      // shape left every field undefined, so even successful parses produced
+      // an empty form (the "create listing from brochure does nothing" bug).
+      const d = (data.data ?? data) as Record<string, unknown>
       const num = (v: unknown) => (v == null || v === '' ? '' : String(v))
+      const str = (v: unknown) => (typeof v === 'string' ? v : '')
       setFields({
-        name: data.name ?? '', slug: data.slug ?? '', area: data.area ?? '', developer: data.developer ?? '',
-        priceFrom: num(data.priceFrom), priceTo: num(data.priceTo), roi: num(data.roi),
-        handoverDate: data.handoverDate ?? '', paymentPlan: data.paymentPlan ?? '', description: data.description ?? '',
+        name: str(d.name), slug: str(d.slug), area: str(d.area), developer: str(d.developer),
+        priceFrom: num(d.priceFrom), priceTo: num(d.priceTo), roi: num(d.roi),
+        handoverDate: str(d.handoverDate), paymentPlan: str(d.paymentPlan), description: str(d.description),
       })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('lm.pdf.parseFailed'))
