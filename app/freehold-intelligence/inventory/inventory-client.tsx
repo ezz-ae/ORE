@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Search, LayoutGrid, ArrowUpRight, Sparkles, TrendingUp, Wrench, Rocket, AlertTriangle } from 'lucide-react'
+import { Search, LayoutGrid, ArrowUpRight, Sparkles, TrendingUp, Wrench, Rocket, AlertTriangle, Plus } from 'lucide-react'
 import {
   getInventoryStats,
   getInventoryAnalysis,
@@ -214,6 +214,14 @@ export default function InventoryClient({
         Icon={LayoutGrid}
         title={t('inv.pageTitle')}
         subtitle={t('inv.pageSubtitle')}
+        actions={
+          <Link
+            href="/freehold-intelligence/inventory/new"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gold/30 bg-gold/10 px-3.5 py-2 text-sm font-medium text-gold transition hover:bg-gold/20"
+          >
+            <Plus className="h-3.5 w-3.5" /> {t('inv.action.newProject')}
+          </Link>
+        }
       />
 
       {/* Stats row — hidden on an empty inventory so a fresh instance never
