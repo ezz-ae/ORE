@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Sparkles, ArrowLeft, Check, Save } from 'lucide-react'
+import { Sparkles, ArrowLeft, Check, Save, Info } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
 const PROPERTY_TYPES = ['apartment', 'villa', 'townhouse', 'penthouse', 'duplex', 'commercial']
@@ -92,6 +92,18 @@ export default function NewListingPage() {
       <h1 className="text-2xl font-semibold tracking-tight text-white">
         {t('plistnew.title')}
       </h1>
+
+      {/* Scope distinction — this page ≠ ad landing pages */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-3 text-xs text-slate-300">
+        <Info className="h-3.5 w-3.5 shrink-0 text-gold" />
+        <span>{t('plistnew.scope.note')}</span>
+        <Link
+          href="/freehold-intelligence/lead-machine/landings"
+          className="font-semibold text-gold transition hover:text-gold-bright"
+        >
+          {t('plistnew.scope.link')}
+        </Link>
+      </div>
 
       {/* Step 1 */}
       <section className="mt-10">
