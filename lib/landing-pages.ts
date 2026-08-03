@@ -1,8 +1,12 @@
 import { getGlobalPixels, mergePixels } from '@/lib/freehold/tracking-pixels'
 import { BRAND } from '@/lib/freehold/brand'
 
+import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { normalizePaymentPlan } from "@/lib/payment-plan"
+// Local bindings (the block below only RE-exports these, which doesn't bind them
+// for use inside this module) — needed by createLandingPage().
+import { landingTemplate as landingTemplateMeta, isLandingTemplateKey as isLandingTemplateKeyFn } from "./landing-templates"
 
 type JsonValue = Record<string, unknown> | Array<unknown> | string | number | boolean | null
 
@@ -1156,5 +1160,144 @@ export async function getLandingAttribution(slug: string): Promise<LandingAttrib
   } catch (error) {
     console.error("[landing-pages] getLandingAttribution failed", error)
     return null
+  }
+}
+
+// ── Create a landing page (shared by the manual UI/API and the chat tool) ─────
+const slugifyLanding = (value: string) =>
+  (value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80)
+
+async function ensureUniqueLandingSlug(base: string): Promise<string> {
+  const root = base || "campaign-lp"
+  let candidate = root
+  for (let i = 0; i < 50; i++) {
+    const rows = await query<{ n: number }>(
+      `SELECT COUNT(*)::int AS n FROM freehold_site_project_landing_pages WHERE lower(slug) = $1`,
+      [candidate.toLowerCase()],
+    )
+    if (!rows[0]?.n) return candidate
+    candidate = `${root}-${i + 2}`
+  }
+  return `${root}-${Date.now()}`
+}
+
+export interface CreateLandingPageInput {
+  /** Must match an existing project in Inventory (slug, or payload.slug). */
+  projectSlug: string
+  campaignName?: string
+  template?: string
+  headline?: string
+  subheadline?: string
+  createdBy?: string
+}
+export interface CreateLandingPageResult {
+  slug: string
+  /** Public page — LIVE only once the draft is published. */
+  url: string
+  /** Manager editor — works immediately for the freshly-created draft. */
+  editUrl: string
+  status: string
+  projectName: string
+}
+
+/**
+ * Create a persisted landing page for an existing project and return its real
+ * slug + URLs. Stores the chosen template's section list as `{type}` objects;
+ * the renderer's normalizeSections fills each section from the joined project
+ * data (and falls back to buildDefaultSections), so the page renders fully.
+ *
+ * Created as a DRAFT: the public /lp/<slug> route only serves PUBLISHED pages,
+ * so callers should surface `editUrl` (which works now) and note that
+ * publishing makes `url` live — never present `url` as immediately viewable.
+ */
+export async function createLandingPage(
+  input: CreateLandingPageInput,
+): Promise<CreateLandingPageResult | { error: string }> {
+  const projectSlugInput = (input.projectSlug || "").trim().toLowerCase()
+  if (!projectSlugInput) return { error: "projectSlug is required" }
+  await ensureLandingPagesSchema()
+
+  const projectRows = await query<{ slug: string; name: string | null; area: string | null; hero_image: string | null }>(
+    `SELECT slug, name, area, hero_image
+       FROM freehold_site_projects
+      WHERE lower(slug) = $1 OR lower(payload->>'slug') = $1
+      LIMIT 1`,
+    [projectSlugInput],
+  )
+  const project = projectRows[0]
+  if (!project) {
+    return { error: `No project found matching "${input.projectSlug}". It must exist in Inventory before a landing page can be created for it.` }
+  }
+
+  const template = input.template && isLandingTemplateKeyFn(input.template) ? input.template : "classic"
+  const campaign = (input.campaignName || "campaign").trim() || "campaign"
+  const projSlug = project.slug || projectSlugInput
+  const baseSlug = slugifyLanding(`${projSlug}-${campaign}`) || slugifyLanding(projSlug) || "campaign-lp"
+  const slug = await ensureUniqueLandingSlug(baseSlug)
+
+  const headline = (input.headline || "").trim() || `${project.name || projSlug} | ${campaign.replace(/[-_]+/g, " ")}`
+  const subheadline =
+    (input.subheadline || "").trim() ||
+    `${project.name || projSlug} in ${project.area || "Dubai"} — enquire for availability, prices and payment plans.`
+  const heroImage = project.hero_image || "/logo.png"
+  const sections = landingTemplateMeta(template).sections.map((type) => ({ type }))
+
+  const cols = await getTableColumns("freehold_site_project_landing_pages")
+  const nowIso = new Date().toISOString()
+  const values: Record<string, string> = {
+    id: randomUUID(),
+    slug,
+    project_slug: projSlug,
+    headline,
+    subheadline,
+    title: headline,
+    subtitle: subheadline,
+    hero_image: heroImage,
+    cta_text: "Request details",
+    status: "draft",
+    publish_status: "draft",
+    template,
+    sections_json: JSON.stringify(sections),
+    sections: JSON.stringify(sections),
+    content_json: JSON.stringify(sections),
+    seo_title: headline,
+    seo_description: subheadline,
+    meta_title: headline,
+    meta_description: subheadline,
+    og_image: heroImage,
+    created_by: input.createdBy || "",
+    created_at: nowIso,
+    updated_at: nowIso,
+  }
+
+  const insertCols: string[] = []
+  const placeholders: string[] = []
+  const params: string[] = []
+  for (const [col, val] of Object.entries(values)) {
+    if (!cols.has(col)) continue
+    insertCols.push(col)
+    params.push(val)
+    placeholders.push(
+      ["sections_json", "sections", "content_json"].includes(col) ? `$${params.length}::jsonb` : `$${params.length}`,
+    )
+  }
+  if (!insertCols.length) return { error: "Landing pages table schema is not compatible." }
+
+  await query(
+    `INSERT INTO freehold_site_project_landing_pages (${insertCols.join(", ")}) VALUES (${placeholders.join(", ")})`,
+    params,
+  )
+
+  return {
+    slug,
+    url: `/lp/${slug}`,
+    editUrl: `/freehold-intelligence/lead-machine/landings/${slug}/edit`,
+    status: "draft",
+    projectName: project.name || projSlug,
   }
 }
