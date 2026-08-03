@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 
 // Per-campaign automation preferences — the wizard's "AI auto-enhancement"
 // choice, persisted at launch and ENFORCED by the autopilot pass:
@@ -7,7 +7,6 @@ import { query } from '@/lib/db'
 //   off      → the campaign is skipped entirely
 export type AutoEnhanceMode = 'on' | 'approval' | 'off'
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS meta_campaign_prefs (
@@ -17,7 +16,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('meta_campaign_prefs', ensure)
 
 export async function setCampaignAutoEnhance(campaignId: string, mode: AutoEnhanceMode): Promise<void> {
   try {

@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { PRESENTER_PERSONAS, GENDER_NOUN } from './constants'
 
 // ─── Presenter memory ─────────────────────────────────────────────────────────
@@ -18,7 +18,6 @@ export interface SavedPresenter {
   prompt: string | null
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_presenters (
@@ -32,7 +31,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_presenters', ensure)
 
 export const personaById = (id: string) => PRESENTER_PERSONAS.find((p) => p.id === id) || null
 

@@ -11,15 +11,13 @@
  * the static demo campaigns and create returns a synthesized object so the UI
  * still behaves, just without persistence.
  */
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 import type { MetaCampaignWithInsights } from '@/lib/meta/types'
 import type { LaunchCampaignPayload, MetaCampaignStatus } from '@/lib/meta/types'
 
-let ensured: Promise<void> | null = null
 async function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
-      await query(`
+  await ensureOnce('freehold_site_meta_campaigns', async () => {
+    await query(`
         CREATE TABLE IF NOT EXISTS freehold_site_meta_campaigns (
           id          text PRIMARY KEY,
           status      text NOT NULL,
@@ -27,11 +25,9 @@ async function ensure(): Promise<void> {
           created_by  text,
           created_at  timestamptz NOT NULL DEFAULT now()
         )`)
-      // No demo seed — the unconfigured view is empty until Meta Ads is
-      // connected (or the user creates a campaign in the in-app sandbox).
-    })().catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+    // No demo seed — the unconfigured view is empty until Meta Ads is
+    // connected (or the user creates a campaign in the in-app sandbox).
+  })
 }
 
 const withStatus = (row: { status: string; data: MetaCampaignWithInsights }): MetaCampaignWithInsights => ({

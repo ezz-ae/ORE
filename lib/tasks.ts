@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 
 export type TaskStatus = "open" | "in_progress" | "blocked" | "done"
 export type TaskPriority = "critical" | "high" | "medium" | "low"
@@ -26,7 +26,6 @@ export interface WorkTaskInput {
 
 const str = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v))
 
-let ensurePromise: Promise<void> | null = null
 const ensureSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_tasks (
@@ -43,10 +42,7 @@ const ensureSchema = async () => {
     )
   `)
 }
-const ensureSchemaOnce = async () => {
-  if (!ensurePromise) ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
-  await ensurePromise
-}
+const ensureSchemaOnce = () => ensureOnce("freehold_site_tasks", ensureSchema)
 
 const mapRow = (r: Record<string, unknown>): WorkTask => ({
   id: str(r.id),

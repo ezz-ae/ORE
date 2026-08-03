@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { randomUUID } from 'node:crypto'
 
 // A Campaign Group folders 2+ campaigns that run the SAME offer under DIFFERENT
@@ -26,7 +26,6 @@ export interface CampaignGroup {
   members: CampaignGroupMember[]
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS meta_campaign_groups (
@@ -50,7 +49,7 @@ const ensure = async () => {
   // A campaign belongs to at most one group — the newest assignment wins.
   await query(`CREATE INDEX IF NOT EXISTS idx_group_members_campaign ON meta_campaign_group_members (campaign_id)`)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('meta_campaign_groups', ensure)
 
 const mapMember = (r: { campaign_id: string; objective: string | null; label: string | null; created_at: string }): CampaignGroupMember => ({
   campaignId: r.campaign_id,

@@ -49,9 +49,16 @@ function getPool(): Pool {
 // ── Tenant schema resolution ─────────────────────────────────────────────────
 //
 // Schema-per-tenant: on a tenant host ({sub}.TENANT_BASE_DOMAIN) every query
-// in this module runs with search_path pointed at that tenant's schema ONLY,
-// so business SQL physically cannot see another tenant's rows — isolation is
-// enforced here, once, not in ~760 call sites. Resolution order:
+// in this module runs with search_path "tenant_schema, DEFAULT_SCHEMA", so
+// business SQL resolves to the tenant's own tables first — isolation is
+// enforced here, once, not in ~760 call sites. The DEFAULT_SCHEMA fallback
+// exists for read-only platform content that is deliberately NOT provisioned
+// per tenant (area/developer profiles, blog): those tables only exist in the
+// shared schema, so tenant reads fall through to them and platform updates
+// reach every tenant instantly. Unqualified CREATE TABLE and any table that
+// DOES exist tenant-side always bind to the tenant schema (first in path),
+// so tenant business tables shadow shared ones from the moment they are
+// created. Resolution order:
 //
 //   1. An explicit runWithSchema()/runWithDefaultSchema() scope (provisioning,
 //      control-plane modules, scripts).
@@ -183,12 +190,15 @@ export async function resolveActiveSchema(): Promise<string> {
  */
 async function acquireClient(schemaName: string): Promise<PoolClient> {
   assertValidSchemaName(schemaName)
+  // Tenant schemas resolve "tenant first, shared fallback"; the default
+  // schema stays exactly itself.
+  const searchPath = schemaName === DEFAULT_SCHEMA ? DEFAULT_SCHEMA : `${schemaName}, ${DEFAULT_SCHEMA}`
   const client = await getPool().connect()
-  if (clientSchema.get(client) !== schemaName) {
+  if (clientSchema.get(client) !== searchPath) {
     try {
       // set_config is parameterised — the schema name never enters SQL text.
-      await client.query(`SELECT set_config('search_path', $1, false)`, [schemaName])
-      clientSchema.set(client, schemaName)
+      await client.query(`SELECT set_config('search_path', $1, false)`, [searchPath])
+      clientSchema.set(client, searchPath)
     } catch (err) {
       client.release()
       throw err

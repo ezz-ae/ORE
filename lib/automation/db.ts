@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 import {
   DEFAULT_WORKSPACE,
   defaultConfig,
@@ -12,10 +12,8 @@ import {
  * uses the 'default' workspace.
  */
 
-let ready: Promise<void> | null = null
-export function ensureAutomationTables(): Promise<void> {
-  if (!ready) {
-    ready = (async () => {
+export async function ensureAutomationTables(): Promise<void> {
+  await ensureOnce('automation_rules', async () => {
       await query(`
         CREATE TABLE IF NOT EXISTS automation_rules (
           id            text PRIMARY KEY,
@@ -43,12 +41,7 @@ export function ensureAutomationTables(): Promise<void> {
           updated_at   timestamptz NOT NULL DEFAULT now()
         )
       `)
-    })().catch((e) => {
-      ready = null
-      throw e
-    })
-  }
-  return ready
+  })
 }
 
 interface RuleRow {

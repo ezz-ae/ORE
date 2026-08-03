@@ -1,4 +1,4 @@
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 import type { AuditEvent, DashboardSnapshot, Milestone, RbacRow, ReviewItem, SystemModule } from "./types"
 import { fallbackDashboard } from "./data/fallbacks"
 import type { InventoryProperty } from "./inventory"
@@ -71,7 +71,6 @@ export async function getSystem(systemId: string): Promise<SystemModule | null> 
   return systems.find((system) => system.module_id === systemId) ?? null
 }
 
-let milestonesReady: Promise<void> | null = null
 const ensureMilestonesSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_milestone_progress (
@@ -89,8 +88,7 @@ const ensureMilestonesSchema = async () => {
   `)
 }
 const ensureMilestonesOnce = async () => {
-  if (!milestonesReady) milestonesReady = ensureMilestonesSchema().catch((e) => { milestonesReady = null; throw e })
-  await milestonesReady
+  await ensureOnce("freehold_milestone_progress", ensureMilestonesSchema)
 }
 
 export async function getMilestones(): Promise<Milestone[]> {

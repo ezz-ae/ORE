@@ -10,28 +10,24 @@
  * static demo campaigns and create/update return a synthesized object so the UI
  * still behaves, just without persistence.
  */
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 import type { GoogleCampaign, LaunchGoogleCampaignPayload } from '@/lib/google/types'
 
 const M = 1_000_000
 
-let ensured: Promise<void> | null = null
 async function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
-      await query(`
-        CREATE TABLE IF NOT EXISTS freehold_site_google_campaigns (
-          id          text PRIMARY KEY,
-          status      text NOT NULL,
-          data        jsonb NOT NULL,
-          created_by  text,
-          created_at  timestamptz NOT NULL DEFAULT now()
-        )`)
-      // No demo seed — the unconfigured view is empty until Google Ads is
-      // connected (or the user creates a campaign in the in-app sandbox).
-    })().catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+  await ensureOnce('freehold_site_google_campaigns', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_site_google_campaigns (
+        id          text PRIMARY KEY,
+        status      text NOT NULL,
+        data        jsonb NOT NULL,
+        created_by  text,
+        created_at  timestamptz NOT NULL DEFAULT now()
+      )`)
+    // No demo seed — the unconfigured view is empty until Google Ads is
+    // connected (or the user creates a campaign in the in-app sandbox).
+  })
 }
 
 const withStatus = (row: { status: string; data: GoogleCampaign }): GoogleCampaign => ({
@@ -118,10 +114,9 @@ export async function createLocalCampaign(p: LaunchGoogleCampaignPayload, create
 // Used by the read-only Google sub-pages to become interactive when the Google
 // API isn't connected: created items persist locally and merge ahead of demo.
 
-let ensuredEntities: Promise<void> | null = null
 async function ensureEntities(): Promise<void> {
-  if (!ensuredEntities) {
-    ensuredEntities = query(`
+  await ensureOnce('freehold_site_google_entities', async () => {
+    await query(`
       CREATE TABLE IF NOT EXISTS freehold_site_google_entities (
         kind        text NOT NULL,
         id          text NOT NULL,
@@ -130,9 +125,8 @@ async function ensureEntities(): Promise<void> {
         created_by  text,
         created_at  timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY (kind, id)
-      )`).then(() => undefined).catch((e) => { ensuredEntities = null; throw e })
-  }
-  await ensuredEntities
+      )`)
+  })
 }
 
 export function localId(prefix: string): string {

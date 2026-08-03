@@ -7,7 +7,7 @@
 // The proposal never touches the live page until an approver publishes it —
 // nothing on the site changes on a broker's word alone (honest-state rule).
 
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 import { getLandingPageForEditor } from '@/lib/landing-pages'
 
 export type EditRequestStatus = 'draft' | 'pending' | 'approved' | 'rejected'
@@ -73,10 +73,8 @@ function mapRow(r: Row): LandingEditRequest {
   }
 }
 
-let ensured: Promise<void> | null = null
 export function ensureLandingEditSchema(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
+  return ensureOnce('freehold_site_landing_edit_requests', async () => {
       try {
         await query(
           `CREATE TABLE IF NOT EXISTS freehold_site_landing_edit_requests (
@@ -101,11 +99,10 @@ export function ensureLandingEditSchema(): Promise<void> {
         await query(`CREATE INDEX IF NOT EXISTS idx_le_reqs_by ON freehold_site_landing_edit_requests(requested_by)`, [])
         await query(`CREATE INDEX IF NOT EXISTS idx_le_reqs_slug ON freehold_site_landing_edit_requests(landing_slug)`, [])
       } catch {
-        ensured = null // allow a retry on the next call
+        // Swallowed on purpose (legacy behaviour): a failed attempt is
+        // forgotten by ensureOnce, so the next call retries.
       }
-    })()
-  }
-  return ensured
+  })
 }
 
 const cleanSections = (v: unknown): ProposedSection[] | null =>

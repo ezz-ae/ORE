@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 
 export type ContractStatus = "active" | "expiring" | "expired" | "draft"
 export type ContractType = "platform" | "data" | "agency" | "legal" | "service"
@@ -32,7 +32,6 @@ export interface ContractInput {
 const str = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v))
 const VALID_TYPES: ContractType[] = ["platform", "data", "agency", "legal", "service"]
 
-let ensurePromise: Promise<void> | null = null
 const ensureSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_contracts (
@@ -52,10 +51,7 @@ const ensureSchema = async () => {
   `)
   // No demo seed — contracts start empty and are added by the client for real.
 }
-const ensureSchemaOnce = async () => {
-  if (!ensurePromise) ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
-  await ensurePromise
-}
+const ensureSchemaOnce = () => ensureOnce("freehold_site_contracts", ensureSchema)
 
 const mapRow = (r: Record<string, unknown>): Contract => {
   const end = r.end_date ? String(r.end_date) : null

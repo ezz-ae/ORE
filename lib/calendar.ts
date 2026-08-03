@@ -16,7 +16,7 @@
 // personal work queues, editable from their own surfaces, read-only here).
 
 import { randomUUID } from "node:crypto"
-import { query } from "@/lib/db"
+import { query, ensureOnce } from "@/lib/db"
 
 export type CalendarKind = "meeting" | "team_meeting" | "training" | "car" | "report" | "roadshow" | "viewing"
 export type VirtualKind = "task" | "followup"
@@ -120,7 +120,6 @@ const isMgmt = (role: string) => MANAGEMENT.includes(role)
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
-let ensurePromise: Promise<void> | null = null
 const ensureSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_calendar_events (
@@ -167,10 +166,7 @@ const ensureSchema = async () => {
   await query(`CREATE INDEX IF NOT EXISTS idx_cal_attendees_event ON freehold_site_calendar_attendees (event_id)`)
   await query(`CREATE INDEX IF NOT EXISTS idx_cal_events_lead ON freehold_site_calendar_events (lead_id) WHERE lead_id IS NOT NULL`)
 }
-const ensureSchemaOnce = async () => {
-  if (!ensurePromise) ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
-  await ensurePromise
-}
+const ensureSchemaOnce = () => ensureOnce("freehold_site_calendar_events", ensureSchema)
 
 // ─── Row mapping ─────────────────────────────────────────────────────────────
 

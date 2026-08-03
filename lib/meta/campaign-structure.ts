@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { getCampaign, getCampaignInsights, listAdSets, listAds } from '@/lib/meta/client'
 import type { MetaCampaign, MetaAdSet, MetaInsights, CampaignTargeting } from '@/lib/meta/types'
 import type { ProjectAdStructure, ExistingCampaign, ExistingAdSet, ExistingAd } from '@/lib/meta/campaign-router'
@@ -11,7 +11,6 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 //     creative keys, and infer learning state, so the router can decide where a
 //     new request belongs.
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS meta_campaign_projects (
@@ -22,7 +21,7 @@ const ensure = async () => {
   `)
   await query(`CREATE INDEX IF NOT EXISTS idx_campaign_projects_slug ON meta_campaign_projects (project_slug)`)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('meta_campaign_projects', ensure)
 
 /** Link a launched campaign to its project (called from the launch route). */
 export async function recordCampaignProject(campaignId: string, projectSlug: string): Promise<void> {

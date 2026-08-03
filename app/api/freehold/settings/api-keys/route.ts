@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { randomUUID, randomBytes, createHash } from "node:crypto"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
-import { query } from "@/lib/db"
+import { query, ensureOnce as dbEnsureOnce } from "@/lib/db"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_api_keys (
@@ -23,7 +22,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_api_keys', ensure)
 
 const str = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v))
 

@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { ensureOnce, query, resolveActiveSchema } from '@/lib/db'
 import { seal, open } from '@/lib/freehold/secure-store'
 
 // Server-side storage for integration credentials connected through the UI.
@@ -10,6 +10,11 @@ import { seal, open } from '@/lib/freehold/secure-store'
 // At rest the credentials are encrypted (AES-256-GCM, see secure-store.ts) so a
 // database-only compromise never exposes a usable token. Reads transparently
 // decrypt, and legacy plaintext rows are re-encrypted on their next write.
+//
+// Multi-tenant: the table lives in whichever schema the current request
+// resolves to, so every tenant holds (and connects) its OWN provider
+// credentials — and the read cache is keyed by that schema, so one tenant's
+// cached token can never be served to another.
 
 export interface MetaStoredCreds {
   accessToken: string
@@ -18,78 +23,59 @@ export interface MetaStoredCreds {
   pixelId?: string | null
 }
 
-let ensured: Promise<void> | null = null
-const ensureTable = async () => {
-  if (!ensured) {
-    ensured = query(`
+const ensureTable = async (): Promise<void> => {
+  await ensureOnce('freehold_site_integration_credentials', async () => {
+    await query(`
       CREATE TABLE IF NOT EXISTS freehold_site_integration_credentials (
         provider    text PRIMARY KEY,
         credentials jsonb NOT NULL,
         updated_by  text,
         updated_at  timestamptz NOT NULL DEFAULT now()
       )
-    `).then(() => undefined).catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+    `)
+  })
 }
 
-// Small cache so every Graph call doesn't hit Postgres.
-let cache: { value: MetaStoredCreds | null; at: number } | null = null
+// Small cache so every Graph call doesn't hit Postgres — keyed by
+// (schema, provider) so entries are strictly per-tenant.
+const providerCache = new Map<string, { value: Record<string, unknown> | null; at: number }>()
 const CACHE_MS = 60_000
 
 export async function getStoredMetaCreds(): Promise<MetaStoredCreds | null> {
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.value
-  try {
-    await ensureTable()
-    const rows = await query<{ credentials: unknown }>(
-      `SELECT credentials FROM freehold_site_integration_credentials WHERE provider = 'meta' LIMIT 1`,
-    )
-    const value = rows[0] ? open<MetaStoredCreds>(rows[0].credentials) : null
-    cache = { value, at: Date.now() }
-    return value
-  } catch {
-    return cache?.value ?? null
-  }
+  return getStoredCreds<MetaStoredCreds>('meta')
 }
 
 export async function setStoredMetaCreds(creds: MetaStoredCreds, updatedBy: string): Promise<void> {
-  await ensureTable()
-  await query(
-    `INSERT INTO freehold_site_integration_credentials (provider, credentials, updated_by, updated_at)
-     VALUES ('meta', $1::jsonb, $2, now())
-     ON CONFLICT (provider) DO UPDATE SET credentials = $1::jsonb, updated_by = $2, updated_at = now()`,
-    [JSON.stringify(seal(creds)), updatedBy],
-  )
-  cache = { value: creds, at: Date.now() }
+  await setStoredCreds('meta', creds as unknown as Record<string, unknown>, updatedBy)
 }
 
 export async function clearStoredMetaCreds(): Promise<void> {
-  await ensureTable()
-  await query(`DELETE FROM freehold_site_integration_credentials WHERE provider = 'meta'`)
-  cache = { value: null, at: Date.now() }
+  await clearStoredCreds('meta')
 }
 
-// ── Generic provider store (whatsapp, hubspot, google, …) ────────────────────
-const providerCache = new Map<string, { value: Record<string, unknown> | null; at: number }>()
+// ── Generic provider store (meta, whatsapp, hubspot, google, …) ──────────────
 
 export async function getStoredCreds<T = Record<string, unknown>>(provider: string): Promise<T | null> {
-  const c = providerCache.get(provider)
-  if (c && Date.now() - c.at < CACHE_MS) return c.value as T | null
+  let cacheKey: string | null = null
   try {
+    cacheKey = `${await resolveActiveSchema()}:${provider}`
+    const c = providerCache.get(cacheKey)
+    if (c && Date.now() - c.at < CACHE_MS) return c.value as T | null
     await ensureTable()
     const rows = await query<{ credentials: unknown }>(
       `SELECT credentials FROM freehold_site_integration_credentials WHERE provider = $1 LIMIT 1`,
       [provider],
     )
     const value = rows[0] ? open<Record<string, unknown>>(rows[0].credentials) : null
-    providerCache.set(provider, { value, at: Date.now() })
+    providerCache.set(cacheKey, { value, at: Date.now() })
     return value as T | null
   } catch {
-    return (providerCache.get(provider)?.value ?? null) as T | null
+    return (cacheKey ? (providerCache.get(cacheKey)?.value ?? null) : null) as T | null
   }
 }
 
 export async function setStoredCreds(provider: string, creds: Record<string, unknown>, updatedBy: string): Promise<void> {
+  const cacheKey = `${await resolveActiveSchema()}:${provider}`
   await ensureTable()
   await query(
     `INSERT INTO freehold_site_integration_credentials (provider, credentials, updated_by, updated_at)
@@ -97,13 +83,14 @@ export async function setStoredCreds(provider: string, creds: Record<string, unk
      ON CONFLICT (provider) DO UPDATE SET credentials = $2::jsonb, updated_by = $3, updated_at = now()`,
     [provider, JSON.stringify(seal(creds)), updatedBy],
   )
-  providerCache.set(provider, { value: creds, at: Date.now() })
+  providerCache.set(cacheKey, { value: creds, at: Date.now() })
 }
 
 export async function clearStoredCreds(provider: string): Promise<void> {
+  const cacheKey = `${await resolveActiveSchema()}:${provider}`
   await ensureTable()
   await query(`DELETE FROM freehold_site_integration_credentials WHERE provider = $1`, [provider])
-  providerCache.set(provider, { value: null, at: Date.now() })
+  providerCache.set(cacheKey, { value: null, at: Date.now() })
 }
 
 export interface WhatsAppStoredCreds { accessToken: string; phoneNumberId: string }

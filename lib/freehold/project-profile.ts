@@ -23,7 +23,7 @@ import { BRAND } from '@/lib/freehold/brand'
  * CREATE TABLE IF NOT EXISTS, fail-soft reads).
  */
 import { createHash } from 'node:crypto'
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 import { getInventoryPropertyBySlug, getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
@@ -66,20 +66,16 @@ export interface ProfileRefreshSummary {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
-let ensured: Promise<void> | null = null
 async function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
-      await query(`
+  await ensureOnce('freehold_site_project_profiles', async () => {
+    await query(`
         CREATE TABLE IF NOT EXISTS freehold_site_project_profiles (
           project_slug text PRIMARY KEY,
           profile      jsonb,
           facts_hash   text,
           generated_at timestamptz NOT NULL DEFAULT now()
         )`)
-    })().catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+  })
 }
 
 // ─── Facts (the ONLY material a profile may cite) ────────────────────────────

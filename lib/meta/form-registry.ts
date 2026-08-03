@@ -12,24 +12,20 @@
  * Every call fails soft where possible: a registry problem must never break
  * form creation or listing.
  */
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 import { listLeadForms, getLeadForm } from '@/lib/meta/client'
 import type { MetaLeadForm } from '@/lib/meta/types'
 
-let ensured: Promise<void> | null = null
 async function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
-      await query(`
+  await ensureOnce('freehold_site_meta_forms', async () => {
+    await query(`
         CREATE TABLE IF NOT EXISTS freehold_site_meta_forms (
           id          text PRIMARY KEY,
           name        text,
           created_by  text,
           created_at  timestamptz DEFAULT now()
         )`)
-    })().catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+  })
 }
 
 export interface RegisteredForm {

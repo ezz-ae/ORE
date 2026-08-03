@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 import type { AutonomyLevel } from '@/lib/freehold/agent-router'
 
 /**
@@ -7,18 +7,17 @@ import type { AutonomyLevel } from '@/lib/freehold/agent-router'
  * management, so neither a client nor the model can escalate it.
  */
 
-let ensured = false
 async function ensureTable(): Promise<void> {
-  if (ensured) return
-  await query(`
-    CREATE TABLE IF NOT EXISTS freehold_agent_settings (
-      id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-      autonomy_level integer NOT NULL DEFAULT 1 CHECK (autonomy_level BETWEEN 1 AND 3),
-      updated_by text,
-      updated_at timestamptz DEFAULT now()
-    )
-  `)
-  ensured = true
+  await ensureOnce('freehold_agent_settings', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_agent_settings (
+        id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        autonomy_level integer NOT NULL DEFAULT 1 CHECK (autonomy_level BETWEEN 1 AND 3),
+        updated_by text,
+        updated_at timestamptz DEFAULT now()
+      )
+    `)
+  })
 }
 
 export async function getAutonomyLevel(): Promise<AutonomyLevel> {

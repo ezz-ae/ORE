@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 
 /**
  * Campaign automation rules — "if a metric crosses a threshold, do X". The
@@ -49,10 +49,9 @@ export interface RuleMatch {
   currentValue: number
 }
 
-let ensured = false
 async function ensureRulesTable(): Promise<void> {
-  if (ensured) return
-  await query(`
+  await ensureOnce('freehold_campaign_rules', async () => {
+    await query(`
     CREATE TABLE IF NOT EXISTS freehold_campaign_rules (
       id text PRIMARY KEY,
       owner_email text NOT NULL,
@@ -68,7 +67,7 @@ async function ensureRulesTable(): Promise<void> {
       created_at timestamptz DEFAULT now()
     )
   `)
-  ensured = true
+  })
 }
 
 interface RuleRow {

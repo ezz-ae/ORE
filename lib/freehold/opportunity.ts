@@ -29,7 +29,7 @@
  * as-is. DB idiom mirrors lib/freehold/ads-machine.ts (query() + lazy
  * CREATE TABLE IF NOT EXISTS, fail-soft reads).
  */
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { normalizePaymentPlan } from '@/lib/payment-plan'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
@@ -110,21 +110,17 @@ export const INSUFFICIENT_DATA_REASON = 'insufficient data'
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
-let ensured: Promise<void> | null = null
 async function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
-      await query(`
-        CREATE TABLE IF NOT EXISTS freehold_site_opportunity_scores (
-          project_slug text PRIMARY KEY,
-          score        int,
-          coverage     real,
-          components   jsonb,
-          computed_at  timestamptz NOT NULL DEFAULT now()
-        )`)
-    })().catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+  await ensureOnce('freehold_site_opportunity_scores', async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_site_opportunity_scores (
+        project_slug text PRIMARY KEY,
+        score        int,
+        coverage     real,
+        components   jsonb,
+        computed_at  timestamptz NOT NULL DEFAULT now()
+      )`)
+  })
 }
 
 // ─── Real-data context (one batch of queries for the whole catalog) ──────────

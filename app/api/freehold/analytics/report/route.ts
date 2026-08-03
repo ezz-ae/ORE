@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { query } from '@/lib/db'
+import { ensureOnce as dbEnsureOnce, query } from '@/lib/db'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
@@ -14,15 +14,13 @@ export const dynamic = 'force-dynamic'
 // reporting and have finance access, so they may generate it too.
 const ALLOWED = new Set(['admin', 'ceo', 'director', 'sales_manager'])
 
-let ensured: Promise<void> | null = null
-const ensureOnce = async () => {
-  if (!ensured) ensured = query(`
+const ensureOnce = () => dbEnsureOnce('freehold_site_notebook_outputs', async () => {
+  await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_notebook_outputs (
       id text PRIMARY KEY, title text NOT NULL, type text NOT NULL DEFAULT 'note',
       content text NOT NULL, created_by text, created_at timestamptz NOT NULL DEFAULT now()
-    )`).then(() => undefined).catch((e) => { ensured = null; throw e })
-  await ensured
-}
+    )`)
+})
 
 async function leadSummary() {
   const [row] = await query<{ total: string; last_30d: string; closed: string; new_count: string }>(`

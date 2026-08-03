@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 import { DEFAULT_WORKSPACE } from '@/lib/automation/types'
 
 /**
@@ -25,18 +25,16 @@ const DEFAULTS: DataSecurityConfig = {
   maskBenchmarkNumbers: true,
 }
 
-let ready: Promise<void> | null = null
 async function ensureTable(): Promise<void> {
-  if (!ready) {
-    ready = query(`
+  await ensureOnce('workspace_data_security_config', async () => {
+    await query(`
       CREATE TABLE IF NOT EXISTS workspace_data_security_config (
         workspace_id text PRIMARY KEY,
         config       jsonb NOT NULL,
         updated_at   timestamptz NOT NULL DEFAULT now()
       )
-    `).then(() => undefined).catch((e) => { ready = null; throw e })
-  }
-  await ready
+    `)
+  })
 }
 
 export async function getDataSecurityConfig(workspaceId = DEFAULT_WORKSPACE): Promise<DataSecurityConfig> {

@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { randomUUID } from 'node:crypto'
 
 // Every autonomous action the intent router takes is recorded here so the admin
@@ -25,7 +25,6 @@ export interface CampaignDecision {
   createdAt: string
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_campaign_decisions (
@@ -44,7 +43,7 @@ const ensure = async () => {
   await query(`CREATE INDEX IF NOT EXISTS idx_campaign_decisions_created ON freehold_campaign_decisions (created_at DESC)`)
   await query(`CREATE INDEX IF NOT EXISTS idx_campaign_decisions_project ON freehold_campaign_decisions (project_slug)`)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_campaign_decisions', ensure)
 
 export async function recordDecision(d: {
   projectSlug: string; campaignId?: string | null; brokerId: string

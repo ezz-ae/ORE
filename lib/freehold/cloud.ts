@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { del, list } from '@vercel/blob'
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 
 // ─── Cloud — account-level file storage ───────────────────────────────────────
 // Real files (images, PDFs, spreadsheets, anything) live in Vercel Blob; this
@@ -26,7 +26,6 @@ export interface CloudFile {
 
 export interface CloudFolder { name: string; files: number }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_cloud_files (
@@ -51,7 +50,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_cloud_files', ensure)
 
 const cleanFolder = (v: unknown): string | null => {
   const s = String(v ?? '').trim().slice(0, 80)

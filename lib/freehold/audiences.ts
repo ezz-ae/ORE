@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import type { CampaignTargeting } from '@/lib/meta/types'
 
 // ─── Saved audiences ──────────────────────────────────────────────────────────
@@ -29,7 +29,6 @@ export interface SavedAudience {
 
 const KINDS = new Set<AudienceKind>(['behavioral', 'narrow', 'lookalike', 'custom_list'])
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_audiences (
@@ -47,10 +46,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => {
-  if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e })
-  await ensured
-}
+const ensureOnce = () => dbEnsureOnce('freehold_site_audiences', ensure)
 
 const DEFAULT_SPEC: CampaignTargeting = {
   countries: ['AE'],

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { query, withTransaction } from '@/lib/db'
+import { ensureOnce as dbEnsureOnce, query, withTransaction } from '@/lib/db'
 
 // ─── The network targeting base ───────────────────────────────────────────────
 // The system's shared brain. Every tenant (Entrestate's own historical data,
@@ -54,7 +54,6 @@ function norm(v: unknown, max: number, sanitized: { count: number }): string | n
   return s ? s.slice(0, max) : null
 }
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS entrestate_lead_history (
@@ -95,7 +94,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('entrestate_lead_history', ensure)
 
 /** Bulk-insert historical rows for a tenant (max ~2000 per call). Returns how
  * many rows landed and how many string cells were formula-injection-defused

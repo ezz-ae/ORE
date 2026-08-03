@@ -14,7 +14,7 @@
  * caller (activity logging), throw-through where silence would lie (CRUD).
  */
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { ensureOnce, query } from '@/lib/db'
 import type { MachinePlan } from './ads-machine-planner'
 
 export type MachineStatus = 'planning' | 'running' | 'paused' | 'stopped'
@@ -46,10 +46,8 @@ export type ActivityKind =
   | 'creative_fatigue'
   | 'error'
 
-let ensured: Promise<void> | null = null
 async function ensure(): Promise<void> {
-  if (!ensured) {
-    ensured = (async () => {
+  await ensureOnce('freehold_site_ads_machines', async () => {
       await query(`
         CREATE TABLE IF NOT EXISTS freehold_site_ads_machines (
           id             text PRIMARY KEY,
@@ -100,9 +98,7 @@ async function ensure(): Promise<void> {
           answered_at       timestamptz,
           UNIQUE (machine_id, lead_id)
         )`)
-    })().catch((e) => { ensured = null; throw e })
-  }
-  await ensured
+  })
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────

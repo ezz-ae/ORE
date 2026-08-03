@@ -5,7 +5,7 @@
 // "what I did" history is genuine, never fabricated.
 
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 
 export interface MachineAction {
   id: string
@@ -18,10 +18,9 @@ export interface MachineAction {
   createdAt: string
 }
 
-let ensured = false
 async function ensure() {
-  if (ensured) return
-  await query(`
+  await ensureOnce('freehold_machine_actions', async () => {
+    await query(`
     CREATE TABLE IF NOT EXISTS freehold_machine_actions (
       id            text PRIMARY KEY,
       action        text NOT NULL,
@@ -33,7 +32,7 @@ async function ensure() {
       created_at    timestamptz NOT NULL DEFAULT now()
     )
   `)
-  ensured = true
+  })
 }
 
 export async function recordMachineAction(a: {

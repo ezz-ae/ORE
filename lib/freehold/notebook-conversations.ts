@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { query } from '@/lib/db'
+import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 
 // Real, DB-backed Notebook conversations. Replaces the demo seed that used to
@@ -34,7 +34,6 @@ export interface StoredConversation {
 
 const isMgmt = (role?: Role | string | null) => MANAGEMENT_ROLES.includes(role as Role)
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_notebook_conversations (
@@ -47,7 +46,7 @@ const ensure = async () => {
     )
   `)
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
+const ensureOnce = () => dbEnsureOnce('freehold_site_notebook_conversations', ensure)
 
 const parseMessages = (v: unknown): NotebookMessage[] => {
   let raw: unknown = v

@@ -671,6 +671,31 @@ export default function NewCampaignPage() {
   // attached to THIS ad immediately — the wizard and its state never unload.
   const [formPopupOpen, setFormPopupOpen] = useState(false)
   const [newFormName, setNewFormName] = useState('')
+  // View-form popup: "Edit form" used to full-navigate to a read-only page —
+  // a double lie (Meta lead forms are immutable once published, and the
+  // wizard context was lost). Now the form opens IN PLACE, says plainly that
+  // published forms can't be edited, and offers duplicate-as-new instead.
+  const [viewFormOpen, setViewFormOpen] = useState(false)
+  const [viewFormLoading, setViewFormLoading] = useState(false)
+  const [viewFormData, setViewFormData] = useState<{ name?: string; status?: string; locale?: string; leads_count?: number; questions?: Array<{ type: string; label?: string }> } | null>(null)
+  const [viewFormErr, setViewFormErr] = useState('')
+  async function openViewForm() {
+    if (!leadFormId) return
+    setViewFormOpen(true)
+    setViewFormLoading(true)
+    setViewFormErr('')
+    setViewFormData(null)
+    try {
+      const res = await fetch(`/api/meta/forms/${encodeURIComponent(leadFormId)}`)
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.form) throw new Error(data?.error || t('lm.newCampaign.leadForm.viewErr'))
+      setViewFormData(data.form)
+    } catch (e) {
+      setViewFormErr(e instanceof Error ? e.message : t('lm.newCampaign.leadForm.viewErr'))
+    } finally {
+      setViewFormLoading(false)
+    }
+  }
   // Meta form locale for in-ad creation. Option labels are each language's
   // own name, so they are intentionally not translated.
   const FORM_LOCALES: { value: string; label: string }[] = [
@@ -1509,9 +1534,9 @@ export default function NewCampaignPage() {
                     ))}
                   </select>
                   {leadFormId ? (
-                    <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-2 text-xs text-slate-300 transition hover:text-white">
-                      {t('lm.newCampaign.leadForm.edit')} <ArrowUpRight className="h-3.5 w-3.5" />
-                    </Link>
+                    <button type="button" onClick={openViewForm} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-2 text-xs text-slate-300 transition hover:text-white">
+                      {t('lm.newCampaign.leadForm.edit')}
+                    </button>
                   ) : null}
                   {/* Created IN the ad via popup — the wizard never unloads and
                       the new form attaches to this ad immediately. */}
@@ -2415,6 +2440,57 @@ export default function NewCampaignPage() {
 
         {/* In-ad lead-form popup: create new or duplicate an existing form —
             either way it attaches to this ad instantly. */}
+        {viewFormOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setViewFormOpen(false)}>
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[15px] font-semibold text-white">{viewFormData?.name || t('lm.newCampaign.leadForm.viewTitle')}</div>
+                <button type="button" onClick={() => setViewFormOpen(false)} className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">{t('lm.newCampaign.s3.closePreview')}</button>
+              </div>
+              {/* The one honest fact this popup exists to state: */}
+              <p className="mt-1 rounded-lg border border-gold/20 bg-gold/[0.05] px-3 py-2 text-[11px] leading-relaxed text-gold/90">{t('lm.newCampaign.leadForm.immutableNote')}</p>
+              {viewFormLoading && <p className="mt-4 text-xs text-slate-500">{t('common.loading')}</p>}
+              {viewFormErr && <p className="mt-4 text-xs text-red-300">{viewFormErr}</p>}
+              {viewFormData && (
+                <>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-400">
+                    {viewFormData.status ? <span className="rounded-full border border-line px-2 py-0.5">{viewFormData.status}</span> : null}
+                    {viewFormData.locale ? <span className="rounded-full border border-line px-2 py-0.5">{viewFormData.locale}</span> : null}
+                    {typeof viewFormData.leads_count === 'number' ? <span className="rounded-full border border-line px-2 py-0.5">{t('lm.newCampaign.leadForm.leadsCount', { n: String(viewFormData.leads_count) })}</span> : null}
+                  </div>
+                  {Array.isArray(viewFormData.questions) && viewFormData.questions.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('pforms.sidebar.questions')}</div>
+                      <ul className="mt-2 space-y-1.5">
+                        {viewFormData.questions.map((q, i) => (
+                          <li key={i} className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-slate-300">
+                            {q.label || q.type}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewFormOpen(false)
+                    setNewFormName(viewFormData?.name ? `${viewFormData.name} — copy` : '')
+                    setFormPopupOpen(true)
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.duplicateBtn')}
+                </button>
+                <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-300 transition hover:text-white">
+                  {t('lm.newCampaign.leadForm.openFull')} <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
         {formPopupOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setFormPopupOpen(false)}>
             {/* max-h + scroll: on a 390px phone the selects + footer overflowed

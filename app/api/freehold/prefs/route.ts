@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { query } from '@/lib/db'
+import { query, ensureOnce } from '@/lib/db'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,17 +10,17 @@ export const dynamic = 'force-dynamic'
 // user's settings across devices and sessions. Self-scoped: a user can only
 // read/write their own prefs.
 
-let ensured: Promise<void> | null = null
 const ensure = async () => {
-  await query(`
+  await ensureOnce('freehold_site_user_prefs', async () => {
+    await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_user_prefs (
       user_email text PRIMARY KEY,
       prefs      jsonb NOT NULL DEFAULT '{}'::jsonb,
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `)
+  })
 }
-const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
 
 // Only known keys are stored, so the table can't be used as arbitrary storage.
 // Each key has a validator + size cap. `null` clears a key (e.g. a finished
@@ -59,7 +59,7 @@ export async function GET() {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
-    await ensureOnce()
+    await ensure()
     const rows = await query<{ prefs: Record<string, unknown> }>(
       `SELECT prefs FROM freehold_site_user_prefs WHERE user_email = $1 LIMIT 1`, [user.email])
     return NextResponse.json({ prefs: rows[0]?.prefs ?? {} })
@@ -80,7 +80,7 @@ export async function PUT(req: NextRequest) {
   if (!Object.keys(patch).length) return NextResponse.json({ error: 'Nothing to save' }, { status: 400 })
 
   try {
-    await ensureOnce()
+    await ensure()
     await query(
       `INSERT INTO freehold_site_user_prefs (user_email, prefs, updated_at)
        VALUES ($1, $2::jsonb, now())

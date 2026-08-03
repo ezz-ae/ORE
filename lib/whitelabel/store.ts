@@ -8,7 +8,7 @@
  */
 
 import { randomBytes, randomUUID } from 'node:crypto'
-import { query, withTransaction } from '@/lib/db'
+import { ensureOnce, query, runWithDefaultSchema, withTransaction } from '@/lib/db'
 import { WL_DEFAULT_ACCENT } from './config'
 
 export interface WlKey {
@@ -30,9 +30,11 @@ export interface WlWorkspace {
   lastSeenAt: string | null
 }
 
-let ensured = false
+// The WL demo registry is deployment-level control plane, never per-tenant:
+// every function below pins itself to the default schema so a call arriving
+// on a tenant host can neither create nor read wl_* tables in a tenant schema.
 async function ensure(): Promise<void> {
-  if (ensured) return
+  await ensureOnce('wl_tables', async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS wl_keys (
       key          text PRIMARY KEY,
@@ -54,11 +56,14 @@ async function ensure(): Promise<void> {
       last_seen_at timestamptz
     )
   `)
-  ensured = true
+  })
 }
 
 /** Mint `count` fresh access keys with an optional label + expiry. */
 export async function mintKeys(count: number, label: string, expiresAt: string | null): Promise<string[]> {
+  return runWithDefaultSchema(() => mintKeysImpl(count, label, expiresAt))
+}
+async function mintKeysImpl(count: number, label: string, expiresAt: string | null): Promise<string[]> {
   await ensure()
   const n = Math.max(1, Math.min(100, Math.floor(count) || 1))
   const keys: string[] = []
@@ -77,6 +82,9 @@ export async function mintKeys(count: number, label: string, expiresAt: string |
 
 /** All keys, newest first — for the vendor's key list. */
 export async function listKeys(): Promise<WlKey[]> {
+  return runWithDefaultSchema(() => listKeysImpl())
+}
+async function listKeysImpl(): Promise<WlKey[]> {
   await ensure()
   const rows = await query<{
     key: string; label: string; status: string; workspace_id: string | null; expires_at: string | null; created_at: string
@@ -96,6 +104,12 @@ export type RedeemResult =
  * can only ever create one workspace, even under concurrent submits.
  */
 export async function redeemKey(
+  rawKey: string,
+  brand: { company: string; product: string; accent: string; logo: string },
+): Promise<RedeemResult> {
+  return runWithDefaultSchema(() => redeemKeyImpl(rawKey, brand))
+}
+async function redeemKeyImpl(
   rawKey: string,
   brand: { company: string; product: string; accent: string; logo: string },
 ): Promise<RedeemResult> {
@@ -137,6 +151,9 @@ export async function redeemKey(
 
 /** Fetch a workspace by id (used to refresh the brand snapshot). */
 export async function getWorkspace(id: string): Promise<WlWorkspace | null> {
+  return runWithDefaultSchema(() => getWorkspaceImpl(id))
+}
+async function getWorkspaceImpl(id: string): Promise<WlWorkspace | null> {
   await ensure()
   const rows = await query<{
     id: string; company: string; product: string; accent: string; logo: string; created_at: string; last_seen_at: string | null
