@@ -74,8 +74,8 @@ const en: Dict = {
 
   // ── New Listing page ───────────────────────────────────────────
   'plistnew.back': 'Back to Listings',
-  'plistnew.eyebrow': 'AI Manager · New Listing',
-  'plistnew.title': 'Create New Listing',
+  'plistnew.eyebrow': 'Web Studio · Listing Content',
+  'plistnew.title': 'Create a Listing Content Page',
   // Step 1
   'plistnew.step1.title': 'Property Details',
   'plistnew.field.name.label': 'Property Name',
@@ -201,8 +201,8 @@ const ar: Dict = {
 
   // ── New Listing page ───────────────────────────────────────────
   'plistnew.back': 'العودة إلى العقارات',
-  'plistnew.eyebrow': 'مدير الذكاء الاصطناعي · قائمة جديدة',
-  'plistnew.title': 'إنشاء قائمة جديدة',
+  'plistnew.eyebrow': 'استوديو الويب · محتوى العقارات',
+  'plistnew.title': 'إنشاء صفحة محتوى لعقار',
   'plistnew.step1.title': 'تفاصيل العقار',
   'plistnew.field.name.label': 'اسم العقار',
   'plistnew.field.name.ph': 'مثال: إعمار بيتشفرونت برج 3',
@@ -321,8 +321,8 @@ const ru: Dict = {
 
   // ── New Listing page ───────────────────────────────────────────
   'plistnew.back': 'Назад к объявлениям',
-  'plistnew.eyebrow': 'AI-менеджер · Новое объявление',
-  'plistnew.title': 'Создать новое объявление',
+  'plistnew.eyebrow': 'Веб-студия · Контент объявлений',
+  'plistnew.title': 'Создать страницу контента объявления',
   'plistnew.step1.title': 'Сведения об объекте',
   'plistnew.field.name.label': 'Название объекта',
   'plistnew.field.name.ph': 'напр. Emaar Beachfront Tower 3',
