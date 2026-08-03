@@ -6,7 +6,7 @@ const en: Dict = {
   // --- App nav (layout) ---
   'paim.nav.appTitle': 'Web Studio',
   'paim.nav.overview': 'Overview',
-  'paim.nav.listings': 'Listings',
+  'paim.nav.listings': 'Listing Content',
   'paim.nav.areas': 'Areas',
   'paim.nav.developers': 'Developers',
   'paim.nav.pages': 'Pages',
@@ -15,11 +15,11 @@ const en: Dict = {
   'paim.nav.insights': 'Insights',
   // --- Listings ---
   'paim.listings.breadcrumb': 'AI Manager · Listings',
-  'paim.listings.title': 'Listings',
+  'paim.listings.title': 'Listing Content',
   'paim.listings.published': 'Published',
   'paim.listings.draft': 'Draft',
   'paim.listings.needsReview': 'Needs Review',
-  'paim.listings.newListing': 'New Listing',
+  'paim.listings.newListing': 'New Content Page',
   'paim.listings.edit': 'Open listing',
   // bulk actions
   'paim.listings.bulk.metaIdle': 'Refresh Meta Descriptions',
@@ -95,7 +95,7 @@ const ar: Dict = {
   // --- App nav (layout) ---
   'paim.nav.appTitle': 'استوديو الويب',
   'paim.nav.overview': 'نظرة عامة',
-  'paim.nav.listings': 'العقارات',
+  'paim.nav.listings': 'محتوى العقارات',
   'paim.nav.areas': 'المناطق',
   'paim.nav.developers': 'المطوّرون',
   'paim.nav.pages': 'الصفحات',
@@ -104,11 +104,11 @@ const ar: Dict = {
   'paim.nav.insights': 'الرؤى',
   // --- Listings ---
   'paim.listings.breadcrumb': 'مدير الذكاء الاصطناعي · العقارات',
-  'paim.listings.title': 'العقارات',
+  'paim.listings.title': 'محتوى العقارات',
   'paim.listings.published': 'منشورة',
   'paim.listings.draft': 'مسودة',
   'paim.listings.needsReview': 'بحاجة لمراجعة',
-  'paim.listings.newListing': 'عقار جديد',
+  'paim.listings.newListing': 'صفحة محتوى جديدة',
   'paim.listings.edit': 'فتح العقار',
   'paim.listings.bulk.metaIdle': 'تحديث أوصاف ميتا',
   'paim.listings.bulk.metaBusy': 'جارٍ التحديث…',
@@ -176,7 +176,7 @@ const ru: Dict = {
   // --- App nav (layout) ---
   'paim.nav.appTitle': 'Веб-студия',
   'paim.nav.overview': 'Обзор',
-  'paim.nav.listings': 'Объявления',
+  'paim.nav.listings': 'Контент объявлений',
   'paim.nav.areas': 'Районы',
   'paim.nav.developers': 'Застройщики',
   'paim.nav.pages': 'Страницы',
@@ -185,11 +185,11 @@ const ru: Dict = {
   'paim.nav.insights': 'Инсайты',
   // --- Listings ---
   'paim.listings.breadcrumb': 'AI-менеджер · Объявления',
-  'paim.listings.title': 'Объявления',
+  'paim.listings.title': 'Контент объявлений',
   'paim.listings.published': 'Опубликовано',
   'paim.listings.draft': 'Черновик',
   'paim.listings.needsReview': 'Требует проверки',
-  'paim.listings.newListing': 'Новое объявление',
+  'paim.listings.newListing': 'Новая страница контента',
   'paim.listings.edit': 'Открыть объявление',
   'paim.listings.bulk.metaIdle': 'Обновить мета-описания',
   'paim.listings.bulk.metaBusy': 'Обновление…',
