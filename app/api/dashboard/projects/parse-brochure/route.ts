@@ -5,6 +5,12 @@ import { requireSession } from "@/lib/freehold/api-auth"
 
 export const runtime = "nodejs"
 
+// Hard ceiling for brochures arriving via the Blob-URL path. Small files
+// (≤4.3MB) still POST multipart directly; anything larger is uploaded by the
+// browser straight to Vercel Blob (the platform rejects request bodies over
+// ~4.5MB before this handler runs) and referenced here as JSON {url}.
+const MAX_BROCHURE_BYTES = 12 * 1024 * 1024
+
 const extractJson = (value: string) => {
   const start = value.indexOf("{")
   const end = value.lastIndexOf("}")
@@ -30,14 +36,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Gemini API key is not configured." }, { status: 400 })
     }
 
-    const formData = await req.formData()
-    const file = formData.get("file")
-    if (!file || typeof file === "string") {
-      return NextResponse.json({ error: "PDF file is required." }, { status: 400 })
+    // Two intake modes, one pipeline:
+    //  - multipart FormData "file" (unchanged fast path for PDFs ≤4.3MB), or
+    //  - JSON {url} pointing at a Vercel Blob the browser uploaded directly
+    //    (4.3–12MB brochures — the platform caps request bodies at ~4.5MB, so
+    //    big files can never arrive as a body; we fetch the bytes ourselves).
+    let buffer: Buffer
+    const contentType = req.headers.get("content-type") || ""
+    if (contentType.includes("application/json")) {
+      const body = (await req.json().catch(() => null)) as { url?: unknown } | null
+      const url = typeof body?.url === "string" ? body.url : ""
+      if (!url) {
+        return NextResponse.json({ error: "A blob `url` is required." }, { status: 400 })
+      }
+      // Only fetch from Vercel Blob storage — this route must not become a
+      // generic server-side fetch proxy (SSRF).
+      let hostname = ""
+      try { hostname = new URL(url).hostname } catch { /* handled below */ }
+      if (!(hostname === "blob.vercel-storage.com" || hostname.endsWith(".blob.vercel-storage.com"))) {
+        return NextResponse.json({ error: "Only Vercel Blob URLs are accepted." }, { status: 400 })
+      }
+      let fetched: Response
+      try {
+        fetched = await fetch(url)
+      } catch {
+        return NextResponse.json({ error: "Couldn't download the uploaded brochure from Blob storage." }, { status: 502 })
+      }
+      if (!fetched.ok) {
+        return NextResponse.json({ error: `Couldn't download the uploaded brochure (HTTP ${fetched.status}).` }, { status: 502 })
+      }
+      buffer = Buffer.from(await fetched.arrayBuffer())
+      if (buffer.byteLength > MAX_BROCHURE_BYTES) {
+        return NextResponse.json({ error: "This PDF is over the 12 MB limit — compress it and try again." }, { status: 413 })
+      }
+    } else {
+      const formData = await req.formData()
+      const file = formData.get("file")
+      if (!file || typeof file === "string") {
+        return NextResponse.json({ error: "PDF file is required." }, { status: 400 })
+      }
+      buffer = Buffer.from(await (file as File).arrayBuffer())
     }
-
-    const arrayBuffer = await (file as File).arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
     // Designed brochures are frequently IMAGE-ONLY PDFs with no text layer at
     // all — text extraction is a fast path, never a requirement. When it comes
     // back empty (or near-empty), fall through to Gemini vision on the PDF
