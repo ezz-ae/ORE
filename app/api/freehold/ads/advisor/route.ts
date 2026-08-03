@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { getCampaign, getCampaignInsights, listAdSets, MetaConfigError } from '@/lib/meta/client'
@@ -277,7 +278,7 @@ export async function POST(req: NextRequest) {
 
   const metrics = computeMetrics(campaign, insights, adSets)
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ available: false, reason: 'no_ai_key', metrics })
 
   // The decision ledger — what was already done to this campaign, so the

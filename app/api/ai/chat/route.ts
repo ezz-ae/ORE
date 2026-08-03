@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { aiConfigured } from "@/lib/gemini-rest"
 import { BRAND, brandName } from "@/lib/freehold/brand"
 import { getSiteUrl } from "@/lib/site"
 import { randomUUID } from "node:crypto"
@@ -454,7 +455,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hasGeminiKey =
-      Boolean(process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY || process.env.google_api_key)
+      aiConfigured()
     const history = Array.isArray(conversationHistory) ? conversationHistory : []
     const conversationText = [
       ...history.filter((entry: any) => entry.role === "user").map((entry: any) => entry.content),

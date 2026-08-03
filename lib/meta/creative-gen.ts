@@ -11,6 +11,7 @@
  *    only from the listing's own name/area/developer/price/payment plan.
  */
 import type { GenerateCreativePayload, GeneratedCreativeVariant, MetaCta } from '@/lib/meta/types'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { geminiGenerate } from '@/lib/gemini-rest'
 
 function fmtPrice(n: number | null) {
@@ -112,7 +113,7 @@ export function buildVariants(p: GenerateCreativePayload): GeneratedCreativeVari
 // Live Gemini creative generation. Returns null on no-key / error / bad output
 // so the caller falls back to the deterministic template.
 export async function geminiCreatives(p: GenerateCreativePayload): Promise<GeneratedCreativeVariant[] | null> {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return null
   const price = fmtPrice(p.startingPrice)
   // Language directive — without it the model always writes English, so an

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   // 3 — pdf / large image → extract with Gemini, save the text as a report.
   if (isPdf || isImage) {
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = geminiApiKey()
     if (!apiKey) return NextResponse.json({ error: 'AI text extraction needs the AI key — set it under Integrations → AI, or upload a .txt/.csv.' }, { status: 503 })
     const instruction = isPdf
       ? 'This is a real-estate document (brochure, fact sheet or contract). Extract ALL readable text and key facts faithfully — project, developer, prices, payment plan, unit types, dates, amenities. Plain text, preserve structure, invent nothing.'

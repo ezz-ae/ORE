@@ -4,7 +4,41 @@
 // gemini-1.5-flash-latest, now 404). Rather than fail, we try the configured
 // model first and fall through current models on a NOT_FOUND.
 
+import { vertexConfigured, vertexGenerateContent } from "@/lib/google/vertex-auth"
+
 const FALLBACK_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"]
+
+// Sentinel returned by geminiApiKey() when there is no AI-Studio key but a
+// Vertex service account IS configured. Callers pass it straight to
+// geminiGenerate (their `if (!apiKey)` guards still pass because it's non-empty),
+// and geminiGenerate routes to Vertex instead of the AI-Studio REST endpoint.
+export const VERTEX_SENTINEL = "__vertex_sa__"
+
+/**
+ * The single source of truth for "what AI credential do I use?" — returns the
+ * real AI-Studio key (any accepted casing), else the Vertex sentinel when a
+ * service account is configured, else "". Use this everywhere instead of
+ * reading process.env.GEMINI_API_KEY directly, so a deployment with ONLY a
+ * Vertex service account still runs AI.
+ */
+export function geminiApiKey(): string {
+  const k = (
+    process.env.GEMINI_API_KEY ||
+    process.env.Gemini_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.google_api_key ||
+    process.env.GEMINI_KEY ||
+    ""
+  ).trim()
+  if (k) return k
+  if (vertexConfigured()) return VERTEX_SENTINEL
+  return ""
+}
+
+/** True when any AI credential (AI-Studio key OR Vertex service account) exists. */
+export function aiConfigured(): boolean {
+  return geminiApiKey() !== ""
+}
 
 export function geminiModelCandidates(): string[] {
   const configured = process.env.GEMINI_MODEL?.trim()
@@ -30,6 +64,12 @@ export type GeminiResponse = {
  * parsed response, or throws with the last error detail.
  */
 export async function geminiGenerate(apiKey: string, contents: unknown, generationConfig?: unknown, tools?: unknown): Promise<GeminiResponse> {
+  // Vertex path: either the caller passed the sentinel, or there's no usable
+  // AI-Studio key but a Vertex service account is available. Vertex preserves
+  // the multimodal contents and returns the same {candidates} shape.
+  if (apiKey === VERTEX_SENTINEL || (!apiKey && vertexConfigured())) {
+    return (await vertexGenerateContent(contents, generationConfig, tools)) as GeminiResponse
+  }
   let last = ""
   for (const model of geminiModelCandidates()) {
     // 2.5-family models think by default and can burn the whole token budget

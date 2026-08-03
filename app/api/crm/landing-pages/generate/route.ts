@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { BRAND } from "@/lib/freehold/brand"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
-import { geminiGenerate } from "@/lib/gemini-rest"
+import { geminiGenerate, geminiApiKey } from "@/lib/gemini-rest"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -370,7 +370,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call Gemini
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = geminiApiKey()
     if (!apiKey) {
       return NextResponse.json({ error: "AI service not configured (GEMINI_API_KEY missing)" }, { status: 503 })
     }

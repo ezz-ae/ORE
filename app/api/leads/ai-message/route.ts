@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { aiConfigured } from "@/lib/gemini-rest"
 import { BRAND } from "@/lib/freehold/brand"
 import { DEFAULT_GEMINI_MODELS, getGeminiModel, getGeminiModelByName, listGeminiModels } from "@/lib/gemini"
 import { getLeadById, getProjectBySlug } from "@/lib/data"
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
     })
 
     const hasGeminiKey =
-      Boolean(process.env.GEMINI_API_KEY || process.env.Gemini_APIKey || process.env.google_api_key || process.env.Gemini_API_KEY)
+      aiConfigured()
 
     if (!hasGeminiKey) {
       return NextResponse.json(fallback)

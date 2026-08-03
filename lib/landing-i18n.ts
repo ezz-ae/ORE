@@ -9,7 +9,7 @@
 //      faqs). Honest fallback: on any failure it returns the original English
 //      page so the visitor never sees blank/partial content.
 
-import { geminiGenerate } from "@/lib/gemini-rest"
+import { geminiGenerate, geminiApiKey } from "@/lib/gemini-rest"
 import { BRAND } from "@/lib/freehold/brand"
 import type { LandingPageData } from "@/lib/landing-pages"
 
@@ -804,7 +804,7 @@ async function runTranslation(
   lang: Exclude<LpLang, "en">,
   originals: string[],
 ): Promise<LandingTranslationResult> {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return { page, translated: false }
   try {
     const prompt = `Translate each string in the following JSON array into ${LANG_NAMES[lang]}.

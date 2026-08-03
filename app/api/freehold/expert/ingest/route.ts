@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { geminiApiKey } from "@/lib/gemini-rest"
 import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
   // stays within Gemini's inline-extraction request ceiling.
   if (base64.length > 16_500_000) return NextResponse.json({ error: 'File too large (12MB max).' }, { status: 413 })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ unavailable: true })
 
   const note = String(body.note ?? '').trim()
