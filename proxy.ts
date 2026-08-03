@@ -38,6 +38,12 @@ const PUBLIC_API_EXACT = new Set([
   "/api/whatsapp/webhook",      // Meta HMAC-signature-gated in handler
   "/api/meta/webhook",          // Meta leadgen push — HMAC-signature-gated in handler
   "/api/mcp",                   // remote MCP server — Bearer-token-gated in handler
+  // Public buyer chatbot on the marketing site (/chat). The handler is
+  // anonymous-by-design (scripted fallback + lead capture, no privileged
+  // data) and sits behind the LLM cost-guard rate limit above. Without this
+  // entry the fail-closed API wall 401s every logged-out visitor — the
+  // "AI site can't help" complaint: only signed-in staff could ever reach it.
+  "/api/ai/chat",
 ])
 const PUBLIC_API_PREFIXES = [
   "/api/freehold/public/",      // public catalogue (projects, areas, developers, search)
