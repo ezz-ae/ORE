@@ -165,7 +165,6 @@ const DB_CLIENT_ALLOWED = new Set([
   'lib/db.ts',                          // THE funnel
   'lib/intelligence-block.ts',          // public market widget — shared data by design
   'components/intelligence_block_api.ts', // stray legacy route file, slated for removal
-  'lib/creative-studio/memory.ts',      // dead code, slated for removal
 ])
 
 function runDbFunnel(): void {
