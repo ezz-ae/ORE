@@ -1,7 +1,11 @@
 import { ShieldCheck } from 'lucide-react'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { getAuditEvents, getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
 import { getServerT } from '@/lib/i18n/server'
 import { getIntegrationStatusSummary } from '@/lib/freehold/integration-status'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 function statusTone(s: string, t: (key: string, vars?: Record<string, string | number>) => string) {
   if (s === 'live') return { dot: 'bg-gold', label: t('pss.status.live'),     text: 'text-gold' }
@@ -10,6 +14,13 @@ function statusTone(s: string, t: (key: string, vars?: Record<string, string | n
 }
 
 export default async function ServerStatusPage() {
+  // Server-side gate: this page server-renders the audit log (actor/role/
+  // action rows), so a client guard cannot strip the data — non-management
+  // roles must be bounced before render. The link only appears in Settings,
+  // but the URL was reachable by any signed-in role.
+  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+  if (!user || !MANAGEMENT_ROLES.includes(user.role)) redirect('/freehold-intelligence')
+
   const { t } = await getServerT()
   // Infra states come from the real integration status — the same truth the
   // Integrations page reports (auth/session hardening shipped long ago).

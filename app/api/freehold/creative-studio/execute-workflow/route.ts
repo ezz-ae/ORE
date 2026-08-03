@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { MANAGEMENT_ROLES, type Role } from "@/lib/freehold/session-types"
 import { genText, genImage, genVideo } from "@/lib/creative-studio/providers"
 import { personaCharacterPrompt } from "@/lib/creative-studio/constants"
 import { saveLibraryItem } from "@/lib/freehold/library"
@@ -184,6 +185,11 @@ async function runNode(node: Node, inputs: string[], byHandle: Map<string, strin
 export async function POST(req: NextRequest) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+  // Executing workflows spends real AI budget — same gate as the Creative
+  // Studio UI (management + marketing), matching presenters/route.ts.
+  if (!([...MANAGEMENT_ROLES, 'marketing'] as Role[]).includes(user.role)) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
+  }
 
   let body: { nodes?: Node[]; edges?: Edge[]; stopAtNodeId?: string }
   try { body = await req.json() } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }) }

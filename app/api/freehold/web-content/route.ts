@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { randomUUID } from "node:crypto"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { MANAGEMENT_ROLES, type Role } from "@/lib/freehold/session-types"
 import { query } from "@/lib/db"
 
 export const runtime = "nodejs"
@@ -44,9 +45,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const WRITE_ROLES: readonly Role[] = [...MANAGEMENT_ROLES, "marketing"]
+
 export async function POST(req: NextRequest) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // Writing/publishing website content is a Web Studio capability — same
+  // roles as the UI (management + marketing), not every signed-in user.
+  if (!WRITE_ROLES.includes(user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }) }
   const kind = String(body.kind || "")
@@ -74,6 +80,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!WRITE_ROLES.includes(user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }) }
   const id = String(body.id || "").trim()

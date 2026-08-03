@@ -173,7 +173,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400/80" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-red-300">
-              {t('lm.landings.alertTitle', { n: String(missing), singular: missing === 1 ? 'property is' : 'properties are', plural: missing === 1 ? '' : 's' })}
+              {missing === 1 ? t('lm.landings.alertTitle.one') : t('lm.landings.alertTitle.many', { n: String(missing) })}
             </div>
             <div className="mt-0.5 text-xs text-slate-500">
               {t('lm.landings.alertDesc')}
@@ -236,7 +236,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                     <span>{fmtPrice(p.startingPriceAED)}</span>
                     {p.linkedCampaigns > 0 && (
                       <><span>·</span>
-                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? t('lm.landings.createCampaign') : t('lm.landings.campaigns')}</span></>
+                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? t('lm.landings.campaignOne') : t('lm.landings.campaigns')}</span></>
                     )}
                   </div>
 
