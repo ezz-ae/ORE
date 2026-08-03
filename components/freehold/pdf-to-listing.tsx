@@ -6,6 +6,7 @@ import { FileUp, Loader2, Sparkles, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
 import { createListingAndLanding } from '@/lib/freehold/brochure-to-listing'
+import { BROCHURE_MAX_BYTES, postBrochureForParse } from '@/lib/freehold/parse-brochure-client'
 
 // Confirm-before-save fields, mirroring what parse-brochure extracts and what
 // /api/crm/projects accepts. All strings so the form is trivially editable;
@@ -53,16 +54,14 @@ export function PdfToListing({ onCreated }: { onCreated?: (slug: string) => void
     e.target.value = '' // allow re-picking the same file
     if (!file) return
     if (file.type !== 'application/pdf') { toast.error(t('lm.pdf.notPdf')); return }
-    // The hosting platform hard-rejects request bodies over ~4.5 MB before our
-    // code runs, which surfaced as a mystery "couldn't read" — fail here with
-    // the real reason instead.
-    if (file.size > 4_300_000) { toast.error(t('lm.pdf.tooLarge')); return }
+    if (file.size > BROCHURE_MAX_BYTES) { toast.error(t('lm.pdf.tooLarge')); return }
     setFileName(file.name)
     setParsing(true)
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
+      // ≤4.3MB posts FormData directly; larger files go browser → Vercel Blob,
+      // then the route fetches the bytes from the blob URL (the platform caps
+      // request bodies at ~4.5MB, which used to surface as a mystery failure).
+      const res = await postBrochureForParse(file)
       const data = await res.json().catch(() => null)
       if (!res.ok || !data) throw new Error(data?.error || t('lm.pdf.parseFailed'))
       // The route wraps the extraction as { data: {...} } — reading the flat

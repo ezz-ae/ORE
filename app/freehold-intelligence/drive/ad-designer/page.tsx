@@ -17,6 +17,7 @@ import { BRAND } from '@/lib/freehold/brand'
 import { fieldClass, Modal } from '@/components/freehold/ui'
 import { SUITE_COPY, type SuiteCopy, type SuiteLang } from '@/lib/freehold/creative-suite'
 import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
+import { BROCHURE_MAX_BYTES, postBrochureForParse } from '@/lib/freehold/parse-brochure-client'
 import {
   PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts, fitHeadline,
   type LayoutKey, type FormatKey, type Overlay,
@@ -242,11 +243,12 @@ export default function AdDesignerPage() {
   const brochureRef = useRef<HTMLInputElement>(null)
   async function onBrochure(file: File | null) {
     if (!file || brochureBusy) return
+    if (file.size > BROCHURE_MAX_BYTES) { toast.error(t('lm.pdf.tooLarge')); return }
     setBrochureBusy(true)
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
+      // ≤4.3MB posts FormData; larger files upload browser → Vercel Blob first
+      // (the platform caps request bodies at ~4.5MB), then parse by {url}.
+      const res = await postBrochureForParse(file)
       const d = await res.json().catch(() => ({}))
       const b = d?.data as { name?: string; area?: string; developer?: string; priceFrom?: number | null; paymentPlan?: string } | undefined
       if (!res.ok || !b) { toast.error(d?.error || t('adz.source.brochureFail')); return }
@@ -262,7 +264,11 @@ export default function AdDesignerPage() {
       }))
       setListingId('')
       toast.success(t('adz.source.brochureDone'))
-    } catch { toast.error(t('adz.source.brochureFail')) } finally { setBrochureBusy(false) }
+    } catch (err) {
+      // Honest failure: a Blob upload error (e.g. missing BLOB_READ_WRITE_TOKEN)
+      // carries the real reason — show it, never a generic mystery.
+      toast.error(err instanceof Error && err.message ? err.message : t('adz.source.brochureFail'))
+    } finally { setBrochureBusy(false) }
   }
 
   // ── AI imagery: generated frames as a fourth source ──
