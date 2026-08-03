@@ -98,6 +98,10 @@ const SELF_DEFENDING: Array<{ route: string; mustMatch: RegExp; why: string }> =
   { route: 'app/api/whatsapp/webhook/route.ts', mustMatch: /X-Hub-Signature|hub\.verify_token|createHmac/i, why: 'Meta HMAC signature' },
   { route: 'app/api/meta/webhook/route.ts', mustMatch: /X-Hub-Signature|createHmac/i, why: 'Meta HMAC signature' },
   { route: 'app/api/mcp/route.ts', mustMatch: /authorization|bearer/i, why: 'Bearer token gate' },
+  // /api/wl/ is allowlisted as a PREFIX, so these must gate themselves.
+  { route: 'app/api/wl/keys/route.ts', mustMatch: /x-wl-admin/i, why: 'WL admin secret gate' },
+  { route: 'app/api/wl/tenants/route.ts', mustMatch: /x-wl-admin/i, why: 'WL admin secret gate' },
+  { route: 'app/api/wl/logo/route.ts', mustMatch: /verifyWorkspace|WL_SESSION_COOKIE/, why: 'workspace-cookie gate' },
 ]
 
 function routeFileFor(apiPath: string): string | null {
@@ -146,8 +150,46 @@ function runAuthMatrix(): void {
   ok('auth-matrix: allowlist entries resolve and self-defending routes carry their gates')
 }
 
+// ── 3. Single DB funnel ───────────────────────────────────────────────────────
+//
+// Tenant isolation (schema-per-tenant) is enforced in exactly one place:
+// lib/db.ts points each connection's search_path at the current tenant's
+// schema. A module that opens its OWN Postgres connection silently escapes
+// that enforcement — its queries would land in the shared schema no matter
+// which tenant is asking. So direct driver imports are forbidden outside
+// lib/db.ts, with the pre-existing exceptions pinned below. Do not add to
+// this list — route new data access through lib/db instead.
+
+const DB_CLIENT_IMPORT = /from\s+["'](pg|postgres|@neondatabase\/serverless|@vercel\/postgres)["']/
+const DB_CLIENT_ALLOWED = new Set([
+  'lib/db.ts',                          // THE funnel
+  'lib/intelligence-block.ts',          // public market widget — shared data by design
+  'components/intelligence_block_api.ts', // stray legacy route file, slated for removal
+  'lib/creative-studio/memory.ts',      // dead code, slated for removal
+])
+
+function runDbFunnel(): void {
+  let hits = 0
+  for (const dir of ['app', 'lib', 'components', 'src']) {
+    const abs = path.join(ROOT, dir)
+    if (!fs.existsSync(abs)) continue
+    for (const file of walk(abs)) {
+      if (!/\.tsx?$/.test(file)) continue
+      const rel = path.relative(ROOT, file)
+      if (DB_CLIENT_ALLOWED.has(rel.split(path.sep).join('/'))) continue
+      const src = fs.readFileSync(file, 'utf-8')
+      if (DB_CLIENT_IMPORT.test(src)) {
+        hits++
+        fail(`db-funnel: ${rel} imports a Postgres client directly — use query/withTransaction from @/lib/db so tenant scoping holds`)
+      }
+    }
+  }
+  if (hits === 0) ok('db-funnel: all data access goes through lib/db')
+}
+
 runCopyRules()
 runAuthMatrix()
+runDbFunnel()
 
 if (failures > 0) {
   console.error(`\n${failures} guard failure(s).`)
