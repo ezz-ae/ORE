@@ -101,7 +101,9 @@ async function toInlineImage(imageUrl?: string): Promise<{ data: string; mime: s
 }
 
 // Imagen 3 — clean text-to-image with real aspect-ratio control.
-async function imagenGenerate(prompt: string, aspectRatio: string, key: string): Promise<string | null> {
+// `notes` collects WHY each attempt failed so the final error can say it —
+// a swallowed 403 here plus a bare fal.ai "Forbidden" was undiagnosable.
+async function imagenGenerate(prompt: string, aspectRatio: string, key: string, notes: string[]): Promise<string | null> {
   try {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${key}`,
@@ -114,20 +116,31 @@ async function imagenGenerate(prompt: string, aspectRatio: string, key: string):
         }),
       },
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      notes.push(`Imagen: HTTP ${res.status}${res.status === 403 ? " (Imagen needs billing enabled on the key)" : ""}`)
+      return null
+    }
     const j = (await res.json()) as { predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }> }
     const p = j.predictions?.[0]
-    return p?.bytesBase64Encoded ? `data:${p.mimeType || "image/png"};base64,${p.bytesBase64Encoded}` : null
-  } catch { return null }
+    if (!p?.bytesBase64Encoded) { notes.push("Imagen: empty response"); return null }
+    return `data:${p.mimeType || "image/png"};base64,${p.bytesBase64Encoded}`
+  } catch (e) { notes.push(`Imagen: ${e instanceof Error ? e.message : "network error"}`); return null }
 }
 
 // Gemini native image (also does image→image editing when given a reference).
-async function geminiImage(prompt: string, key: string, ref: { data: string; mime: string } | null): Promise<string | null> {
-  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"]
+// GA model first; GEMINI_IMAGE_MODEL overrides; retired previews kept as tail
+// fallbacks (they 404 harmlessly once fully removed).
+const GEMINI_IMAGE_MODELS = (): string[] => {
+  const configured = process.env.GEMINI_IMAGE_MODEL?.trim()
+  const ladder = ["gemini-2.5-flash-image", "gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"]
+  return configured ? [configured, ...ladder.filter((m) => m !== configured)] : ladder
+}
+
+async function geminiImage(prompt: string, key: string, ref: { data: string; mime: string } | null, notes: string[]): Promise<string | null> {
   const parts: unknown[] = []
   if (ref) parts.push({ inline_data: { mime_type: ref.mime, data: ref.data } })
   parts.push({ text: prompt })
-  for (const model of models) {
+  for (const model of GEMINI_IMAGE_MODELS()) {
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -137,13 +150,14 @@ async function geminiImage(prompt: string, key: string, ref: { data: string; mim
           body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } }),
         },
       )
-      if (!res.ok) continue
+      if (!res.ok) { notes.push(`${model}: HTTP ${res.status}`); continue }
       const j = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<Record<string, unknown>> } }> }
       for (const part of j.candidates?.[0]?.content?.parts ?? []) {
         const inl = (part.inlineData || part.inline_data) as { data?: string; mimeType?: string; mime_type?: string } | undefined
         if (inl?.data) return `data:${inl.mimeType || inl.mime_type || "image/png"};base64,${inl.data}`
       }
-    } catch { continue }
+      notes.push(`${model}: no image in response`)
+    } catch (e) { notes.push(`${model}: ${e instanceof Error ? e.message : "network error"}`); continue }
   }
   return null
 }
@@ -155,38 +169,45 @@ async function geminiImage(prompt: string, key: string, ref: { data: string; mim
 export async function genImage(prompt: string, opts: ImageOptions = {}): Promise<{ url: string; provider: string }> {
   const key = GEMINI_KEY()
   const aspect = opts.aspectRatio || "1:1"
+  // Every failed attempt leaves a note; the final error reports them all, so
+  // "image generation failed" is never a mystery again (the observed field
+  // failure was a bare "Forbidden" with zero context).
+  const notes: string[] = []
 
   if (key) {
     const ref = await toInlineImage(opts.imageUrl)
     // With a reference image → Gemini editing. Without → Imagen for aspect control.
     if (!ref) {
-      const im = await imagenGenerate(prompt, aspect, key)
+      const im = await imagenGenerate(prompt, aspect, key, notes)
       if (im) return { url: im, provider: "google-imagen" }
     }
-    const gm = await geminiImage(ref ? `${prompt}\n\nMaintain the composition and use ${aspect} framing.` : `${prompt}\n\nRender in ${aspect} aspect ratio.`, key, ref)
+    const gm = await geminiImage(ref ? `${prompt}\n\nMaintain the composition and use ${aspect} framing.` : `${prompt}\n\nRender in ${aspect} aspect ratio.`, key, ref, notes)
     if (gm) return { url: gm, provider: "google-gemini" }
+  } else {
+    notes.push("no GEMINI_API_KEY configured")
   }
 
-  // Optional premium provider.
+  // Optional premium provider. Its raw errors (e.g. a bare "Forbidden" on a
+  // bad FAL_KEY) must never mask the Google-side diagnosis collected above.
   if (FAL_KEY()) {
-    const { fal } = await import("@fal-ai/client")
-    fal.config({ credentials: FAL_KEY() })
-    const model = opts.model || (opts.imageUrl ? "fal-ai/flux-2-pro/edit" : "fal-ai/flux-2-pro")
-    const input: Record<string, unknown> = { prompt }
-    if (opts.imageUrl && /^https?:\/\//.test(opts.imageUrl)) input.image_url = opts.imageUrl
-    if (opts.aspectRatio) input.aspect_ratio = opts.aspectRatio
-    const result = (await fal.subscribe(model, { input })) as { data?: { images?: Array<{ url?: string }> } }
-    const url = result?.data?.images?.[0]?.url
-    if (!url) throw new Error("fal.ai returned no image.")
-    return { url, provider: "fal.ai" }
+    try {
+      const { fal } = await import("@fal-ai/client")
+      fal.config({ credentials: FAL_KEY() })
+      const model = opts.model || (opts.imageUrl ? "fal-ai/flux-2-pro/edit" : "fal-ai/flux-2-pro")
+      const input: Record<string, unknown> = { prompt }
+      if (opts.imageUrl && /^https?:\/\//.test(opts.imageUrl)) input.image_url = opts.imageUrl
+      if (opts.aspectRatio) input.aspect_ratio = opts.aspectRatio
+      const result = (await fal.subscribe(model, { input })) as { data?: { images?: Array<{ url?: string }> } }
+      const url = result?.data?.images?.[0]?.url
+      if (!url) notes.push("fal.ai: returned no image")
+      else return { url, provider: "fal.ai" }
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "request failed"
+      notes.push(`fal.ai: ${m}${/forbidden|401|403/i.test(m) ? " (FAL_KEY is invalid or unauthorized — fix or remove it in the environment)" : ""}`)
+    }
   }
 
-  // The key exists but every Google attempt failed — almost always the same
-  // quota/rate-limit wall (or Imagen not enabled on the key), not a missing key.
-  if (key) {
-    throw new Error("Image generation failed on Google — likely the Gemini quota/rate limit (free tier exhausted) or Imagen isn't enabled on your key. Enable billing on your Gemini key, or add FAL_KEY for premium image/video.")
-  }
-  throw new Error("Image generation needs GEMINI_API_KEY (Google, default) or FAL_KEY. Add one in your environment (Integrations → AI).")
+  throw new Error(`Image generation failed on every provider — ${notes.join("; ")}. Fix: enable billing on the Gemini key (Imagen/image models need it), or set GEMINI_IMAGE_MODEL to a current model, or correct/remove FAL_KEY.`)
 }
 
 export interface VideoOptions { imageUrl?: string; model?: string; duration?: number; aspectRatio?: string }

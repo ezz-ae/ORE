@@ -522,7 +522,12 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         } else {
           seenCalls.add(callKey)
           const result = await runCoordinatorTool(tools, call, toolCtx)
-          toolsUsed.push(call.name)
+          // The chips render as ACTIONS TAKEN ("Generated an image") — a failed
+          // call is not a taken action, so it must not earn a success chip.
+          // The failure still reaches the user via resultNotes and the model's
+          // observation. (Observed: "Generated an image" chip over a Forbidden.)
+          const failed = !!(result && typeof result === 'object' && (result as Record<string, unknown>).error)
+          if (!failed) toolsUsed.push(call.name)
           resultNotes.push(`• ${call.name}: ${summarizeToolResult(result)}`)
           const resultJson = JSON.stringify(result)
           toolResultsText += ' ' + resultJson
