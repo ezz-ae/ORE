@@ -437,7 +437,7 @@ Your tools:${renderToolDocs(tools)}`
 
 YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
 CAPABILITY TRUTH — THE HARD BOUNDARY: the tools listed below are the COMPLETE set of things you can do. You have NO background jobs, NO import capability, NO scheduled or long-running processes, and NO ability to do anything after this reply is sent. Sentences like "I am initiating the import", "this runs securely in the background", "this may take several hours" are FABRICATED ACTIONS unless a tool in THIS turn actually did the thing — and no such tool exists. If the user asks for something outside your tools (importing historical CRM data, connecting integrations, migrations), say plainly that you cannot do it from chat and point to the exact page where it lives (CRM/HubSpot sync: /freehold-intelligence/integrations/hubspot). Every action button you offer MUST correspond to a tool you can execute when they confirm — a button for a capability you do not have is a lie with styling. You can create a landing page ONLY via the landing_create tool — it makes a DRAFT and returns a real edit link; tell the user to review and PUBLISH it, and never present the public /lp link as live until they publish. You CANNOT create listings or brochures from chat (no tool exists), so never say you created, built or generated one — point to the platform's builder and offer to draft the copy as text instead. Never link to a specific page/record whose id/slug did not come from a tool THIS turn (that link would 404).
-METRIC QUESTIONS REQUIRE A TOOL CALL: when the user asks about leads, lead quality, campaign performance, spend, CPL, or any other figure not already in your context JSON, call the tool that fetches it BEFORE answering — numbers that came from neither context nor a tool result are fabrication and strictly forbidden; if no tool covers it, say you don't have that data and where it lives.
+METRIC QUESTIONS REQUIRE A TOOL CALL: when the user asks about leads, lead quality, campaign performance, spend, CPL, or any other figure not already in your context JSON, call the tool that fetches it BEFORE answering — numbers that came from neither context nor a tool result are fabrication and strictly forbidden; if no tool covers it, say you don't have that data and where it lives. EMPTY IS AN ANSWER: if a list or insights tool returns zero campaigns/leads/rows or an error, report exactly that — NEVER present example, sample, remembered or plausible-looking entities and figures as if they were the user's real data.
 DO THE WORK YOURSELF — never ask the user for an id, a list, or a current value your tools or context.pageContent can supply. If the target is unambiguous (one ad set, one campaign on the page), act on it directly. For a directional ask without a number ("spend more"), read the current value and propose ONE concrete change (~20–30%, floor AED 50) as a one-click confirmation showing current → new — never ask the user to supply the number.
 SCREEN TRUTH: before presenting any entity's details as "this ad/campaign/lead", verify they MATCH context.pageContent — the screen is ground truth. A mismatch means you fetched the wrong entity: re-list and pick the one that matches. If the user corrects you, re-resolving is YOUR job — never ask them for an identifier.
 Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
@@ -585,6 +585,41 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
           type: 'text',
           content: 'I have to correct myself: I did not actually start anything — no action ran just now, and I have no background-import capability. What I can genuinely do here: search and update the leads already in the CRM, and manage campaigns. For importing or syncing CRM data, use Integrations → HubSpot (Sync) in the platform — that is a real import, visible and verifiable.',
         }]
+      }
+    }
+    // ── FABRICATED-METRICS TRIPWIRE ───────────────────────────────────────────
+    // Screenshot-verified failure: asked how the ads are doing, the campaigns
+    // tool returned nothing usable, and the model presented two INVENTED
+    // campaigns ("Villanova (C267)" — spend 11,450 AED, CPL 75.33, quality
+    // 78/100) as "live performance". The user does not run those campaigns.
+    //
+    // Deterministic net: a reply that reads like a performance report is only
+    // deliverable if its numbers actually came from somewhere real this turn.
+    // Extract every significant number from the reply; if NONE of them appear
+    // in the raw tool results OR the injected system context, the entire
+    // report is invented — replace it with the honest state instead of
+    // shipping fiction. (Any genuine report grounds at least one figure
+    // verbatim; derived values like a computed CPL ride on grounded inputs.)
+    const METRIC_SHAPED = /\b(?:CPL|cost\s+per\s+lead|spend|leads?|budget|ROAS|CTR|impressions|quality\s+score|conversions?)\b/i
+    const replyJson = JSON.stringify(blocks)
+    if (tools.length > 0 && METRIC_SHAPED.test(replyJson)) {
+      const sigNums = (text: string) =>
+        (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? [])
+          .map((m) => m.replace(/,/g, ''))
+          .filter((m) => Number.parseFloat(m) >= 10)
+      const claimed = [...new Set(sigNums(replyJson))]
+      if (claimed.length >= 3) {
+        const grounded = new Set([...sigNums(toolResultsText), ...sigNums(JSON.stringify(fullContext))])
+        const anyGrounded = claimed.some((num) => grounded.has(num))
+        if (!anyGrounded) {
+          blocks = [{
+            type: 'text',
+            content: 'I have to correct myself — the performance figures I was about to show did not come from your live data, so I will not present them. ' +
+              (resultNotes.length
+                ? `What actually happened this turn:\n${resultNotes.join('\n')}\n\nAsk me to check the campaigns again and I will report only real numbers — and say so plainly if there are none.`
+                : 'No data-returning check completed this turn. Ask me to check the campaigns again and I will report only real numbers — and say so plainly if there are none.'),
+          }]
+        }
       }
     }
     // Never end a turn with tool chips and no answer: if the model executed
