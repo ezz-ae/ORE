@@ -168,10 +168,60 @@ export default function DriveDocEditor() {
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
   }
 
-  const fullDoc = () =>
-    `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title || 'document')}</title><style>${DOC_CSS}</style></head><body>${content}</body></html>`
+  // ── Designed export ──────────────────────────────────────────────────────
+  // Management verdict on the plain export: "looks like WordPress blog
+  // writing, not a brochure." The export now RENDERS the document as a
+  // designed brochure: "— SECTION —" marker paragraphs become gold section
+  // headings, the opening title block becomes a dark cover band, bullet runs
+  // become styled fact lists. Editing stays simple text; the deliverable is
+  // a designed A4 document.
+  const BROCHURE_CSS = `
+    *{box-sizing:border-box}@page{size:A4;margin:0}
+    body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#1c1c1c;line-height:1.7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cover{background:#0C0E12;color:#F5F2EA;padding:64px 56px 48px;position:relative}
+    .cover:after{content:'';position:absolute;left:56px;right:56px;bottom:0;height:3px;background:#D4AF37}
+    .eyebrow{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#D4AF37;margin-bottom:18px}
+    h1{font-size:40px;line-height:1.15;margin:0;font-weight:600}
+    .by{margin:14px 0 0;color:#B9BDC7;font-size:15px;font-style:italic}
+    main{padding:40px 56px 24px}
+    h2{font-family:Inter,system-ui,sans-serif;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:#AA8122;margin:34px 0 12px;padding-bottom:8px;border-bottom:1px solid #E5DFCE}
+    p{margin:0 0 12px;font-size:14.5px}
+    ul{margin:0 0 14px;padding:0;list-style:none}
+    li{margin:7px 0;padding-inline-start:22px;position:relative;font-size:14.5px}
+    li:before{content:'';position:absolute;inset-inline-start:0;top:.55em;width:9px;height:9px;background:#D4AF37;transform:rotate(45deg)}
+    img{max-width:100%;height:auto;margin:14px 0}
+    .foot{margin-top:26px;background:#0C0E12;color:#B9BDC7;padding:22px 56px;font-family:Inter,system-ui,sans-serif;font-size:12px;display:flex;justify-content:space-between;gap:12px}
+    .foot b{color:#D4AF37;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+  `
+  function brochureHtml(): string {
+    const host = document.createElement('div')
+    host.innerHTML = content
+    // "— SECTION —" paragraphs → design headings
+    for (const el of Array.from(host.querySelectorAll('p'))) {
+      const m = (el.textContent || '').trim().match(/^[—–-]\s*(.+?)\s*[—–-]$/)
+      if (m) { const h = document.createElement('h2'); h.textContent = m[1]; el.replaceWith(h) }
+    }
+    // paragraphs made of "• " lines → styled fact lists
+    for (const el of Array.from(host.querySelectorAll('p'))) {
+      const lines = el.innerHTML.split(/<br\s*\/?>/i).map((l) => l.trim()).filter(Boolean)
+      if (lines.length && lines.every((l) => /^•\s*/.test(l.replace(/<[^>]*>/g, '').trim()) || /^•/.test(l))) {
+        const ul = document.createElement('ul')
+        ul.innerHTML = lines.map((l) => `<li>${l.replace(/^(\s|&nbsp;)*•\s*/i, '')}</li>`).join('')
+        el.replaceWith(ul)
+      }
+    }
+    // opening title block → cover band
+    let cover = ''
+    const first = host.firstElementChild
+    if (first && first.tagName === 'P') {
+      const lines = first.innerHTML.split(/<br\s*\/?>/i).map((l) => l.trim()).filter(Boolean)
+      cover = `<header class="cover"><div class="eyebrow">${escapeHtml(title || 'Brochure')}</div><h1>${lines[0] || ''}</h1>${lines.length > 1 ? `<p class="by">${lines.slice(1).join('<br>')}</p>` : ''}</header>`
+      first.remove()
+    }
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title || 'document')}</title><style>${BROCHURE_CSS}</style></head><body dir="auto">${cover}<main>${host.innerHTML}</main><footer class="foot"><b>${escapeHtml(title || '')}</b><span>freeholdproperty.ae</span></footer></body></html>`
+  }
   function downloadHtml() {
-    const blob = new Blob([fullDoc()], { type: 'text/html' })
+    const blob = new Blob([brochureHtml()], { type: 'text/html' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `${(title || 'document').replace(/[^\w؀-ۿ-]+/g, '_').slice(0, 60)}.html`
@@ -179,7 +229,7 @@ export default function DriveDocEditor() {
   }
   function exportPdf() {
     const w = window.open('', '_blank'); if (!w) return
-    w.document.write(fullDoc()); w.document.close(); w.focus()
+    w.document.write(brochureHtml()); w.document.close(); w.focus()
     setTimeout(() => w.print(), 300)
   }
 
