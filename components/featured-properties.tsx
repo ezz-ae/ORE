@@ -72,7 +72,7 @@ export async function FeaturedProperties() {
             return (
               <Link
                 key={property.id}
-                href={`/properties/${property.slug}`}
+                href={property.slug ? `/properties/${property.slug}` : "/properties"}
                 prefetch={false}
                 className={`group block ${isLarge ? "md:col-span-2 lg:col-span-1" : ""}`}
               >
