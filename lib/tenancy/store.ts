@@ -54,6 +54,11 @@ interface TenantRow {
 
 const SELECT_COLS = `id, subdomain, schema_name, company, product, accent, logo, status, trial_ends_at, created_at`
 
+// Brand resolution hits this on every request of a tenant host — cache found
+// tenants briefly. Misses are not cached (signup availability must stay live).
+const bySubdomainCache = new Map<string, { tenant: SaasTenant; expires: number }>()
+const BY_SUBDOMAIN_TTL_MS = 15_000
+
 const mapTenant = (r: TenantRow): SaasTenant => ({
   id: r.id,
   subdomain: r.subdomain,
@@ -146,6 +151,7 @@ export async function createTenant(input: {
       // (^t_[a-z0-9_]+$), so it is safe to embed as a quoted identifier.
       await q(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`)
       invalidateTenantSchemaCache(sub)
+      bySubdomainCache.delete(sub)
       return { ok: true, tenant: mapTenant(row) } as const
     })
   })
@@ -155,13 +161,18 @@ export async function createTenant(input: {
 export async function getTenantBySubdomain(raw: string): Promise<SaasTenant | null> {
   const sub = raw.trim().toLowerCase()
   if (!SUBDOMAIN_RE.test(sub)) return null
+  const cached = bySubdomainCache.get(sub)
+  if (cached && cached.expires > Date.now()) return cached.tenant
   return runWithDefaultSchema(async () => {
     await ensure()
     const rows = await query<TenantRow>(
       `SELECT ${SELECT_COLS} FROM saas_tenants WHERE subdomain = $1 LIMIT 1`,
       [sub],
     )
-    return rows[0] ? mapTenant(rows[0]) : null
+    if (!rows[0]) return null
+    const tenant = mapTenant(rows[0])
+    bySubdomainCache.set(sub, { tenant, expires: Date.now() + BY_SUBDOMAIN_TTL_MS })
+    return tenant
   })
 }
 

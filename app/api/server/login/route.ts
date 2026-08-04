@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { authenticateFromDB } from '@/lib/freehold/auth-db'
 import { signSession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
 
 export const runtime = 'nodejs'
 
@@ -28,7 +29,11 @@ export async function POST(req: Request) {
 
   const remember = !!body.remember
   const ttlMs = (remember ? 30 * DAY : 12 * 60 * 60) * 1000
-  const token = await signSession(user, ttlMs)
+  // On a tenant host the session is fenced to that tenant: authenticateFromDB
+  // already read the tenant's own users table (schema-per-tenant), and the
+  // claim below lets the proxy reject this cookie on any other host.
+  const tenant = tenantSubdomainFromHost(req.headers.get('host'))
+  const token = await signSession(tenant ? { ...user, tenant } : user, ttlMs)
 
   const res = NextResponse.json({ user })
   res.cookies.set(SESSION_COOKIE, token, {

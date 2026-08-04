@@ -9,6 +9,7 @@ import {
   resolveStoredCrmRole,
 } from "@/lib/auth"
 import { signSession, SESSION_COOKIE as FH_SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { tenantSubdomainFromHost } from "@/lib/tenancy/config"
 import type { Role } from "@/lib/freehold/session-types"
 
 export const runtime = "nodejs"
@@ -55,6 +56,10 @@ export async function POST(req: NextRequest) {
       const role = resolveStoredCrmRole(user.role) as Role
       const initials = String(user.name || user.email)
         .split(/\s+/).map((s) => s[0]).slice(0, 2).join("").toUpperCase()
+      // On a tenant host the platform session carries the tenant claim so the
+      // proxy can fence it to this host (schema-per-tenant already scoped the
+      // credential check itself).
+      const tenant = tenantSubdomainFromHost(req.headers.get("host"))
       const fhToken = await signSession(
         {
           email: user.email,
@@ -63,6 +68,7 @@ export async function POST(req: NextRequest) {
           role,
           brokerId: role === "broker" ? user.id : undefined,
           home: role === "broker" ? "/freehold-intelligence/agent" : "/freehold-intelligence",
+          ...(tenant ? { tenant } : {}),
         },
         FH_TTL_MS,
       )

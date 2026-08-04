@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server"
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { WHITE_LABEL } from '@/lib/whitelabel/config'
+import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
 
 // Internal command surfaces — pages that must never render for anonymous visitors.
 const internalPagePrefixes = [
@@ -136,6 +137,13 @@ export async function proxy(request: NextRequest) {
       if (!user) {
         return NextResponse.json({ error: "Authentication required." }, { status: 401 })
       }
+      // Tenant fencing (SaaS): a session is only valid on the host it was
+      // minted for — tenant sessions on their own subdomain, non-tenant
+      // sessions on non-tenant hosts. Pure string compare, no DB at the edge.
+      // Dormant when TENANT_BASE_DOMAIN is unset (parser always returns null).
+      if ((user.tenant ?? null) !== tenantSubdomainFromHost(hostname)) {
+        return NextResponse.json({ error: "Session does not belong to this workspace." }, { status: 401 })
+      }
       // Ad spend + lead PII: launching/editing campaigns (any write to
       // /api/meta|google/*) and reading Meta lead-form data must be gated to
       // marketing + management. Brokers keep GET access (view their campaigns).
@@ -197,6 +205,15 @@ export async function proxy(request: NextRequest) {
       const loginUrl = request.nextUrl.clone()
       // White-label demo: unauthenticated visitors go to the activation gate,
       // not the Freehold team sign-in.
+      loginUrl.pathname = WHITE_LABEL ? '/activate' : '/server'
+      loginUrl.search = ''
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Tenant fencing for pages (SaaS): a session minted on another host must
+    // re-authenticate here — same rule as the API wall above.
+    if ((user.tenant ?? null) !== tenantSubdomainFromHost(hostname)) {
+      const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = WHITE_LABEL ? '/activate' : '/server'
       loginUrl.search = ''
       return NextResponse.redirect(loginUrl)

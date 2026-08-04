@@ -41,4 +41,10 @@ export interface SessionUser {
   brokerId?: string
   /** Where this role lands after login. */
   home: string
+  /**
+   * SaaS tenant subdomain this session was minted on ({sub}.TENANT_BASE_DOMAIN).
+   * Absent on Freehold / non-tenant sessions. The proxy fences every request:
+   * host tenant and session tenant must match exactly, both directions.
+   */
+  tenant?: string
 }

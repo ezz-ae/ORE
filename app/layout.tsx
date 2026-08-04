@@ -10,6 +10,7 @@ import { BRAND_OG_IMAGE, getMetadataBase, getSiteUrl } from "@/lib/site"
 import { BRAND } from "@/lib/freehold/brand"
 import { BrandProvider } from "@/components/whitelabel/brand-provider"
 import { getWorkspaceBrand } from "@/lib/whitelabel/server"
+import { getTenantBrand } from "@/lib/tenancy/server"
 import "./globals.css"
 
 export const dynamic = "force-dynamic"
@@ -145,8 +146,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // White-label: paint the current workspace's brand (null in the Freehold product).
-  const wlBrand = await getWorkspaceBrand()
+  // Brand resolution order: SaaS tenant (by host) → WL demo workspace (by
+  // cookie) → static Freehold BRAND. Null everywhere except those modes.
+  const wlBrand = (await getTenantBrand()) ?? (await getWorkspaceBrand())
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
