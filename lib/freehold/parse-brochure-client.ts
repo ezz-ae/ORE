@@ -9,12 +9,12 @@ import { upload } from '@vercel/blob/client'
 export const BROCHURE_INLINE_LIMIT = 4_300_000
 /** Absolute brochure ceiling — enforced client-side here, in the Blob token
  *  route, and again on the fetched bytes server-side. */
-export const BROCHURE_MAX_BYTES = 12 * 1024 * 1024
+export const BROCHURE_MAX_BYTES = 30 * 1024 * 1024
 
 /**
  * POST a brochure PDF to /api/dashboard/projects/parse-brochure, picking the
  * transport by size: small files go as FormData (unchanged fast path); files
- * between the platform body cap and 12 MB are uploaded by the browser directly
+ * between the platform body cap and 30 MB are uploaded by the browser directly
  * to Vercel Blob (same token route pattern as reel videos) and referenced as
  * JSON {url}. Callers must reject files over BROCHURE_MAX_BYTES beforehand.
  *

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 // Signs a short-lived token so the browser uploads a brochure PDF DIRECTLY to
 // Vercel Blob (bytes never pass through this function — the platform caps
-// request bodies at ~4.5 MB, so 4.3–12 MB brochures can't ride a FormData
+// request bodies at ~4.5 MB, so 4.3–30 MB brochures can't ride a FormData
 // POST). Auth-gated, same pattern as upload-video. The client then POSTs the
 // returned blob URL to /api/dashboard/projects/parse-brochure as JSON {url}.
 export async function POST(req: NextRequest) {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       request: req,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ['application/pdf'],
-        maximumSizeInBytes: 12 * 1024 * 1024, // 12MB per brochure
+        maximumSizeInBytes: 30 * 1024 * 1024, // 30MB per brochure
         addRandomSuffix: true,
         tokenPayload: JSON.stringify({ email: auth.user.email }),
       }),
