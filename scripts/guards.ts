@@ -102,6 +102,9 @@ const SELF_DEFENDING: Array<{ route: string; mustMatch: RegExp; why: string }> =
   { route: 'app/api/wl/keys/route.ts', mustMatch: /x-wl-admin/i, why: 'WL admin secret gate' },
   { route: 'app/api/wl/tenants/route.ts', mustMatch: /x-wl-admin/i, why: 'WL admin secret gate' },
   { route: 'app/api/wl/logo/route.ts', mustMatch: /verifyWorkspace|WL_SESSION_COOKIE/, why: 'workspace-cookie gate' },
+  { route: 'app/api/wl/signup/route.ts', mustMatch: /checkRateLimit/, why: 'rate limit (public signup)' },
+  { route: 'app/api/wl/subdomain-check/route.ts', mustMatch: /checkRateLimit/, why: 'rate limit (public check)' },
+  { route: 'app/api/wl/claim/route.ts', mustMatch: /verifySession/, why: 'HMAC claim-token gate' },
 ]
 
 function routeFileFor(apiPath: string): string | null {
