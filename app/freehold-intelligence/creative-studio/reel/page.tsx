@@ -16,6 +16,7 @@ import { PALETTES, FORMATS, loadImage, fmtPrice, ensureAdFonts, type FormatKey, 
 import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
 import { SUITE_LANGS, type SuiteLang } from '@/lib/freehold/creative-suite'
 import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type ReelOptions } from '@/lib/freehold/reel-compose'
+import { pickRecorderMime } from '@/lib/freehold/video-export'
 
 /**
  * PHOTO REEL — the motion tool of the Creative Suite.
@@ -27,15 +28,6 @@ import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type 
  * the same per-frame renderer the export records, so what you watch IS what
  * downloads — no separate "preview approximation".
  */
-
-/** First WebM codec the platform's MediaRecorder actually supports, else null. */
-function pickWebmMime(): string | null {
-  if (typeof MediaRecorder === 'undefined') return null
-  for (const m of ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']) {
-    try { if (MediaRecorder.isTypeSupported(m)) return m } catch { continue }
-  }
-  return null
-}
 
 type Shot = { id: string; url: string; img: HTMLImageElement }
 
@@ -306,12 +298,15 @@ export default function ReelMakerPage() {
   })
   const removeShot = (i: number) => setShots((prev) => prev.filter((_, x) => x !== i))
 
-  // ── Real WebM export: record the canvas as the renderer drives it ──
-  async function renderToBlob(): Promise<Blob | null> {
+  // ── Real video export: record the canvas as the renderer drives it ──
+  // MP4 first — the reel exists to run as an Instagram/Facebook ad, and Meta
+  // does not accept WebM for ad creative. See lib/freehold/video-export.ts.
+  async function renderToBlob(): Promise<{ blob: Blob; ext: 'mp4' | 'webm' } | null> {
     const canvas = canvasRef.current
     if (!canvas || !canRender) return null
-    const mimeType = pickWebmMime()
-    if (!mimeType) { toast.error(t('reel.err.unsupported')); return null }
+    const choice = pickRecorderMime()
+    if (!choice) { toast.error(t('reel.err.unsupported')); return null }
+    const mimeType = choice.mime
     setPlaying(false)
     setExporting(true)
     setExportPct(0)
@@ -355,7 +350,7 @@ export default function ReelMakerPage() {
       // tracks against the canvas.
       stream.getTracks().forEach((track) => track.stop())
       setExportPct(100)
-      return blob
+      return { blob, ext: choice.ext }
     } catch {
       // A tainted (cross-origin) photo makes captureStream/drawImage throw.
       toast.error(t('reel.err.tainted'))
@@ -366,23 +361,27 @@ export default function ReelMakerPage() {
   }
 
   async function downloadReel() {
-    const blob = await renderToBlob()
-    if (!blob) return
+    const out = await renderToBlob()
+    if (!out) return
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `${(overlay.headline || 'reel').slice(0, 40).replace(/\s+/g, '-').toLowerCase()}-${format}.webm`
+    a.href = URL.createObjectURL(out.blob)
+    // The extension follows the container that was actually recorded. Writing
+    // an MP4 as .webm (or the reverse) gives the uploader and the OS a file
+    // that disagrees with its own name.
+    a.download = `${(overlay.headline || 'reel').slice(0, 40).replace(/\s+/g, '-').toLowerCase()}-${format}.${out.ext}`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }
 
   async function saveReel() {
     if (saving) return
-    const blob = await renderToBlob()
-    if (!blob) return
+    const out = await renderToBlob()
+    if (!out) return
+    const { blob } = out
     setSaving(true)
     try {
       const title = `${(overlay.headline || 'Reel').slice(0, 60)} — reel (${FORMATS[format].w}×${FORMATS[format].h})`
-      const file = new File([blob], `${title.replace(/\s+/g, '-').toLowerCase()}.webm`, { type: blob.type })
+      const file = new File([blob], `${title.replace(/\s+/g, '-').toLowerCase()}.${out.ext}`, { type: blob.type })
       const put = await upload(file.name, file, { access: 'public', handleUploadUrl: '/api/freehold/drive/upload-video' })
       const res = await fetch('/api/freehold/library', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },

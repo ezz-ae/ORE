@@ -11,6 +11,7 @@ import { upload } from '@vercel/blob/client'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import type { DriveKind } from '@/lib/freehold/drive'
+import { pickRecorderMime } from '@/lib/freehold/video-export'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LibRow = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
@@ -35,16 +36,11 @@ const fmt = (s: number) => {
   return `${m}:${String(sec).padStart(2, '0')}`
 }
 
-// ── Real WebM export helpers ─────────────────────────────────────────────────
-/** First WebM codec the platform's MediaRecorder actually supports, else null. */
-function pickWebmMime(): string | null {
-  if (typeof MediaRecorder === 'undefined') return null
-  const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
-  for (const m of candidates) {
-    try { if (MediaRecorder.isTypeSupported(m)) return m } catch { continue }
-  }
-  return null
-}
+// ── Real video export helpers ────────────────────────────────────────────────
+// The container is chosen by lib/freehold/video-export.ts, which prefers MP4:
+// an edited clip is usually headed for an ad or a client, and Meta does not
+// accept WebM for ad creative. Safari, which cannot record WebM at all, could
+// not export from here before that change.
 
 /** Rounded-rect path with a manual fallback for engines without ctx.roundRect. */
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -286,8 +282,9 @@ export default function DriveVideoEditor() {
   async function exportWebm() {
     const v = videoRef.current
     // Guards, honest first.
-    const mimeType = pickWebmMime()
-    if (!mimeType) { toast.error(t('ed.video.exportUnsupported')); return }
+    const choice = pickRecorderMime()
+    if (!choice) { toast.error(t('ed.video.exportUnsupported')); return }
+    const mimeType = choice.mime
     if (!v || !url) { toast.error(t('ed.video.exportTainted')); return }
 
     setExporting(true)
@@ -443,7 +440,8 @@ export default function DriveVideoEditor() {
           const a = document.createElement('a')
           const base = (title || item?.title || 'video').trim() || 'video'
           a.href = objUrl
-          a.download = `${base}-edit.webm`
+          // Name the file after the container that was really recorded.
+          a.download = `${base}-edit.${choice.ext}`
           document.body.appendChild(a)
           a.click()
           a.remove()
