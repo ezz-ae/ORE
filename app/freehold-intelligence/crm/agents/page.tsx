@@ -6,6 +6,7 @@ import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle }
 import { type CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
 
 const STATUS_CONFIG = {
   available:    { labelKey: 'crm.status.available',  classes: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25' },
@@ -101,6 +102,8 @@ export default function CrmAgentsPage() {
               ? t('crm.agentsSubtitle', { agents: agents.length, leads: totalLeads, overdue: totalOverdue })
               : t('crm.agentsSubtitleSingular', { agents: agents.length, leads: totalLeads, overdue: totalOverdue })}
           />
+
+          <TeamSignpost className="mt-6" />
 
           {overloaded.length > 0 && (
             <div className="mt-7 flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4">

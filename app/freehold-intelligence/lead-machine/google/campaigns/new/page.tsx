@@ -178,7 +178,16 @@ export default function GoogleCampaignNewPage() {
         }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Launch failed')
+      if (!res.ok) {
+        // A Google launch now reserves credits like a Meta one, so 402 is a real
+        // outcome the broker can act on — say it in their language, with the
+        // numbers, instead of passing the server's English through.
+        throw new Error(
+          res.status === 402
+            ? t('lm.launch.insufficientCredits', { required: json.required ?? 0, balance: json.balance ?? 0 })
+            : (json.error ?? 'Launch failed'),
+        )
+      }
       setSuccess(json.campaignId ?? '')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unexpected error')

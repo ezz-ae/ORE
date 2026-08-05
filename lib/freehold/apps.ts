@@ -17,7 +17,7 @@
 
 import type { LucideIcon } from 'lucide-react'
 import {
-  Users, Megaphone, DollarSign, TrendingUp, Bot, Package,
+  Users, UsersRound, Megaphone, DollarSign, TrendingUp, Bot, Package,
   ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard, CalendarDays, HardDrive,
 } from 'lucide-react'
 import type { Role } from './session-types'
@@ -108,6 +108,17 @@ export const APPS: AppDef[] = [
     card: 'border-violet-400/15 hover:border-violet-400/30',
     icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
     brokerHide: true,
+  },
+  // Team — the ONE dashboard for every agent/broker control (roster, pipeline,
+  // performance, credits, ad permissions, roles). Management-only: a broker
+  // must never see other brokers' pipelines, money or access.
+  {
+    id: 'team', label: 'Team', sub: 'Roster · Pipeline · Credits · Access',
+    href: '/freehold-intelligence/team', Icon: UsersRound,
+    metric: 'Everyone on the team', badge: 0, accent: '#2DD4BF',
+    card: 'border-teal-400/15 hover:border-teal-400/35',
+    icon: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+    roles: MGMT_ROLES,
   },
   {
     id: 'calendar', label: 'Calendar', sub: 'Meetings · Bookings · Training · Follow-ups',

@@ -7,6 +7,7 @@ import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance } from '@/lib/freehold/credits-db'
+import { creditsForDailyBudget } from '@/lib/freehold/credits-shared'
 import { randomUUID } from 'crypto'
 import { decideCampaignAction, type CampaignIntent, type RouterDecision } from '@/lib/meta/campaign-router'
 import {
@@ -70,8 +71,9 @@ export async function POST(req: NextRequest) {
     : undefined
 
   // 1 credit = AED 10 of funded ad spend (CREDIT_VALUE_AED). Whole credits only —
-  // the ledger column is INTEGER.
-  const creditsToSpend = brokerId ? Math.max(1, Math.round(body.dailyBudgetAED / 10)) : 0
+  // the ledger column is INTEGER. The rate lives in credits-shared so Meta and
+  // Google charge identically instead of each re-deriving "/ 10".
+  const creditsToSpend = brokerId ? creditsForDailyBudget(body.dailyBudgetAED) : 0
 
   // ── Money: RESERVE credits BEFORE launching (fail-closed) ────────────────────
   // A campaign must never reach the auction without its credits already committed.

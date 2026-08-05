@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useI18n } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { prettySource, fmtAed } from '@/lib/freehold/analytics-format'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
 
 type Profile = {
   agent: { id: string; name: string; email: string; phone: string | null; role: string; tenureDays: number | null }
@@ -172,6 +173,8 @@ export default function AgentProfilePage() {
       <Link href="/freehold-intelligence/analytics/team" className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100">
         <ArrowLeft className="h-4 w-4" /> {t('analytics.agent.back')}
       </Link>
+
+      <TeamSignpost />
 
       {/* Header */}
       <div className="flex flex-wrap items-center gap-4">

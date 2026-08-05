@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Crown, Shield, User, Check, Lock, ChevronDown, ChevronUp } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
 
 type Role = 'Owner' | 'Admin' | 'Agent' | 'Viewer'
 
@@ -84,6 +85,7 @@ export default function RolesPage() {
           {t('settings.roles.subtitle')}
         </p>
         <p className="mt-2 text-xs text-slate-500">{t('settings.roles.referenceNote')}</p>
+        <TeamSignpost className="mt-4" />
       </div>
 
       {/* Role cards */}

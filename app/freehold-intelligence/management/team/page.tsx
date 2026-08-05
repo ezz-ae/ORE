@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { TeamAdmin } from './_team-admin'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
 
 interface AgentRow {
   id: string
@@ -101,6 +102,7 @@ export default function TeamPerformancePage() {
   if (agents.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-6 pt-8 space-y-6">
+        <TeamSignpost />
         <div className="flex flex-col items-center justify-center py-16 text-slate-500">
           <Users className="h-10 w-10 mb-3 opacity-30" />
           <p className="text-sm">{t('mgmt.team.noBrokers')}</p>
@@ -135,6 +137,8 @@ export default function TeamPerformancePage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
+
+        <TeamSignpost />
 
         <TeamAdmin />
 

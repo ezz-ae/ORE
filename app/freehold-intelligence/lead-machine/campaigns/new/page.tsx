@@ -1266,7 +1266,11 @@ export default function NewCampaignPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setApiError(data.error ?? 'Launch failed. Check your Meta credentials and try again.')
+        setApiError(
+          res.status === 402
+            ? t('lm.launch.insufficientCredits', { required: data.required ?? 0, balance: data.balance ?? 0 })
+            : (data.error ?? 'Launch failed. Check your Meta credentials and try again.'),
+        )
         setLoading(false)
         return
       }

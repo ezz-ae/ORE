@@ -268,6 +268,7 @@ export const finance: Record<Locale, Dict> = {
     'finance.credits.ledgerRefund': 'Refunded',
     'finance.credits.ledgerAdjustment': 'Adjustment',
     'finance.credits.ledgerEarn': 'Earned from a deal',
+    'finance.credits.ledgerMonthlyGrant': 'Monthly tier quota',
 
     // ── Contracts ──
     'finance.contracts.title': 'Contracts',
@@ -631,6 +632,7 @@ export const finance: Record<Locale, Dict> = {
     'finance.credits.ledgerRefund': 'مسترجعة',
     'finance.credits.ledgerAdjustment': 'تسوية',
     'finance.credits.ledgerEarn': 'مكتسبة من صفقة',
+    'finance.credits.ledgerMonthlyGrant': 'حصة المستوى الشهرية',
 
     // ── Contracts ──
     'finance.contracts.title': 'العقود',
@@ -994,6 +996,7 @@ export const finance: Record<Locale, Dict> = {
     'finance.credits.ledgerRefund': 'Возврат',
     'finance.credits.ledgerAdjustment': 'Корректировка',
     'finance.credits.ledgerEarn': 'Заработано на сделке',
+    'finance.credits.ledgerMonthlyGrant': 'Ежемесячная квота уровня',
 
     // ── Contracts ──
     'finance.contracts.title': 'Договоры',
