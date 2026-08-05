@@ -12,7 +12,8 @@
     "smoke": "tsx scripts/smoke.ts",
     "smoke:tenancy": "tsx scripts/tenancy-smoke.ts",
     "i18n": "tsx scripts/i18n-audit.ts",
-    "guards": "tsx scripts/guards.ts",
+    "routes": "tsx scripts/gen-app-routes.ts",
+    "guards": "tsx scripts/gen-app-routes.ts && tsx scripts/guards.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "typecheck": "tsc --noEmit"
   },
