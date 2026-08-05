@@ -16,6 +16,7 @@ import { Compass, Sun, Moon } from 'lucide-react'
 import { useThemeMode } from '@/lib/freehold/use-theme-mode'
 import { WhatsNew, WhatsNewMenuButton } from '@/components/freehold/whats-new'
 import { PrefsSync, saveUserPref } from '@/components/freehold/prefs-sync'
+import { CommandNav } from '@/components/freehold/command-nav'
 
 const HOME_HREF = '/freehold-intelligence'
 
@@ -81,6 +82,12 @@ export function SpacesNav() {
           <span className="ml-1 text-gold">{brand.product}</span>
         </span>
       </Link>
+
+      {/* All tools — the popup that holds the whole system + global search.
+          Sits beside the brand on every screen size, so the depth of the
+          product is one click (or ⌘K) away without any page growing a second
+          and third permanent nav rail. */}
+      <CommandNav />
 
       {/* Mobile spacer — keeps brand left, account right while the spine is hidden */}
       <div className="flex-1 md:hidden" />

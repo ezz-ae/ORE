@@ -218,10 +218,41 @@ function runEnsureMemos(): void {
   if (hits === 0) ok('ensure-memo: no process-global DDL memos outside lib/db')
 }
 
+// ── 5. Tool registry points at real routes ────────────────────────────────────
+// The All-tools popup indexes the whole system from lib/freehold/tools.ts. If a
+// page is renamed or removed, the popup would keep offering the old path and
+// hand out a 404 — the same failure the chat link sanitizer was built to stop,
+// only worse, because this one is the product's main way to get anywhere.
+// Checked against the generated route list (scripts/gen-app-routes.ts runs
+// first in `pnpm guards`), so the two can never drift.
+function runToolRoutes(): void {
+  const toolsFile = path.join(ROOT, 'lib/freehold/tools.ts')
+  const routesFile = path.join(ROOT, 'lib/freehold/app-routes.generated.ts')
+  if (!fs.existsSync(toolsFile) || !fs.existsSync(routesFile)) {
+    fail('tool-routes: lib/freehold/tools.ts or the generated route list is missing')
+    return
+  }
+  const routes = new Set(
+    [...fs.readFileSync(routesFile, 'utf-8').matchAll(/"([^"]+)"/g)].map((m) => m[1]),
+  )
+  const hrefs = [...fs.readFileSync(toolsFile, 'utf-8').matchAll(/href:\s*`\$\{FI\}([^`]*)`/g)]
+    .map((m) => `/freehold-intelligence${m[1]}`)
+  if (hrefs.length < 50) {
+    fail('tool-routes: could not parse hrefs from tools.ts — guard needs updating')
+    return
+  }
+  let hits = 0
+  for (const href of hrefs) {
+    if (!routes.has(href)) { hits++; fail(`tool-routes: ${href} is in the tool registry but has no page — the All-tools popup would 404`) }
+  }
+  if (hits === 0) ok(`tool-routes: all ${hrefs.length} registry entries resolve to real pages`)
+}
+
 runCopyRules()
 runAuthMatrix()
 runDbFunnel()
 runEnsureMemos()
+runToolRoutes()
 
 if (failures > 0) {
   console.error(`\n${failures} guard failure(s).`)
