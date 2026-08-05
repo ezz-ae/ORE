@@ -283,7 +283,7 @@ export function GenerateClient({ prop, fromLandings = false }: { prop: Inventory
             Ads → Landing Pages list, or the Inventory project — instead of
             always dumping them into Inventory (the reported nav loop). */}
         <Link
-          href={fromLandings ? '/freehold-intelligence/lead-machine/landings' : `/freehold-intelligence/inventory/${prop.id}`}
+          href={fromLandings ? '/freehold-intelligence/inventory/landings' : `/freehold-intelligence/inventory/${prop.id}`}
           className="mb-4 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-400"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {fromLandings ? t('inv.gen.backToLandings') : t('inv.gen.back', { name: prop.name })}
@@ -342,7 +342,7 @@ export function GenerateClient({ prop, fromLandings = false }: { prop: Inventory
               the full editor (sections, layout canvas, SEO, pixels, test) is
               where deep editing lives. */}
           <Link
-            href={`/freehold-intelligence/lead-machine/landings/${publishedSlug}/edit`}
+            href={`/freehold-intelligence/inventory/landings/${publishedSlug}/edit`}
             className="shrink-0 flex items-center gap-1 rounded-full bg-gold px-3 py-1 text-xs font-medium text-ink transition hover:bg-[#F0CB67]"
           >
             <PenLine className="h-3 w-3" /> {t('inv.gen.openFullEditor')}

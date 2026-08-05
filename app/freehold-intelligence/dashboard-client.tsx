@@ -208,7 +208,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
     if (crm && crm.fresh > 0) s.push({ id: 'inbox', sev: 'gold', text: t('hub.sig.inbox', { n: crm.fresh }), href: `${FI}/crm/inbox`, ai: t('hub.ai.inbox') })
     if (pendingDeals && pendingDeals > 0) s.push({ id: 'deals', sev: 'amber', text: t('hub.sig.deals', { n: pendingDeals }), href: `${FI}/management/deals`, ai: t('hub.ai.deals') })
     if (payoutsAed && payoutsAed > 0) s.push({ id: 'payouts', sev: 'amber', text: t('hub.sig.payouts', { amount: Math.round(payoutsAed).toLocaleString() }), href: `${FI}/finance/payments`, ai: t('hub.ai.payouts') })
-    if (missingLandings.length > 0) s.push({ id: 'landings', sev: 'amber', text: t('hub.sig.landings', { n: missingLandings.length }), href: `${FI}/lead-machine/landings`, ai: t('hub.ai.landings') })
+    if (missingLandings.length > 0) s.push({ id: 'landings', sev: 'amber', text: t('hub.sig.landings', { n: missingLandings.length }), href: `${FI}/inventory/landings`, ai: t('hub.ai.landings') })
     return s
   }, [crm, urgentTasks, pendingDeals, payoutsAed, missingLandings.length, t])
 

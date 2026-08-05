@@ -56,7 +56,7 @@ const ROUTE_ACTIONS: Record<Route, { key: string; href: string }[]> = {
     { key: 'agent.act.offPlan',     href: '/freehold-intelligence/inventory/off-plan' },
   ],
   frontend: [
-    { key: 'agent.act.landings',   href: '/freehold-intelligence/lead-machine/landings' },
+    { key: 'agent.act.landings',   href: '/freehold-intelligence/inventory/landings' },
     { key: 'agent.act.shortLinks', href: '/freehold-intelligence/lead-machine/links' },
     { key: 'agent.act.catalogue',  href: '/properties' },
   ],

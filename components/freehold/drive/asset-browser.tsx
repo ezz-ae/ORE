@@ -331,7 +331,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
                   <span className="text-[11px] text-slate-500">{shown.length}</span>
                   {/* One system: the Drive shows your live pages; the manager
                       creates them from inventory. Same store, same editor. */}
-                  <Link href="/freehold-intelligence/lead-machine/landings"
+                  <Link href="/freehold-intelligence/inventory/landings"
                     className="ms-auto inline-flex items-center gap-1 text-[11px] font-medium text-teal-300/90 transition hover:text-teal-200">
                     {t('drive.landings.manage')} <ExternalLink className="h-3 w-3" />
                   </Link>
@@ -339,8 +339,8 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {shown.map((l) => (
                     <div key={l.slug} role="button" tabIndex={0}
-                      onClick={() => router.push(`/freehold-intelligence/lead-machine/landings/${l.slug}/edit`)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/freehold-intelligence/lead-machine/landings/${l.slug}/edit`) }}
+                      onClick={() => router.push(`/freehold-intelligence/inventory/landings/${l.slug}/edit`)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/freehold-intelligence/inventory/landings/${l.slug}/edit`) }}
                       className="group relative cursor-pointer overflow-hidden rounded-xl border border-line bg-surface transition hover:border-teal-400/30">
                       <div className="relative aspect-[4/3] w-full bg-surface-2">
                         {l.heroImage
@@ -360,7 +360,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
                         </div>
                       </div>
                       <div className="pointer-events-none absolute inset-x-2 bottom-2 flex justify-end opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-                        <Link href={`/freehold-intelligence/lead-machine/landings/${l.slug}/edit`} onClick={(e) => e.stopPropagation()}
+                        <Link href={`/freehold-intelligence/inventory/landings/${l.slug}/edit`} onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 rounded-full bg-teal-400 px-2.5 py-1 text-[11px] font-semibold text-black shadow-lg"><Pencil className="h-3 w-3" /> {t('drive.edit')}</Link>
                       </div>
                     </div>

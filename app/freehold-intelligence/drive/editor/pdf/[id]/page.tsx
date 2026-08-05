@@ -165,7 +165,7 @@ export default function DrivePdfSurface() {
     setCreatingListing(true)
     try {
       const res = await createListingAndLanding(parsed as BrochureFields)
-      if (res.ok) { toast.success(t('ed.pdf.listing.created')); router.push('/freehold-intelligence/lead-machine/landings') }
+      if (res.ok) { toast.success(t('ed.pdf.listing.created')); router.push('/freehold-intelligence/inventory/landings') }
       else if (res.error === 'landing-failed') toast.error(t('ed.pdf.listing.landingFailed'))
       else if (res.error === 'name-required') toast.error(t('ed.pdf.listing.needName'))
       else toast.error(t('ed.pdf.listing.failed'))

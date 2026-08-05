@@ -160,7 +160,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 </a>
               )}
               <Link
-                href={`/freehold-intelligence/lead-machine/landings/${prop.landingSlug}/edit`}
+                href={`/freehold-intelligence/inventory/landings/${prop.landingSlug}/edit`}
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${prop.landingUrl ? 'border border-gold/30 bg-gold/[0.07] text-gold hover:bg-gold/[0.14]' : 'bg-gold text-ink hover:bg-gold-bright'}`}
               >
                 <Sparkles className="h-4 w-4" /> {t('inv.detail.editLanding')}

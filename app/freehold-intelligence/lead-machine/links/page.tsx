@@ -87,7 +87,7 @@ export default function ShortLinksPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-      <Link href="/freehold-intelligence/lead-machine/landings" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
+      <Link href="/freehold-intelligence/inventory/landings" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.links.back')}
       </Link>
 

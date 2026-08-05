@@ -44,7 +44,8 @@ const MANAGER_NAV_SECTIONS = [
     key: 'lm.nav.sec.sources',
     items: [
       { key: 'lm.nav.pipeline',    href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
-      { key: 'lm.nav.landings',    href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
+      // Shortcut only — Landing Pages HOME is Inventory (pages advertise inventory).
+      { key: 'lm.nav.landings',    href: '/freehold-intelligence/inventory/landings',                       Icon: Monitor     },
     ],
   },
   {

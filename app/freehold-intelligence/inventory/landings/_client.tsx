@@ -131,7 +131,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
               </select>
             </label>
             <Link
-              href="/freehold-intelligence/lead-machine/landings/requests"
+              href="/freehold-intelligence/inventory/landings/requests"
               className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-2 text-xs font-medium text-slate-200 transition hover:text-white"
             >
               <Inbox className="h-3.5 w-3.5" /> {t('lper.navLabel')}
@@ -273,7 +273,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
 
                   {/* from=landings → the generator's back button returns HERE,
                       not to Inventory (kills the reported nav loop). */}
-                  <Link href={p.landingStatus === 'missing' ? `/freehold-intelligence/inventory/${p.id}/generate?from=landings` : `/freehold-intelligence/lead-machine/landings/${encodeURIComponent(p.landingSlug ?? p.slug)}/edit`}
+                  <Link href={p.landingStatus === 'missing' ? `/freehold-intelligence/inventory/${p.id}/generate?from=landings` : `/freehold-intelligence/inventory/landings/${encodeURIComponent(p.landingSlug ?? p.slug)}/edit`}
                     className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
                     <Pencil className="h-3 w-3" /> {t('lm.landings.edit')}
                   </Link>

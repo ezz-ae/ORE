@@ -691,7 +691,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   },
   {
     name: 'landing_get', agent: 'landing_agent',
-    description: 'Load one landing page for review: headline, sections (order/visibility), SEO, publish state. Editor: /freehold-intelligence/lead-machine/landings/<slug>/edit',
+    description: 'Load one landing page for review: headline, sections (order/visibility), SEO, publish state. Editor: /freehold-intelligence/inventory/landings/<slug>/edit',
     params: '{ "slug": string }', roles: EVERYONE,
     schema: z.object({ slug: z.string() }),
     run: async (args) => {

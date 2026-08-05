@@ -114,7 +114,7 @@ MODULES:
 - AI Assistant: This chat — the Expert is available from every app via the Expert panel. Ask about leads, projects, draft messages, get scored lead lists.
 - Inventory (/freehold-intelligence/inventory): Browse Dubai projects. Filter by area, ROI, handover, developer, price.
 - Add Listing (/freehold-intelligence/ai-manager/listings/new): Manually add off-market listings. AI auto-fills area context on save.
-- Landing Pages (/freehold-intelligence/lead-machine/landings): Generate shareable advertising pages for any project. Leads from those pages feed into the CRM automatically.
+- Landing Pages (/freehold-intelligence/inventory/landings): Generate shareable advertising pages for any project. Leads from those pages feed into the CRM automatically.
 - CRM / Leads (/freehold-intelligence/crm): Full pipeline. Filter by stage, open any lead to see details, activity history, and AI follow-up composer.
 - Analytics (/freehold-intelligence/analytics): Conversion rates, source attribution, broker performance, pipeline velocity.
 - Settings (/freehold-intelligence/settings): Update your name, email, password, and preferences.

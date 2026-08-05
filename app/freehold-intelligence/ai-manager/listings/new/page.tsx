@@ -98,7 +98,7 @@ export default function NewListingPage() {
         <Info className="h-3.5 w-3.5 shrink-0 text-gold" />
         <span>{t('plistnew.scope.note')}</span>
         <Link
-          href="/freehold-intelligence/lead-machine/landings"
+          href="/freehold-intelligence/inventory/landings"
           className="font-semibold text-gold transition hover:text-gold-bright"
         >
           {t('plistnew.scope.link')}

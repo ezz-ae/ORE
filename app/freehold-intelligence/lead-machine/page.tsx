@@ -40,7 +40,7 @@ export default async function LeadMachineOverviewPage() {
     },
     {
       label: t('lm.hub.nav.landings'),
-      href: '/freehold-intelligence/lead-machine/landings',
+      href: '/freehold-intelligence/inventory/landings',
       icon: Monitor,
       desc: t('lm.hub.nav.landings.desc'),
       // Don't advertise "0 pages" — the count only helps once there are pages.

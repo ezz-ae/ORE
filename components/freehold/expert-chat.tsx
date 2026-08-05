@@ -134,7 +134,7 @@ const PAGE_STARTERS: { match: (p: string) => boolean; keys: string[] }[] = [
     keys: ['expert.st.camp1', 'expert.st.camp2', 'expert.st.camp3'],
   },
   {
-    match: (p) => p.includes('/lead-machine/landings'),
+    match: (p) => p.includes('/inventory/landings'),
     keys: ['expert.st.land1', 'expert.st.land2', 'expert.st.land3'],
   },
   {

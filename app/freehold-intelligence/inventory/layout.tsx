@@ -7,11 +7,16 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Package } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
+// The main list IS the projects list ("Projects", not "All Units"); the old
+// Projects grid is the same inventory grouped by developer, so it's named for
+// what it adds. Landing Pages live here too — pages advertise inventory, so
+// Inventory is their one home (Ads keeps only a shortcut).
 const tabs = [
-  { key: 'inv.tab.allUnits',     href: '/freehold-intelligence/inventory',                  exact: true },
-  { key: 'inv.tab.projects',     href: '/freehold-intelligence/inventory/projects' },
+  { key: 'inv.tab.projects',     href: '/freehold-intelligence/inventory',                  exact: true },
+  { key: 'inv.tab.byDeveloper',  href: '/freehold-intelligence/inventory/projects' },
   { key: 'inv.tab.offPlan',      href: '/freehold-intelligence/inventory/off-plan' },
   { key: 'inv.tab.ready',        href: '/freehold-intelligence/inventory/ready' },
+  { key: 'inv.tab.landingPages', href: '/freehold-intelligence/inventory/landings' },
   { key: 'inv.tab.dataQuality',  href: '/freehold-intelligence/inventory/data-quality' },
 ]
 

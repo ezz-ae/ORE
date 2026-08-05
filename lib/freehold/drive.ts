@@ -43,7 +43,7 @@ export function editorHrefForItem(item: { id: string; kind: DriveKind; url?: str
 
 // Landing pages are not Library rows — they open in their own existing editor.
 export function landingEditHref(slug: string): string {
-  return `/freehold-intelligence/lead-machine/landings/${encodeURIComponent(slug)}/edit`
+  return `/freehold-intelligence/inventory/landings/${encodeURIComponent(slug)}/edit`
 }
 
 // Presentation metadata per kind. i18nKey reuses the existing nb.lib.kind.*

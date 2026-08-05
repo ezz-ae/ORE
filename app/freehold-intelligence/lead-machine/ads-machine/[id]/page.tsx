@@ -587,7 +587,7 @@ export default function MachineDashboardPage() {
                   </Link>
                 )}
                 {p.landingSlug && (
-                  <Link href={`/freehold-intelligence/lead-machine/landings/${p.landingSlug}/edit`}
+                  <Link href={`/freehold-intelligence/inventory/landings/${p.landingSlug}/edit`}
                     className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
                     <Pencil className="h-3 w-3" /> {t('lm.machine.conn.editLanding')}
                   </Link>

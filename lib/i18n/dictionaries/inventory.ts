@@ -8,10 +8,11 @@ const en: Dict = {
   // shell / layout
   'inv.apps': 'Apps',
   'inv.inventory': 'Inventory',
-  'inv.tab.allUnits': 'All Units',
   'inv.tab.projects': 'Projects',
+  'inv.tab.byDeveloper': 'By Developer',
   'inv.tab.offPlan': 'Off-Plan',
   'inv.tab.ready': 'Ready',
+  'inv.tab.landingPages': 'Landing Pages',
   'inv.tab.dataQuality': 'Data Quality',
 
   // status labels (property)
@@ -125,7 +126,7 @@ const en: Dict = {
   'inv.action.view': 'View',
 
   // projects
-  'inv.projects.title': 'Projects',
+  'inv.projects.title': 'By Developer',
   'inv.projects.subtitle': 'All properties grouped by developer',
   'inv.projects.tile.developers': 'Developers',
   'inv.projects.tile.totalUnits': 'Total units',
@@ -390,10 +391,11 @@ const en: Dict = {
 const ar: Dict = {
   'inv.apps': 'التطبيقات',
   'inv.inventory': 'المخزون',
-  'inv.tab.allUnits': 'كل الوحدات',
   'inv.tab.projects': 'المشاريع',
+  'inv.tab.byDeveloper': 'حسب المطوّر',
   'inv.tab.offPlan': 'على الخارطة',
   'inv.tab.ready': 'جاهز',
+  'inv.tab.landingPages': 'صفحات الهبوط',
   'inv.tab.dataQuality': 'جودة البيانات',
 
   'inv.status.active': 'نشط',
@@ -501,7 +503,7 @@ const ar: Dict = {
   'inv.propertiesSorted': '{shown} من {total} عقار · مرتبة حسب جاهزية الإعلان',
   'inv.action.view': 'عرض',
 
-  'inv.projects.title': 'المشاريع',
+  'inv.projects.title': 'حسب المطوّر',
   'inv.projects.subtitle': 'جميع العقارات مجمَّعة حسب المطوّر',
   'inv.projects.tile.developers': 'المطوّرون',
   'inv.projects.tile.totalUnits': 'إجمالي الوحدات',
@@ -757,10 +759,11 @@ const ar: Dict = {
 const ru: Dict = {
   'inv.apps': 'Приложения',
   'inv.inventory': 'Каталог',
-  'inv.tab.allUnits': 'Все объекты',
   'inv.tab.projects': 'Проекты',
+  'inv.tab.byDeveloper': 'По застройщикам',
   'inv.tab.offPlan': 'Офф-план',
   'inv.tab.ready': 'Готов',
+  'inv.tab.landingPages': 'Лендинги',
   'inv.tab.dataQuality': 'Качество данных',
 
   'inv.status.active': 'Активен',
@@ -868,7 +871,7 @@ const ru: Dict = {
   'inv.propertiesSorted': '{shown} из {total} объектов · сортировка по готовности к рекламе',
   'inv.action.view': 'Просмотр',
 
-  'inv.projects.title': 'Проекты',
+  'inv.projects.title': 'По застройщикам',
   'inv.projects.subtitle': 'Все объекты, сгруппированные по застройщику',
   'inv.projects.tile.developers': 'Застройщики',
   'inv.projects.tile.totalUnits': 'Всего объектов',
