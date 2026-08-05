@@ -49,7 +49,9 @@ interface FormLead {
 }
 
 function getField(lead: FormLead, name: string): string {
-  return lead.field_data.find((f) => f.name.toLowerCase().includes(name))?.values?.[0] ?? '—'
+  // Meta omits field_data entirely on some rows, and omits `values` for a
+  // skipped optional question — both used to crash the whole page.
+  return (lead.field_data ?? []).find((f) => f.name.toLowerCase().includes(name))?.values?.[0] ?? '—'
 }
 
 export default function FormDetailPage({ params }: { params: Promise<{ formId: string }> }) {
@@ -447,7 +449,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                   return (
                     <div key={lead.id} className="flex items-start gap-4 px-5 py-4">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-semibold text-slate-400">
-                        {name !== '—' ? name.split(' ').map((p) => p[0]).slice(0, 2).join('') : '?'}
+                        {name !== '—' ? name.split(' ').filter(Boolean).map((p) => p[0]).slice(0, 2).join('') : '?'}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -462,9 +464,9 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                           {lead.ad_id && <span className="font-mono text-xs">{t('pforms.leads.ad', { id: lead.ad_id.slice(0, 8) })}</span>}
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-slate-500">
-                          {lead.field_data
+                          {(lead.field_data ?? [])
                             .filter((f) => !['full_name', 'phone_number', 'email'].some((k) => f.name.includes(k)))
-                            .map((f) => <span key={f.name}>{f.name}: {f.values[0] ?? '—'}</span>)
+                            .map((f) => <span key={f.name}>{f.name}: {f.values?.[0] ?? '—'}</span>)
                           }
                         </div>
                         {/* Rate the lead HERE — same canonical 0–10 the CRM
