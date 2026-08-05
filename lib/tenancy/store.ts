@@ -80,7 +80,7 @@ async function ensure(): Promise<void> {
         subdomain     text NOT NULL UNIQUE,
         schema_name   text NOT NULL UNIQUE,
         company       text NOT NULL,
-        product       text NOT NULL DEFAULT 'Intelligence',
+        product       text NOT NULL DEFAULT 'Lead Machine',
         accent        text NOT NULL DEFAULT '${DEFAULT_ACCENT}',
         logo          text NOT NULL DEFAULT '',
         status        text NOT NULL DEFAULT 'trial',
@@ -131,7 +131,9 @@ export async function createTenant(input: {
   const id = randomUUID()
   const schemaName = schemaNameForSubdomain(sub)
   const company = input.company.trim().slice(0, 40) || 'Your Company'
-  const product = (input.product ?? '').trim().slice(0, 24) || 'Intelligence'
+  // "{Company} Lead Machine" is the default identity — the word "Intelligence"
+  // is deliberately NOT the default (overused; brokers can still type it).
+  const product = (input.product ?? '').trim().slice(0, 24) || 'Lead Machine'
   const accent = /^#[0-9a-fA-F]{6}$/.test(input.accent ?? '') ? (input.accent as string) : DEFAULT_ACCENT
   const logo = (input.logo ?? '').startsWith('data:image/') ? (input.logo as string) : ''
 

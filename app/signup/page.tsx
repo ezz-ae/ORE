@@ -61,7 +61,7 @@ function SignupForm() {
   const [company, setCompany] = useState('')
   const [subdomain, setSubdomain] = useState('')
   const [subState, setSubState] = useState<SubState>('idle')
-  const [product, setProduct] = useState('Intelligence')
+  const [product, setProduct] = useState('Lead Machine')
   const [accent, setAccent] = useState(DEFAULT_ACCENT)
   const [logo, setLogo] = useState('')
   const [adminName, setAdminName] = useState('')
