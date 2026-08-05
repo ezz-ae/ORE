@@ -155,6 +155,12 @@ const ensureSchema = async () => {
       UNIQUE (event_id, user_key)
     )
   `)
+  // Self-heal: this table's ON CONFLICT target needs a real unique index.
+  // Tables created before the UNIQUE was declared never gained one, which
+  // makes every upsert fail with 42P10 (the bug that broke project create).
+  try {
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS fh_calendar_attendees_uidx ON freehold_site_calendar_attendees (event_id, user_key)`)
+  } catch { /* duplicates present — leave the data alone, surface nothing */ }
   // Viewings-as-objects (Layer 10): a viewing is a calendar event of kind
   // 'viewing' carrying its CRM lead + broker (+ project when known) and, once
   // the time has passed, an honest recorded outcome (held / no_show).

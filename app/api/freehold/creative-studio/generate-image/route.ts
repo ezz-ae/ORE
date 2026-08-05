@@ -8,7 +8,11 @@ export const runtime = "nodejs"
 export const maxDuration = 60
 
 // Generating spends real AI budget — same gate as the Creative Studio UI.
-const WRITE_ROLES: readonly Role[] = [...MANAGEMENT_ROLES, "marketing"]
+// Must mirror the Creative Suite layout's MOVED_TOOL_ROLES: the ad-designer,
+// reel and image/video editors were open to every signed-in role in Drive and
+// the move must not tighten access. A narrower list here meant the page
+// opened but Generate answered 403 — the literal "Creative Studio forbidden".
+const WRITE_ROLES: readonly Role[] = [...MANAGEMENT_ROLES, "marketing", "broker"]
 
 /**
  * Single-image generation for guided flows (Reel Autopilot & friends): one

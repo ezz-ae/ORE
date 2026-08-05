@@ -242,7 +242,7 @@ export default function NewCampaignPage() {
   const [step,    setStep]    = useState<WizardStep>(1)
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
-  const [launched, setLaunched] = useState<{ campaignId: string; status: string } | null>(null)
+  const [launched, setLaunched] = useState<{ campaignId: string; status: string; demo?: boolean } | null>(null)
 
   const [form, setForm] = useState<WizardState>({
     listingId:    '',
@@ -1259,7 +1259,10 @@ export default function NewCampaignPage() {
         return
       }
 
-      setLaunched({ campaignId: data.campaignId, status: data.status })
+      // The API returns demo:true when Meta isn't connected — the campaign is a
+      // LOCAL record and no ad exists on Facebook. Saying "launched" there is
+      // the worst kind of lie, so the success screen must carry the truth.
+      setLaunched({ campaignId: data.campaignId, status: data.status, demo: data.demo === true })
       try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
       saveAccountMemory({ campaignDraft: null }) // launched — clear the draft everywhere
     } catch {
@@ -1291,10 +1294,22 @@ export default function NewCampaignPage() {
           <CheckCircle2 className="mx-auto h-14 w-14 text-gold" />
           <h1 className="mt-6 text-[32px] font-semibold text-white">{t('lm.newCampaign.success.title')}</h1>
           <p className="mt-3 text-[16px] text-slate-400">
-            {launched.status === 'ACTIVE'
-              ? t('lm.newCampaign.success.liveMsg')
-              : t('lm.newCampaign.success.pausedMsg')}
+            {launched.demo
+              ? t('lm.newCampaign.success.demoMsg')
+              : launched.status === 'ACTIVE'
+                ? t('lm.newCampaign.success.liveMsg')
+                : t('lm.newCampaign.success.pausedMsg')}
           </p>
+          {/* Not connected to Meta = nothing exists on Facebook. Say it loudly
+              rather than let a green tick imply a live ad. */}
+          {launched.demo && (
+            <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3 text-start">
+              <p className="text-[13px] leading-relaxed text-amber-200">{t('lm.newCampaign.success.demoWarn')}</p>
+              <Link href="/freehold-intelligence/integrations/meta" className="mt-2 inline-flex text-xs font-semibold text-amber-300 underline">
+                {t('lm.newCampaign.success.demoConnect')}
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Honest results — estimates until the campaign delivers. */}

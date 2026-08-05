@@ -2360,12 +2360,16 @@ export async function upsertDashboardProject(input: DashboardProjectInput) {
          name = $2, area = $3, status = $4, developer_name = $5, hero_image = $6,
          price_from_aed = $7, price_to_aed = $8, market_score = $9, rental_yield = $10,
          golden_visa_eligible = $11, featured = $12, payload = $13::jsonb, updated_at = $14
-       WHERE lower(slug) = lower($1)
+       WHERE id = $15 OR lower(slug) = lower($1)
        RETURNING ${RETURNING_COLS}`,
-      vals,
+      [...vals, existing.id],
     )
     if (updated[0]) return updated[0]
-    // Slug moved or the row vanished between read and write — fall through to insert.
+    // Matching on id as well as slug matters: getProjectBySlug also resolves a
+    // row via payload->>'slug', whose slug COLUMN can differ. Updating by slug
+    // alone hit 0 rows there and fell through to an INSERT that reused the same
+    // id — a primary-key violation surfaced as "Failed to save project".
+    // Row genuinely gone between read and write — fall through to insert.
   }
 
   // $1..$14 mirror `vals`; the row id rides last as $15.
@@ -2435,6 +2439,12 @@ export async function ensureUsersTable() {
       created_at timestamptz DEFAULT now()
     )
   `)
+  // Self-heal: this table's ON CONFLICT target needs a real unique index.
+  // Tables created before the UNIQUE was declared never gained one, which
+  // makes every upsert fail with 42P10 (the bug that broke project create).
+  try {
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS freehold_site_users_email_uidx ON freehold_site_users (email)`)
+  } catch { /* duplicates present — leave the data alone, surface nothing */ }
   await query(`
     ALTER TABLE freehold_site_users
       ADD COLUMN IF NOT EXISTS phone text,

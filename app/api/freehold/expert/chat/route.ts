@@ -212,7 +212,7 @@ function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
 // else the model invented, and the user lands on a 404 — the exact "every link
 // from the chat is 404" report. hrefAllowed lets static routes through and
 // requires record ids to be tool-sourced.
-const RECORD_COLLECTIONS = /\/(leads|forms|projects|properties|landing|landing-pages|ads-machine|campaigns|deals|audiences)\/([^/?#]+)/i
+const RECORD_COLLECTIONS = /\/(leads|forms|projects|properties|landing|landings|landing-pages|ads-machine|campaigns|deals|audiences)\/([^/?#]+)/i
 function hrefAllowed(href: unknown, seen: string): boolean {
   if (typeof href !== 'string') return false
   const h = href.trim()

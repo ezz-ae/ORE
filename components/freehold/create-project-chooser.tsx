@@ -8,6 +8,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { AlignLeft, ArrowLeft, FileUp, Link2, Loader2, Plus, Sparkles, SquarePen, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
@@ -42,6 +43,15 @@ function OptionCard({
 
 export function CreateProjectChooser() {
   const t = useT()
+  const router = useRouter()
+  // Creating without going anywhere left the user staring at a 2,000-row
+  // list wondering where it went ("it says created but I don't see it").
+  // Always land ON the thing that was just created.
+  const goToCreated = (slug: string) => {
+    setOpen(false)
+    setFields(null)
+    if (slug) router.push(`/freehold-intelligence/inventory/${encodeURIComponent(slug)}`)
+  }
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<Mode>('menu')
   const [url, setUrl] = useState('')
@@ -111,7 +121,7 @@ export function CreateProjectChooser() {
                 {/* From brochure — the entire existing pick → parse → confirm
                     flow, triggered from this card. */}
                 <PdfToListing
-                  onCreated={() => setOpen(false)}
+                  onCreated={goToCreated}
                   renderTrigger={(openPick, pdfParsing) => (
                     <OptionCard Icon={FileUp} title={t('inv.create.brochure')} desc={t('inv.create.brochure.desc')} onClick={openPick} busy={pdfParsing} />
                   )}
@@ -182,6 +192,7 @@ export function CreateProjectChooser() {
         <ConfirmListingModal
           initialFields={fields}
           subtitle={confirmSubtitle}
+          onCreated={goToCreated}
           onClose={() => setFields(null)}
         />
       )}
