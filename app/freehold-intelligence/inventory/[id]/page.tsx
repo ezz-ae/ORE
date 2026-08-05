@@ -185,7 +185,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           )}
           {canLaunchAds && (
             <Link
-              href={`/freehold-intelligence/drive/reel?project=${encodeURIComponent(prop.id)}&auto=1`}
+              href={`/freehold-intelligence/creative-studio/reel?project=${encodeURIComponent(prop.id)}&auto=1`}
               className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-5 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/[0.14]"
             >
               <Clapperboard className="h-4 w-4" /> {t('inv.detail.autoVideoAd')}

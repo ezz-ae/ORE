@@ -598,7 +598,7 @@ export default function MachineDashboardPage() {
                     <FileText className="h-3 w-3" /> {t('lm.machine.conn.leadForm')}
                   </Link>
                 )}
-                <Link href={`/freehold-intelligence/drive/ad-designer`}
+                <Link href={`/freehold-intelligence/creative-studio/ad-designer`}
                   className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white">
                   <Pencil className="h-3 w-3" /> {t('lm.machine.conn.creative')}
                 </Link>

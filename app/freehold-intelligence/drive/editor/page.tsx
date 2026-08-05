@@ -51,7 +51,7 @@ export default function DriveEditorLauncher() {
 
       {/* New */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Link href="/freehold-intelligence/drive/editor/image/new" className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2/60 p-4 transition hover:border-gold/30">
+        <Link href="/freehold-intelligence/creative-studio/image/new" className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2/60 p-4 transition hover:border-gold/30">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-400/15 text-emerald-400"><ImageIcon className="h-5 w-5" /></span>
           <div><div className="text-sm font-semibold text-white">{t('drive.new.image')}</div><div className="text-[11px] text-slate-500">{t('drive.new.imageSub')}</div></div>
           <Plus className="ms-auto h-4 w-4 text-slate-500" />

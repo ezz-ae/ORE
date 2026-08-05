@@ -31,7 +31,7 @@ export default function MediaEditorPage() {
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok || !d.item?.id) { toast.error(t('med.failed')); return }
-      router.push(`/freehold-intelligence/drive/editor/image/${d.item.id}`)
+      router.push(`/freehold-intelligence/creative-studio/image/${d.item.id}`)
     } catch { toast.error(t('med.failed')) } finally { setBusy(null) }
   }
 
@@ -83,7 +83,7 @@ export default function MediaEditorPage() {
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         <Card onClick={newImage} Icon={ImageIcon} accent="text-violet-300 border-violet-400/25 bg-violet-400/[0.06]" appKey="image" loading={busy === 'image'} />
         <Card onClick={newBrochure} Icon={FileText} accent="text-gold border-gold/25 bg-gold/[0.06]" appKey="brochure" loading={busy === 'brochure'} />
-        <Card href="/freehold-intelligence/drive/editor/video/new" Icon={Video} accent="text-teal-300 border-teal-400/25 bg-teal-400/[0.06]" appKey="video" />
+        <Card href="/freehold-intelligence/creative-studio/video/new" Icon={Video} accent="text-teal-300 border-teal-400/25 bg-teal-400/[0.06]" appKey="video" />
       </div>
     </div>
   )

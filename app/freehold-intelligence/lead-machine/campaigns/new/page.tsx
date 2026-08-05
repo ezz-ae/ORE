@@ -2269,7 +2269,7 @@ export default function NewCampaignPage() {
                   {t('lm.newCampaign.s3.pickLibrary')}
                 </button>
                 <Link
-                  href="/freehold-intelligence/drive/editor/image/new"
+                  href="/freehold-intelligence/creative-studio/image/new"
                   target="_blank"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40"
                 >

@@ -95,7 +95,7 @@ export const SUITE_TEMPLATES: SuiteTemplate[] =
 export const templateOverlay = (tpl: SuiteTemplate): Overlay => SUITE_COPY[tpl.lang][tpl.copy]
 
 export function templateHref(tpl: SuiteTemplate): string {
-  return `/freehold-intelligence/drive/ad-designer?format=${tpl.format}&layout=${tpl.layout}` +
+  return `/freehold-intelligence/creative-studio/ad-designer?format=${tpl.format}&layout=${tpl.layout}` +
     `&palette=${tpl.palette}&copy=${tpl.copy}&lang=${tpl.lang}`
 }
 

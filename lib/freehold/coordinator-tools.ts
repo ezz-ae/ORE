@@ -803,7 +803,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       const out = await genImage(prompt, { aspectRatio: s(args.aspectRatio) || undefined })
       const item = await saveLibraryItem(ctx.email, { kind: 'image', title: prompt.slice(0, 80), url: out.url })
       return item
-        ? { ok: true, libraryId: item.id, editorPath: `/freehold-intelligence/drive/editor/image/${item.id}` }
+        ? { ok: true, libraryId: item.id, editorPath: `/freehold-intelligence/creative-studio/image/${item.id}` }
         : { error: 'Image generated but could not be saved to the Library.' }
     },
   },
