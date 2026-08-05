@@ -38,12 +38,15 @@ const DRIVE_BASE = '/freehold-intelligence/drive'
 
 export function editorHrefForItem(item: { id: string; kind: DriveKind; url?: string | null }): string {
   const type = editorTypeForKind(item.kind, !!item.url)
+  // Image & video are design apps — they live in the Creative Suite now.
+  // Doc & PDF are files, so their editors stay in Drive.
+  if (type === 'image' || type === 'video') return `/freehold-intelligence/creative-studio/${type}/${item.id}`
   return `${DRIVE_BASE}/editor/${type}/${item.id}`
 }
 
 // Landing pages are not Library rows — they open in their own existing editor.
 export function landingEditHref(slug: string): string {
-  return `/freehold-intelligence/lead-machine/landings/${encodeURIComponent(slug)}/edit`
+  return `/freehold-intelligence/inventory/landings/${encodeURIComponent(slug)}/edit`
 }
 
 // Presentation metadata per kind. i18nKey reuses the existing nb.lib.kind.*

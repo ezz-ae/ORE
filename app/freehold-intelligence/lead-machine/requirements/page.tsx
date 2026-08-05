@@ -52,7 +52,7 @@ export default async function RequirementsPage() {
       severity: 'high',
       title: t('lm.req.missingLp', { n: missingLp }),
       desc: t('lm.req.missingLpDesc'),
-      href: '/freehold-intelligence/lead-machine/landings',
+      href: '/freehold-intelligence/inventory/landings',
       cta: t('lm.hub.nav.landings'),
     })
   }

@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation'
 
-// The standalone Quick page duplicated what the Creative Studio home already
-// embeds (the same _client component, same data). Nothing linked here, so it
-// was an invisible second copy of an existing screen — one door, one surface.
-// The _client in this directory stays: the home imports it.
+// The quick smart-form surface lives at /presenters now (the home became the
+// suite's tool grid). Old links keep working via this redirect. The _client in
+// this directory stays: the presenters page imports it.
 export default function QuickGenerateRedirect() {
-  redirect('/freehold-intelligence/creative-studio')
+  redirect('/freehold-intelligence/creative-studio/presenters')
 }

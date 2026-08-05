@@ -85,7 +85,7 @@ export function CampaignListingPicker({ listings, value, onChange, loading, canE
   const totalShown = groups.reduce((s, g) => s + g.items.length, 0)
   const previewHref = (l: PickerListing) => `/lp/${l.landingSlug || l.id}`
   const editHref = (l: PickerListing) =>
-    l.landingSlug ? `/freehold-intelligence/lead-machine/landings/${l.landingSlug}/edit` : null
+    l.landingSlug ? `/freehold-intelligence/inventory/landings/${l.landingSlug}/edit` : null
 
   function statusBadge(l: PickerListing) {
     const key =

@@ -2,7 +2,7 @@
 
 import { useT } from '@/lib/i18n/provider'
 import { PageHeader } from '@/components/freehold/ui'
-import { Clapperboard } from 'lucide-react'
+import { Clapperboard, Users } from 'lucide-react'
 
 export function StudioHomeHeader() {
   const t = useT()
@@ -17,12 +17,15 @@ export function StudioHomeHeader() {
   )
 }
 
-export function StudioRowText({ kind }: { kind: 'canvas' | 'drive' }) {
+export function PresentersHeader() {
   const t = useT()
   return (
-    <>
-      <span className="block truncate text-sm font-semibold text-white">{t(`cs.home.${kind}.title`)}</span>
-      <span className="block truncate text-xs text-slate-500">{t(`cs.home.${kind}.desc`)}</span>
-    </>
+    <PageHeader
+      eyebrow={t('cs.home.eyebrow')}
+      Icon={Users}
+      title={t('cs.presenters.title')}
+      subtitle={t('cs.presenters.subtitle')}
+      className="mb-6"
+    />
   )
 }

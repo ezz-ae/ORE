@@ -1287,7 +1287,7 @@ export async function createLandingPage(
   return {
     slug,
     url: `/lp/${slug}`,
-    editUrl: `/freehold-intelligence/lead-machine/landings/${slug}/edit`,
+    editUrl: `/freehold-intelligence/inventory/landings/${slug}/edit`,
     status: "draft",
     projectName: project.name || projSlug,
   }

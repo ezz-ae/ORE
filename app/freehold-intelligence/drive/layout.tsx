@@ -24,12 +24,13 @@ export default function DriveLayout({ children }: { children: React.ReactNode })
   // The per-asset editor canvases bring their OWN full-height chrome
   // (DriveEditorFrame), so they render full-bleed under the top spine — no
   // Drive header/sidebar (the /drive/editor launcher keeps the shell).
-  const isCanvas = /^\/freehold-intelligence\/drive\/editor\/(doc|image|video|pdf)\//.test(pathname)
+  const isCanvas = /^\/freehold-intelligence\/drive\/editor\/(doc|pdf)\//.test(pathname)
   if (isCanvas) return <>{children}</>
 
+  // Drive is about FILES — the design apps moved to the Creative Suite, so the
+  // nav is home · editor (doc/PDF) · library · notebook.
   const items = [
     { label: t('drive.nav.all'),      href: '/freehold-intelligence/drive',          exact: true, Icon: LayoutGrid },
-    { label: t('drive.nav.create'),   href: '/freehold-intelligence/drive/create',                Icon: Sparkles },
     { label: t('drive.nav.editor'),   href: '/freehold-intelligence/drive/editor',                Icon: Wand2 },
     { label: t('drive.nav.library'),  href: '/freehold-intelligence/drive/library',               Icon: FolderOpen },
     // Notebook lives under Drive — links out to its existing route (not moved).

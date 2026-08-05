@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { aiConfigured, geminiApiKey, geminiGenerate, geminiText } from "@/lib/gemini-rest"
 import { PDFParse } from "pdf-parse"
 import { requireSession } from "@/lib/freehold/api-auth"
+import { buildProjectExtractionPrompt, extractJsonBlock } from "@/lib/freehold/project-extraction"
 
 export const runtime = "nodejs"
 // Files-API upload + PROCESSING poll + vision call need headroom.
@@ -12,18 +13,6 @@ export const maxDuration = 60
 // browser straight to Vercel Blob (the platform rejects request bodies over
 // ~4.5MB before this handler runs) and referenced here as JSON {url}.
 const MAX_BROCHURE_BYTES = 30 * 1024 * 1024
-
-const extractJson = (value: string) => {
-  const start = value.indexOf("{")
-  const end = value.lastIndexOf("}")
-  if (start === -1 || end === -1) return null
-  const snippet = value.slice(start, end + 1)
-  try {
-    return JSON.parse(snippet)
-  } catch {
-    return null
-  }
-}
 
 /**
  * Upload a large PDF to the Gemini Files API and wait for it to become
@@ -129,33 +118,11 @@ export async function POST(req: NextRequest) {
     } catch { /* corrupt text layer — vision path below still works */ }
     const imageOnly = text.length < 200
 
-    const prompt = `You are an AI data extraction engine for real estate brochures.
-Return ONLY valid JSON. No markdown.
-
-Extract these fields from the brochure text:
-{
-  "name": string,
-  "slug": string,
-  "area": string,
-  "developer": string,
-  "priceFrom": number | null,
-  "priceTo": number | null,
-  "roi": number | null,
-  "paymentPlan": string,
-  "handoverDate": string,
-  "description": string,
-  "highlights": string[],
-  "amenities": string[]
-}
-
-Rules:
-- slug should be URL-safe and start with "freehold-".
-- priceFrom/priceTo should be numbers in AED (no commas).
-- roi should be a number (percent) without the % sign.
-- If any field is not found, return null or an empty string/array.
-
-${imageOnly ? "The brochure follows as an attached PDF — read it visually (it has little or no text layer)." : `Brochure text:\n${text.slice(0, 12000)}`}
-`
+    // Shared prompt (lib/freehold/project-extraction) — the link/text intake
+    // route feeds the SAME extraction contract, so all sources fill the same form.
+    const prompt = buildProjectExtractionPrompt(
+      imageOnly ? "The brochure follows as an attached PDF — read it visually (it has little or no text layer)." : `Brochure text:\n${text.slice(0, 12000)}`,
+    )
 
     // One hardened path for both modes: geminiGenerate carries the full model
     // ladder, the 5 key-alias spellings, and the Vertex fallback — the same
@@ -190,7 +157,7 @@ ${imageOnly ? "The brochure follows as an attached PDF — read it visually (it 
       return NextResponse.json({ error: "The AI returned no content for this brochure — try again, or use a smaller/cleaner PDF." }, { status: 502 })
     }
 
-    const extracted = extractJson(responseText)
+    const extracted = extractJsonBlock(responseText)
     if (!extracted) {
       return NextResponse.json({ error: "Unable to parse AI response." }, { status: 500 })
     }

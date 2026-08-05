@@ -33,7 +33,7 @@ import type { MetaCta } from '@/lib/meta/types'
 const META_MIN = 50
 
 const CREATIVE_STUDIO = '/freehold-intelligence/creative-studio'
-const LANDINGS_HUB = '/freehold-intelligence/lead-machine/landings'
+const LANDINGS_HUB = '/freehold-intelligence/inventory/landings'
 
 /** The landing editor path for a project — its own landing slug when known,
  * else derived from a `/lp/{slug}` landing URL. Null when it has no landing

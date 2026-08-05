@@ -103,7 +103,7 @@ export default function RoadshowPage() {
   const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch { return '' } }
 
   const ASSET_META: Record<string, { Icon: typeof LayoutTemplate; href: string | null }> = useMemo(() => ({
-    landing: { Icon: LayoutTemplate, href: '/freehold-intelligence/lead-machine/landings' },
+    landing: { Icon: LayoutTemplate, href: '/freehold-intelligence/inventory/landings' },
     fb_event: { Icon: CalendarCheck, href: null },
     campaign: { Icon: Rocket, href: '/freehold-intelligence/lead-machine/campaigns/launch' },
   }), [])

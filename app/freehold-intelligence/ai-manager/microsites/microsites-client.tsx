@@ -78,7 +78,7 @@ export function MicrositesClient() {
           <p className="mt-2 text-xs text-slate-600">
             {t('paim.micro.notLandings')}{' '}
             <Link
-              href="/freehold-intelligence/lead-machine/landings"
+              href="/freehold-intelligence/inventory/landings"
               className="text-teal-400/80 underline underline-offset-2 transition hover:text-teal-300"
             >
               {t('paim.micro.goToLandings')}

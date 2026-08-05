@@ -30,22 +30,22 @@ import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 type FormatFilter = 'all' | FormatKey
 
 const QUICK: { key: string; href: string; Icon: React.ElementType; labelKey: string; accent: string }[] = [
-  { key: 'feed',   href: '/freehold-intelligence/drive/ad-designer?format=feed',   Icon: RectangleVertical, labelKey: 'adz.format.feed',   accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
-  { key: 'square', href: '/freehold-intelligence/drive/ad-designer?format=square', Icon: Square,            labelKey: 'adz.format.square', accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
-  { key: 'story',  href: '/freehold-intelligence/drive/ad-designer?format=story',  Icon: Smartphone,        labelKey: 'adz.format.story',  accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
-  { key: 'reel',   href: '/freehold-intelligence/drive/reel',                       Icon: Clapperboard,      labelKey: 'suite.quick.reel',  accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
-  { key: 'video',  href: '/freehold-intelligence/drive/editor/video/new',          Icon: Film,              labelKey: 'suite.quick.video', accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
-  { key: 'ai',     href: '/freehold-intelligence/creative-studio',                 Icon: Sparkles,          labelKey: 'suite.quick.ai',    accent: 'text-sky-300 border-sky-400/25 bg-sky-400/[0.06]' },
+  { key: 'feed',   href: '/freehold-intelligence/creative-studio/ad-designer?format=feed',   Icon: RectangleVertical, labelKey: 'adz.format.feed',   accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
+  { key: 'square', href: '/freehold-intelligence/creative-studio/ad-designer?format=square', Icon: Square,            labelKey: 'adz.format.square', accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
+  { key: 'story',  href: '/freehold-intelligence/creative-studio/ad-designer?format=story',  Icon: Smartphone,        labelKey: 'adz.format.story',  accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
+  { key: 'reel',   href: '/freehold-intelligence/creative-studio/reel',                       Icon: Clapperboard,      labelKey: 'suite.quick.reel',  accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
+  { key: 'video',  href: '/freehold-intelligence/creative-studio/video/new',          Icon: Film,              labelKey: 'suite.quick.video', accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
+  { key: 'ai',     href: '/freehold-intelligence/creative-studio/presenters',                 Icon: Sparkles,          labelKey: 'suite.quick.ai',    accent: 'text-sky-300 border-sky-400/25 bg-sky-400/[0.06]' },
 ]
 
 const TOOLS: { key: string; href?: string; Icon: React.ElementType; accent: string }[] = [
-  { key: 'addesigner', href: '/freehold-intelligence/drive/ad-designer',        Icon: Megaphone,    accent: 'text-gold' },
-  { key: 'reel',       href: '/freehold-intelligence/drive/reel',               Icon: Clapperboard, accent: 'text-violet-300' },
-  { key: 'image',      href: '/freehold-intelligence/drive/editor/image/new',   Icon: ImageIcon,    accent: 'text-violet-300' },
+  { key: 'addesigner', href: '/freehold-intelligence/creative-studio/ad-designer',        Icon: Megaphone,    accent: 'text-gold' },
+  { key: 'reel',       href: '/freehold-intelligence/creative-studio/reel',               Icon: Clapperboard, accent: 'text-violet-300' },
+  { key: 'image',      href: '/freehold-intelligence/creative-studio/image/new',   Icon: ImageIcon,    accent: 'text-violet-300' },
   { key: 'doc',                                                                 Icon: FileText,     accent: 'text-sky-300' },
-  { key: 'video',      href: '/freehold-intelligence/drive/editor/video/new',   Icon: Film,         accent: 'text-emerald-300' },
+  { key: 'video',      href: '/freehold-intelligence/creative-studio/video/new',   Icon: Film,         accent: 'text-emerald-300' },
   { key: 'pdf',        href: '/freehold-intelligence/drive/files',              Icon: FileType,     accent: 'text-rose-300' },
-  { key: 'quick',      href: '/freehold-intelligence/creative-studio',          Icon: Wand2,        accent: 'text-violet-300' },
+  { key: 'quick',      href: '/freehold-intelligence/creative-studio/presenters',          Icon: Wand2,        accent: 'text-violet-300' },
   { key: 'canvas',     href: '/freehold-intelligence/creative-studio/canvas',   Icon: Workflow,     accent: 'text-teal-300' },
   { key: 'roadshow',   href: '/freehold-intelligence/lead-machine/roadshow',    Icon: Presentation, accent: 'text-emerald-300' },
   { key: 'notebook',   href: '/freehold-intelligence/notebook',                 Icon: NotebookPen,  accent: 'text-sky-300' },
@@ -154,7 +154,7 @@ export default function CreativeSuitePage() {
           ))}
         </div>
         <div className="mt-4 columns-2 gap-4 sm:columns-3 lg:columns-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
-          <Link href="/freehold-intelligence/drive/ad-designer"
+          <Link href="/freehold-intelligence/creative-studio/ad-designer"
             className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line text-slate-400 transition hover:border-gold/40 hover:text-gold">
             <Plus className="h-6 w-6" />
             <span className="px-3 text-center text-xs font-medium">{t('suite.tpl.blank')}</span>

@@ -11,11 +11,20 @@
 //
 // Guard: the app registry restricts Creative Studio to STUDIO_ROLES, but the
 // parent shell only enforces sign-in — so this layout must gate the same roles
-// or a broker/sales_manager could deep-link in.
+// or a broker/sales_manager could deep-link in. EXCEPTION: the design tools
+// that moved here from Drive (ad-designer, reel, image, video) were open to
+// every signed-in role there — the move must not tighten access, so those
+// routes keep Drive's role set.
+import { usePathname } from 'next/navigation'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 
+const STUDIO_ROLES = ['admin', 'director', 'ceo', 'marketing'] as const
+const MOVED_TOOL_ROLES = ['admin', 'sales_manager', 'director', 'ceo', 'marketing', 'broker'] as const
+
 export default function CreativeStudioLayout({ children }: { children: React.ReactNode }) {
-  const { ready } = useSessionGuard(['admin', 'director', 'ceo', 'marketing'])
+  const pathname = usePathname()
+  const isMovedTool = /^\/freehold-intelligence\/creative-studio\/(ad-designer|reel|image|video)(\/|$)/.test(pathname)
+  const { ready } = useSessionGuard(isMovedTool ? [...MOVED_TOOL_ROLES] : [...STUDIO_ROLES])
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">

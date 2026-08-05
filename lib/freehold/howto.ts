@@ -48,8 +48,8 @@ export const HOWTOS: HowToFlow[] = [
     titleKey: 'howto.landing.name',
     section: 'ads',
     steps: [
-      { key: 'howto.landing.s1', href: `${FI}/lead-machine/landings`, anchor: 'lm-landing-create' },
-      { key: 'howto.landing.s2', href: `${FI}/lead-machine/landings` },
+      { key: 'howto.landing.s1', href: `${FI}/inventory/landings`, anchor: 'lm-landing-create' },
+      { key: 'howto.landing.s2', href: `${FI}/inventory/landings` },
     ],
   },
   {

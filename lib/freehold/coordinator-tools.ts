@@ -691,7 +691,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   },
   {
     name: 'landing_get', agent: 'landing_agent',
-    description: 'Load one landing page for review: headline, sections (order/visibility), SEO, publish state. Editor: /freehold-intelligence/lead-machine/landings/<slug>/edit',
+    description: 'Load one landing page for review: headline, sections (order/visibility), SEO, publish state. Editor: /freehold-intelligence/inventory/landings/<slug>/edit',
     params: '{ "slug": string }', roles: EVERYONE,
     schema: z.object({ slug: z.string() }),
     run: async (args) => {
@@ -803,7 +803,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       const out = await genImage(prompt, { aspectRatio: s(args.aspectRatio) || undefined })
       const item = await saveLibraryItem(ctx.email, { kind: 'image', title: prompt.slice(0, 80), url: out.url })
       return item
-        ? { ok: true, libraryId: item.id, editorPath: `/freehold-intelligence/drive/editor/image/${item.id}` }
+        ? { ok: true, libraryId: item.id, editorPath: `/freehold-intelligence/creative-studio/image/${item.id}` }
         : { error: 'Image generated but could not be saved to the Library.' }
     },
   },

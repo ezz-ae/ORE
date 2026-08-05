@@ -1,20 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { Sparkles, Wand2, Monitor, FolderOpen, Cloud, ArrowRight } from 'lucide-react'
+import { Wand2, FolderOpen, BookOpen, Cloud, ArrowRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-// The Drive home = five ROOMS. These are the top level, so they read as big,
-// distinct entrances (icon tile + a soft accent glow) — deliberately unlike the
-// compact app tiles inside a room (HubGrid) and the thumbnail file cards.
+// The Drive home = ROOMS about FILES: the files manager, the media library,
+// the notebook, the doc/PDF editors and cloud uploads. These are the top
+// level, so they read as big, distinct entrances (icon tile + a soft accent
+// glow) — deliberately unlike the compact app tiles inside a room (HubGrid)
+// and the thumbnail file cards. The design apps (Ad Designer, Photo Reel,
+// image/video editors) live in the Creative Suite now, not here.
 type Room = { key: string; href: string; Icon: React.ElementType; icon: string; glow: string; ring: string }
 
 const ROOMS: Room[] = [
-  { key: 'studio', href: '/freehold-intelligence/drive/create',  Icon: Sparkles,   icon: 'text-gold',        glow: 'from-gold/15',        ring: 'ring-gold/25' },
-  { key: 'editor', href: '/freehold-intelligence/drive/media',   Icon: Wand2,      icon: 'text-violet-300',  glow: 'from-violet-500/15',  ring: 'ring-violet-400/25' },
-  { key: 'web',    href: '/freehold-intelligence/drive/web',     Icon: Monitor,    icon: 'text-teal-300',    glow: 'from-teal-500/15',    ring: 'ring-teal-400/25' },
-  { key: 'files',  href: '/freehold-intelligence/drive/files',   Icon: FolderOpen, icon: 'text-sky-300',     glow: 'from-sky-500/15',     ring: 'ring-sky-400/25' },
-  { key: 'cloud',  href: '/freehold-intelligence/cloud',         Icon: Cloud,      icon: 'text-emerald-300', glow: 'from-emerald-500/15', ring: 'ring-emerald-400/25' },
+  { key: 'files',    href: '/freehold-intelligence/drive/files',   Icon: FolderOpen, icon: 'text-sky-300',     glow: 'from-sky-500/15',     ring: 'ring-sky-400/25' },
+  { key: 'library',  href: '/freehold-intelligence/drive/library', Icon: FolderOpen, icon: 'text-gold',        glow: 'from-gold/15',        ring: 'ring-gold/25' },
+  { key: 'editor',   href: '/freehold-intelligence/drive/media',   Icon: Wand2,      icon: 'text-violet-300',  glow: 'from-violet-500/15',  ring: 'ring-violet-400/25' },
+  { key: 'notebook', href: '/freehold-intelligence/notebook',      Icon: BookOpen,   icon: 'text-pink-300',    glow: 'from-pink-500/15',    ring: 'ring-pink-400/25' },
+  { key: 'cloud',    href: '/freehold-intelligence/cloud',         Icon: Cloud,      icon: 'text-emerald-300', glow: 'from-emerald-500/15', ring: 'ring-emerald-400/25' },
 ]
 
 export function DriveRooms() {
