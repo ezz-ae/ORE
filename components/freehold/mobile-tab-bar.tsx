@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Sparkles, LayoutGrid, X, BookOpen, Users, Package, Megaphone, DollarSign, UsersRound, Handshake } from 'lucide-react'
+import { Home, Sparkles, LayoutGrid, X, BookOpen, Users, Package, Megaphone, DollarSign, UsersRound, Handshake, Search } from 'lucide-react'
 import { spineApps } from '@/lib/freehold/apps'
 import { useSession } from '@/lib/freehold/use-session'
 import { openExpert } from '@/lib/freehold/expert-bus'
 import { useT } from '@/lib/i18n/provider'
+import { AllToolsPanel } from '@/components/freehold/command-nav'
 
 const HOME_HREF = '/freehold-intelligence'
 
@@ -41,6 +42,9 @@ export function MobileTabBar() {
   const role = user?.role
   const t = useT()
   const [sheetOpen, setSheetOpen] = useState(false)
+  // The full tool index + global search. Phones get the same depth the desktop
+  // ⌘K popup has — the Apps sheet stays the shortlist, this is everything.
+  const [toolsOpen, setToolsOpen] = useState(false)
 
   const apps = spineApps(role)
   const label = (id: string, fallback: string) => (NAV_KEYS[id] ? t(NAV_KEYS[id]) : fallback)
@@ -70,6 +74,17 @@ export function MobileTabBar() {
               <span className="text-sm font-semibold text-white">{t('common.apps')}</span>
               <button onClick={() => setSheetOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-white">
                 <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Search everything — leads by phone, projects, campaigns, tools */}
+            <div className="px-4 pt-3">
+              <button
+                onClick={() => { setSheetOpen(false); setToolsOpen(true) }}
+                className="flex w-full items-center gap-2.5 rounded-xl border border-white/[0.10] bg-white/[0.04] px-3.5 py-3 text-start text-sm text-slate-400 transition active:bg-white/[0.08]"
+              >
+                <Search className="h-4 w-4 shrink-0 text-slate-500" />
+                <span className="truncate">{t('nav.searchPlaceholder')}</span>
               </button>
             </div>
 
@@ -125,10 +140,20 @@ export function MobileTabBar() {
                 <BookOpen className="h-5 w-5 text-slate-300" />
                 <span className="text-[10px] font-medium leading-tight text-slate-400">{t('common.help')}</span>
               </Link>
+              <button
+                onClick={() => { setSheetOpen(false); setToolsOpen(true) }}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface-2 px-1 py-3 text-center transition"
+              >
+                <LayoutGrid className="h-5 w-5 text-slate-300" />
+                <span className="text-[10px] font-medium leading-tight text-slate-400">{t('nav.allTools')}</span>
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Full tool index + global search, on phones too */}
+      {toolsOpen && <AllToolsPanel onClose={() => setToolsOpen(false)} />}
 
       {/* The bar itself */}
       {/* Below the Expert overlay (z-200): opening the Expert covers the tabs. */}
