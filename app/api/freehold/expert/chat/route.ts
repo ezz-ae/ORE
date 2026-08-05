@@ -21,6 +21,7 @@ import { query } from '@/lib/db'
 import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
 import { APP_ROUTES } from '@/lib/freehold/app-routes.generated'
+import { auditFigures, evidenceLine, METRIC_SHAPED, type EvidenceReport } from '@/lib/freehold/evidence'
 
 export const runtime = 'nodejs'
 
@@ -662,46 +663,43 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         }]
       }
     }
-    // ── FABRICATED-METRICS TRIPWIRE ───────────────────────────────────────────
-    // Screenshot-verified failure: asked how the ads are doing, the campaigns
-    // tool returned nothing usable, and the model presented two INVENTED
+    // ── FIGURE PROVENANCE ─────────────────────────────────────────────────────
+    // Screenshot-verified failure: asked how the ads were doing, the campaigns
+    // tool returned nothing usable and the model presented two INVENTED
     // campaigns ("Villanova (C267)" — spend 11,450 AED, CPL 75.33, quality
-    // 78/100) as "live performance". The user does not run those campaigns.
+    // 78/100) as live performance. The user does not run those campaigns.
     //
-    // Deterministic net: a reply that reads like a performance report is only
-    // deliverable if its numbers actually came from somewhere real this turn.
-    // Extract every significant number from the reply; if NONE of them appear
-    // in the raw tool results OR the injected system context, the entire
-    // report is invented — replace it with the honest state instead of
-    // shipping fiction. (Any genuine report grounds at least one figure
-    // verbatim; derived values like a computed CPL ride on grounded inputs.)
-    // "Verify the Math" (Evidence-Drawer-lite): when a performance reply's
-    // figures ARE grounded in this turn's tool results, say so in the UI —
-    // the proving side of the same contract whose blocking side lives below.
-    let metricsGrounded = false
-    const METRIC_SHAPED = /\b(?:CPL|cost\s+per\s+lead|spend|leads?|budget|ROAS|CTR|impressions|quality\s+score|conversions?)\b/i
+    // The first fix blocked a reply only when NONE of its numbers appeared in
+    // the turn's real data — and, worse, set the "✓ verified" badge when ANY
+    // single number did. One true spend figure therefore licensed nine
+    // invented ones AND decorated them with a verification mark.
+    //
+    // Now every figure is traced individually (lib/freehold/evidence.ts):
+    // grounded (came from a tool or the context), derived (honest arithmetic
+    // over grounded values — a computed CPL is not a fabrication), or
+    // ungrounded. One ungrounded figure withholds the whole report. A withheld
+    // true number costs a follow-up question; an invented one costs trust in
+    // every number after it.
+    let evidence: EvidenceReport | null = null
     const replyJson = JSON.stringify(blocks)
     if (tools.length > 0 && METRIC_SHAPED.test(replyJson)) {
-      const sigNums = (text: string) =>
-        (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? [])
-          .map((m) => m.replace(/,/g, ''))
-          .filter((m) => Number.parseFloat(m) >= 10)
-      const claimed = [...new Set(sigNums(replyJson))]
-      if (claimed.length >= 3) {
-        const grounded = new Set([...sigNums(toolResultsText), ...sigNums(JSON.stringify(fullContext))])
-        const anyGrounded = claimed.some((num) => grounded.has(num))
-        if (anyGrounded) metricsGrounded = true
-        if (!anyGrounded) {
-          blocks = [{
-            type: 'text',
-            content: 'I have to correct myself — the performance figures I was about to show did not come from your live data, so I will not present them. ' +
-              (resultNotes.length
-                ? `What actually happened this turn:\n${resultNotes.join('\n')}\n\nAsk me to check the campaigns again and I will report only real numbers — and say so plainly if there are none.`
-                : 'No data-returning check completed this turn. Ask me to check the campaigns again and I will report only real numbers — and say so plainly if there are none.'),
-          }]
-        }
+      evidence = auditFigures(replyJson, [toolResultsText, JSON.stringify(fullContext)])
+      if (evidence.verdict === 'fabricated' || evidence.verdict === 'tainted') {
+        const untraceable = evidence.figures.filter((f) => f.status === 'ungrounded').map((f) => f.value)
+        blocks = [{
+          type: 'text',
+          content:
+            (evidence.verdict === 'fabricated'
+              ? 'I have to correct myself — none of the figures I was about to show came from your live data, so I will not present them. '
+              : `I have to correct myself — some of those figures (${untraceable.slice(0, 4).join(', ')}) did not come from your live data, so I will not present the report with them in it. `) +
+            (resultNotes.length
+              ? `What actually happened this turn:\n${resultNotes.join('\n')}\n\nAsk me to check again and I will report only figures I can trace — and say so plainly if there are none.`
+              : 'No data-returning check completed this turn. Ask me to check the campaigns again and I will report only figures I can trace — and say so plainly if there are none.'),
+        }]
       }
     }
+    const metricsGrounded = evidence?.verdict === 'clean'
+
     // Never end a turn with tool chips and no answer: if the model executed
     // real tools but produced no meaningful text, answer with what actually
     // happened (real results — never invented) and invite a follow-up.
@@ -720,7 +718,14 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     const persistedId = sessionUser
       ? await appendExpertTurn(sessionId, sessionUser.email, message, blocks)
       : sessionId
-    const data = { blocks, skill: skill.id, sessionId: persistedId, toolsUsed, ...(metricsGrounded ? { verified: true } : {}) }
+    const data = {
+      blocks, skill: skill.id, sessionId: persistedId, toolsUsed,
+      ...(metricsGrounded ? { verified: true } : {}),
+      // "How we know this" — per-figure provenance, sent only when the reply
+      // actually made numeric claims. The UI renders it verbatim; there is no
+      // second place where this could say something different.
+      ...(evidence && evidence.verdict !== 'no_figures' ? { evidence: evidence.figures } : {}),
+    }
 
     const response: McpResponseEnvelope<typeof data> = {
       requestId: crypto.randomUUID(),
@@ -732,6 +737,7 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         'Skill: expert (full-system)',
         `Context: ${Object.entries(systemContext).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}`,
         ...(toolsUsed.length ? [`Tools executed: ${toolsUsed.join(', ')}`] : []),
+        ...(evidence ? [evidenceLine(evidence)] : []),
       ],
       warnings: sdkError ? [`AI SDK path fell back to legacy: ${sdkError}`] : [],
       nextActions: ['Act on a button', 'Ask a follow-up'],
