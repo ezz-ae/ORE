@@ -4,95 +4,20 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { CheckCircle, Lock, ChevronDown, ChevronUp, Shield, Loader2 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
+import {
+  PERM_GROUPS, permsWithDefaults, deriveTier, TIER_COLOR,
+  type Permission,
+} from '@/lib/freehold/broker-permissions-ui'
 
-// Tier is DERIVED from how many permissions are actually granted (was hardcoded
-// 'Bronze' for everyone), so the badge reflects real access.
-function deriveTier(n: number): 'Bronze' | 'Silver' | 'Gold' {
-  return n >= 8 ? 'Gold' : n >= 4 ? 'Silver' : 'Bronze'
-}
-
-type Permission =
-  | 'view_campaigns'
-  | 'create_campaigns'
-  | 'manage_budget'
-  | 'view_attribution'
-  | 'manage_landings'
-  | 'manage_creatives'
-  | 'view_leads'
-  | 'export_leads'
-  | 'manage_requirements'
-  | 'view_competitor'
-
+// The permission catalogue, the Bronze floor and the tier derivation now live
+// in lib/freehold/broker-permissions-ui.ts — shared with the Team app's
+// Permissions tab, so both screens toggle and save exactly the same map.
 type AgentPerms = {
   id: string
   name: string
   initials: string
   perms: Record<Permission, boolean>
-}
-
-const PERM_GROUPS: { groupKey: string; items: { id: Permission; labelKey: string; descKey: string }[] }[] = [
-  {
-    groupKey: 'lm.permissions.group.campaigns',
-    items: [
-      { id: 'view_campaigns',   labelKey: 'lm.permissions.perm.view_campaigns.label',   descKey: 'lm.permissions.perm.view_campaigns.desc'   },
-      { id: 'create_campaigns', labelKey: 'lm.permissions.perm.create_campaigns.label', descKey: 'lm.permissions.perm.create_campaigns.desc' },
-      { id: 'manage_budget',    labelKey: 'lm.permissions.perm.manage_budget.label',    descKey: 'lm.permissions.perm.manage_budget.desc'    },
-    ],
-  },
-  {
-    groupKey: 'lm.permissions.group.attribution',
-    items: [
-      { id: 'view_attribution', labelKey: 'lm.permissions.perm.view_attribution.label', descKey: 'lm.permissions.perm.view_attribution.desc' },
-    ],
-  },
-  {
-    groupKey: 'lm.permissions.group.assets',
-    items: [
-      { id: 'manage_landings',  labelKey: 'lm.permissions.perm.manage_landings.label',  descKey: 'lm.permissions.perm.manage_landings.desc'  },
-      { id: 'manage_creatives', labelKey: 'lm.permissions.perm.manage_creatives.label', descKey: 'lm.permissions.perm.manage_creatives.desc' },
-    ],
-  },
-  {
-    groupKey: 'lm.permissions.group.leads',
-    items: [
-      { id: 'view_leads',   labelKey: 'lm.permissions.perm.view_leads.label',   descKey: 'lm.permissions.perm.view_leads.desc'   },
-      { id: 'export_leads', labelKey: 'lm.permissions.perm.export_leads.label', descKey: 'lm.permissions.perm.export_leads.desc' },
-    ],
-  },
-  {
-    groupKey: 'lm.permissions.group.settings',
-    items: [
-      { id: 'manage_requirements', labelKey: 'lm.permissions.perm.manage_requirements.label', descKey: 'lm.permissions.perm.manage_requirements.desc' },
-      { id: 'view_competitor',     labelKey: 'lm.permissions.perm.view_competitor.label',     descKey: 'lm.permissions.perm.view_competitor.desc'     },
-    ],
-  },
-]
-
-const DEFAULT_GOLD: Record<Permission, boolean> = {
-  view_campaigns: true, create_campaigns: true,  manage_budget: true,
-  view_attribution: true, manage_landings: true, manage_creatives: true,
-  view_leads: true, export_leads: true, manage_requirements: false, view_competitor: false,
-}
-const DEFAULT_SILVER: Record<Permission, boolean> = {
-  view_campaigns: true, create_campaigns: true,  manage_budget: false,
-  view_attribution: true, manage_landings: false, manage_creatives: true,
-  view_leads: true, export_leads: false, manage_requirements: false, view_competitor: false,
-}
-const DEFAULT_BRONZE: Record<Permission, boolean> = {
-  view_campaigns: true, create_campaigns: false, manage_budget: false,
-  view_attribution: false, manage_landings: false, manage_creatives: false,
-  view_leads: true, export_leads: false, manage_requirements: false, view_competitor: false,
-}
-
-// suppress unused-variable warnings for the tier defaults
-void DEFAULT_GOLD
-void DEFAULT_SILVER
-
-const TIER_COLOR: Record<string, string> = {
-  Bronze:   'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  Silver:   'text-slate-300   border-white/15      bg-surface-2',
-  Gold:     'text-gold  border-gold/25  bg-gold/10',
-  Platinum: 'text-violet-300 border-violet-400/25 bg-violet-400/10',
 }
 
 export default function PermissionsPage() {
@@ -115,9 +40,9 @@ export default function PermissionsPage() {
             id: m.id,
             name: m.name,
             initials: m.initials,
-            // Real stored permissions, merged over the Bronze defaults for any
+            // Real stored permissions, merged over the shared defaults for any
             // permission the stored map doesn't yet carry.
-            perms: { ...DEFAULT_BRONZE, ...(stored[m.id] ?? {}) } as Record<Permission, boolean>,
+            perms: permsWithDefaults(stored[m.id]),
           }))
         setAgents(brokers)
         if (brokers.length > 0) setExpanded(brokers[0].id)
@@ -158,6 +83,7 @@ export default function PermissionsPage() {
         <p className="mt-1 text-sm text-slate-500">
           {t('lm.permissions.subtitle')}
         </p>
+        <TeamSignpost className="mt-4" />
       </div>
 
       {loading && (

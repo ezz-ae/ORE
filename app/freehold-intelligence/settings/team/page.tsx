@@ -7,6 +7,7 @@ import {
   Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown, Loader2,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
 
 // Canonical roles — these map 1:1 to the database, so editing a member's role
 // never silently demotes them (e.g. sales_manager → admin).
@@ -149,6 +150,8 @@ export default function TeamPage() {
           {t('settings.team.invite')}
         </button>
       </div>
+
+      <TeamSignpost className="mb-6" />
 
       {/* Invite form */}
       {showInvite && (

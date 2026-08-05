@@ -6,6 +6,7 @@ import { useT } from '@/lib/i18n/provider'
 import { STAGE_ORDER } from '@/lib/freehold/analytics-format'
 import { ComparisonTable, type CmpColumn, type CmpItem, type CmpPreset } from '@/components/freehold/analytics/comparison-table'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
+import { TeamSignpost } from '@/components/freehold/team-signpost'
 
 type AgentMetric = {
   id: string; name: string; tenureDays: number | null
@@ -105,6 +106,7 @@ export default function TeamAnalyticsPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-slate-100 sm:text-2xl">{t('analytics.tab.team')}</h1>
         <p className="mt-1 text-sm text-slate-400">{t('analytics.team.sub')}</p>
+        <TeamSignpost className="mt-4" />
       </div>
 
       {/* Depth: prompt the single side-docked Expert (no separate conversation) */}

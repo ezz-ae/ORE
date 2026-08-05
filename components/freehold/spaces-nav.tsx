@@ -23,7 +23,7 @@ const HOME_HREF = '/freehold-intelligence'
 const NAV_KEYS: Record<string, string> = {
   crm: 'nav.crm', ads: 'nav.ads', inventory: 'nav.inventory', finance: 'nav.finance',
   'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
-  drive: 'nav.drive',
+  drive: 'nav.drive', team: 'nav.team',
   integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
   agent: 'nav.agent', calendar: 'nav.calendar',
 }

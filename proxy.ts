@@ -219,7 +219,14 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (pathname.startsWith('/freehold-intelligence/management') && !MANAGEMENT_ROLES.includes(user.role)) {
+    // Management-only sections. Team consolidates every agent control (other
+    // brokers' pipelines, money and access), so it carries the same gate as
+    // Management — its role list in lib/freehold/apps.ts is MGMT_ROLES, which
+    // is exactly MANAGEMENT_ROLES.
+    const managementOnlySection =
+      pathname.startsWith('/freehold-intelligence/management') ||
+      pathname.startsWith('/freehold-intelligence/team')
+    if (managementOnlySection && !MANAGEMENT_ROLES.includes(user.role)) {
       const homeUrl = request.nextUrl.clone()
       homeUrl.pathname = user.home
       homeUrl.search = ''
