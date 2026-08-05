@@ -23,6 +23,7 @@ import {
   load, initialsOf, lastActiveLabel, fmtMinutes, ROLE_CHIP, ASSIGNABLE_ROLES,
   type Member, type AgentMetric, type BrokerBalance, type LedgerEntry, type AdAllocation,
 } from '../_lib'
+import { ProfileTab } from './_profile-tab'
 
 // ─── Wire types ──────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ type Profile = {
   ads: { totalCredits: number; totalAed: number; activeCampaigns: number; campaigns: { name: string; creditsSpent: number; status: string; createdAt: string }[] }
 }
 
-type TabKey = 'performance' | 'pipeline' | 'credits' | 'permissions' | 'account'
+type TabKey = 'profile' | 'performance' | 'pipeline' | 'credits' | 'permissions' | 'account'
 
 const STAGE_SET = new Set(['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed'])
 const PRI_SET = new Set(['priority', 'hot', 'warm', 'cold'])
@@ -104,10 +105,12 @@ export default function TeamMemberPage() {
   const agentId = String(params.agentId || '')
   const { user: actor } = useSession()
 
-  const [tab, setTab] = useState<TabKey>('performance')
+  const [tab, setTab] = useState<TabKey>('profile')
   const [loaded, setLoaded] = useState(false)
 
   const [member, setMember] = useState<Member | null>(null)
+  // The whole roster, kept for the profile tab's "reports to" picker.
+  const [roster, setRoster] = useState<Member[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [metric, setMetric] = useState<AgentMetric | null>(null)
   const [balance, setBalance] = useState<BrokerBalance | null>(null)
@@ -131,8 +134,11 @@ export default function TeamMemberPage() {
     ])
 
     const e: typeof errs = {}
-    if (roster.ok) setMember((roster.data.members ?? []).find((m) => m.id === agentId) ?? null)
-    else e.member = roster.error
+    if (roster.ok) {
+      const members = roster.data.members ?? []
+      setRoster(members)
+      setMember(members.find((m) => m.id === agentId) ?? null)
+    } else e.member = roster.error
     if (prof.ok) setProfile(prof.data.agent ? prof.data : null); else e.profile = prof.error
     if (metrics.ok) setMetric((metrics.data.agents ?? []).find((a) => a.id === agentId) ?? null); else e.metric = metrics.error
     if (balances.ok) setBalance((balances.data.balances ?? []).find((b) => b.id === agentId) ?? null); else e.credits = balances.error
@@ -209,6 +215,8 @@ export default function TeamMemberPage() {
   }
 
   const TABS: Array<[TabKey, string]> = [
+    // Profile first: it is the offer-letter spine every other tab hangs off.
+    ['profile', 'team.tab.profile'],
     ['performance', 'team.tab.performance'],
     ['pipeline', 'team.tab.pipeline'],
     ['credits', 'team.tab.credits'],
@@ -264,6 +272,19 @@ export default function TeamMemberPage() {
           </button>
         ))}
       </div>
+
+      {/* ── Profile — the offer-letter spine ─────────────────────────────── */}
+      {tab === 'profile' && (
+        <ProfileTab
+          agentId={agentId}
+          roster={roster}
+          // Editing employment terms is management's call. A team leader sees
+          // the person they lead in full, and changes none of it — the same
+          // split the rest of this system uses: run the work, don't run the
+          // contract.
+          canEdit={['ceo', 'admin', 'director', 'sales_manager'].includes(actorRole)}
+        />
+      )}
 
       {/* ── Performance ──────────────────────────────────────────────────── */}
       {tab === 'performance' && (

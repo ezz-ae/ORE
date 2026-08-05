@@ -24,6 +24,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   LayoutGrid, Search, X, Loader2, ArrowRight, Clock, AlertCircle, CornerDownLeft,
@@ -180,6 +181,16 @@ function CommandPanel({ onClose }: { onClose: () => void }) {
     if (matchedTools[0]) return go(matchedTools[0].href, matchedTools[0].id)
   }
 
+  // Portal target. Both places that open this panel — the top spine and the
+  // phone Apps sheet — sit inside an element with `backdrop-blur`, and
+  // backdrop-filter makes an element a CONTAINING BLOCK for position:fixed
+  // descendants. Rendered in place, `fixed inset-0` therefore resolved to the
+  // 56px-tall nav bar instead of the viewport: the backdrop covered only that
+  // strip and the page underneath showed straight through the panel. Portalling
+  // to <body> puts the panel back in the viewport's coordinate space.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   const searching = q.trim().length > 0
   const recentTools = recents.map(toolById).filter((x): x is ToolDef => !!x && tools.includes(x))
   const dataSections = (data ?? [])
@@ -188,7 +199,9 @@ function CommandPanel({ onClose }: { onClose: () => void }) {
   const nothingFound =
     searching && !loading && matchedTools.length === 0 && dataSections.every((s) => !s.hits.length && !s.error)
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <div className="fixed inset-0 z-[150] flex items-start justify-center" role="dialog" aria-modal="true" aria-label={t('nav.allTools')}>
       <button className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-label={t('common.close')} />
 
@@ -330,7 +343,8 @@ function CommandPanel({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

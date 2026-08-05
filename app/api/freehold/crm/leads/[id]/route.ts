@@ -7,6 +7,8 @@ import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 import { notify } from '@/lib/freehold/notifications'
 import { emailLeadMovementToInbox, notifyBrokerOfAssignedLead } from '@/lib/transactional-email'
 import { answerLeadScore } from '@/lib/freehold/ads-machine'
+import { authorizeReassign, authorizeDelete } from '@/lib/freehold/authority-db'
+import { statusForDenial } from '@/lib/freehold/authority'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -160,6 +162,28 @@ export async function PATCH(
     }
   }
 
+  // ── Reassignment authority ──────────────────────────────────────────────
+  // A team leader's power to move a lead is not a flag on their account: it
+  // depends on THIS lead's state. Inside the grace window the assigned broker
+  // is protected; a lead they have actually worked is never up for grabs; a
+  // lead untouched past the neglect threshold unlocks. Management is not
+  // fairness-gated but every decision — allowed or denied — is written down,
+  // which is what settles the argument later.
+  if (!isBroker && 'assigned_broker_id' in body) {
+    const { decision, facts } = await authorizeReassign(
+      id,
+      { email: user.email, role: user.role, id: user.brokerId ?? null },
+      `→ ${String(body.assigned_broker_id || 'unassigned')}`,
+    )
+    if (!facts) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    if (!decision.allowed) {
+      return NextResponse.json(
+        { error: 'Reassignment not permitted', reason: decision.reason, unlocksAt: decision.unlocksAt ?? null },
+        { status: statusForDenial(decision) },
+      )
+    }
+  }
+
   const ALLOWED_FIELDS = ['status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest', 'message', 'snooze_until', 'archived', 'muted_until', 'blocked', 'duplicate_dismissed_at']
   const updates: string[] = []
   const values: unknown[] = []
@@ -207,10 +231,22 @@ export async function PATCH(
 
   for (const field of ALLOWED_FIELDS) {
     if (field in body) {
-      updates.push(`${field} = $${updates.length + 1}`)
+      // Numbered by values.length, NOT updates.length — for exactly the reason
+      // spelled out above the value_rating block: `value_rated_at = now()` and
+      // `updated_at = now()` push a clause without pushing a value, so counting
+      // clauses desyncs every later placeholder. This loop was still counting
+      // clauses, so a PATCH carrying value_rating AND another field (say
+      // status) bound that field to the same $-index as the WHERE id — writing
+      // the lead's own id into status.
+      updates.push(`${field} = $${values.length + 1}`)
       values.push(body[field])
     }
   }
+
+  // Stamp WHEN this broker received the lead. The grace window measures from
+  // here, so without it a reassigned lead would be judged by the date the lead
+  // first arrived and would never be protected.
+  if ('assigned_broker_id' in body) updates.push(`assigned_at = now()`)
 
   if (updates.length === 0) return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
 
@@ -228,5 +264,51 @@ export async function PATCH(
     return NextResponse.json({ ok: true, id })
   } catch {
     return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+  }
+}
+
+/**
+ * Delete a lead — the owner and nobody else.
+ *
+ * "always the only one can even delete them and the lead … anyone else is
+ * account with limitations." Until now there was no delete endpoint at all, so
+ * the rule had nowhere to live. It lives here: the paying account can destroy a
+ * record, an admin or a team leader can only archive it, and either way the
+ * attempt is on the record.
+ *
+ * Archiving stays available to everyone through PATCH { archived: true } — the
+ * safe, reversible action that covers the real day-to-day need.
+ */
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+  const token = (await cookies()).get(SESSION_COOKIE)?.value
+  const user = await verifySession(token)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const decision = await authorizeDelete('lead', id, { email: user.email, role: user.role })
+  if (!decision.allowed) {
+    return NextResponse.json(
+      { error: 'Only the account owner can delete a lead. Archive it instead.', reason: decision.reason },
+      { status: statusForDenial(decision) },
+    )
+  }
+
+  try {
+    await ensureLeadsTable()
+    const rows = await query<{ id: string }>(
+      `DELETE FROM freehold_site_leads WHERE id = $1 RETURNING id`, [id],
+    )
+    if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    return NextResponse.json({ ok: true, id })
+  } catch (err) {
+    // Say what actually failed. "Try again" for a foreign-key or permission
+    // error is the reflex that made the whole system feel broken.
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Delete failed' },
+      { status: 500 },
+    )
   }
 }

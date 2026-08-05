@@ -966,7 +966,26 @@ export async function runCoordinatorTool(
   call: { name: string; args: Record<string, unknown> },
   ctx: ToolCtx,
 ): Promise<unknown> {
-  const tool = tools.find((t) => t.name === call.name)
+  let tool = tools.find((t) => t.name === call.name)
+
+  // Qualified spelling: the model writes the tool as "<agent>.<tool>" or
+  // "<agent>:<tool>" — e.g. `creative_agent.library_list` — because that is how
+  // the tools are PRESENTED to it, grouped under an agent. The intent is
+  // unambiguous, so honour it instead of failing. Left unhandled, this burned
+  // the whole turn budget on retries and surfaced a raw
+  // `Unknown tool "creative_agent.library_list"` to the user, which is exactly
+  // the kind of breakage a client notices and never forgets.
+  if (!tool) {
+    const bare = call.name.split(/[.:]/).pop() ?? ''
+    const qualified = tools.find((t) => t.name === bare)
+    // Only accept it when the prefix really is that tool's agent (or the tool
+    // name alone is unique) — never let a stray prefix silently redirect a call
+    // to a different tool than the one named.
+    if (qualified && (call.name === `${qualified.agent}.${bare}` || call.name === `${qualified.agent}:${bare}` || !call.name.includes('.'))) {
+      tool = qualified
+    }
+  }
+
   if (!tool) {
     // Observed drift: the model calls an agent GROUP name ("creative_agent")
     // as if it were a tool, gets a bare "unknown tool", then flails until the

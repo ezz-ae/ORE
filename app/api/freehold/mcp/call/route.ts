@@ -12,6 +12,9 @@ import type { Role as McpRole } from '@/types/freehold-mcp';
 // the request body (that was the pre-P0 hole: body role defaulted to 'owner').
 const SESSION_TO_MCP: Record<SessionRole, McpRole> = {
   broker: 'sales_agent',
+  // A team leader's AI scope is a sales manager's: their team's leads,
+  // follow-ups, stages and delays — not company money or access.
+  team_leader: 'sales_manager',
   admin: 'admin',
   sales_manager: 'sales_manager',
   director: 'admin',
