@@ -29,18 +29,23 @@ import { OWNER_ROLES, MANAGEMENT_ROLES, LEADERSHIP_ROLES } from './session-types
 
 // ── The fairness defaults ─────────────────────────────────────────────────────
 // "fair by default". A broker who has just been handed a lead gets a protected
-// window to work it before anyone can take it away. These are the two numbers
-// that define fairness in this system; they live here, together, so changing
-// the policy is one edit and not a hunt.
+// window to work it before anyone can take it away. Changing the policy is one
+// edit here, not a hunt.
+//
+// There is ONE number, not two. An earlier version carried a second
+// `neglectMs: 72h` described as letting a leader move a lead that had gone
+// untouched — but it could never change an outcome: any lead old enough to be
+// "neglected" was already past the 24h grace, so the ordinary path allowed the
+// move anyway. A policy constant that decides nothing is worse than none: it
+// reads like a protection that exists. Removed rather than left as decoration.
+//
+// The deliberate consequence is that the two rules are exactly the two that
+// were asked for, and nothing else: a protected window, and untouchable
+// follow-up. A lead that HAS been worked is never reassignable by a leader, no
+// matter how stale — that needs authority this role does not have.
 export const FAIRNESS = {
   /** A newly assigned lead cannot be taken from its broker for this long. */
   graceMs: 24 * 60 * 60 * 1000,
-  /**
-   * After this long with NO follow-up at all, a lead counts as neglected and a
-   * leader may move it even though the grace window has passed — the rule that
-   * stops "protected" from becoming "parked".
-   */
-  neglectMs: 72 * 60 * 60 * 1000,
 } as const
 
 /** Activity types that count as a human actually working the lead. */
@@ -135,13 +140,6 @@ export function decideReassign(actorRole: Role, f: ReassignFacts): AuthorityDeci
   const heldFor = Number.isNaN(assignedAt) ? Infinity : f.now - assignedAt
   const worked = hasFollowUp(f)
 
-  // Neglect overrides protection. A lead sitting untouched for three days is
-  // not being worked, and leaving it there serves nobody — least of all the
-  // buyer waiting for a call. This is the event that activates the authority.
-  if (!worked && heldFor >= FAIRNESS.neglectMs) {
-    return { allowed: true, reason: 'leader_unlocked' }
-  }
-
   // Inside the protected window: the broker gets their fair chance first.
   if (heldFor < FAIRNESS.graceMs) {
     return {
@@ -156,7 +154,8 @@ export function decideReassign(actorRole: Role, f: ReassignFacts): AuthorityDeci
   // thing a leader can do, so it needs authority this role does not have.
   if (worked) return { allowed: false, reason: 'has_follow_up' }
 
-  // Past grace, no follow-up yet, not yet neglected — the leader may act.
+  // Past grace, never touched — the broker had their window and did nothing
+  // with it. This is the event that activates the leader's authority.
   return { allowed: true, reason: 'leader_unlocked' }
 }
 

@@ -3,7 +3,7 @@ import type { Locale } from '../config'
 // Navigation namespace (p_nav). Two families of keys:
 //
 //   nav.*    — the All-tools popup chrome and the global search box.
-//   tools.*  — one label per entry in lib/freehold/tools.ts (123 tools + 10
+//   tools.*  — one label per entry in lib/freehold/tools.ts (125 tools + 10
 //              group headings). Looked up dynamically as t(tool.labelKey), so
 //              the i18n audit's literal-key check does not see them; EN/AR/RU
 //              parity is what keeps them honest.
@@ -156,6 +156,8 @@ export const p_nav: Record<Locale, Dict> = {
 
     // ── People ──
     'tools.team.roster': 'Team',
+    'tools.team.teams': 'Teams & leaders',
+    'tools.team.log': 'Authority log',
     'tools.settings.team': 'Invite & accounts',
     'tools.settings.roles': 'Roles & permissions',
     'tools.agent.home': 'My workspace',
@@ -330,6 +332,8 @@ export const p_nav: Record<Locale, Dict> = {
 
     // ── People ──
     'tools.team.roster': 'الفريق',
+    'tools.team.teams': 'الفرق والقادة',
+    'tools.team.log': 'سجل الصلاحيات',
     'tools.settings.team': 'الدعوات والحسابات',
     'tools.settings.roles': 'الأدوار والصلاحيات',
     'tools.agent.home': 'مساحتي',
@@ -504,6 +508,8 @@ export const p_nav: Record<Locale, Dict> = {
 
     // ── People ──
     'tools.team.roster': 'Команда',
+    'tools.team.teams': 'Команды и руководители',
+    'tools.team.log': 'Журнал полномочий',
     'tools.settings.team': 'Приглашения и аккаунты',
     'tools.settings.roles': 'Роли и права',
     'tools.agent.home': 'Мой кабинет',

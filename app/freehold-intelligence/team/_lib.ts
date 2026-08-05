@@ -166,14 +166,15 @@ export const ROLE_CHIP: Record<string, string> = {
   director:      'border-gold/25 bg-gold/[0.07] text-gold/90',
   admin:         'border-violet-400/30 bg-violet-400/10 text-violet-300',
   sales_manager: 'border-teal-400/30 bg-teal-400/10 text-teal-300',
+  team_leader:   'border-cyan-400/30 bg-cyan-400/10 text-cyan-300',
   marketing:     'border-pink-400/30 bg-pink-400/10 text-pink-300',
   broker:        'border-line-strong bg-surface-2 text-slate-300',
 }
 
 /** Every DB role, in the order the roster filter and the invite form show them. */
-export const TEAM_ROLES = ['ceo', 'director', 'admin', 'sales_manager', 'marketing', 'broker'] as const
+export const TEAM_ROLES = ['ceo', 'director', 'admin', 'sales_manager', 'team_leader', 'marketing', 'broker'] as const
 /** CEO is the protected owner role — never assignable from a form. */
-export const ASSIGNABLE_ROLES = ['director', 'admin', 'sales_manager', 'marketing', 'broker'] as const
+export const ASSIGNABLE_ROLES = ['director', 'admin', 'sales_manager', 'team_leader', 'marketing', 'broker'] as const
 
 /** Minutes → compact human form (measured values only; callers dash nulls). */
 export const fmtMinutes = (n: number) => (n < 60 ? `${n}m` : `${Math.floor(n / 60)}h ${n % 60}m`)

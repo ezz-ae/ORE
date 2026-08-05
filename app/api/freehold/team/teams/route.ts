@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MGMT_ROLES, TEAM_APP_ROLES } from '@/lib/freehold/apps'
-import { listTeams, createTeam, setTeamLeader } from '@/lib/freehold/teams'
+import { listTeams, createTeam, setTeamLeader, renameTeam, deleteTeam } from '@/lib/freehold/teams'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/** Move the leadership of an existing team. */
+/** Rename a team, or move its leadership. Both are management's call. */
 export async function PATCH(req: NextRequest) {
   const auth = await requireSession(MGMT_ROLES)
   if ('res' in auth) return auth.res
@@ -62,12 +62,47 @@ export async function PATCH(req: NextRequest) {
   const teamId = String(body.teamId ?? '').trim()
   if (!teamId) return NextResponse.json({ error: 'teamId is required' }, { status: 400 })
 
+  // `leaderUserId: null` is a real instruction (leave the team leaderless), so
+  // presence of the KEY decides, not truthiness of the value.
+  const setsLeader = Object.prototype.hasOwnProperty.call(body, 'leaderUserId')
+  const name = body.name === undefined ? null : String(body.name).trim()
+  if (name !== null && !name) {
+    return NextResponse.json({ error: 'A team needs a name' }, { status: 400 })
+  }
+  if (!setsLeader && name === null) {
+    return NextResponse.json({ error: 'Nothing to change' }, { status: 400 })
+  }
+
   try {
-    await setTeamLeader(teamId, body.leaderUserId ? String(body.leaderUserId) : null)
+    if (name !== null) await renameTeam(teamId, name)
+    if (setsLeader) await setTeamLeader(teamId, body.leaderUserId ? String(body.leaderUserId) : null)
     return NextResponse.json({ ok: true })
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to set the leader' },
+      { error: err instanceof Error ? err.message : 'Failed to update the team' },
+      { status: 500 },
+    )
+  }
+}
+
+/**
+ * Disband a team. Management, not the owner-only rule: a team is an
+ * organisational grouping, not a lead or a campaign — nobody's work is
+ * destroyed and every member survives with their record intact.
+ */
+export async function DELETE(req: NextRequest) {
+  const auth = await requireSession(MGMT_ROLES)
+  if ('res' in auth) return auth.res
+
+  const teamId = (new URL(req.url).searchParams.get('teamId') ?? '').trim()
+  if (!teamId) return NextResponse.json({ error: 'teamId is required' }, { status: 400 })
+
+  try {
+    await deleteTeam(teamId)
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to disband the team' },
       { status: 500 },
     )
   }

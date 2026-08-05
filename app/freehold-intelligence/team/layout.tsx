@@ -1,23 +1,42 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, UsersRound } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { ArrowLeft, UsersRound, Users, ScrollText } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { rolesForApp } from '@/lib/freehold/apps'
 import { useT } from '@/lib/i18n/provider'
+import { tabLinkClass } from '@/components/freehold/ui'
 
 /**
- * Team — one app, one screen per concern:
+ * Team — one app, four screens:
  *   /team            the roster (status strip + one row per person)
  *   /team/[agentId]  everything about one person, in tabs
+ *   /team/teams      the org chart — who leads whom
+ *   /team/log        the authority record — who did what, and what was refused
  *
- * There is no sidebar because there is nothing to navigate between: the app is
- * a list and its detail. The guard reads the SAME role list the app registry
- * publishes, so nav visibility and route access can never drift apart.
+ * These three DO earn a nav row: they are peers you move between while doing
+ * the same job (deciding something about a person), not separate destinations.
+ * That is the test for a second level — the All-tools popup already reaches
+ * everything, so chrome here has to pay for itself in the flow.
+ *
+ * The guard reads the SAME role list the app registry publishes, so nav
+ * visibility and route access can never drift apart.
  */
 export default function TeamLayout({ children }: { children: React.ReactNode }) {
   const { ready } = useSessionGuard(rolesForApp('team'))
   const t = useT()
+  const pathname = usePathname()
+
+  const tabs = [
+    { href: '/freehold-intelligence/team',       label: t('team.nav.roster'), Icon: UsersRound, exact: true },
+    { href: '/freehold-intelligence/team/teams', label: t('team.nav.teams'),  Icon: Users },
+    { href: '/freehold-intelligence/team/log',   label: t('team.nav.log'),    Icon: ScrollText },
+  ]
+  // A person's page (/team/<id>) is a detail view, not a peer of these tabs —
+  // lighting "Roster" there would be wrong, so nothing is lit.
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -43,6 +62,15 @@ export default function TeamLayout({ children }: { children: React.ReactNode }) 
           <span className="text-sm font-semibold text-white">{t('team.app.title')}</span>
           <span className="hidden text-xs text-slate-500 sm:block">· {t('team.app.tag')}</span>
         </div>
+
+        <nav className="ms-auto flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {tabs.map((tab) => (
+            <Link key={tab.href} href={tab.href} className={tabLinkClass(isActive(tab.href, tab.exact))}>
+              <tab.Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </Link>
+          ))}
+        </nav>
       </header>
 
       <div className="min-w-0 flex-1">{children}</div>

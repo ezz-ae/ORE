@@ -196,6 +196,23 @@ export async function setTeamLeader(teamId: string, leaderUserId: string | null)
   await query(`UPDATE freehold_site_teams SET leader_user_id = $2 WHERE id = $1`, [teamId, leaderUserId])
 }
 
+export async function renameTeam(teamId: string, name: string): Promise<void> {
+  await ensureTeamsSchema()
+  await query(`UPDATE freehold_site_teams SET name = $2 WHERE id = $1`, [teamId, name.trim()])
+}
+
+/**
+ * Delete a team. Members are detached rather than deleted — losing a team must
+ * never lose a person. Their `team_id` clears, which drops them out of the old
+ * leader's scope; `reports_to` is left alone because it is a separate statement
+ * about who someone answers to.
+ */
+export async function deleteTeam(teamId: string): Promise<void> {
+  await ensureTeamsSchema()
+  await query(`UPDATE freehold_site_users SET team_id = NULL WHERE team_id = $1`, [teamId])
+  await query(`DELETE FROM freehold_site_teams WHERE id = $1`, [teamId])
+}
+
 /**
  * Patch a profile. Only whitelisted columns are written, and the column name is
  * taken from that whitelist rather than from the request — the identifier can

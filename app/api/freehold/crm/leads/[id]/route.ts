@@ -165,8 +165,9 @@ export async function PATCH(
   // ── Reassignment authority ──────────────────────────────────────────────
   // A team leader's power to move a lead is not a flag on their account: it
   // depends on THIS lead's state. Inside the grace window the assigned broker
-  // is protected; a lead they have actually worked is never up for grabs; a
-  // lead untouched past the neglect threshold unlocks. Management is not
+  // is protected; a lead they have actually worked is never up for grabs,
+  // however old; a lead still untouched once the window passes unlocks.
+  // Management is not
   // fairness-gated but every decision — allowed or denied — is written down,
   // which is what settles the argument later.
   if (!isBroker && 'assigned_broker_id' in body) {
