@@ -1945,7 +1945,14 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
   })
 }
 
-export async function getFormLeads(formId: string, pageToken?: string): Promise<MetaFormLead[]> {
+export async function getFormLeads(
+  formId: string,
+  pageToken?: string,
+  /** Unix seconds. When given, Meta returns ONLY leads created after this —
+   *  the difference between re-reading a form's entire history on every cron
+   *  pass and reading the handful that are actually new. */
+  sinceUnix?: number,
+): Promise<MetaFormLead[]> {
   // Follows pagination up to 5000 leads per form (25 pages) — and says so
   // when the cap is hit, so a monster form can't silently under-sync.
   // `pageToken`: leads are a Page asset, and reading them with the owning
@@ -1955,6 +1962,9 @@ export async function getFormLeads(formId: string, pageToken?: string): Promise<
   const leads = await apiFetchAllPages<MetaFormLead>(`/${formId}/leads`, {
     fields: 'id,created_time,field_data,ad_id,adset_id,campaign_id',
     limit:  '200',
+    ...(sinceUnix && Number.isFinite(sinceUnix)
+      ? { filtering: JSON.stringify([{ field: 'time_created', operator: 'GREATER_THAN', value: Math.floor(sinceUnix) }]) }
+      : {}),
   }, CAP, pageToken)
   if (leads.length >= CAP) {
     console.warn(`[meta-leads] form ${formId} returned ${CAP}+ leads — pagination capped, oldest leads beyond the cap were not fetched this pass`)
