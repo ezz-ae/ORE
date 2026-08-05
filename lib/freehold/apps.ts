@@ -54,11 +54,20 @@ export interface AppDef {
 }
 
 // Canonical role lists reused by both nav visibility and route guards.
-export const ALL_ROLES: Role[] = ['broker', 'admin', 'sales_manager', 'director', 'ceo', 'marketing']
-export const NON_BROKER_ROLES: Role[] = ['admin', 'sales_manager', 'director', 'ceo', 'marketing']
+export const ALL_ROLES: Role[] = ['broker', 'team_leader', 'admin', 'sales_manager', 'director', 'ceo', 'marketing']
+// A team leader is not a broker — they belong wherever "everyone except the
+// individual agent" is meant, which is what this list has always expressed.
+export const NON_BROKER_ROLES: Role[] = ['team_leader', 'admin', 'sales_manager', 'director', 'ceo', 'marketing']
 export const MGMT_ROLES: Role[] = ['admin', 'sales_manager', 'director', 'ceo']
 export const STUDIO_ROLES: Role[] = ['admin', 'director', 'ceo', 'marketing']
 export const SETTINGS_ROLES: Role[] = ['admin', 'director', 'ceo']
+/**
+ * Team app: management PLUS team leaders. The leader sees their own team here
+ * and management sees everyone — the page scopes the roster, the guard only
+ * decides who may open the door. Deliberately NOT MGMT_ROLES: leading a team
+ * has to be visible somewhere, and this is that somewhere.
+ */
+export const TEAM_APP_ROLES: Role[] = [...MGMT_ROLES, 'team_leader']
 
 export const APPS: AppDef[] = [
   {
@@ -118,7 +127,7 @@ export const APPS: AppDef[] = [
     metric: 'Everyone on the team', badge: 0, accent: '#2DD4BF',
     card: 'border-teal-400/15 hover:border-teal-400/35',
     icon: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
-    roles: MGMT_ROLES,
+    roles: TEAM_APP_ROLES,
   },
   {
     id: 'calendar', label: 'Calendar', sub: 'Meetings · Bookings · Training · Follow-ups',

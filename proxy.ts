@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { BRAND } from "@/lib/freehold/brand"
 import type { NextRequest } from "next/server"
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
+import { MANAGEMENT_ROLES, LEADERSHIP_ROLES } from '@/lib/freehold/session-types'
 import { WHITE_LABEL } from '@/lib/whitelabel/config'
 import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
 
@@ -54,8 +54,13 @@ const PUBLIC_API_PREFIXES = [
   "/api/wl/",                   // white-label: activate (public), keys (secret-gated), logo (cookie)
 ]
 
-// Roles allowed to spend ad budget / read lead-form PII (marketing + management).
-const ADS_ROLES = new Set<string>([...MANAGEMENT_ROLES, "marketing"])
+// Roles allowed to spend ad budget / read lead-form PII (marketing +
+// management + team leaders). A team leader "can see all the campaigns and
+// work with them on it but doesnt own camapigns": that means pausing, editing,
+// re-targeting and reading the leads a campaign produced. It does NOT mean
+// deletion — /api/meta/campaigns/[id] refuses that in-handler for everyone but
+// the owner, and this wall is not the place that decision belongs.
+const ADS_ROLES = new Set<string>([...LEADERSHIP_ROLES, "marketing"])
 
 // ── Apex short landing slugs (fhp.ae/velencia → /lp/velencia) ─────────────────
 // On the public short domain, a bare single-segment path is served as the real
@@ -219,14 +224,19 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // Management-only sections. Team consolidates every agent control (other
-    // brokers' pipelines, money and access), so it carries the same gate as
-    // Management — its role list in lib/freehold/apps.ts is MGMT_ROLES, which
-    // is exactly MANAGEMENT_ROLES.
-    const managementOnlySection =
-      pathname.startsWith('/freehold-intelligence/management') ||
-      pathname.startsWith('/freehold-intelligence/team')
-    if (managementOnlySection && !MANAGEMENT_ROLES.includes(user.role)) {
+    // Management-only: company-wide reporting, money, ROI, system events.
+    if (pathname.startsWith('/freehold-intelligence/management') && !MANAGEMENT_ROLES.includes(user.role)) {
+      const homeUrl = request.nextUrl.clone()
+      homeUrl.pathname = user.home
+      homeUrl.search = ''
+      return NextResponse.redirect(homeUrl)
+    }
+
+    // Team: management PLUS team leaders. A leader has to be able to see the
+    // people they lead, so this gate is wider than Management by exactly one
+    // role — and the page scopes the roster to their team, which is where the
+    // real limit lives. Matches TEAM_APP_ROLES in lib/freehold/apps.ts.
+    if (pathname.startsWith('/freehold-intelligence/team') && !LEADERSHIP_ROLES.includes(user.role)) {
       const homeUrl = request.nextUrl.clone()
       homeUrl.pathname = user.home
       homeUrl.search = ''

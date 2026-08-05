@@ -1526,8 +1526,15 @@ export async function ensureLeadsTable() {
       ADD COLUMN IF NOT EXISTS snooze_until timestamptz,
       ADD COLUMN IF NOT EXISTS archived boolean DEFAULT false,
       ADD COLUMN IF NOT EXISTS muted_until timestamptz,
-      ADD COLUMN IF NOT EXISTS blocked boolean DEFAULT false
+      ADD COLUMN IF NOT EXISTS blocked boolean DEFAULT false,
+      ADD COLUMN IF NOT EXISTS assigned_at timestamptz
   `)
+  // When the current broker got this lead. The fairness rules protect a newly
+  // assigned lead for a grace window, so "newly" needs a real timestamp —
+  // created_at is when the LEAD arrived, not when this broker received it, and
+  // using it would leave a reassigned lead permanently unprotected.
+  // Rows written before this column existed fall back to the last `assignment`
+  // activity row (see authority-db.ts); a null is never read as "just now".
 
   // Lead status vocabulary must match the CRM pipeline the UI actually offers
   // (new → contacted → qualified → viewing → negotiation → closed, + lost).
@@ -2471,8 +2478,11 @@ export async function ensureUsersTable() {
   try {
     await query(`ALTER TABLE freehold_site_users DROP CONSTRAINT IF EXISTS gc_users_role_check`)
     await query(`ALTER TABLE freehold_site_users DROP CONSTRAINT IF EXISTS freehold_users_role_check`)
+    // team_leader must be listed here or every attempt to create one is
+    // rejected by the database — the same class of failure the narrow seed
+    // constraint above caused for sales_manager and marketing.
     await query(`ALTER TABLE freehold_site_users ADD CONSTRAINT freehold_users_role_check
-      CHECK (role IS NULL OR role IN ('broker','admin','sales_manager','director','ceo','marketing'))`)
+      CHECK (role IS NULL OR role IN ('broker','team_leader','admin','sales_manager','director','ceo','marketing'))`)
   } catch { /* never block user ops on constraint maintenance */ }
 }
 

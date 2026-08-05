@@ -3,14 +3,23 @@
  * Contains no secrets and no runtime logic.
  */
 
-export type Role = 'broker' | 'admin' | 'sales_manager' | 'director' | 'ceo' | 'marketing'
+export type Role =
+  | 'broker' | 'admin' | 'sales_manager' | 'director' | 'ceo' | 'marketing'
+  /**
+   * Team leader — runs a team of brokers. Sees and works on every campaign but
+   * OWNS none, and can reassign leads only when the fairness rules unlock it.
+   * Deliberately NOT in MANAGEMENT_ROLES: leading a team is not the same as
+   * company-wide reporting, money or access administration.
+   */
+  | 'team_leader'
 
 export const ROLE_LABELS: Record<Role, string> = {
   broker:        'Broker',
+  team_leader:   'Team Leader',
   admin:         'Admin',
   sales_manager: 'Sales Manager',
   director:      'Director',
-  ceo:           'CEO',
+  ceo:           'Owner',
   marketing:     'Marketing',
 }
 
@@ -18,6 +27,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 // so a blue broker tint made the whole team list read blue).
 export const ROLE_COLORS: Record<Role, string> = {
   broker:        '#2DD4BF',
+  team_leader:   '#22D3EE',
   admin:         '#D4AF37',
   sales_manager: '#34D399',
   director:      '#A78BFA',
@@ -31,6 +41,24 @@ export const ROLE_COLORS: Record<Role, string> = {
  * Sales managers are included: they own team performance reporting.
  */
 export const MANAGEMENT_ROLES: Role[] = ['admin', 'ceo', 'director', 'sales_manager']
+
+/**
+ * THE OWNER. The account that pays for the system, and — stated as an absolute
+ * rule — the only one who may DELETE a campaign or a lead. Everyone else,
+ * team leaders and admins included, is an account with limitations.
+ *
+ * 'ceo' is the owner in this system's vocabulary: the team API has always
+ * displayed that role as "Owner", so this is naming an existing fact, not
+ * inventing a new tier.
+ */
+export const OWNER_ROLES: Role[] = ['ceo']
+
+/**
+ * Roles that lead people: management plus team leaders. This is the gate for
+ * SEEING a team and working across its campaigns — never for deleting, paying,
+ * or changing anyone's access, which stay with the roles above.
+ */
+export const LEADERSHIP_ROLES: Role[] = [...MANAGEMENT_ROLES, 'team_leader']
 
 export interface SessionUser {
   email: string

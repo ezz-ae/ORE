@@ -3,6 +3,8 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { getCampaign, getCampaignInsights, listAdSets, listAds, updateCampaignStatus, deleteCampaign } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { getLocalCampaign, updateLocalCampaignStatus } from '@/lib/meta/local-store'
+import { authorizeDelete } from '@/lib/freehold/authority-db'
+import { statusForDenial } from '@/lib/freehold/authority'
 import type { MetaCampaignStatus } from '@/lib/meta/types'
 
 export async function GET(
@@ -63,6 +65,19 @@ export async function PATCH(
 
   try {
     if (status === 'DELETED') {
+      // Deleting a campaign is the owner's call alone. A team leader "can see
+      // all the campaigns and work with them on it but doesnt own camapigns" —
+      // pausing, editing and re-targeting stay open to them below; destroying
+      // one does not. The attempt is logged either way.
+      const decision = await authorizeDelete('campaign', id, {
+        email: __auth.user.email, role: __auth.user.role,
+      })
+      if (!decision.allowed) {
+        return NextResponse.json(
+          { error: 'Only the account owner can delete a campaign. Pause it instead.', reason: decision.reason },
+          { status: statusForDenial(decision) },
+        )
+      }
       const result = await deleteCampaign(id)
       return NextResponse.json(result)
     }

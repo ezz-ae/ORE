@@ -33,6 +33,9 @@ type ExpertRole = 'owner' | 'admin' | 'marketing' | 'sales_manager' | 'sales_age
  */
 const SESSION_TO_EXPERT: Record<SessionRole, ExpertRole> = {
   broker: 'sales_agent',
+  // A team leader's AI scope is a sales manager's: their team's leads,
+  // follow-ups, stages and delays — not company money or access.
+  team_leader: 'sales_manager',
   admin: 'admin',
   sales_manager: 'sales_manager',
   director: 'admin',
@@ -314,16 +317,24 @@ function parseBlocks(raw: string): ExpertBlock[] {
   return [{ type: 'text', content: text }]
 }
 
-// One human-readable line per executed tool, for the "hit the tool limit"
-// reply — so a cut-off turn still tells the user what actually happened.
-function summarizeToolResult(result: unknown): string {
-  if (!result || typeof result !== 'object') return 'done'
+// One human-readable line per executed tool, for the cut-off-turn reply — so a
+// truncated turn still tells the user what actually happened.
+//
+// It must READ LIKE A PERSON, not like a stack trace. A client shown
+// `• creative_agent.library_list: failed — Unknown tool "…"` concludes the
+// product is broken, and they are not wrong to. Internal tool names and
+// internal error strings are for the server log; the user gets the outcome.
+function summarizeToolResult(result: unknown): string | null {
+  if (!result || typeof result !== 'object') return null
   const r = result as Record<string, unknown>
-  if (typeof r.error === 'string' && r.error) return `failed — ${r.error.slice(0, 140)}`
+  // A failed internal call is not a progress note. It is logged server-side and
+  // omitted here — reporting "I tried something that doesn't exist" tells the
+  // user nothing they can act on.
+  if (typeof r.error === 'string' && r.error) return null
   for (const key of ['message', 'summary', 'status', 'url', 'reviewUrl', 'wizardUrl', 'path']) {
     if (typeof r[key] === 'string' && r[key]) return String(r[key]).slice(0, 160)
   }
-  return 'done'
+  return null
 }
 
 export async function POST(request: NextRequest) {
@@ -523,9 +534,11 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         JSON.stringify({
           blocks: [{
             type: 'text',
+            // Plain language. "Tool limit" is our implementation detail; what
+            // the user needs is what got done and how to carry on.
             content: resultNotes.length
-              ? `I hit this turn's tool limit. Done so far:\n${resultNotes.join('\n')}\nSay "continue" and I'll pick up from here.`
-              : `I hit this turn's tool limit before finishing — say "continue" and I'll pick up from here.`,
+              ? `Here's what I've done so far:\n${resultNotes.join('\n')}\n\nThere's more to do on this — say "continue" and I'll carry on.`
+              : `This one needs a few more steps than I can take in a single go — say "continue" and I'll carry on.`,
           }],
         })
 
@@ -550,7 +563,18 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
           // observation. (Observed: "Generated an image" chip over a Forbidden.)
           const failed = !!(result && typeof result === 'object' && (result as Record<string, unknown>).error)
           if (!failed) toolsUsed.push(call.name)
-          resultNotes.push(`• ${call.name}: ${summarizeToolResult(result)}`)
+          // Progress notes carry the OUTCOME in plain language, never the
+          // internal tool name. Failures return null and are logged instead —
+          // the model still sees the raw error in its observation below and can
+          // recover, but the user never reads our internals.
+          const note = summarizeToolResult(result)
+          if (note) resultNotes.push(`• ${note}`)
+          else if (failed) {
+            console.error('[expert] tool failed', {
+              tool: call.name,
+              error: (result as Record<string, unknown>).error,
+            })
+          }
           const resultJson = JSON.stringify(result)
           toolResultsText += ' ' + resultJson
           observation = `TOOL_RESULT ${call.name}: ${resultJson.slice(0, 6000)}`

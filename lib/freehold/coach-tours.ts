@@ -54,6 +54,17 @@ export const TOURS: Record<Role, CoachStep[]> = {
     { key: 'coach.common.serverai', anchor: 'hub-ai', placement: 'top' },
     ...COMMON_TAIL,
   ],
+  // A leader's tour goes where their authority actually is: their team, the
+  // campaigns they work on but don't own, and the fairness rules — because the
+  // first time a reassignment is refused should not be the first time they hear
+  // that reassignment has rules.
+  team_leader: [
+    { key: 'coach.leader.welcome', placement: 'center' },
+    { key: 'coach.leader.team', anchor: 'nav-team', placement: 'bottom' },
+    { key: 'coach.leader.fairness', anchor: 'nav-crm', placement: 'bottom' },
+    { key: 'coach.leader.campaigns', anchor: 'nav-ads', placement: 'bottom' },
+    ...COMMON_TAIL,
+  ],
   sales_manager: [
     { key: 'coach.manager.welcome', placement: 'center' },
     { key: 'coach.manager.crm', anchor: 'nav-crm', placement: 'bottom' },
