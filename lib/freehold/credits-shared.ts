@@ -18,9 +18,40 @@ export const TIER_MONTHLY_QUOTA: Record<CreditTier, number> = {
 export const isCreditTier = (value: unknown): value is CreditTier =>
   typeof value === 'string' && (CREDIT_TIERS as readonly string[]).includes(value)
 
-/** 1 credit = AED 10 of funded ad spend (matches the Meta launch deduction:
- *  creditsToSpend = dailyBudgetAED / 10). */
+/** 1 credit = AED 10 of funded ad spend (matches the launch deduction:
+ *  creditsToSpend = dailyBudgetAED / CREDIT_VALUE_AED). */
 export const CREDIT_VALUE_AED = 10
+
+/**
+ * Credits reserved for a campaign launch, for EVERY ad platform.
+ *
+ * One derivation, one rate: Meta and Google must charge a broker the same for
+ * the same funded budget, so neither route re-derives "/ 10" of its own. Whole
+ * credits only (the ledger column is INTEGER), minimum 1 — a funded campaign is
+ * never free.
+ *
+ * Returns 0 for a non-finite budget so a malformed payload can never produce a
+ * NaN charge; every caller must still reject a non-numeric budget BEFORE this
+ * point (0 credits = no reservation = a free launch, which is the bug this
+ * guard exists to make loud rather than to paper over).
+ */
+export const creditsForDailyBudget = (dailyBudgetAED: number): number =>
+  Number.isFinite(dailyBudgetAED)
+    ? Math.max(1, Math.round(dailyBudgetAED / CREDIT_VALUE_AED))
+    : 0
+
+/**
+ * Ledger reference prefix for the monthly tier grant: `cycle:YYYY-MM`.
+ *
+ * This IS the idempotency key of the monthly quota — combined with the unique
+ * index on (broker_id, type, reference), a calendar month can be granted to a
+ * broker exactly once, however many times the rollover is attempted.
+ */
+export const CYCLE_REFERENCE_PREFIX = 'cycle:'
+
+/** True for a ledger row written by the monthly tier grant. */
+export const isCycleGrantReference = (reference: string | null | undefined): boolean =>
+  typeof reference === 'string' && reference.startsWith(CYCLE_REFERENCE_PREFIX)
 
 /** Earn rule: 1 credit per AED 1,000 of broker net commission, minimum 1. */
 export const EARN_AED_PER_CREDIT = 1000

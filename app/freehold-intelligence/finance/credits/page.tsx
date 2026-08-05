@@ -8,7 +8,9 @@ import {
   History, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
-import { CREDIT_TIERS, TIER_MONTHLY_QUOTA, type CreditTier } from '@/lib/freehold/credits-shared'
+import {
+  CREDIT_TIERS, TIER_MONTHLY_QUOTA, isCycleGrantReference, type CreditTier,
+} from '@/lib/freehold/credits-shared'
 import { useT } from '@/lib/i18n/provider'
 
 type BrokerBalance = {
@@ -28,6 +30,7 @@ type LedgerEntry = {
   type: 'allocation' | 'spend' | 'refund' | 'adjustment' | 'earn'
   amount: number
   note: string | null
+  reference: string | null
   created_by: string | null
   created_at: string
 }
@@ -344,7 +347,12 @@ export default function AgentCreditsPage() {
                           <div key={entry.id} className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}>
                             <div className="min-w-0 flex-1">
                               <div className="text-xs font-medium text-slate-200">
-                                {t(LEDGER_LABEL_KEY[entry.type] ?? 'finance.credits.ledgerAdjustment')}
+                                {/* The monthly tier grant is an allocation, but calling it
+                                    one hides WHY the credits appeared — it is the automatic
+                                    cycle top-up, not a Finance decision. */}
+                                {isCycleGrantReference(entry.reference)
+                                  ? t('finance.credits.ledgerMonthlyGrant')
+                                  : t(LEDGER_LABEL_KEY[entry.type] ?? 'finance.credits.ledgerAdjustment')}
                               </div>
                               {entry.note && <div className="mt-0.5 truncate text-[11px] text-slate-500">{entry.note}</div>}
                             </div>

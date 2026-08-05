@@ -8,7 +8,10 @@ import {
   Users, Trophy, Target, ChevronRight,
   AlertTriangle, ArrowDownCircle, ArrowUpCircle,
 } from 'lucide-react'
-import { CREDIT_VALUE_AED, EARN_AED_PER_CREDIT } from '@/lib/freehold/credits-shared'
+import {
+  CREDIT_VALUE_AED, EARN_AED_PER_CREDIT, TIER_MONTHLY_QUOTA,
+  isCreditTier, isCycleGrantReference,
+} from '@/lib/freehold/credits-shared'
 import { useI18n } from '@/lib/i18n/provider'
 
 interface LiveBalance {
@@ -24,6 +27,7 @@ interface LedgerEntry {
   type: 'allocation' | 'spend' | 'refund' | 'adjustment' | 'earn'
   amount: number
   note: string | null
+  reference: string | null
   created_at: string
 }
 
@@ -95,6 +99,8 @@ export default function AgentCreditsPage() {
   const cycleEndLabel = balance?.cycle_end
     ? new Date(balance.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' })
     : null
+  const tierName = balance?.tier
+  const monthlyQuota = TIER_MONTHLY_QUOTA[isCreditTier(tierName) ? tierName : 'Starter']
 
   const lowBalance = hasAccount && allocated > 0 && remaining <= allocated * 0.15
   const statusBadge = !hasAccount
@@ -157,7 +163,12 @@ export default function AgentCreditsPage() {
               />
             </div>
             {cycleEndLabel && (
-              <div className="mt-1.5 text-xs text-slate-500">{t('agent.cycleResets', { date: cycleEndLabel })}</div>
+              <div className="mt-1.5 text-xs text-slate-500">
+                {/* The real mechanic, in the broker's words: on that date the
+                    balance is topped back up TO the tier quota — a balance
+                    already above it (earned credits) is never reduced. */}
+                {t('agent.cycleTopUp', { quota: monthlyQuota, date: cycleEndLabel })}
+              </div>
             )}
           </div>
         )}
@@ -249,7 +260,13 @@ export default function AgentCreditsPage() {
                     {isDebit ? <ArrowDownCircle className="h-4 w-4" /> : <ArrowUpCircle className="h-4 w-4" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-white">{t(LEDGER_LABEL_KEY[entry.type] ?? 'agent.ledgerAdjustment')}</div>
+                    <div className="text-sm font-medium text-white">
+                      {/* Monthly tier grants are allocations on the ledger, but the
+                          broker should read them as what they are: the cycle top-up. */}
+                      {isCycleGrantReference(entry.reference)
+                        ? t('agent.ledgerMonthlyGrant')
+                        : t(LEDGER_LABEL_KEY[entry.type] ?? 'agent.ledgerAdjustment')}
+                    </div>
                     {entry.note && <div className="mt-0.5 truncate text-xs text-slate-500">{entry.note}</div>}
                   </div>
                   <div className="shrink-0 text-end">

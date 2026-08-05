@@ -3,6 +3,9 @@ import { notifyBrokerLowCredits } from '@/lib/transactional-email'
 import {
   creditsEarnedForCommission,
   isValidCreditAmount,
+  isCreditTier,
+  CYCLE_REFERENCE_PREFIX,
+  TIER_MONTHLY_QUOTA,
   type CreditTier,
 } from '@/lib/freehold/credits-shared'
 
@@ -82,15 +85,43 @@ export async function readCreditBalance(
   brokerId: string,
 ): Promise<{ ok: true; balance: CreditBalance | null } | { ok: false }> {
   try {
-    const rows = await query<CreditBalance>(
-      `SELECT broker_id, tier, allocated, balance, total_spent,
-              cycle_start::text, cycle_end::text
-       FROM broker_credit_balances
-       WHERE broker_id = $1`,
-      [brokerId]
-    )
-    return { ok: true, balance: rows[0] ?? null }
+    let row = await selectBalanceRow(brokerId)
+    // Lazy, self-healing monthly cycle: a broker who has been away for months
+    // is topped up the moment anyone looks at their account, no cron required.
+    // The grant itself happens under the account row lock (rollMonthlyQuota) —
+    // this read only decides whether it is worth opening that transaction, and
+    // the locked path re-checks, so a stale "due" here cannot double-grant.
+    if (row?.cycle_due) {
+      const rolled = await rollMonthlyQuota(brokerId).then(() => true).catch(() => false)
+      // A failed rollover must not fail the read: report the balance as it
+      // stands (under-granted, never over-granted) rather than a false error.
+      if (rolled) row = await selectBalanceRow(brokerId)
+    }
+    return { ok: true, balance: row ? stripCycleFlag(row) : null }
   } catch { return { ok: false } }
+}
+
+/** The balance row every read path uses, plus whether its cycle has rolled into
+ *  a new calendar month (evaluated in the operating timezone, in Postgres — the
+ *  month boundary must not depend on the Node process's clock or locale). */
+async function selectBalanceRow(
+  brokerId: string,
+): Promise<(CreditBalance & { cycle_due: boolean }) | null> {
+  const rows = await query<CreditBalance & { cycle_due: boolean }>(
+    `SELECT broker_id, tier, allocated, balance, total_spent,
+            cycle_start::text, cycle_end::text,
+            (to_char(cycle_start AT TIME ZONE '${CYCLE_TZ}', 'YYYY-MM')
+               <> to_char(now() AT TIME ZONE '${CYCLE_TZ}', 'YYYY-MM')) AS cycle_due
+     FROM broker_credit_balances
+     WHERE broker_id = $1`,
+    [brokerId],
+  )
+  return rows[0] ?? null
+}
+
+const stripCycleFlag = (row: CreditBalance & { cycle_due: boolean }): CreditBalance => {
+  const { cycle_due: _cycleDue, ...balance } = row
+  return balance
 }
 
 export async function getCreditBalance(brokerId: string): Promise<CreditBalance | null> {
@@ -325,21 +356,138 @@ async function insertLedgerOnce(
   }
 }
 
-/** Create-if-missing then lock the broker's account row. Returns false when the
- *  row cannot be locked — no lock means no serialisation, so callers fail closed
- *  rather than authorise a spend against an unprotected balance. */
-async function lockAccount(q: TxQuery, brokerId: string): Promise<boolean> {
-  await q(
+/**
+ * Create-if-missing then lock the broker's account row.
+ *
+ * `locked: false` means the row could not be locked — no lock means no
+ * serialisation, so callers fail closed rather than authorise a spend against
+ * an unprotected balance. `created` reports whether THIS call brought the
+ * account into existence, which is the monthly cycle's "first ever" signal: a
+ * brand-new account is already sitting in the current calendar month, so
+ * without it a new broker would wait until next month for the quota the UI
+ * promises them today.
+ */
+async function lockAccount(
+  q: TxQuery,
+  brokerId: string,
+): Promise<{ locked: boolean; created: boolean }> {
+  const inserted = await q<{ broker_id: string }>(
     `INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
      VALUES ($1, 'Starter', 0)
-     ON CONFLICT (broker_id) DO NOTHING`,
+     ON CONFLICT (broker_id) DO NOTHING
+     RETURNING broker_id`,
     [brokerId],
   )
   const locked = await q<{ broker_id: string }>(
     `SELECT broker_id FROM broker_credit_accounts WHERE broker_id = $1 FOR UPDATE`,
     [brokerId],
   )
-  return locked.length > 0
+  return { locked: locked.length > 0, created: inserted.length > 0 }
+}
+
+/**
+ * The timezone the credit cycle lives in. Credits fund UAE ad spend and the
+ * product's month is the Dubai month, so a broker's quota rolls at midnight
+ * Dubai — not at whatever the database session or the serverless region says.
+ */
+const CYCLE_TZ = 'Asia/Dubai'
+
+/**
+ * Monthly tier quota — the grant that TIER_MONTHLY_QUOTA has always advertised.
+ *
+ * Runs INSIDE the caller's transaction, under the account row lock they already
+ * hold, so it serialises with every spend/refund/earn for that broker.
+ *
+ * Semantics (deliberate, and the least surprising reading of the UI's "Resets"):
+ *   • the balance is topped up TO the tier quota — 8 credits on a 25 quota → 25;
+ *   • a balance already at or above quota is left ALONE (deal bonuses are never
+ *     clawed back), and no ledger row is written;
+ *   • the grant is therefore max(0, quota − balance).
+ *
+ * A broker who was inactive for five months lands on the CURRENT month with ONE
+ * top-up, not five: the trigger is "the cycle is not in this calendar month",
+ * and the ledger reference is the month itself.
+ *
+ * Impossible to double-grant: the ledger row is written by `insertLedgerOnce`
+ * under reference `cycle:<YYYY-MM>`, which the unique index
+ * `(broker_id, type, reference)` makes unique per broker per month. Two racing
+ * requests, a retry after a timeout, a re-entered rollover — the second insert
+ * finds the row (or raises 23505) and grants nothing.
+ */
+async function rollMonthlyQuotaLocked(
+  q: TxQuery,
+  brokerId: string,
+  isNewAccount: boolean,
+): Promise<number> {
+  const rows = await q<{ tier: string; cycle_month: string; now_month: string }>(
+    `SELECT tier,
+            to_char(cycle_start AT TIME ZONE '${CYCLE_TZ}', 'YYYY-MM') AS cycle_month,
+            to_char(now()       AT TIME ZONE '${CYCLE_TZ}', 'YYYY-MM') AS now_month
+     FROM broker_credit_accounts
+     WHERE broker_id = $1`,
+    [brokerId],
+  )
+  const row = rows[0]
+  if (!row) return 0
+  // Already in this month's cycle → nothing due. A just-created account is the
+  // one exception: its first cycle has never been granted.
+  if (!isNewAccount && row.cycle_month === row.now_month) return 0
+
+  const tier: CreditTier = isCreditTier(row.tier) ? row.tier : 'Starter'
+  const quota = TIER_MONTHLY_QUOTA[tier]
+  const balance = await lockedBalance(q, brokerId)
+  const grant = Math.max(0, quota - balance)
+
+  let granted = 0
+  if (grant > 0 && isValidCreditAmount(grant)) {
+    const booked = await insertLedgerOnce(q, {
+      brokerId,
+      type: 'allocation',
+      amount: grant,
+      note: `Monthly ${tier} quota (${row.now_month})`,
+      reference: `${CYCLE_REFERENCE_PREFIX}${row.now_month}`,
+      meta: { cycle: row.now_month, tier, quota, balance_before: balance },
+      createdBy: 'system',
+    })
+    if (booked) {
+      granted = grant
+      // `allocated` is the cumulative "credits given" the usage bar measures
+      // spend against. Granted credits that never landed there would render as
+      // "12 of 0 used" — a wrong number on a money screen.
+      await q(
+        `UPDATE broker_credit_accounts
+         SET allocated = allocated + $2, updated_at = now()
+         WHERE broker_id = $1`,
+        [brokerId, grant],
+      )
+    }
+  }
+
+  // The dates roll whether or not credits moved — a broker already above quota
+  // still starts a new cycle, and the UI's "Resets …" finally tells the truth.
+  await q(
+    `UPDATE broker_credit_accounts
+     SET cycle_start = date_trunc('month', now() AT TIME ZONE '${CYCLE_TZ}') AT TIME ZONE '${CYCLE_TZ}',
+         cycle_end   = (date_trunc('month', now() AT TIME ZONE '${CYCLE_TZ}') + interval '1 month') AT TIME ZONE '${CYCLE_TZ}',
+         updated_at  = now()
+     WHERE broker_id = $1`,
+    [brokerId],
+  )
+  return granted
+}
+
+/**
+ * Standalone rollover for the READ path — same lock, same transaction shape as
+ * every mutation. Only ever called for a broker who already HAS an account, so
+ * reading a balance still never conjures one.
+ */
+async function rollMonthlyQuota(brokerId: string): Promise<void> {
+  await ensureCreditsSchema()
+  await withTransaction(async (q) => {
+    const { locked, created } = await lockAccount(q, brokerId)
+    if (!locked) return
+    await rollMonthlyQuotaLocked(q, brokerId, created)
+  })
 }
 
 /** Re-derive the authoritative balance from the ledger, under the caller's lock. */
@@ -374,9 +522,15 @@ export async function deductCreditsForCampaign(
     // The account upsert is INSIDE the transaction — done outside it, a missing
     // row made `FOR UPDATE` match zero rows and take no lock at all.
     const result = await withTransaction(async (q) => {
-      if (!await lockAccount(q, brokerId)) {
+      const account = await lockAccount(q, brokerId)
+      if (!account.locked) {
         return { ok: false as const, reason: 'error' as const }
       }
+      // Settle the monthly quota BEFORE authorising the spend, in this same
+      // transaction and under this same lock: a broker returning after a month
+      // away can afford the launch their tier already entitles them to, and the
+      // balance the debit checks is the post-grant one.
+      await rollMonthlyQuotaLocked(q, brokerId, account.created)
       const bal = await lockedBalance(q, brokerId)
       if (bal < credits) {
         return { ok: false as const, reason: 'insufficient' as const, balance: bal }
@@ -474,7 +628,8 @@ export async function refundCredits(
     return await withTransaction(async (q) => {
       // Same row lock as the debit path: every ledger mutation for a broker
       // serialises on their account row, so the idempotency check cannot race.
-      if (!await lockAccount(q, brokerId)) return { ok: false as const, reason: 'error' as const }
+      const account = await lockAccount(q, brokerId)
+      if (!account.locked) return { ok: false as const, reason: 'error' as const }
       const credited = await insertLedgerOnce(q, {
         brokerId,
         type: 'refund',
@@ -489,6 +644,12 @@ export async function refundCredits(
          WHERE broker_id = $1 AND campaign_id = $2 AND status <> 'cancelled'`,
         [brokerId, campaignId],
       )
+      // The monthly cycle settles AFTER the reversal, unlike every other path.
+      // A refund undoes a spend that happened before the roll, so the balance
+      // the top-up measures must already include it — rolling first would top a
+      // drained broker up to quota and THEN hand back last month's spend on top,
+      // paying twice for a campaign that never served.
+      await rollMonthlyQuotaLocked(q, brokerId, account.created)
       return credited ? { ok: true } : { ok: true, alreadyRefunded: true }
     })
   } catch {
@@ -510,6 +671,11 @@ export async function allocateCredits(
     // as two statements, a failed ledger insert left `allocated` inflated while
     // the balance never moved — the UI then showed "0 of 25 used" forever.
     await withTransaction(async (q) => {
+      // Lock first, then settle any due monthly quota — a Finance bonus stacks
+      // on top of the tier grant, and every ledger write for this broker
+      // serialises on the same row lock as a spend.
+      const account = await lockAccount(q, brokerId)
+      if (account.locked) await rollMonthlyQuotaLocked(q, brokerId, account.created)
       await q(
         `INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
          VALUES ($1, 'Starter', $2)
@@ -552,7 +718,12 @@ export async function earnCreditsForDeal(
       // Creates the account row (so the balances view picks the broker up) AND
       // locks it, so two approvals landing together cannot both pass the
       // "already earned?" check.
-      if (!await lockAccount(q, brokerId)) return { ok: false as const, reason: 'error' as const }
+      const account = await lockAccount(q, brokerId)
+      if (!account.locked) return { ok: false as const, reason: 'error' as const }
+      // Quota first, bonus second: a deal reward stacks ON TOP of the monthly
+      // grant. Rolling after the earn would absorb the reward into the top-up
+      // and the broker would be paid nothing for closing the deal.
+      await rollMonthlyQuotaLocked(q, brokerId, account.created)
       const earned = await insertLedgerOnce(q, {
         brokerId,
         type: 'earn',
@@ -578,13 +749,20 @@ export async function setBrokerTier(
   if (!brokerId) return { ok: false, reason: 'invalid' }
   try {
     await ensureCreditsSchema()
-    await query(`
-      INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
-      VALUES ($1, $2, 0)
-      ON CONFLICT (broker_id) DO UPDATE SET
-        tier = $2,
-        updated_at = now()
-    `, [brokerId, tier])
+    await withTransaction(async (q) => {
+      // Same lock as every other account mutation. The tier is written FIRST so
+      // a due cycle is granted at the tier the broker now holds — and because a
+      // tier assignment is how many accounts come into existence, the rollover
+      // right after it is what gives a brand-new broker the quota their tier
+      // advertises instead of an empty first month.
+      const account = await lockAccount(q, brokerId)
+      if (!account.locked) throw new Error('could not lock credit account')
+      await q(
+        `UPDATE broker_credit_accounts SET tier = $2, updated_at = now() WHERE broker_id = $1`,
+        [brokerId, tier],
+      )
+      await rollMonthlyQuotaLocked(q, brokerId, account.created)
+    })
     return { ok: true }
   } catch { return { ok: false, reason: 'error' } }
 }
@@ -606,7 +784,14 @@ export async function listBrokerBalances(): Promise<BrokerBalanceRow[]> {
          COALESCE(b.total_spent, 0)::integer AS total_spent,
          COALESCE(b.balance, 0)::integer    AS balance,
          COALESCE(e.earned, 0)::integer     AS earned,
-         b.cycle_end::text                  AS cycle_end
+         -- The real next reset. The cycle is calendar-month based and rolls
+         -- lazily the next time each account is touched, so the stored
+         -- cycle_end of a broker nobody has touched yet is history; the date
+         -- their quota actually tops up on is the start of next month.
+         CASE WHEN b.broker_id IS NOT NULL THEN
+           ((date_trunc('month', now() AT TIME ZONE '${CYCLE_TZ}') + interval '1 month')
+              AT TIME ZONE '${CYCLE_TZ}')::text
+         END                                AS cycle_end
        FROM freehold_site_users u
        LEFT JOIN broker_credit_balances b
          ON b.broker_id = u.id OR b.broker_id = u.email
