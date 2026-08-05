@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { BROCHURE_MAX_BYTES, postBrochureForParse } from '@/lib/freehold/parse-brochure-client'
 import {
   Loader2, Download, ExternalLink, FileSearch, BookOpen, ArrowLeft, ScanText, Stamp, QrCode, Upload, Save,
   Layers, RotateCw, Trash2, FilePlus, ArrowUp, ArrowDown, ImagePlus, Palette, FileImage, Sparkles, Building2,
@@ -113,11 +114,13 @@ export default function DrivePdfSurface() {
 
   async function extract(file: File) {
     if (file.type && file.type !== 'application/pdf') { toast.error(t('ed.pdf.extractFailed')); return }
+    if (file.size > BROCHURE_MAX_BYTES) { toast.error(t('lm.pdf.tooLarge')); return }
     setExtracting(true)
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
+      // Raw FormData dies above the platform's ~4.5MB body cap. The shared
+      // helper posts small files directly and routes bigger ones through a
+      // browser→Blob upload, so a real 10MB brochure extracts here too.
+      const res = await postBrochureForParse(file)
       const d = await res.json().catch(() => ({}))
       if (!res.ok || !d?.data) { toast.error(d?.error || t('ed.pdf.extractFailed')); return }
       setParsed(d.data as Record<string, unknown>)

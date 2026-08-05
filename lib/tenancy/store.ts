@@ -89,6 +89,12 @@ async function ensure(): Promise<void> {
         last_seen_at  timestamptz
       )
     `)
+  // Self-heal: this table's ON CONFLICT target needs a real unique index.
+  // Tables created before the UNIQUE was declared never gained one, which
+  // makes every upsert fail with 42P10 (the bug that broke project create).
+  try {
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS saas_tenants_subdomain_uidx ON saas_tenants (subdomain)`)
+  } catch { /* duplicates present — leave the data alone, surface nothing */ }
   })
 }
 

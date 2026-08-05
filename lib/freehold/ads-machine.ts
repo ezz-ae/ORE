@@ -98,6 +98,12 @@ async function ensure(): Promise<void> {
           answered_at       timestamptz,
           UNIQUE (machine_id, lead_id)
         )`)
+  // Self-heal: this table's ON CONFLICT target needs a real unique index.
+  // Tables created before the UNIQUE was declared never gained one, which
+  // makes every upsert fail with 42P10 (the bug that broke project create).
+  try {
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS fh_ads_machine_lead_verdicts_uidx ON freehold_site_ads_machine_lead_verdicts (machine_id, lead_id)`)
+  } catch { /* duplicates present — leave the data alone, surface nothing */ }
   })
 }
 

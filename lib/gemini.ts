@@ -8,13 +8,15 @@ import {
   vertexConfigured,
   type VertexContent,
 } from "@/lib/google/vertex-auth"
+import { geminiApiKey as resolveGeminiKey } from "@/lib/gemini-rest"
 
 // Initialize Gemini API
-const geminiApiKey =
-  process.env.GEMINI_API_KEY ||
-  process.env.Gemini_API_KEY ||
-  process.env.google_api_key ||
-  ""
+// One resolver for the whole app. This module used to accept only three of the
+// five spellings gemini-rest accepts, so a deployment keyed on GOOGLE_API_KEY
+// or GEMINI_KEY passed the `aiConfigured()` gate and then constructed the SDK
+// with an empty key — every model threw and the public chat shipped its canned
+// fallback. That mismatch WAS the "AI on the public site falls back" report.
+const geminiApiKey = resolveGeminiKey()
 const genAI = new GoogleGenerativeAI(geminiApiKey)
 const hasGeminiApiKey = Boolean(geminiApiKey)
 

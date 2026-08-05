@@ -212,7 +212,7 @@ function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
 // else the model invented, and the user lands on a 404 — the exact "every link
 // from the chat is 404" report. hrefAllowed lets static routes through and
 // requires record ids to be tool-sourced.
-const RECORD_COLLECTIONS = /\/(leads|forms|projects|properties|landing|landing-pages|ads-machine|campaigns|deals|audiences)\/([^/?#]+)/i
+const RECORD_COLLECTIONS = /\/(leads|forms|projects|properties|landing|landings|landing-pages|ads-machine|campaigns|deals|audiences)\/([^/?#]+)/i
 function hrefAllowed(href: unknown, seen: string): boolean {
   if (typeof href !== 'string') return false
   const h = href.trim()
@@ -584,6 +584,35 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         blocks = [{
           type: 'text',
           content: 'I have to correct myself: I did not actually start anything — no action ran just now, and I have no background-import capability. What I can genuinely do here: search and update the leads already in the CRM, and manage campaigns. For importing or syncing CRM data, use Integrations → HubSpot (Sync) in the platform — that is a real import, visible and verifiable.',
+        }]
+      }
+    }
+    // ── FABRICATED-CREATION TRIPWIRE ──────────────────────────────────────────
+    // Client-reported, verbatim: "it says campaign launched and nothing
+    // happened, it says landing created and nothing." The action tripwire
+    // above only covers STARTED-work verbs (initiate/import/sync), so a flat
+    // "I've created the landing page" or "your campaign is now live" sailed
+    // through untouched.
+    //
+    // Rule: a claim that something was CREATED or LAUNCHED is true here only
+    // if a creating tool actually succeeded this turn. toolsUsed already holds
+    // successes only (failed calls are excluded upstream), so an empty
+    // intersection means the claim is invented — replace it, never ship it.
+    // Deliberately FIRST-PERSON only. "Campaign X is now live" is a legitimate
+    // thing to say when merely REPORTING status from a list/insights tool, so
+    // matching it would suppress true answers. Only the assistant claiming
+    // authorship of a creation counts.
+    const CREATION_CLAIM = /\b(?:i\s+(?:have\s+|had\s+)?(?:just\s+|now\s+)?(?:created|launched|published|generated|built|set\s+up|posted)|i['’]ve\s+(?:just\s+|now\s+)?(?:created|launched|published|generated|built|set\s+up|posted))\b/i
+    const CREATING_TOOL = /(?:_create|create_|_launch|launch_|_publish|publish_|_generate|generate_|_add|add_|_send|send_|_save|save_)/i
+    const creationRan = toolsUsed.some((name) => CREATING_TOOL.test(name))
+    if (tools.length > 0 && !creationRan) {
+      const claimsCreation = blocks.some((b) => b.type === 'text' && CREATION_CLAIM.test(String((b as { content?: unknown }).content ?? '')))
+      if (claimsCreation) {
+        blocks = [{
+          type: 'text',
+          content: resultNotes.length
+            ? `I have to correct myself — I did NOT create or launch anything just now. Here is what actually ran this turn:\n${resultNotes.join('\n')}\n\nTell me to go ahead and I will run the real creation tool, then give you the link to the thing itself.`
+            : 'I have to correct myself — I did NOT create or launch anything just now; no creation step ran. Ask me again and I will run the real tool, then hand you the link to what it made. If a campaign launch failed silently, Meta is most likely not connected (Integrations → Meta).',
         }]
       }
     }

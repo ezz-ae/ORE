@@ -102,10 +102,35 @@ export default function FilesManagerPage() {
       .filter((i) => !q || i.name.toLowerCase().includes(q))
   }, [items, query, source, activeFolder])
 
-  function open(it: Unified) {
+  const [opening, setOpening] = useState(false)
+
+  async function open(it: Unified) {
     if (it.source === 'library' && it.driveKind && SHIPPED.has(editorTypeForKind(it.driveKind, !!it.url))) {
       router.push(editorHrefForItem({ id: it.id.replace(/^lib-/, ''), kind: it.driveKind, url: it.url }))
       return
+    }
+    // An UPLOADED pdf lives in cloud storage, and the PDF editor only resolves
+    // Library ids — so it used to just open in a browser tab, with no way to
+    // edit it ("the brochure editor has no way to upload a brochure").
+    // Register it in the Library once, then open the real editor.
+    if (it.source === 'cloud' && it.driveKind === 'pdf' && it.url && !opening) {
+      setOpening(true)
+      try {
+        const res = await fetch('/api/freehold/drive/save-pdf', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: it.name, url: it.url }),
+        })
+        const data = await res.json().catch(() => null)
+        if (res.ok && data?.item?.id) {
+          router.push(editorHrefForItem({ id: String(data.item.id), kind: 'pdf', url: it.url }))
+          return
+        }
+        toast.error(data?.error || t('fm.cantOpenEditor'))
+      } catch {
+        toast.error(t('fm.cantOpenEditor'))
+      } finally {
+        setOpening(false)
+      }
     }
     if (it.url) window.open(it.url, '_blank', 'noopener')
   }
