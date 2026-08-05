@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { getCreditLedger, getAdSpendAllocations } from '@/lib/freehold/credits-db'
+import { readCreditLedger, getAdSpendAllocations } from '@/lib/freehold/credits-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,9 +16,13 @@ export async function GET() {
     : null
   if (!brokerId) return NextResponse.json({ error: 'Not a broker account' }, { status: 403 })
 
-  const [ledger, allocations] = await Promise.all([
-    getCreditLedger(brokerId),
+  const [ledgerResult, allocations] = await Promise.all([
+    readCreditLedger(brokerId),
     getAdSpendAllocations(brokerId),
   ])
-  return NextResponse.json({ ledger, allocations, brokerId })
+  // An empty history and a failed query must never look the same to the broker.
+  if (!ledgerResult.ok) {
+    return NextResponse.json({ error: 'Could not read the credit history.' }, { status: 503 })
+  }
+  return NextResponse.json({ ledger: ledgerResult.ledger, allocations, brokerId })
 }

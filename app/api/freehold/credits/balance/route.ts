@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { getCreditBalance, ensureCreditsSchema } from '@/lib/freehold/credits-db'
+import { readCreditBalance, ensureCreditsSchema } from '@/lib/freehold/credits-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +17,11 @@ export async function GET() {
   if (!brokerId) return NextResponse.json({ error: 'Not a broker account' }, { status: 403 })
 
   await ensureCreditsSchema()
-  const balance = await getCreditBalance(brokerId)
-  return NextResponse.json({ balance, brokerId })
+  const result = await readCreditBalance(brokerId)
+  // A failed read must not render as "no credits yet" — that is a wrong number
+  // on a money screen. Fail loudly so the page can say it could not load.
+  if (!result.ok) {
+    return NextResponse.json({ error: 'Could not read the credit balance.' }, { status: 503 })
+  }
+  return NextResponse.json({ balance: result.balance, brokerId })
 }

@@ -34,12 +34,17 @@ const sessionId = (user: { brokerId?: string; email: string }) => user.brokerId 
 async function awardDealCredits(deal: Deal | null) {
   if (!deal || !deal.agentId) return
   try {
-    await earnCreditsForDeal(
+    const result = await earnCreditsForDeal(
       deal.agentId,
       deal.id,
       deal.projectName || deal.leadName || deal.id,
       deal.brokerCommissionAed,
     )
+    // The library reports a failed ledger write by returning ok:false rather
+    // than throwing — swallowing that lost the earn silently.
+    if (!result.ok) {
+      console.error("[deals] earnCreditsForDeal did not write the ledger", { dealId: deal.id, agentId: deal.agentId })
+    }
   } catch (error) {
     console.error("[deals] earnCreditsForDeal failed", error)
   }
