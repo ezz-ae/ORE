@@ -587,6 +587,35 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         }]
       }
     }
+    // ── FABRICATED-CREATION TRIPWIRE ──────────────────────────────────────────
+    // Client-reported, verbatim: "it says campaign launched and nothing
+    // happened, it says landing created and nothing." The action tripwire
+    // above only covers STARTED-work verbs (initiate/import/sync), so a flat
+    // "I've created the landing page" or "your campaign is now live" sailed
+    // through untouched.
+    //
+    // Rule: a claim that something was CREATED or LAUNCHED is true here only
+    // if a creating tool actually succeeded this turn. toolsUsed already holds
+    // successes only (failed calls are excluded upstream), so an empty
+    // intersection means the claim is invented — replace it, never ship it.
+    // Deliberately FIRST-PERSON only. "Campaign X is now live" is a legitimate
+    // thing to say when merely REPORTING status from a list/insights tool, so
+    // matching it would suppress true answers. Only the assistant claiming
+    // authorship of a creation counts.
+    const CREATION_CLAIM = /\b(?:i\s+(?:have\s+|had\s+)?(?:just\s+|now\s+)?(?:created|launched|published|generated|built|set\s+up|posted)|i['’]ve\s+(?:just\s+|now\s+)?(?:created|launched|published|generated|built|set\s+up|posted))\b/i
+    const CREATING_TOOL = /(?:_create|create_|_launch|launch_|_publish|publish_|_generate|generate_|_add|add_|_send|send_|_save|save_)/i
+    const creationRan = toolsUsed.some((name) => CREATING_TOOL.test(name))
+    if (tools.length > 0 && !creationRan) {
+      const claimsCreation = blocks.some((b) => b.type === 'text' && CREATION_CLAIM.test(String((b as { content?: unknown }).content ?? '')))
+      if (claimsCreation) {
+        blocks = [{
+          type: 'text',
+          content: resultNotes.length
+            ? `I have to correct myself — I did NOT create or launch anything just now. Here is what actually ran this turn:\n${resultNotes.join('\n')}\n\nTell me to go ahead and I will run the real creation tool, then give you the link to the thing itself.`
+            : 'I have to correct myself — I did NOT create or launch anything just now; no creation step ran. Ask me again and I will run the real tool, then hand you the link to what it made. If a campaign launch failed silently, Meta is most likely not connected (Integrations → Meta).',
+        }]
+      }
+    }
     // ── FABRICATED-METRICS TRIPWIRE ───────────────────────────────────────────
     // Screenshot-verified failure: asked how the ads are doing, the campaigns
     // tool returned nothing usable, and the model presented two INVENTED
