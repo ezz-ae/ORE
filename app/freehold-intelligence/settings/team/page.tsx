@@ -4,14 +4,16 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
   UserPlus, MoreHorizontal, Mail, CheckCircle,
-  Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown, Loader2,
+  Clock, XCircle, Crown, Shield, User, Users, Trash2, ChevronDown, Loader2,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { TeamSignpost } from '@/components/freehold/team-signpost'
+import type { Role } from '@/lib/freehold/session-types'
 
-// Canonical roles — these map 1:1 to the database, so editing a member's role
-// never silently demotes them (e.g. sales_manager → admin).
-type Role = 'ceo' | 'director' | 'admin' | 'sales_manager' | 'marketing' | 'broker'
+// Roles come from session-types — the ONE definition. This screen used to keep
+// its own copy of the union, which is how `team_leader` shipped as a real role
+// that no form could grant: the role existed in the database, in the guards and
+// in the proxy, but never in this list, so nobody could ever be made one.
 type Status = 'active' | 'invited' | 'suspended'
 
 type TeamMember = {
@@ -31,6 +33,7 @@ const ROLE_META: Record<Role, { labelKey: string; Icon: React.ElementType; color
   director:      { labelKey: 'settings.role.director.label',      Icon: Crown,  color: 'text-gold/80',     descKey: 'settings.role.director.desc' },
   admin:         { labelKey: 'settings.role.admin.label',         Icon: Shield, color: 'text-violet-400',  descKey: 'settings.role.admin.desc' },
   sales_manager: { labelKey: 'settings.role.sales_manager.label', Icon: Shield, color: 'text-teal-300',     descKey: 'settings.role.sales_manager.desc' },
+  team_leader:   { labelKey: 'settings.role.team_leader.label',   Icon: Users,  color: 'text-cyan-300',    descKey: 'settings.role.team_leader.desc' },
   marketing:     { labelKey: 'settings.role.marketing.label',     Icon: User,   color: 'text-pink-300',    descKey: 'settings.role.marketing.desc' },
   broker:        { labelKey: 'settings.role.broker.label',        Icon: User,   color: 'text-teal-400',     descKey: 'settings.role.broker.desc' },
 }
@@ -41,9 +44,10 @@ const STATUS_META: Record<Status, { labelKey: string; Icon: React.ElementType; c
   suspended: { labelKey: 'settings.status.suspended', Icon: XCircle,     color: 'text-red-400'     },
 }
 
-// All assignable roles. CEO is the protected owner role — not assignable from the UI.
-const ROLES: Role[] = ['ceo', 'director', 'admin', 'sales_manager', 'marketing', 'broker']
-const ASSIGNABLE_ROLES: Role[] = ['director', 'admin', 'sales_manager', 'marketing', 'broker']
+// All roles. CEO is the protected owner — the account that pays, and the only
+// one that can delete anything — so it is never assignable from a form.
+const ROLES: Role[] = ['ceo', 'director', 'admin', 'sales_manager', 'team_leader', 'marketing', 'broker']
+const ASSIGNABLE_ROLES: Role[] = ['director', 'admin', 'sales_manager', 'team_leader', 'marketing', 'broker']
 
 export default function TeamPage() {
   const [members, setMembers]         = useState<TeamMember[]>([])

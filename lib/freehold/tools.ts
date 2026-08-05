@@ -190,6 +190,8 @@ export const TOOLS: ToolDef[] = [
 
   // ── People ────────────────────────────────────────────────────────────────
   { id: 'team.roster',   href: `${FI}/team`,           labelKey: 'tools.team.roster',   group: 'people', app: 'team',     Icon: UsersRound, keywords: 'team roster agents everyone profiles' },
+  { id: 'team.teams',    href: `${FI}/team/teams`,     labelKey: 'tools.team.teams',    group: 'people', app: 'team',     Icon: Users,      keywords: 'teams org chart leader reports to structure' },
+  { id: 'team.log',      href: `${FI}/team/log`,       labelKey: 'tools.team.log',      group: 'people', app: 'team',     Icon: ClipboardList, keywords: 'authority log audit who did what refused denied dispute' },
   { id: 'settings.team', href: `${FI}/settings/team`,  labelKey: 'tools.settings.team', group: 'people', app: 'settings', Icon: UserPlus,   keywords: 'invite user add member accounts' },
   { id: 'settings.roles',href: `${FI}/settings/roles`, labelKey: 'tools.settings.roles',group: 'people', app: 'settings', Icon: ShieldCheck,keywords: 'roles permissions access who can' },
   // ── Me (broker's own workspace) ───────────────────────────────────────────

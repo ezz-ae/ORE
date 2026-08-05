@@ -221,6 +221,29 @@ export const p_help: Record<Locale, Dict> = {
     'help.broker.q3': 'Where do I see my commission?',
     'help.broker.a3': 'My Workspace → Account: gross, received and outstanding commission from your real deals.',
     'help.broker.l3': 'My account',
+
+    // ── Getting anywhere: the All-tools popup + global search ──
+    'help.start.q8': 'How do I find a page without hunting through menus?',
+    'help.start.a8': 'Press ⌘K (Ctrl+K on Windows), or click “All tools” next to the logo. It opens the whole system on one screen — every tool, grouped by what it is for, with the ones you use most at the top. On a phone it is in the Apps sheet at the bottom. You only ever see tools your role can actually open.',
+    'help.start.q9': 'Can I search for a lead by phone number?',
+    'help.start.a9': 'Yes — type the number into that same box. It ignores spaces, dashes and the country code, so 0501234567, +971501234567 and 501234567 all find the same person. Typing a word instead, like “Emaar”, returns results grouped by section: Emaar in Inventory with its area, then in Ads, then landing pages. Agents see only their own leads; managers see everyone.',
+
+    // ── Team leaders, fairness, the record ──
+    'help.team.q5': 'What can a team leader do that an agent cannot?',
+    'help.team.a5': 'A leader sees and works the whole team: their agents’ pipelines, and every campaign — they can edit, pause, re-target and change budgets on campaigns they do not own. What they cannot do is delete. Deleting a lead or a campaign belongs to the owner account alone. They also cannot change anyone’s role or suspend an account; that stays with management.',
+    'help.team.l5': 'Open Team',
+    'help.team.q6': 'How do I set up a team and give someone a leader?',
+    'help.team.a6': 'Two steps, in order. First give the person the Team Leader role in Settings → Team. Then go to Team → Teams, create the team and pick them as leader — only people who already hold the role appear in that list. Finally put people on the team from Team → open the person → Profile → Team. Until a team exists with members on it, a leader can only see themselves.',
+    'help.team.l6': 'Teams & leaders',
+    'help.team.q7': 'Why was a leader refused when they tried to move a lead?',
+    'help.team.a7': 'One of three reasons, and the system tells you which. The lead was assigned less than 24 hours ago, so the agent still has their protected window. Or the agent has already worked it — a logged call, a recorded contact, or a status past “new” — and a worked lead is never taken from the person building the relationship. Or the agent is not on that leader’s team. Managers are not held by these rules, but every move they make is recorded.',
+    'help.team.q8': 'When does a leader get to move a lead, then?',
+    'help.team.a8': 'When the 24 hours have passed and the agent has done nothing with it at all. That is the whole rule: a fair chance first, and after that a lead nobody is working can go to someone who will. If the agent has touched it even once, it stays theirs and only management can move it.',
+    'help.team.q9': 'Two people disagree about who did what. Where do I look?',
+    'help.team.a9': 'Team → Log. It records every decision about a lead, a campaign or an account — who acted, on whom, when, and whether the system allowed it. The refusals are recorded too, which is usually the part that settles the argument: “I tried and was blocked” and “I never touched it” look identical everywhere else. Filter by Refused to see only those. Managers see the whole company; a leader sees their own actions.',
+    'help.team.l9': 'Open the log',
+    'help.team.q10': 'Can I change the 24-hour protection?',
+    'help.team.a10': 'Not from a settings screen — it is deliberately one number in the code (FAIRNESS in lib/freehold/authority.ts) so it cannot drift per-person or be quietly loosened for one team. Ask for it to be changed and it changes for everyone at once, which is what makes it fair by default.',
   },
   ar: {
     // ── Page chrome ──
@@ -439,6 +462,29 @@ export const p_help: Record<Locale, Dict> = {
     'help.broker.q3': 'أين أرى عمولتي؟',
     'help.broker.a3': 'مساحتي ← الحساب: العمولة الإجمالية والمستلمة والمستحقة من صفقاتك الحقيقية.',
     'help.broker.l3': 'حسابي',
+
+    // ── Getting anywhere ──
+    'help.start.q8': 'كيف أجد صفحة دون البحث في القوائم؟',
+    'help.start.a8': 'اضغط ⌘K (أو Ctrl+K على ويندوز)، أو انقر «كل الأدوات» بجانب الشعار. تُفتح المنظومة كاملة في شاشة واحدة — كل أداة مُصنّفة حسب الغرض، وأكثر ما تستخدمه في الأعلى. على الهاتف تجدها في لوحة التطبيقات بالأسفل. ولا تظهر لك إلا الأدوات التي يسمح دورك بفتحها.',
+    'help.start.q9': 'هل أستطيع البحث عن عميل برقم الهاتف؟',
+    'help.start.a9': 'نعم — اكتب الرقم في المربع نفسه. يتجاهل المسافات والشرطات ورمز الدولة، فـ 0501234567 و+971501234567 و501234567 تصل جميعها إلى الشخص نفسه. وإذا كتبت كلمة مثل «إعمار» تظهر النتائج مُجمّعة حسب القسم: إعمار في المخزون مع المنطقة، ثم في الإعلانات، ثم الصفحات المقصودة. الوسيط يرى عملاءه فقط، والمدير يرى الجميع.',
+
+    // ── Team leaders, fairness, the record ──
+    'help.team.q5': 'ما الذي يستطيع قائد الفريق فعله ولا يستطيعه الوسيط؟',
+    'help.team.a5': 'القائد يرى الفريق كله ويعمل معه: مسارات وسطائه، وكل الحملات — يمكنه التعديل والإيقاف وإعادة الاستهداف وتغيير الميزانيات حتى على حملات لا يملكها. ما لا يستطيعه هو الحذف؛ فحذف عميل محتمل أو حملة يخصّ حساب المالك وحده. كما لا يمكنه تغيير دور أحد أو إيقاف حساب، وهذا يبقى للإدارة.',
+    'help.team.l5': 'فتح الفريق',
+    'help.team.q6': 'كيف أنشئ فريقًا وأعيّن له قائدًا؟',
+    'help.team.a6': 'خطوتان بالترتيب. أولًا امنح الشخص دور «قائد الفريق» من الإعدادات ← الفريق. ثم من الفريق ← الفرق، أنشئ الفريق واخترْه قائدًا — ولا يظهر في القائمة إلا من يحمل الدور فعلًا. وأخيرًا أضف الأشخاص من: الفريق ← افتح الشخص ← الملف الشخصي ← الفريق. وقبل وجود فريق له أعضاء، لا يرى القائد سوى نفسه.',
+    'help.team.l6': 'الفرق والقادة',
+    'help.team.q7': 'لماذا رُفض نقل عميل محتمل من قِبل القائد؟',
+    'help.team.a7': 'لأحد ثلاثة أسباب، والنظام يخبرك بأيها. إمّا أن العميل أُسند قبل أقل من ٢٤ ساعة فالوسيط ما زال في مهلته المحمية. أو أن الوسيط عمل عليه فعلًا — مكالمة مسجّلة، أو تواصل موثّق، أو حالة تجاوزت «جديد» — والعميل الذي عُمل عليه لا يُنتزع ممن بنى العلاقة. أو أن الوسيط ليس ضمن فريق ذلك القائد. الإدارة ليست مقيّدة بهذه القواعد، لكن كل نقل تقوم به يُسجَّل.',
+    'help.team.q8': 'إذن متى يحق للقائد نقل عميل محتمل؟',
+    'help.team.a8': 'حين تمرّ الـ٢٤ ساعة ولا يكون الوسيط قد فعل به شيئًا على الإطلاق. هذه هي القاعدة كاملة: فرصة عادلة أولًا، وبعدها العميل الذي لا يعمل عليه أحد ينتقل إلى من سيعمل عليه. وإن لمسه الوسيط ولو مرة واحدة، يبقى له ولا ينقله إلا الإدارة.',
+    'help.team.q9': 'اختلف شخصان حول من فعل ماذا. أين أنظر؟',
+    'help.team.a9': 'الفريق ← السجل. يسجّل كل قرار يخصّ عميلًا محتملًا أو حملة أو حسابًا — من نفّذ، وعلى مَن، ومتى، وهل سمح النظام. والمرفوضات مسجّلة أيضًا، وهي غالبًا ما يحسم الخلاف: «حاولتُ ومُنعت» و«لم ألمسه أبدًا» يبدوان متطابقين في كل مكان آخر. صفِّ بـ«مرفوض» لتراها وحدها. الإدارة ترى الشركة كلها، والقائد يرى إجراءاته هو.',
+    'help.team.l9': 'فتح السجل',
+    'help.team.q10': 'هل يمكن تغيير مهلة الـ٢٤ ساعة؟',
+    'help.team.a10': 'ليس من شاشة إعدادات — فهي عمدًا رقم واحد في الكود (FAIRNESS في lib/freehold/authority.ts) حتى لا تختلف من شخص لآخر ولا تُخفَّف بهدوء لفريق بعينه. اطلب تغييرها فتتغيّر للجميع دفعة واحدة، وهذا ما يجعلها عادلة بالأصل.',
   },
   ru: {
     // ── Page chrome ──
@@ -657,5 +703,28 @@ export const p_help: Record<Locale, Dict> = {
     'help.broker.q3': 'Где посмотреть мою комиссию?',
     'help.broker.a3': 'Моё пространство → Аккаунт: общая, полученная и невыплаченная комиссия из ваших реальных сделок.',
     'help.broker.l3': 'Мой аккаунт',
+
+    // ── Getting anywhere ──
+    'help.start.q8': 'Как найти страницу, не перебирая меню?',
+    'help.start.a8': 'Нажмите ⌘K (или Ctrl+K в Windows) либо «Все инструменты» рядом с логотипом. Откроется вся система на одном экране — каждый инструмент, сгруппированный по назначению, а сверху те, которыми вы пользуетесь чаще всего. На телефоне это в нижней панели приложений. Показываются только инструменты, которые ваша роль действительно может открыть.',
+    'help.start.q9': 'Можно ли найти лид по номеру телефона?',
+    'help.start.a9': 'Да — введите номер в то же поле. Пробелы, дефисы и код страны игнорируются, поэтому 0501234567, +971501234567 и 501234567 находят одного и того же человека. Если ввести слово, например «Emaar», результаты вернутся по разделам: Emaar в Инвентаре с районом, затем в Рекламе, затем лендинги. Агент видит только свои лиды, руководитель — все.',
+
+    // ── Team leaders, fairness, the record ──
+    'help.team.q5': 'Что может руководитель группы, чего не может агент?',
+    'help.team.a5': 'Руководитель видит всю команду и работает с ней: воронки своих агентов и все кампании — он может править, ставить на паузу, менять таргетинг и бюджеты даже в чужих кампаниях. Чего он не может — удалять. Удаление лида или кампании принадлежит только аккаунту владельца. Он также не может менять роли и блокировать аккаунты — это остаётся за руководством.',
+    'help.team.l5': 'Открыть Команду',
+    'help.team.q6': 'Как создать команду и назначить руководителя?',
+    'help.team.a6': 'Два шага по порядку. Сначала дайте человеку роль «Руководитель группы» в Настройки → Команда. Затем в Команда → Команды создайте команду и выберите его руководителем — в списке появляются только те, у кого уже есть эта роль. И наконец добавьте людей: Команда → откройте человека → Профиль → Команда. Пока команды с участниками нет, руководитель видит только себя.',
+    'help.team.l6': 'Команды и руководители',
+    'help.team.q7': 'Почему руководителю отказали в передаче лида?',
+    'help.team.a7': 'По одной из трёх причин, и система говорит, по какой. Лид назначен менее 24 часов назад — у агента ещё идёт защищённое окно. Или агент уже работал с ним: записанный звонок, зафиксированный контакт или статус дальше «нового» — и такой лид не забирают у того, кто строит отношения. Или агент не в команде этого руководителя. На руководство эти правила не распространяются, но каждое его действие записывается.',
+    'help.team.q8': 'Когда же руководитель может передать лид?',
+    'help.team.a8': 'Когда 24 часа прошли, а агент не сделал с ним ровно ничего. Это всё правило: сначала честный шанс, а потом лид, с которым никто не работает, уходит к тому, кто будет. Если агент прикоснулся к нему хотя бы раз, лид остаётся за ним, и передать его может только руководство.',
+    'help.team.q9': 'Двое спорят, кто что сделал. Куда смотреть?',
+    'help.team.a9': 'Команда → Журнал. Там фиксируется каждое решение о лиде, кампании или аккаунте: кто действовал, в отношении кого, когда и разрешила ли система. Отказы записываются тоже — и обычно именно они решают спор: «пробовал, но не дали» и «я вообще не трогал» везде остальное выглядят одинаково. Отфильтруйте по «Отклонено», чтобы увидеть только их. Руководство видит всю компанию, руководитель группы — свои действия.',
+    'help.team.l9': 'Открыть журнал',
+    'help.team.q10': 'Можно ли изменить 24-часовую защиту?',
+    'help.team.a10': 'Не через экран настроек — это намеренно одно число в коде (FAIRNESS в lib/freehold/authority.ts), чтобы оно не расходилось по людям и не смягчалось тихо для одной команды. Попросите изменить — и оно изменится сразу для всех, что и делает правило справедливым по умолчанию.',
   },
 }

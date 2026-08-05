@@ -34,6 +34,10 @@ export async function GET(req: NextRequest) {
       // A leader's view is pinned to themselves regardless of what they ask
       // for — the filter is not a suggestion.
       actorEmail: isManagement ? (url.searchParams.get('actor') ?? undefined) : user.email,
+      action: url.searchParams.get('action') ?? undefined,
+      decision: url.searchParams.get('decision') === 'allowed' ? 'allowed'
+              : url.searchParams.get('decision') === 'denied' ? 'denied'
+              : undefined,
       limit: Number(url.searchParams.get('limit') ?? 100),
     })
     return NextResponse.json({ entries: rows, scope: isManagement ? 'all' : 'self' })

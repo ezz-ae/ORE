@@ -91,7 +91,8 @@ export async function logAuthority(entry: {
 }
 
 export async function listAuthorityLog(opts: {
-  targetType?: string; targetId?: string; actorEmail?: string; limit?: number
+  targetType?: string; targetId?: string; actorEmail?: string
+  action?: string; decision?: 'allowed' | 'denied'; limit?: number
 } = {}): Promise<AuthorityLogRow[]> {
   await ensureAuthorityLog()
   const where: string[] = []
@@ -99,6 +100,11 @@ export async function listAuthorityLog(opts: {
   if (opts.targetType) { params.push(opts.targetType); where.push(`target_type = $${params.length}`) }
   if (opts.targetId)   { params.push(opts.targetId);   where.push(`target_id = $${params.length}`) }
   if (opts.actorEmail) { params.push(opts.actorEmail); where.push(`actor_email = $${params.length}`) }
+  // Action and decision are filtered in SQL, not on the page. Filtering a
+  // capped list client-side would answer "were there any refusals?" with the
+  // refusals that happen to be in the last N rows — which reads as none.
+  if (opts.action)     { params.push(opts.action);     where.push(`action = $${params.length}`) }
+  if (opts.decision)   { params.push(opts.decision);   where.push(`decision = $${params.length}`) }
   const limit = Math.min(Math.max(opts.limit ?? 100, 1), 500)
   const rows = await query<{
     id: string; actor_email: string; actor_role: string; action: string

@@ -47,6 +47,9 @@ interface QASection {
 
 const MGMT = ['admin', 'ceo', 'director', 'sales_manager']
 const MGMT_MKT = [...MGMT, 'marketing']
+// Team leaders need the fairness and log answers as much as management does —
+// they are the ones who will hit a refusal and want to know why.
+const LEADERSHIP = [...MGMT, 'team_leader']
 
 const SECTIONS: QASection[] = [
   {
@@ -61,6 +64,9 @@ const SECTIONS: QASection[] = [
       { q: 'help.start.q5', a: 'help.start.a5', links: [{ label: 'help.start.l5', href: `${FI}/notebook` }] },
       { q: 'help.start.q6', a: 'help.start.a6' },
       { q: 'help.start.q7', a: 'help.start.a7' },
+      // How to reach anything at all — the All-tools popup and global search.
+      { q: 'help.start.q8', a: 'help.start.a8' },
+      { q: 'help.start.q9', a: 'help.start.a9' },
     ],
   },
   {
@@ -152,6 +158,13 @@ const SECTIONS: QASection[] = [
       { q: 'help.team.q2', a: 'help.team.a2', links: [{ label: 'help.team.l2', href: `${FI}/settings/roles` }], roles: MGMT },
       { q: 'help.team.q3', a: 'help.team.a3', links: [{ label: 'help.team.l3', href: `${FI}/settings/automation` }], roles: MGMT },
       { q: 'help.team.q4', a: 'help.team.a4', links: [{ label: 'help.team.l4', href: `${FI}/management/team` }], roles: MGMT },
+      // ── Team layer 2: leaders, fairness, the record ──
+      { q: 'help.team.q5', a: 'help.team.a5', links: [{ label: 'help.team.l5', href: `${FI}/team` }], roles: LEADERSHIP },
+      { q: 'help.team.q6', a: 'help.team.a6', links: [{ label: 'help.team.l6', href: `${FI}/team/teams` }], roles: MGMT },
+      { q: 'help.team.q7', a: 'help.team.a7', roles: LEADERSHIP },
+      { q: 'help.team.q8', a: 'help.team.a8', roles: LEADERSHIP },
+      { q: 'help.team.q9', a: 'help.team.a9', links: [{ label: 'help.team.l9', href: `${FI}/team/log` }], roles: LEADERSHIP },
+      { q: 'help.team.q10', a: 'help.team.a10', roles: LEADERSHIP },
     ],
   },
   {
