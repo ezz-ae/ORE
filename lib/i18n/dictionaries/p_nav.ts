@@ -3,7 +3,7 @@ import type { Locale } from '../config'
 // Navigation namespace (p_nav). Two families of keys:
 //
 //   nav.*    — the All-tools popup chrome and the global search box.
-//   tools.*  — one label per entry in lib/freehold/tools.ts (123 tools + 9
+//   tools.*  — one label per entry in lib/freehold/tools.ts (123 tools + 10
 //              group headings). Looked up dynamically as t(tool.labelKey), so
 //              the i18n audit's literal-key check does not see them; EN/AR/RU
 //              parity is what keeps them honest.
@@ -44,6 +44,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.group.analyze': 'Analyze & report',
     'tools.group.money': 'Money',
     'tools.group.people': 'People',
+    'tools.group.me': 'Me',
     'tools.group.setup': 'Setup & system',
 
     // ── Sell ──
@@ -217,6 +218,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.group.analyze': 'التحليل والتقارير',
     'tools.group.money': 'المالية',
     'tools.group.people': 'الأشخاص',
+    'tools.group.me': 'حسابي',
     'tools.group.setup': 'الإعداد والنظام',
 
     // ── Sell ──
@@ -390,6 +392,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.group.analyze': 'Аналитика и отчёты',
     'tools.group.money': 'Финансы',
     'tools.group.people': 'Люди',
+    'tools.group.me': 'Мой кабинет',
     'tools.group.setup': 'Настройка и система',
 
     // ── Sell ──

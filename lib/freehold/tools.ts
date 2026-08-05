@@ -42,7 +42,7 @@ import type { Role } from './session-types'
 import { MANAGEMENT_ROLES } from './session-types'
 import { ALL_ROLES, rolesForApp } from './apps'
 
-/** The nine shelves of the popup. Order here is the order on screen. */
+/** The ten shelves of the popup. Order here is the order on screen. */
 export const TOOL_GROUPS = [
   { id: 'sell',      labelKey: 'tools.group.sell'      },
   { id: 'advertise', labelKey: 'tools.group.advertise' },
@@ -52,6 +52,9 @@ export const TOOL_GROUPS = [
   { id: 'analyze',   labelKey: 'tools.group.analyze'   },
   { id: 'money',     labelKey: 'tools.group.money'     },
   { id: 'people',    labelKey: 'tools.group.people'    },
+  // The broker's own surfaces. Their own shelf, because "My leads" filed under
+  // "People" reads as other people's leads — to the one role that sees it.
+  { id: 'me',        labelKey: 'tools.group.me'        },
   { id: 'setup',     labelKey: 'tools.group.setup'     },
 ] as const
 
@@ -189,13 +192,14 @@ export const TOOLS: ToolDef[] = [
   { id: 'team.roster',   href: `${FI}/team`,           labelKey: 'tools.team.roster',   group: 'people', app: 'team',     Icon: UsersRound, keywords: 'team roster agents everyone profiles' },
   { id: 'settings.team', href: `${FI}/settings/team`,  labelKey: 'tools.settings.team', group: 'people', app: 'settings', Icon: UserPlus,   keywords: 'invite user add member accounts' },
   { id: 'settings.roles',href: `${FI}/settings/roles`, labelKey: 'tools.settings.roles',group: 'people', app: 'settings', Icon: ShieldCheck,keywords: 'roles permissions access who can' },
-  { id: 'agent.home',      href: `${FI}/agent`,           labelKey: 'tools.agent.home',      group: 'people', app: 'agent', Icon: UserCircle,keywords: 'my workspace me personal' },
-  { id: 'agent.leads',     href: `${FI}/agent/leads`,     labelKey: 'tools.agent.leads',     group: 'people', app: 'agent', Icon: Users,     keywords: 'my leads mine' },
-  { id: 'agent.campaigns', href: `${FI}/agent/campaigns`, labelKey: 'tools.agent.campaigns', group: 'people', app: 'agent', Icon: Megaphone, keywords: 'my campaigns my ads' },
-  { id: 'agent.credits',   href: `${FI}/agent/credits`,   labelKey: 'tools.agent.credits',   group: 'people', app: 'agent', Icon: Coins,     keywords: 'my credits points balance' },
-  { id: 'agent.ai',        href: `${FI}/agent/ai`,        labelKey: 'tools.agent.ai',        group: 'people', app: 'agent', Icon: Sparkles,  keywords: 'my ai assistant expert' },
-  { id: 'agent.bio',       href: `${FI}/agent/bio`,       labelKey: 'tools.agent.bio',       group: 'people', app: 'agent', Icon: UserCircle,keywords: 'my bio public profile page' },
-  { id: 'agent.account',   href: `${FI}/agent/account`,   labelKey: 'tools.agent.account',   group: 'people', app: 'agent', Icon: Settings,  keywords: 'my account password profile' },
+  // ── Me (broker's own workspace) ───────────────────────────────────────────
+  { id: 'agent.home',      href: `${FI}/agent`,           labelKey: 'tools.agent.home',      group: 'me', app: 'agent', Icon: UserCircle,keywords: 'my workspace me personal' },
+  { id: 'agent.leads',     href: `${FI}/agent/leads`,     labelKey: 'tools.agent.leads',     group: 'me', app: 'agent', Icon: Users,     keywords: 'my leads mine' },
+  { id: 'agent.campaigns', href: `${FI}/agent/campaigns`, labelKey: 'tools.agent.campaigns', group: 'me', app: 'agent', Icon: Megaphone, keywords: 'my campaigns my ads' },
+  { id: 'agent.credits',   href: `${FI}/agent/credits`,   labelKey: 'tools.agent.credits',   group: 'me', app: 'agent', Icon: Coins,     keywords: 'my credits points balance' },
+  { id: 'agent.ai',        href: `${FI}/agent/ai`,        labelKey: 'tools.agent.ai',        group: 'me', app: 'agent', Icon: Sparkles,  keywords: 'my ai assistant expert' },
+  { id: 'agent.bio',       href: `${FI}/agent/bio`,       labelKey: 'tools.agent.bio',       group: 'me', app: 'agent', Icon: UserCircle,keywords: 'my bio public profile page' },
+  { id: 'agent.account',   href: `${FI}/agent/account`,   labelKey: 'tools.agent.account',   group: 'me', app: 'agent', Icon: Settings,  keywords: 'my account password profile' },
 
   // ── Setup & system ────────────────────────────────────────────────────────
   { id: 'int.home',     href: `${FI}/integrations`,          labelKey: 'tools.int.home',     group: 'setup', app: 'integrations', Icon: Plug,       keywords: 'integrations connect apps' },
