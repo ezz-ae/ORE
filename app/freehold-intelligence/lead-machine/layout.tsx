@@ -8,7 +8,7 @@ import {
   Activity,
   BarChart3, Zap,
   Monitor, ClipboardList, Crosshair, Palette, Users,
-  Search, Radio, Bot,
+  Search, Radio, RadioTower, Bot,
   FileText, FileCheck, Shield,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
@@ -37,6 +37,7 @@ const MANAGER_NAV_SECTIONS = [
       { key: 'lm.nav.forms',       href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
       { key: 'lm.nav.targeting',   href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
       { key: 'lm.nav.audiences',   href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users,       coach: 'lm-audiences' },
+      { key: 'lm.nav.pixel',       href: '/freehold-intelligence/lead-machine/pixel',                       Icon: RadioTower  },
       { key: 'lm.nav.google',      href: '/freehold-intelligence/lead-machine/google',                      Icon: Search      },
     ],
   },

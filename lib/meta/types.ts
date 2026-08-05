@@ -271,6 +271,37 @@ export interface MetaPixel {
   lastFiredTime?: string | null
 }
 
+/**
+ * A single pixel read on its own node (`GET /{pixel-id}`), which — unlike the
+ * account's list edge — can return the base-code snippet for pasting on sites
+ * this platform does not own.
+ */
+export interface MetaPixelDetail extends MetaPixel {
+  /** Meta's base-code install snippet, or null when Graph withheld it. */
+  code: string | null
+}
+
+/**
+ * A custom conversion on the ad account. Note that `event_source_id` is a
+ * CREATE-only parameter on Graph — reading back the pixel a conversion listens
+ * to comes from `pixel{id,name}` / `data_sources{id,name}`, which is what
+ * `eventSourceId` is normalized from.
+ */
+export interface MetaCustomConversion {
+  id: string
+  name: string
+  /** Meta's custom_event_type enum value (LEAD, CONTENT_VIEW, OTHER, …). */
+  customEventType: string | null
+  /** The rule as a JSON string, exactly as Meta stores it. */
+  rule: string | null
+  /** The pixel (or other data source) this conversion listens to. */
+  eventSourceId: string | null
+  eventSourceName: string | null
+  isArchived: boolean
+  lastFiredTime: string | null
+  description: string | null
+}
+
 export interface LaunchCampaignResult {
   campaignId: string
   adSetId: string

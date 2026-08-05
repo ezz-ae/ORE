@@ -22,6 +22,8 @@ import type {
   CreateLeadFormPayload,
   MetaAdCreativeDetail,
   MetaPixel,
+  MetaPixelDetail,
+  MetaCustomConversion,
   MetaAdFormat,
   MetaLocale,
   AdDestination,
@@ -1556,6 +1558,128 @@ export async function listPixels(): Promise<MetaPixel[]> {
     name: p.name || p.id,
     lastFiredTime: p.last_fired_time ?? null,
   }))
+}
+
+/**
+ * The pixel id the SERVER-side Conversions API fires at (lib/meta/capi.ts) —
+ * env META_PIXEL_ID, else the id stored with the Meta connection. Exposed so
+ * the Pixel tab can tell the operator when the browser pixel on the landing
+ * pages and the server pixel are two DIFFERENT pixels, which silently breaks
+ * Meta's browser/server deduplication of the same lead.
+ */
+export async function getConfiguredPixelId(): Promise<string | null> {
+  const { pixelId } = await creds()
+  return pixelId
+}
+
+/** Create a pixel on the connected ad account. POST /{adAccountId}/adspixels. */
+export async function createPixel(name: string): Promise<MetaPixel> {
+  const { adAccountId } = await creds()
+  const res = await apiPost<{ id: string; name?: string }>(`/${adAccountId}/adspixels`, { name })
+  // Graph answers a create with the id only; the name is the one we just sent.
+  return { id: res.id, name: res.name || name, lastFiredTime: null }
+}
+
+/**
+ * One pixel read on its own node, including `code` — Meta's base-code snippet.
+ * Only needed for sites this platform does NOT own; our landing pages inject
+ * the pixel themselves from the saved global id.
+ */
+export async function getPixelDetail(pixelId: string): Promise<MetaPixelDetail> {
+  const res = await apiFetch<{ id: string; name?: string; code?: string; last_fired_time?: string }>(
+    `/${pixelId}`, undefined, { fields: 'id,name,code,last_fired_time' },
+  )
+  return {
+    id: res.id,
+    name: res.name || res.id,
+    lastFiredTime: res.last_fired_time ?? null,
+    code: res.code ?? null,
+  }
+}
+
+// ─── Custom conversions ───────────────────────────────────────────────────────
+// A custom conversion is the object an ad set can actually optimize toward: a
+// named rule over the events a pixel receives.
+
+interface RawCustomConversion {
+  id: string
+  name?: string
+  custom_event_type?: string
+  rule?: string | Record<string, unknown>
+  is_archived?: boolean
+  last_fired_time?: string
+  description?: string
+  pixel?: { id?: string; name?: string }
+  data_sources?: { id?: string; name?: string; source_type?: string }[]
+}
+
+// `event_source_id` is a create-only PARAMETER — it is not a readable field on
+// the node, so the pixel a conversion listens to is read from `pixel` /
+// `data_sources` instead. The richer list is tried first and narrowed on a
+// field error (Graph rejects the whole read if one field is unavailable to the
+// account), so a permission quirk degrades the detail rather than the page.
+const CUSTOM_CONVERSION_FIELDS_FULL =
+  'id,name,custom_event_type,rule,is_archived,last_fired_time,description,pixel{id,name},data_sources{id,name,source_type}'
+const CUSTOM_CONVERSION_FIELDS_MIN = 'id,name,custom_event_type,rule,is_archived'
+
+function normalizeCustomConversion(raw: RawCustomConversion): MetaCustomConversion {
+  const sources = Array.isArray(raw.data_sources) ? raw.data_sources : []
+  return {
+    id: raw.id,
+    name: raw.name || raw.id,
+    customEventType: raw.custom_event_type ?? null,
+    rule: typeof raw.rule === 'string' ? raw.rule : raw.rule ? JSON.stringify(raw.rule) : null,
+    eventSourceId: raw.pixel?.id ?? sources[0]?.id ?? null,
+    eventSourceName: raw.pixel?.name ?? sources[0]?.name ?? null,
+    isArchived: raw.is_archived === true,
+    lastFiredTime: raw.last_fired_time ?? null,
+    description: raw.description ?? null,
+  }
+}
+
+/** Every custom conversion on the connected ad account, archived ones included
+ *  (the UI labels them rather than hiding them). */
+export async function listCustomConversions(): Promise<MetaCustomConversion[]> {
+  const { adAccountId } = await creds()
+  const read = (fields: string) =>
+    apiFetch<{ data: RawCustomConversion[] }>(
+      `/${adAccountId}/customconversions`, undefined, { fields, limit: '100' },
+    )
+  let res: { data: RawCustomConversion[] }
+  try {
+    res = await read(CUSTOM_CONVERSION_FIELDS_FULL)
+  } catch (err) {
+    // Code 100 is Graph's "unknown/unavailable field" — retry with the subset
+    // every account can read. Any other error is a real failure and propagates.
+    if (!(err instanceof MetaApiError) || err.code !== 100) throw err
+    res = await read(CUSTOM_CONVERSION_FIELDS_MIN)
+  }
+  return (res.data ?? []).map(normalizeCustomConversion)
+}
+
+export interface CreateCustomConversionPayload {
+  name: string
+  /** The pixel the conversion listens to. */
+  eventSourceId: string
+  /** Meta's custom_event_type enum (LEAD, CONTENT_VIEW, SCHEDULE, OTHER, …). */
+  customEventType: string
+  /** Rule as a JSON STRING — Graph rejects a nested object here. */
+  rule: string
+  description?: string
+}
+
+/** Create a custom conversion. POST /{adAccountId}/customconversions. */
+export async function createCustomConversion(
+  payload: CreateCustomConversionPayload,
+): Promise<{ id: string }> {
+  const { adAccountId } = await creds()
+  return apiPost<{ id: string }>(`/${adAccountId}/customconversions`, {
+    name:              payload.name,
+    event_source_id:   payload.eventSourceId,
+    custom_event_type: payload.customEventType,
+    rule:              payload.rule,
+    ...(payload.description ? { description: payload.description } : {}),
+  })
 }
 
 // Language (locale) targeting vocabulary. Meta's adlocale keys are numeric and
