@@ -600,6 +600,10 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     // report is invented — replace it with the honest state instead of
     // shipping fiction. (Any genuine report grounds at least one figure
     // verbatim; derived values like a computed CPL ride on grounded inputs.)
+    // "Verify the Math" (Evidence-Drawer-lite): when a performance reply's
+    // figures ARE grounded in this turn's tool results, say so in the UI —
+    // the proving side of the same contract whose blocking side lives below.
+    let metricsGrounded = false
     const METRIC_SHAPED = /\b(?:CPL|cost\s+per\s+lead|spend|leads?|budget|ROAS|CTR|impressions|quality\s+score|conversions?)\b/i
     const replyJson = JSON.stringify(blocks)
     if (tools.length > 0 && METRIC_SHAPED.test(replyJson)) {
@@ -611,6 +615,7 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
       if (claimed.length >= 3) {
         const grounded = new Set([...sigNums(toolResultsText), ...sigNums(JSON.stringify(fullContext))])
         const anyGrounded = claimed.some((num) => grounded.has(num))
+        if (anyGrounded) metricsGrounded = true
         if (!anyGrounded) {
           blocks = [{
             type: 'text',
@@ -640,7 +645,7 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     const persistedId = sessionUser
       ? await appendExpertTurn(sessionId, sessionUser.email, message, blocks)
       : sessionId
-    const data = { blocks, skill: skill.id, sessionId: persistedId, toolsUsed }
+    const data = { blocks, skill: skill.id, sessionId: persistedId, toolsUsed, ...(metricsGrounded ? { verified: true } : {}) }
 
     const response: McpResponseEnvelope<typeof data> = {
       requestId: crypto.randomUUID(),

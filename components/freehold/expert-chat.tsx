@@ -39,7 +39,7 @@ function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
   return { html: `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0">${parts.join('') || '<p>(empty)</p>'}</div>`, title }
 }
 
-type Message = { role: 'user'; content: string; ref?: ExpertContextRef } | { role: 'assistant'; blocks: ExpertBlock[]; toolsUsed?: string[] }
+type Message = { role: 'user'; content: string; ref?: ExpertContextRef } | { role: 'assistant'; blocks: ExpertBlock[]; toolsUsed?: string[]; verified?: boolean }
 
 // Friendly, localized labels for the "Actions taken" pills — the raw tool
 // identifiers (ads_list_ads, creative_generate_image, …) read like the chat
@@ -584,7 +584,8 @@ export function ExpertChat() {
       const data = await res.json()
       const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: t('expert.fallbackOk') }]
       const toolsUsed: string[] = Array.isArray(data?.data?.toolsUsed) ? data.data.toolsUsed : []
-      setMessages((m) => [...m, { role: 'assistant', blocks, toolsUsed }])
+      const verified: boolean = data?.data?.verified === true
+      setMessages((m) => [...m, { role: 'assistant', blocks, toolsUsed, verified }])
       // Adopt the durable session id the server persisted this turn under —
       // and remember it on the ACCOUNT so the conversation follows the user.
       const sid = data?.data?.sessionId
@@ -828,6 +829,13 @@ export function ExpertChat() {
                             {count > 1 ? ` ×${count}` : ''}
                           </span>
                         ))}
+                      </div>
+                    )}
+                    {/* "How we know this" — shown ONLY when the reply's figures
+                        were verified against this turn's live tool results. */}
+                    {m.verified && (
+                      <div className="flex items-center gap-1.5 text-[10px] text-emerald-400/90">
+                        <span aria-hidden>✓</span> {t('expert.verifiedNote')}
                       </div>
                     )}
                     {m.blocks.map((b, j) => {
