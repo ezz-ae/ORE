@@ -429,6 +429,9 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error("[crm-landing-pages] create error", error)
-    return NextResponse.json({ error: "Failed to create landing page" }, { status: 500 })
+    // Surface the real reason — a blanket "failed" left the UI with nothing to
+    // tell the user and nothing for us to debug from a screenshot.
+    const detail = error instanceof Error ? error.message.slice(0, 200) : "unknown error"
+    return NextResponse.json({ error: `Failed to create landing page: ${detail}` }, { status: 500 })
   }
 }

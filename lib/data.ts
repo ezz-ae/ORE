@@ -2017,6 +2017,14 @@ export async function ensureProjectsTable() {
       ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now(),
       ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()
   `)
+  // Legacy production tables were created before `slug UNIQUE` existed, and
+  // ADD COLUMN never backfills a constraint — so `ON CONFLICT (slug)` used to
+  // throw 42P10 ("no unique or exclusion constraint matching") on EVERY insert.
+  // Best-effort: add the index when the data allows it. The upsert below no
+  // longer depends on it, so a duplicate-slug table stays fully functional.
+  try {
+    await query(`CREATE UNIQUE INDEX IF NOT EXISTS freehold_site_projects_slug_uidx ON freehold_site_projects (slug)`)
+  } catch { /* duplicate slugs present — upsert handles it without the index */ }
 }
 
 const buildProjectPayload = (input: DashboardProjectInput, existing?: Project | null): Project => {
@@ -2310,7 +2318,7 @@ export async function upsertDashboardProject(input: DashboardProjectInput) {
   const payload = buildProjectPayload(input, existing)
   const id = existing?.id || payload.id || normalizeSlug(input.slug)
   const nowIso = new Date().toISOString()
-  const rows = await query<{
+  type ProjectRow = {
     id: string
     slug: string
     name: string
@@ -2322,50 +2330,58 @@ export async function upsertDashboardProject(input: DashboardProjectInput) {
     price_to_aed: number | null
     featured: boolean | null
     payload: Project
-  }>(
+  }
+  const RETURNING_COLS = 'id, slug, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, featured, payload'
+  // Values in the exact order both statements below bind them.
+  const vals = [
+    payload.slug,
+    payload.name,
+    payload.location.area,
+    payload.status,
+    payload.developer.name,
+    payload.heroImage,
+    payload.units?.[0]?.priceFrom ?? null,
+    payload.units?.[0]?.priceTo ?? null,
+    payload.sortScore ?? payload.investmentHighlights.expectedROI ?? 0,
+    payload.investmentHighlights.rentalYield ?? payload.investmentHighlights.expectedROI ?? 0,
+    payload.investmentHighlights.goldenVisaEligible,
+    payload.featured,
+    JSON.stringify(payload),
+    nowIso,
+  ]
+
+  // Explicit update-then-insert instead of ON CONFLICT (slug): the conflict
+  // target requires a unique index that legacy tables don't have, and its
+  // absence made every create fail with a swallowed 42P10. `existing` was
+  // already resolved above, so the branch costs nothing.
+  if (existing) {
+    const updated = await query<ProjectRow>(
+      `UPDATE freehold_site_projects SET
+         name = $2, area = $3, status = $4, developer_name = $5, hero_image = $6,
+         price_from_aed = $7, price_to_aed = $8, market_score = $9, rental_yield = $10,
+         golden_visa_eligible = $11, featured = $12, payload = $13::jsonb, updated_at = $14
+       WHERE lower(slug) = lower($1)
+       RETURNING ${RETURNING_COLS}`,
+      vals,
+    )
+    if (updated[0]) return updated[0]
+    // Slug moved or the row vanished between read and write — fall through to insert.
+  }
+
+  // $1..$14 mirror `vals`; the row id rides last as $15.
+  const rows = await query<ProjectRow>(
     `INSERT INTO freehold_site_projects (
-        id, slug, name, area, status, developer_name, hero_image,
+        slug, name, area, status, developer_name, hero_image,
         price_from_aed, price_to_aed, market_score, rental_yield,
-        golden_visa_eligible, featured, payload, updated_at
+        golden_visa_eligible, featured, payload, updated_at, id
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7,
-        $8, $9, $10, $11,
-        $12, $13, $14::jsonb, $15
+        $1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10,
+        $11, $12, $13::jsonb, $14, $15
       )
-      ON CONFLICT (slug)
-      DO UPDATE SET
-        name = EXCLUDED.name,
-        area = EXCLUDED.area,
-        status = EXCLUDED.status,
-        developer_name = EXCLUDED.developer_name,
-        hero_image = EXCLUDED.hero_image,
-        price_from_aed = EXCLUDED.price_from_aed,
-        price_to_aed = EXCLUDED.price_to_aed,
-        market_score = EXCLUDED.market_score,
-        rental_yield = EXCLUDED.rental_yield,
-        golden_visa_eligible = EXCLUDED.golden_visa_eligible,
-        featured = EXCLUDED.featured,
-        payload = EXCLUDED.payload,
-        updated_at = EXCLUDED.updated_at
-      RETURNING id, slug, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, featured, payload`,
-    [
-      id,
-      payload.slug,
-      payload.name,
-      payload.location.area,
-      payload.status,
-      payload.developer.name,
-      payload.heroImage,
-      payload.units?.[0]?.priceFrom ?? null,
-      payload.units?.[0]?.priceTo ?? null,
-      payload.sortScore ?? payload.investmentHighlights.expectedROI ?? 0,
-      payload.investmentHighlights.rentalYield ?? payload.investmentHighlights.expectedROI ?? 0,
-      payload.investmentHighlights.goldenVisaEligible,
-      payload.featured,
-      JSON.stringify(payload),
-      nowIso,
-    ],
+      RETURNING ${RETURNING_COLS}`,
+    [...vals, id],
   )
 
   return rows[0]

@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ project })
   } catch (error) {
     console.error("[crm-projects] upsert error", error)
-    return NextResponse.json({ error: "Failed to save project." }, { status: 500 })
+    // Same rule as the landing route: say what actually broke. "Failed to save
+    // project." told the user nothing and left support guessing.
+    const detail = error instanceof Error ? error.message.slice(0, 200) : "unknown error"
+    return NextResponse.json({ error: `Failed to save project: ${detail}` }, { status: 500 })
   }
 }

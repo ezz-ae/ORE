@@ -69,7 +69,19 @@ export function ConfirmListingModal({
     try {
       const res = await createListingAndLanding({ ...fields, name: fields.name.trim() })
       if (!res.ok) {
-        toast.error(res.error === 'name-required' ? t('lm.pdf.needName') : t('lm.pdf.listingFailed'))
+        if (res.error === 'name-required') { toast.error(t('lm.pdf.needName')); return }
+        // The project exists — only the landing page failed. Say so, keep the
+        // project, and send the user to it instead of inviting a retry that
+        // would just re-upsert the same row.
+        if (res.partial && res.slug) {
+          toast.error(t('lm.pdf.landingFailedPartial', { detail: res.detail || '' }), { duration: 9000 })
+          onCreated?.(res.slug)
+          onClose()
+          router.refresh()
+          return
+        }
+        // Never a bare "try again": show what the server actually said.
+        toast.error(res.detail ? t('lm.pdf.listingFailedDetail', { detail: res.detail }) : t('lm.pdf.listingFailed'), { duration: 9000 })
         return
       }
       toast.success(t('lm.pdf.created', { name: fields.name.trim() }))
