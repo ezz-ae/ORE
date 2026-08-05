@@ -707,6 +707,10 @@ export default function NewCampaignPage() {
   // Quick-create can start from one of the shared real-estate templates —
   // '' = the plain contact form (previous behavior).
   const [newFormTemplate, setNewFormTemplate] = useState<'' | FormTemplateKey>('')
+  // A real duplicate carries the ORIGINAL questions and lets you edit them.
+  // Copying only the name (as this used to) silently produced a different
+  // form — the "duplicated form should be editable" report.
+  const [dupQuestions, setDupQuestions] = useState<Array<{ type: string; label: string }> | null>(null)
   const [formBusy, setFormBusy] = useState(false)
   const [dupBusyId, setDupBusyId] = useState<string | null>(null)
 
@@ -752,7 +756,15 @@ export default function NewCampaignPage() {
       let questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }> =
         [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }]
       let extras: Partial<CreateLeadFormPayload> | undefined
-      if (tpl) {
+      // A duplicate's (possibly edited) questions win over any template.
+      const dq = dupQuestions?.filter((q) => q.type || q.label.trim())
+      if (dq && dq.length) {
+        questions = dq.map((q, i) =>
+          q.type && q.type !== 'CUSTOM'
+            ? { type: q.type }
+            : customToMetaQuestion({ label: q.label.trim() || `Question ${i + 1}` } as never, i),
+        )
+      } else if (tpl) {
         // Materialize the shared template from THIS ad's real listing facts —
         // the same prefill the full builder would produce.
         const listing = listings.find((l) => l.id === form.listingId)
@@ -2493,15 +2505,23 @@ export default function NewCampaignPage() {
                   onClick={() => {
                     setViewFormOpen(false)
                     setNewFormName(viewFormData?.name ? `${viewFormData.name} — copy` : '')
+                    // Carry the real questions across so this is a true copy.
+                    setDupQuestions(
+                      (viewFormData?.questions ?? []).map((q) => ({ type: String(q.type || 'CUSTOM'), label: String(q.label || '') })),
+                    )
+                    setNewFormTemplate('')
                     setFormPopupOpen(true)
                   }}
                   className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright"
                 >
                   <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.duplicateBtn')}
                 </button>
-                <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-300 transition hover:text-white">
+                {/* Analytics live on the full page; everything needed to READ the
+                    form is already in this popup, so the wizard is never
+                    unloaded mid-setup. Opens in a new tab, never in place. */}
+                <a href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-300 transition hover:text-white">
                   {t('lm.newCampaign.leadForm.openFull')} <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
+                </a>
               </div>
             </div>
           </div>
@@ -2521,6 +2541,39 @@ export default function NewCampaignPage() {
               <input value={newFormName} onChange={(e) => setNewFormName(e.target.value)} className={`${inputCls(!newFormName.trim())} mt-1`} />
               {/* Shared real-estate templates — same definitions as the full
                   builder, materialized from THIS ad's listing. */}
+              {dupQuestions && dupQuestions.length > 0 && (
+                <div className="mt-4">
+                  <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lm.newCampaign.leadForm.dupQuestions')}</label>
+                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.leadForm.dupQuestionsHint')}</p>
+                  <div className="mt-2 space-y-2">
+                    {dupQuestions.map((q, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          value={q.label}
+                          onChange={(e) => setDupQuestions((prev) => prev ? prev.map((x, xi) => xi === i ? { ...x, label: e.target.value } : x) : prev)}
+                          placeholder={q.type}
+                          className={`${inputCls()} flex-1`}
+                        />
+                        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] text-slate-500">{q.type}</span>
+                        <button
+                          type="button"
+                          onClick={() => setDupQuestions((prev) => prev ? prev.filter((_, xi) => xi !== i) : prev)}
+                          aria-label={t('lm.pdf.cancel')}
+                          className="shrink-0 rounded-full border border-line px-2 py-1 text-[11px] text-slate-400 transition hover:text-white"
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDupQuestions((prev) => [...(prev ?? []), { type: 'CUSTOM', label: '' }])}
+                    className="mt-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20"
+                  >+ {t('lm.newCampaign.leadForm.dupAddQuestion')}</button>
+                </div>
+              )}
+              {/* A duplicate already HAS its questions — a template would replace them. */}
+              {!(dupQuestions && dupQuestions.length > 0) && (
+              <>
               <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('pforms.tpl.title')}</label>
               <select value={newFormTemplate} onChange={(e) => setNewFormTemplate(e.target.value as '' | FormTemplateKey)} className={`${inputCls()} mt-1`}>
                 <option value="">{t('pforms.tpl.quickBlank')}</option>
@@ -2528,6 +2581,8 @@ export default function NewCampaignPage() {
                   <option key={tpl.key} value={tpl.key}>{t(tpl.nameKey)}</option>
                 ))}
               </select>
+              </>
+              )}
               <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('pforms.basics.language')}</label>
               <select value={newFormLocale} onChange={(e) => setNewFormLocale(e.target.value)} className={`${inputCls()} mt-1`}>
                 {FORM_LOCALES.map((l) => (
