@@ -20,6 +20,7 @@ import { getFinanceTotals } from '@/lib/deals'
 import { query } from '@/lib/db'
 import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
+import { APP_ROUTES } from '@/lib/freehold/app-routes.generated'
 
 export const runtime = 'nodejs'
 
@@ -228,9 +229,30 @@ function hrefAllowed(href: unknown, seen: string): boolean {
   // A trailing id-looking segment on any other route must also be tool-sourced.
   const seg = (path.split('/').filter(Boolean).pop() || '').toLowerCase()
   if (/^[0-9a-f]{8,}$/i.test(seg) || /^\d{6,}$/.test(seg) || /^[0-9a-f][0-9a-f-]{19,}$/i.test(seg)) {
-    return seen.toLowerCase().includes(seg)
+    if (!seen.toLowerCase().includes(seg)) return false
   }
-  return true // a normal static app route
+  // FINAL GATE: the route itself must exist. This used to `return true` for
+  // anything that merely looked static, so a wholly invented path such as
+  // /freehold-intelligence/library/creatives/edit/generated_image_x.png
+  // was handed to the user and 404'd. Verifying record ids was never enough —
+  // the ROUTE has to be real.
+  return routeExists(path)
+}
+
+/** Does `path` match a real page route? '*' = one segment, '**' = catch-all. */
+function routeExists(path: string): boolean {
+  const parts = path.split('/').filter(Boolean)
+  return APP_ROUTES.some((pattern) => {
+    const pp = pattern.split('/').filter(Boolean)
+    let i = 0
+    for (; i < pp.length; i++) {
+      if (pp[i] === '**') return true       // catch-all swallows the rest
+      if (i >= parts.length) return false
+      if (pp[i] === '*') continue           // one dynamic segment
+      if (pp[i].toLowerCase() !== parts[i].toLowerCase()) return false
+    }
+    return i === parts.length
+  })
 }
 
 /** Strip fabricated hrefs: a `path` block with a bad link becomes plain text

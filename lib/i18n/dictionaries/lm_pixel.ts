@@ -19,6 +19,24 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.copied': 'Copied',
     'lm.pixel.actionFailed': 'That did not go through',
 
+    // ── Status strip ──
+    'lm.pixel.stat.pixel': 'Pixel on your pages',
+    'lm.pixel.stat.pixelNone': 'Not deployed',
+    'lm.pixel.stat.events': 'Events firing',
+    'lm.pixel.stat.eventsHint': 'from your landing pages',
+    'lm.pixel.stat.conversions': 'Conversions',
+    'lm.pixel.stat.conversionsHint': 'live, not archived',
+
+    // ── Do this next ──
+    'lm.pixel.next.title': 'Do this next',
+    'lm.pixel.next.more': '+{n} more suggestions',
+    'lm.pixel.next.less': 'Hide the rest',
+
+    // ── Tabs ──
+    'lm.pixel.tab.pixels': 'Pixels',
+    'lm.pixel.tab.events': 'Events',
+    'lm.pixel.tab.conversions': 'Conversions',
+
     // ── Relative time ──
     'lm.pixel.rel.now': 'moments ago',
     'lm.pixel.rel.min': '{n} min ago',
@@ -30,7 +48,8 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.list.title': 'Your pixels',
     'lm.pixel.list.desc': 'Read live from your connected ad account. Select one to deploy it or build a conversion on it.',
     'lm.pixel.list.empty': 'This ad account has no pixels',
-    'lm.pixel.list.emptyDesc': 'Create one below — it needs a name and nothing else.',
+    'lm.pixel.list.emptyDesc': 'Create one — it needs a name and nothing else.',
+    'lm.pixel.list.new': 'New pixel',
     'lm.pixel.list.id': 'ID',
     'lm.pixel.list.lastFired': 'Last event',
     'lm.pixel.list.neverFired': 'No events received yet',
@@ -105,6 +124,7 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.conv.sourceUnknown': 'Not reported by Meta',
     'lm.pixel.conv.lastFired': 'Last counted',
     'lm.pixel.conv.newTitle': 'New conversion',
+    'lm.pixel.conv.new': 'New conversion',
     'lm.pixel.conv.fPixel': 'Pixel',
     'lm.pixel.conv.fBasis': 'Count it when',
     'lm.pixel.conv.basisEvent': 'A standard event arrives',
@@ -167,6 +187,24 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.copied': 'تم النسخ',
     'lm.pixel.actionFailed': 'لم تنجح العملية',
 
+    // ── Status strip ──
+    'lm.pixel.stat.pixel': 'البكسل على صفحاتك',
+    'lm.pixel.stat.pixelNone': 'غير منشور',
+    'lm.pixel.stat.events': 'أحداث تُطلق الآن',
+    'lm.pixel.stat.eventsHint': 'من صفحات الهبوط لديك',
+    'lm.pixel.stat.conversions': 'التحويلات',
+    'lm.pixel.stat.conversionsHint': 'نشطة وغير مؤرشفة',
+
+    // ── Do this next ──
+    'lm.pixel.next.title': 'الخطوة التالية',
+    'lm.pixel.next.more': '+{n} اقتراحات أخرى',
+    'lm.pixel.next.less': 'إخفاء البقية',
+
+    // ── Tabs ──
+    'lm.pixel.tab.pixels': 'وحدات البكسل',
+    'lm.pixel.tab.events': 'الأحداث',
+    'lm.pixel.tab.conversions': 'التحويلات',
+
     // ── Relative time ──
     'lm.pixel.rel.now': 'قبل لحظات',
     'lm.pixel.rel.min': 'قبل {n} دقيقة',
@@ -178,7 +216,8 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.list.title': 'وحدات البكسل لديك',
     'lm.pixel.list.desc': 'مقروءة مباشرة من حسابك الإعلاني المتصل. اختر واحدة لنشرها أو لبناء تحويل عليها.',
     'lm.pixel.list.empty': 'لا توجد وحدات بكسل في هذا الحساب الإعلاني',
-    'lm.pixel.list.emptyDesc': 'أنشئ واحدة أدناه — تحتاج اسماً فقط لا غير.',
+    'lm.pixel.list.emptyDesc': 'أنشئ واحدة — تحتاج اسماً فقط لا غير.',
+    'lm.pixel.list.new': 'بكسل جديد',
     'lm.pixel.list.id': 'المعرّف',
     'lm.pixel.list.lastFired': 'آخر حدث',
     'lm.pixel.list.neverFired': 'لم تصل أي أحداث بعد',
@@ -253,6 +292,7 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.conv.sourceUnknown': 'لم تذكره ميتا',
     'lm.pixel.conv.lastFired': 'آخر احتساب',
     'lm.pixel.conv.newTitle': 'تحويل جديد',
+    'lm.pixel.conv.new': 'تحويل جديد',
     'lm.pixel.conv.fPixel': 'البكسل',
     'lm.pixel.conv.fBasis': 'احتسبه عندما',
     'lm.pixel.conv.basisEvent': 'يصل حدث قياسي',
@@ -315,6 +355,24 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.copied': 'Скопировано',
     'lm.pixel.actionFailed': 'Не удалось выполнить',
 
+    // ── Status strip ──
+    'lm.pixel.stat.pixel': 'Пиксель на ваших страницах',
+    'lm.pixel.stat.pixelNone': 'Не развёрнут',
+    'lm.pixel.stat.events': 'События отправляются',
+    'lm.pixel.stat.eventsHint': 'с ваших лендингов',
+    'lm.pixel.stat.conversions': 'Конверсии',
+    'lm.pixel.stat.conversionsHint': 'активные, не в архиве',
+
+    // ── Do this next ──
+    'lm.pixel.next.title': 'Сделайте это дальше',
+    'lm.pixel.next.more': 'Ещё подсказок: {n}',
+    'lm.pixel.next.less': 'Скрыть остальные',
+
+    // ── Tabs ──
+    'lm.pixel.tab.pixels': 'Пиксели',
+    'lm.pixel.tab.events': 'События',
+    'lm.pixel.tab.conversions': 'Конверсии',
+
     // ── Relative time ──
     'lm.pixel.rel.now': 'только что',
     'lm.pixel.rel.min': '{n} мин назад',
@@ -326,7 +384,8 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.list.title': 'Ваши пиксели',
     'lm.pixel.list.desc': 'Читаются напрямую из подключённого рекламного аккаунта. Выберите один, чтобы развернуть его или построить на нём конверсию.',
     'lm.pixel.list.empty': 'В этом рекламном аккаунте нет пикселей',
-    'lm.pixel.list.emptyDesc': 'Создайте ниже — нужно только имя, больше ничего.',
+    'lm.pixel.list.emptyDesc': 'Создайте пиксель — нужно только имя, больше ничего.',
+    'lm.pixel.list.new': 'Новый пиксель',
     'lm.pixel.list.id': 'ID',
     'lm.pixel.list.lastFired': 'Последнее событие',
     'lm.pixel.list.neverFired': 'События ещё не поступали',
@@ -401,6 +460,7 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.conv.sourceUnknown': 'Meta не сообщила',
     'lm.pixel.conv.lastFired': 'Последний засчёт',
     'lm.pixel.conv.newTitle': 'Новая конверсия',
+    'lm.pixel.conv.new': 'Новая конверсия',
     'lm.pixel.conv.fPixel': 'Пиксель',
     'lm.pixel.conv.fBasis': 'Засчитывать, когда',
     'lm.pixel.conv.basisEvent': 'Приходит стандартное событие',
