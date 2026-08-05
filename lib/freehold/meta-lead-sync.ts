@@ -254,7 +254,13 @@ async function alertTeamOfLead(lead: {
  * leads on Meta that never once landed in the CRM.
  */
 export async function syncAllMetaLeads(): Promise<{
+  /** Forms actually processed this pass (may be < totalForms if the budget cut it short). */
   formsChecked: number
+  /** Every form the sweep knows about. */
+  totalForms: number
+  /** True when the wall-clock budget stopped the sweep; the next run resumes
+   *  from the updated watermarks, so nothing is lost — only deferred. */
+  stoppedEarly: boolean
   totalSynced: number
   /** Leads Meta returned that had neither a phone nor an email. */
   totalSkipped: number
@@ -273,13 +279,53 @@ export async function syncAllMetaLeads(): Promise<{
   // Page rather than only the configured one. A form with no page_id (locally
   // registered drafts) falls back to the connected token, as before.
   const pageTokens = new Map((await listAccessiblePages().catch(() => [])).map((p) => [p.id, p.token]))
+
+  // ── Incremental sweep ───────────────────────────────────────────────────
+  // This used to re-read EVERY form's entire lead history on every pass: with
+  // a real account that is ~300 Graph calls, ~11s of CPU, and a run that
+  // exceeded its 60s ceiling — production observability showed Timeout 100%,
+  // i.e. the cron NEVER completed and no lead ever synced automatically. That
+  // is the "leads arrive in the form but need a manual sync" report.
+  //
+  // The watermark is derived from data we already store (no new schema): the
+  // newest created_at we hold per meta_form_id. A 10-minute overlap absorbs
+  // clock skew and late arrivals; re-fetching is harmless because the insert
+  // is deduped on meta_lead_id.
+  const OVERLAP_MS = 10 * 60 * 1000
+  const watermarks = new Map<string, number>()
+  try {
+    const rows = await query<{ meta_form_id: string; newest: string | null }>(
+      `SELECT meta_form_id, MAX(created_at)::text AS newest
+         FROM freehold_site_leads
+        WHERE meta_form_id IS NOT NULL
+        GROUP BY meta_form_id`,
+    )
+    for (const r of rows) {
+      const t = r.newest ? Date.parse(r.newest) : NaN
+      if (Number.isFinite(t)) watermarks.set(r.meta_form_id, Math.floor((t - OVERLAP_MS) / 1000))
+    }
+  } catch { /* no watermarks — fall back to a full read, as before */ }
+
+  // Hard wall-clock budget. Finishing PART of the sweep and saying so beats
+  // being killed mid-flight and recording nothing.
+  const startedAt = Date.now()
+  const BUDGET_MS = 45_000
+  let stoppedEarly = false
+
   const perForm: Array<{ formId: string; formName: string; synced: number; skipped: number; error?: string }> = []
   let totalSynced = 0
   let totalSkipped = 0
   let formsFailed = 0
+  let formsProcessed = 0
   for (const form of forms) {
+    if (Date.now() - startedAt > BUDGET_MS) { stoppedEarly = true; break }
+    formsProcessed += 1
     try {
-      const leads = await getFormLeads(form.id, form.page_id ? pageTokens.get(form.page_id) : undefined)
+      const leads = await getFormLeads(
+        form.id,
+        form.page_id ? pageTokens.get(form.page_id) : undefined,
+        watermarks.get(form.id),
+      )
       const { synced, skipped } = await syncLeadsToCrm(form.id, leads)
       perForm.push({ formId: form.id, formName: form.name, synced, skipped })
       totalSynced += synced
@@ -295,5 +341,15 @@ export async function syncAllMetaLeads(): Promise<{
       })
     }
   }
-  return { formsChecked: forms.length, totalSynced, totalSkipped, formsFailed, perForm }
+  return {
+    formsChecked: formsProcessed,
+    totalForms: forms.length,
+    totalSynced,
+    totalSkipped,
+    formsFailed,
+    // True when the budget cut the sweep short — the next run resumes from the
+    // updated watermarks, so progress is never lost, only deferred.
+    stoppedEarly,
+    perForm,
+  }
 }
