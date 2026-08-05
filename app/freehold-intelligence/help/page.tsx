@@ -118,6 +118,16 @@ const SECTIONS: QASection[] = [
       { q: 'help.inventory.q3', a: 'help.inventory.a3', links: [{ label: 'help.inventory.l3', href: `${FI}/inventory/data-quality` }] },
       { q: 'help.inventory.q4', a: 'help.inventory.a4', links: [{ label: 'help.inventory.l4', href: `${FI}/inventory/new` }] },
       { q: 'help.inventory.q5', a: 'help.inventory.a5' },
+      { q: 'help.inventory.q6', a: 'help.inventory.a6', links: [{ label: 'help.inventory.l6', href: `${FI}/inventory` }] },
+    ],
+  },
+  {
+    id: 'creative',
+    title: 'help.creative.title',
+    Icon: Sparkles,
+    items: [
+      { q: 'help.creative.q1', a: 'help.creative.a1', links: [{ label: 'help.creative.l1', href: `${FI}/creative-studio` }] },
+      { q: 'help.creative.q2', a: 'help.creative.a2', roles: MGMT_MKT },
     ],
   },
   {
