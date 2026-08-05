@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Creative must include primaryText, headline, and landingUrl' }, { status: 400 })
   }
 
+  // Must be a real number BEFORE it becomes money: a non-numeric budget made
+  // `Math.round(budget / 10)` NaN, which skipped the credit reservation entirely
+  // and launched for free (NaN < 50 and NaN > 0 are both false).
+  if (typeof body.dailyBudgetAED !== 'number' || !Number.isFinite(body.dailyBudgetAED)) {
+    return NextResponse.json({ error: 'Daily budget must be a number in AED' }, { status: 400 })
+  }
   if (body.dailyBudgetAED < 50) {
     return NextResponse.json({ error: 'Minimum daily budget is AED 50' }, { status: 400 })
   }
@@ -63,7 +69,9 @@ export async function POST(req: NextRequest) {
     ? (sessionUser.brokerId ?? sessionUser.email)
     : undefined
 
-  const creditsToSpend = brokerId ? Math.round((body.dailyBudgetAED ?? 100) / 10) : 0
+  // 1 credit = AED 10 of funded ad spend (CREDIT_VALUE_AED). Whole credits only —
+  // the ledger column is INTEGER.
+  const creditsToSpend = brokerId ? Math.max(1, Math.round(body.dailyBudgetAED / 10)) : 0
 
   // ── Money: RESERVE credits BEFORE launching (fail-closed) ────────────────────
   // A campaign must never reach the auction without its credits already committed.
@@ -76,31 +84,62 @@ export async function POST(req: NextRequest) {
   const reservationRef = `res-${randomUUID()}`
   let reserved = false
   if (brokerId && creditsToSpend > 0) {
+    // Friendly pre-check ONLY. A null balance means "no account yet" OR "the
+    // read failed" — telling a broker they are out of credits because a query
+    // errored is a lie, so we only 402 here on a balance we actually read. The
+    // locked deduction below is the authority either way.
     const bal = await getCreditBalance(brokerId)
-    if ((bal?.balance ?? 0) < creditsToSpend) {
+    if (bal && bal.balance < creditsToSpend) {
       return NextResponse.json(
-        { error: 'Insufficient credits to launch this campaign.', balance: bal?.balance ?? 0, required: creditsToSpend },
+        { error: 'Insufficient credits to launch this campaign.', balance: bal.balance, required: creditsToSpend },
         { status: 402 },
       )
     }
     const reservation = await deductCreditsForCampaign(brokerId, reservationRef, body.campaignName, creditsToSpend)
     if (!reservation.ok) {
       // Lost the race, or a concurrent spend drained the balance — never launch.
+      // A failure that is NOT about the balance must say so: reporting "out of
+      // credits" for a database error sends the broker to Finance for a refill
+      // that will not help.
+      if (reservation.reason === 'insufficient') {
+        return NextResponse.json(
+          { error: 'Insufficient credits to launch this campaign.', balance: reservation.balance ?? 0, required: creditsToSpend },
+          { status: 402 },
+        )
+      }
       return NextResponse.json(
-        { error: 'Insufficient credits to launch this campaign.', balance: reservation.balance ?? 0, required: creditsToSpend },
-        { status: reservation.reason === 'insufficient' ? 402 : 500 },
+        {
+          error: reservation.reason === 'invalid'
+            ? 'That daily budget does not convert to a valid number of credits.'
+            : 'Could not reserve credits for this campaign, so nothing was launched. Please try again.',
+          required: creditsToSpend,
+        },
+        { status: reservation.reason === 'invalid' ? 400 : 500 },
       )
     }
     reserved = true
   }
 
   // Give the reserved credits back when a launch does NOT actually serve an ad
-  // (Meta rejected it, or it fell back to a local/demo campaign).
-  async function releaseReservation() {
-    if (reserved && brokerId) {
-      await refundCredits(brokerId, reservationRef, creditsToSpend, 'Refund: campaign did not launch/serve').catch(() => {})
-      reserved = false
+  // (Meta rejected it, or it fell back to a local/demo campaign). Returns false
+  // when the ledger write failed — the credits are then still held, and the
+  // caller must say so rather than report a clean outcome.
+  async function releaseReservation(): Promise<boolean> {
+    if (!reserved || !brokerId) return true
+    const refund = await refundCredits(
+      brokerId, reservationRef, creditsToSpend, 'Refund: campaign did not launch/serve',
+    ).catch(() => ({ ok: false as const }))
+    if (!refund.ok) {
+      // Keep `reserved` true so a later attempt in this request retries, and
+      // leave a trace an operator can reconcile the ledger from.
+      console.error(
+        '[meta/launch] credit refund FAILED — broker credits are still held',
+        { brokerId, reservationRef, credits: creditsToSpend },
+      )
+      return false
     }
+    reserved = false
+    return true
   }
 
   // Persist broker↔campaign attribution (best-effort link). The money is already
@@ -145,7 +184,7 @@ export async function POST(req: NextRequest) {
     if (autonomy === 3 && decision.action === 'hold') {
       // No new campaign serves on this path → return the reserved credits first,
       // so a held launch never charges the broker.
-      await releaseReservation()
+      const refunded = await releaseReservation()
       await recordDecision({
         projectSlug, campaignId: decision.targetCampaignId ?? null, brokerId: intent.brokerId,
         action: 'hold', outcome: 'auto', reason: decision.reason,
@@ -153,7 +192,10 @@ export async function POST(req: NextRequest) {
       // Point the wizard's success screen at the live campaign already serving
       // this objective — no new (competing) campaign, no credits spent.
       return NextResponse.json(
-        { campaignId: decision.targetCampaignId, held: true, decision, brokerId },
+        {
+          campaignId: decision.targetCampaignId, held: true, decision, brokerId,
+          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
+        },
         { status: 200 },
       )
     }
@@ -200,15 +242,25 @@ export async function POST(req: NextRequest) {
       leadLanguages:    Array.isArray(body.leadLanguages) ? body.leadLanguages.map(String) : undefined,
     })
 
-    // Launch succeeded → the campaign will serve, so the reservation stands.
-    // Attribute the broker and reconcile the reservation to the real campaign id.
-    await attributeCampaign(result.campaignId)
-    await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
-    await recordCampaignProject(result.campaignId, projectSlug) // link for the router
-    await recordLaunchDecision(result.campaignId)
-    // Persist the wizard's autopilot policy — the autopilot pass reads it.
-    if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
-      await setCampaignAutoEnhance(result.campaignId, body.autoEnhance)
+    // Launch succeeded → the ad WILL serve, so the reservation is now committed.
+    // Clearing the flag first is the whole point: everything below is
+    // bookkeeping, and a throw in bookkeeping used to fall into the catch below
+    // and REFUND a live campaign — the broker got funded ad spend for free and
+    // the ledger said "did not launch/serve".
+    reserved = false
+    try {
+      await attributeCampaign(result.campaignId)
+      await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
+      await recordCampaignProject(result.campaignId, projectSlug) // link for the router
+      await recordLaunchDecision(result.campaignId)
+      // Persist the wizard's autopilot policy — the autopilot pass reads it.
+      if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
+        await setCampaignAutoEnhance(result.campaignId, body.autoEnhance)
+      }
+    } catch (bookkeepingErr) {
+      // The campaign is live and the credits are correctly spent; only the
+      // links/logs are incomplete. Never turn that into a launch failure.
+      console.error('[meta/launch] post-launch bookkeeping failed', bookkeepingErr)
     }
 
     return NextResponse.json({ ...result, brokerId, decision }, { status: 201 })
@@ -217,7 +269,7 @@ export async function POST(req: NextRequest) {
       // Not connected → persist a local campaign (mirrors the Google flow) so
       // the wizard's success screen + detail page work end to end. A demo campaign
       // never serves an ad, so release the reservation (attribute, don't charge).
-      await releaseReservation()
+      const refunded = await releaseReservation()
       const local = await createLocalCampaign(body, brokerId)
       await attributeCampaign(local.campaignId)
       await recordCampaignProject(local.campaignId, projectSlug)
@@ -225,7 +277,13 @@ export async function POST(req: NextRequest) {
       if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
         await setCampaignAutoEnhance(local.campaignId, body.autoEnhance)
       }
-      return NextResponse.json({ ...local, brokerId, demo: true, decision }, { status: 201 })
+      return NextResponse.json(
+        {
+          ...local, brokerId, demo: true, decision,
+          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
+        },
+        { status: 201 },
+      )
     }
     // A real launch failed → nothing serves → return the reserved credits.
     await releaseReservation()

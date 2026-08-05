@@ -25,5 +25,27 @@ export const CREDIT_VALUE_AED = 10
 /** Earn rule: 1 credit per AED 1,000 of broker net commission, minimum 1. */
 export const EARN_AED_PER_CREDIT = 1000
 
-export const creditsEarnedForCommission = (brokerTotalAED: number): number =>
-  Math.max(1, Math.round(brokerTotalAED / EARN_AED_PER_CREDIT))
+export const creditsEarnedForCommission = (brokerTotalAED: number): number => {
+  if (!Number.isFinite(brokerTotalAED)) return 1
+  return Math.max(1, Math.round(brokerTotalAED / EARN_AED_PER_CREDIT))
+}
+
+/**
+ * Sanity ceiling for a single ledger movement (1,000,000 credits = AED 10M of
+ * funded ad spend). Not an economic rule — a fail-closed guard so a typo or a
+ * malformed payload can never write an absurd amount into the ledger.
+ */
+export const MAX_CREDIT_AMOUNT = 1_000_000
+
+/**
+ * Every credit movement is a WHOLE, POSITIVE, finite number of credits. The
+ * ledger column is INTEGER, so a float would be silently rounded by Postgres
+ * and a negative would invert the sign convention (a negative 'spend' ADDS
+ * credits). Validated at the library boundary, not just in the API routes.
+ */
+export const isValidCreditAmount = (value: unknown): value is number =>
+  typeof value === 'number' &&
+  Number.isFinite(value) &&
+  Number.isInteger(value) &&
+  value > 0 &&
+  value <= MAX_CREDIT_AMOUNT

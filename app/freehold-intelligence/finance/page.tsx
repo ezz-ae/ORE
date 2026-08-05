@@ -19,12 +19,15 @@ async function computeRealSpend() {
   //   2. Campaign allocations (ad_spend_allocations) written when a Meta campaign
   //      launches — credits are deducted from the broker balance at launch, so
   //      credits_allocated × CREDIT_VALUE_AED is the money committed to ads.
+  //      Cancelled rows are reservations that were refunded because the campaign
+  //      never served (demo fallback, Meta rejection, autopilot hold) — counting
+  //      them reported ad spend that never happened.
   const spend30 = await safe(() => query<{ s: number }>(
     `SELECT COALESCE(SUM(amount_aed),0)::float AS s FROM freehold_site_finance_entries
      WHERE category = 'ad_spend' AND COALESCE(entry_date, created_at::date) >= CURRENT_DATE - INTERVAL '30 days'`), [{ s: 0 }])
   const campaign30 = await safe(() => query<{ c: number }>(
     `SELECT COALESCE(SUM(credits_allocated),0)::float AS c FROM ad_spend_allocations
-     WHERE created_at >= now() - INTERVAL '30 days'`), [{ c: 0 }])
+     WHERE created_at >= now() - INTERVAL '30 days' AND status <> 'cancelled'`), [{ c: 0 }])
   const leads30 = await safe(() => query<{ c: number }>(
     `SELECT COUNT(*)::int AS c FROM freehold_site_leads WHERE created_at >= now() - INTERVAL '30 days'`), [{ c: 0 }])
   const monthlySpend = await safe(() => query<{ k: string; m: string; s: number }>(
@@ -39,7 +42,7 @@ async function computeRealSpend() {
             to_char(date_trunc('month', created_at), 'Mon YYYY') AS m,
             COALESCE(SUM(credits_allocated),0)::float AS c
      FROM ad_spend_allocations
-     WHERE created_at >= now() - INTERVAL '6 months'
+     WHERE created_at >= now() - INTERVAL '6 months' AND status <> 'cancelled'
      GROUP BY 1, 2`), [])
   const monthlyLeads = await safe(() => query<{ m: string; c: number }>(
     `SELECT to_char(date_trunc('month', created_at), 'Mon YYYY') AS m, COUNT(*)::int AS c

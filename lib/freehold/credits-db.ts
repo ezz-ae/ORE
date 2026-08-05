@@ -1,6 +1,10 @@
-import { query, withTransaction } from '@/lib/db'
+import { query, withTransaction, ensureOnce, type TxQuery } from '@/lib/db'
 import { notifyBrokerLowCredits } from '@/lib/transactional-email'
-import { creditsEarnedForCommission, type CreditTier } from '@/lib/freehold/credits-shared'
+import {
+  creditsEarnedForCommission,
+  isValidCreditAmount,
+  type CreditTier,
+} from '@/lib/freehold/credits-shared'
 
 export interface CreditBalance {
   broker_id: string
@@ -49,7 +53,34 @@ export interface AdSpendAllocation {
   created_at: string
 }
 
-export async function getCreditBalance(brokerId: string): Promise<CreditBalance | null> {
+/**
+ * THE balance definition — one string, used by both the `broker_credit_balances`
+ * view (what every screen reads) and the locked re-derivation inside the debit
+ * transaction (what authorises a spend). Money bugs come from two definitions
+ * drifting apart, so there is exactly one, and `$ALIAS` is substituted for the
+ * table alias each site needs.
+ */
+const BALANCE_SUM = (a: string) => `COALESCE(SUM(CASE
+  WHEN ${a}type = 'allocation' THEN  ${a}amount
+  WHEN ${a}type = 'spend'      THEN -${a}amount
+  WHEN ${a}type = 'refund'     THEN  ${a}amount
+  WHEN ${a}type = 'adjustment' THEN  ${a}amount
+  WHEN ${a}type = 'earn'       THEN  ${a}amount
+  ELSE 0
+END), 0)::integer`
+
+const SPENT_SUM = (a: string) =>
+  `COALESCE(SUM(CASE WHEN ${a}type = 'spend' THEN ${a}amount ELSE 0 END), 0)::integer`
+
+/**
+ * Read a balance, distinguishing "this broker has no account yet" (`balance:
+ * null`) from "the read failed" (`ok: false`). Collapsing the two is how a
+ * database hiccup used to render as a confident "0 credits" — a wrong number on
+ * a money screen, and a 402 on a launch the broker could actually afford.
+ */
+export async function readCreditBalance(
+  brokerId: string,
+): Promise<{ ok: true; balance: CreditBalance | null } | { ok: false }> {
   try {
     const rows = await query<CreditBalance>(
       `SELECT broker_id, tier, allocated, balance, total_spent,
@@ -58,13 +89,22 @@ export async function getCreditBalance(brokerId: string): Promise<CreditBalance 
        WHERE broker_id = $1`,
       [brokerId]
     )
-    return rows[0] ?? null
-  } catch { return null }
+    return { ok: true, balance: rows[0] ?? null }
+  } catch { return { ok: false } }
 }
 
-export async function getCreditLedger(brokerId: string, limit = 50): Promise<CreditLedgerEntry[]> {
+export async function getCreditBalance(brokerId: string): Promise<CreditBalance | null> {
+  const res = await readCreditBalance(brokerId)
+  return res.ok ? res.balance : null
+}
+
+/** Ledger read that reports a failed query instead of an empty history. */
+export async function readCreditLedger(
+  brokerId: string,
+  limit = 50,
+): Promise<{ ok: true; ledger: CreditLedgerEntry[] } | { ok: false }> {
   try {
-    return await query<CreditLedgerEntry>(
+    const ledger = await query<CreditLedgerEntry>(
       `SELECT id, broker_id, type, amount, note, reference, meta, created_by, created_at::text
        FROM credit_ledger
        WHERE broker_id = $1
@@ -72,7 +112,13 @@ export async function getCreditLedger(brokerId: string, limit = 50): Promise<Cre
        LIMIT $2`,
       [brokerId, limit]
     )
-  } catch { return [] }
+    return { ok: true, ledger }
+  } catch { return { ok: false } }
+}
+
+export async function getCreditLedger(brokerId: string, limit = 50): Promise<CreditLedgerEntry[]> {
+  const res = await readCreditLedger(brokerId, limit)
+  return res.ok ? res.ledger : []
 }
 
 export async function getAdSpendAllocations(brokerId: string): Promise<AdSpendAllocation[]> {
@@ -88,133 +134,289 @@ export async function getAdSpendAllocations(brokerId: string): Promise<AdSpendAl
   } catch { return [] }
 }
 
-export async function ensureCreditsSchema(): Promise<void> {
-  try {
-    await query(`
-      CREATE TABLE IF NOT EXISTS broker_credit_accounts (
-        broker_id   TEXT PRIMARY KEY,
-        user_id     TEXT,
-        tier        TEXT NOT NULL DEFAULT 'Starter',
-        allocated   INTEGER NOT NULL DEFAULT 0,
-        cycle_start TIMESTAMPTZ NOT NULL DEFAULT now(),
-        cycle_end   TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
-        created_at  TIMESTAMPTZ DEFAULT now(),
-        updated_at  TIMESTAMPTZ DEFAULT now()
-      )
-    `, [])
-    await query(`
-      CREATE TABLE IF NOT EXISTS credit_ledger (
-        id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        broker_id  TEXT NOT NULL,
-        type       TEXT NOT NULL,
-        amount     INTEGER NOT NULL,
-        note       TEXT,
-        meta       JSONB DEFAULT '{}',
-        created_by TEXT,
-        created_at TIMESTAMPTZ DEFAULT now()
-      )
-    `, [])
-    // Deal-earn idempotency: 'earn' entries store the deal id in `reference`.
-    await query(`ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS reference TEXT`, [])
-    await query(`CREATE INDEX IF NOT EXISTS idx_credit_ledger_reference ON credit_ledger(reference)`, [])
-    await query(`
-      CREATE TABLE IF NOT EXISTS ad_spend_allocations (
-        id                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        broker_id         TEXT NOT NULL,
-        campaign_id       TEXT,
-        campaign_name     TEXT,
-        credits_allocated INTEGER NOT NULL DEFAULT 0,
-        credits_spent     INTEGER NOT NULL DEFAULT 0,
-        daily_cap         INTEGER,
-        status            TEXT NOT NULL DEFAULT 'active',
-        created_at        TIMESTAMPTZ DEFAULT now(),
-        updated_at        TIMESTAMPTZ DEFAULT now()
-      )
-    `, [])
-    await query(`
-      CREATE OR REPLACE VIEW broker_credit_balances AS
-      SELECT
-        bca.broker_id, bca.user_id, bca.tier, bca.allocated, bca.cycle_start, bca.cycle_end,
-        COALESCE(SUM(CASE
-          WHEN cl.type = 'allocation' THEN  cl.amount
-          WHEN cl.type = 'spend'      THEN -cl.amount
-          WHEN cl.type = 'refund'     THEN  cl.amount
-          WHEN cl.type = 'adjustment' THEN  cl.amount
-          WHEN cl.type = 'earn'       THEN  cl.amount
-          ELSE 0
-        END), 0)::integer AS balance,
-        COALESCE(SUM(CASE WHEN cl.type = 'spend' THEN cl.amount ELSE 0 END), 0)::integer AS total_spent
-      FROM broker_credit_accounts bca
-      LEFT JOIN credit_ledger cl ON cl.broker_id = bca.broker_id
-      GROUP BY bca.broker_id, bca.user_id, bca.tier, bca.allocated, bca.cycle_start, bca.cycle_end
-    `, [])
-  } catch { /* Non-blocking */ }
+/**
+ * Management drill-down: the full ledger + campaign allocations for one broker.
+ * Historic rows were written under either the user id or the login email, so a
+ * broker's money is looked up under every identity they may have been booked
+ * under (the same tolerance `listBrokerBalances` applies).
+ */
+export async function getBrokerCreditDetail(
+  identities: string[],
+  limit = 100,
+): Promise<{ ledger: CreditLedgerEntry[]; allocations: AdSpendAllocation[] }> {
+  const ids = identities.filter((v): v is string => typeof v === 'string' && v.length > 0)
+  if (ids.length === 0) return { ledger: [], allocations: [] }
+  const [ledger, allocations] = await Promise.all([
+    query<CreditLedgerEntry>(
+      `SELECT id, broker_id, type, amount, note, reference, meta, created_by, created_at::text
+       FROM credit_ledger
+       WHERE broker_id = ANY($1)
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [ids, limit],
+    ).catch(() => []),
+    query<AdSpendAllocation>(
+      `SELECT id, broker_id, campaign_id, campaign_name,
+              credits_allocated, credits_spent, daily_cap, status, created_at::text
+       FROM ad_spend_allocations
+       WHERE broker_id = ANY($1)
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [ids, limit],
+    ).catch(() => []),
+  ])
+  return { ledger, allocations }
 }
+
+/**
+ * Lazily create/repair the credit schema.
+ *
+ * Every statement is guarded INDIVIDUALLY: a single try/catch around the whole
+ * block meant that one failing statement (a pre-existing table with a different
+ * shape, a permissions hiccup) silently skipped everything after it — including
+ * the balances view every screen reads.
+ *
+ * Self-healing indexes: a table created by an older migration never gains an
+ * inline UNIQUE/PRIMARY KEY, and `INSERT … ON CONFLICT (col)` against it fails
+ * with 42P10 at runtime. `CREATE UNIQUE INDEX IF NOT EXISTS` gives the ON
+ * CONFLICT targets a real index to infer, on old and new databases alike.
+ */
+async function ensureCreditsSchemaOnce(): Promise<void> {
+  const ddl = async (sql: string) => { try { await query(sql, []) } catch { /* per-statement, non-blocking */ } }
+
+  await ddl(`
+    CREATE TABLE IF NOT EXISTS broker_credit_accounts (
+      broker_id   TEXT PRIMARY KEY,
+      user_id     TEXT,
+      tier        TEXT NOT NULL DEFAULT 'Starter',
+      allocated   INTEGER NOT NULL DEFAULT 0,
+      cycle_start TIMESTAMPTZ NOT NULL DEFAULT now(),
+      cycle_end   TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
+      created_at  TIMESTAMPTZ DEFAULT now(),
+      updated_at  TIMESTAMPTZ DEFAULT now()
+    )
+  `)
+  // ON CONFLICT (broker_id) needs a real unique index — a table created before
+  // the PRIMARY KEY existed would otherwise throw 42P10 on every allocation.
+  await ddl(`CREATE UNIQUE INDEX IF NOT EXISTS broker_credit_accounts_broker_id_uidx
+             ON broker_credit_accounts (broker_id)`)
+
+  await ddl(`
+    CREATE TABLE IF NOT EXISTS credit_ledger (
+      id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      broker_id  TEXT NOT NULL,
+      type       TEXT NOT NULL,
+      amount     INTEGER NOT NULL,
+      note       TEXT,
+      meta       JSONB DEFAULT '{}',
+      created_by TEXT,
+      created_at TIMESTAMPTZ DEFAULT now()
+    )
+  `)
+  await ddl(`ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS reference TEXT`)
+  await ddl(`CREATE INDEX IF NOT EXISTS idx_credit_ledger_reference ON credit_ledger(reference)`)
+  await ddl(`CREATE INDEX IF NOT EXISTS idx_credit_ledger_broker ON credit_ledger(broker_id)`)
+
+  // Idempotency spine. Every referenced movement (a campaign reservation debit,
+  // its refund, a deal earn) is unique per (broker, type, reference), so a retry
+  // — a double-clicked approval, a webhook firing twice, a client retry after a
+  // timeout — can never credit or debit the same event twice.
+  //
+  // Any duplicate that already slipped through before this index existed is an
+  // over-credit (or a double debit) sitting in a money ledger; the oldest row is
+  // the real one and the rest are collapsed, otherwise the index cannot be built
+  // and every future retry stays unguarded.
+  await ddl(`
+    DELETE FROM credit_ledger a
+    USING credit_ledger b
+    WHERE a.reference IS NOT NULL
+      AND a.broker_id = b.broker_id
+      AND a.type      = b.type
+      AND a.reference = b.reference
+      AND (a.created_at, a.id) > (b.created_at, b.id)
+  `)
+  await ddl(`CREATE UNIQUE INDEX IF NOT EXISTS credit_ledger_reference_uidx
+             ON credit_ledger (broker_id, type, reference)
+             WHERE reference IS NOT NULL`)
+
+  await ddl(`
+    CREATE TABLE IF NOT EXISTS ad_spend_allocations (
+      id                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      broker_id         TEXT NOT NULL,
+      campaign_id       TEXT,
+      campaign_name     TEXT,
+      credits_allocated INTEGER NOT NULL DEFAULT 0,
+      credits_spent     INTEGER NOT NULL DEFAULT 0,
+      daily_cap         INTEGER,
+      status            TEXT NOT NULL DEFAULT 'active',
+      created_at        TIMESTAMPTZ DEFAULT now(),
+      updated_at        TIMESTAMPTZ DEFAULT now()
+    )
+  `)
+  await ddl(`CREATE INDEX IF NOT EXISTS idx_ad_spend_broker ON ad_spend_allocations(broker_id)`)
+  await ddl(`CREATE INDEX IF NOT EXISTS idx_ad_spend_campaign ON ad_spend_allocations(campaign_id)`)
+
+  await ddl(`
+    CREATE OR REPLACE VIEW broker_credit_balances AS
+    SELECT
+      bca.broker_id, bca.user_id, bca.tier, bca.allocated, bca.cycle_start, bca.cycle_end,
+      ${BALANCE_SUM('cl.')} AS balance,
+      ${SPENT_SUM('cl.')} AS total_spent
+    FROM broker_credit_accounts bca
+    LEFT JOIN credit_ledger cl ON cl.broker_id = bca.broker_id
+    GROUP BY bca.broker_id, bca.user_id, bca.tier, bca.allocated, bca.cycle_start, bca.cycle_end
+  `)
+}
+
+export async function ensureCreditsSchema(): Promise<void> {
+  // Memoised per tenant schema: the DDL is idempotent but was previously issued
+  // on every single credit call (six round trips per campaign launch).
+  try { await ensureOnce('credits-schema', ensureCreditsSchemaOnce) } catch { /* non-blocking */ }
+}
+
+/** Postgres unique-violation — the concurrent-retry arm of an idempotent write. */
+const isUniqueViolation = (err: unknown): boolean =>
+  typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505'
+
+/**
+ * Insert a ledger row exactly once for (broker_id, type, reference).
+ *
+ * `WHERE NOT EXISTS` makes it idempotent on ANY schema (including a database
+ * that never got the unique index), and the unique index closes the concurrent
+ * window — a racing duplicate raises 23505, which is the same answer as "already
+ * recorded". Returns false when the movement was already on the ledger.
+ */
+async function insertLedgerOnce(
+  q: TxQuery,
+  row: {
+    brokerId: string
+    type: CreditLedgerEntry['type']
+    amount: number
+    note: string | null
+    reference: string
+    meta?: Record<string, unknown>
+    createdBy?: string | null
+  },
+): Promise<boolean> {
+  // A unique violation aborts the whole Postgres transaction, so the insert runs
+  // inside a savepoint: "already recorded" must be a normal answer, not a
+  // poisoned transaction that then fails at COMMIT.
+  await q(`SAVEPOINT credit_ledger_once`)
+  try {
+    const inserted = await q<{ id: string }>(
+      `INSERT INTO credit_ledger (broker_id, type, amount, note, reference, meta, created_by)
+       SELECT $1, $2, $3, $4, $5, $6::jsonb, $7
+       WHERE NOT EXISTS (
+         SELECT 1 FROM credit_ledger
+         WHERE broker_id = $1 AND type = $2 AND reference = $5
+       )
+       RETURNING id`,
+      [
+        row.brokerId, row.type, row.amount, row.note, row.reference,
+        JSON.stringify(row.meta ?? {}), row.createdBy ?? null,
+      ],
+    )
+    await q(`RELEASE SAVEPOINT credit_ledger_once`)
+    return inserted.length > 0
+  } catch (err) {
+    await q(`ROLLBACK TO SAVEPOINT credit_ledger_once`).catch(() => {})
+    if (isUniqueViolation(err)) return false
+    throw err
+  }
+}
+
+/** Create-if-missing then lock the broker's account row. Returns false when the
+ *  row cannot be locked — no lock means no serialisation, so callers fail closed
+ *  rather than authorise a spend against an unprotected balance. */
+async function lockAccount(q: TxQuery, brokerId: string): Promise<boolean> {
+  await q(
+    `INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
+     VALUES ($1, 'Starter', 0)
+     ON CONFLICT (broker_id) DO NOTHING`,
+    [brokerId],
+  )
+  const locked = await q<{ broker_id: string }>(
+    `SELECT broker_id FROM broker_credit_accounts WHERE broker_id = $1 FOR UPDATE`,
+    [brokerId],
+  )
+  return locked.length > 0
+}
+
+/** Re-derive the authoritative balance from the ledger, under the caller's lock. */
+async function lockedBalance(q: TxQuery, brokerId: string): Promise<number> {
+  const rows = await q<{ balance: number }>(
+    `SELECT ${BALANCE_SUM('')} AS balance FROM credit_ledger WHERE broker_id = $1`,
+    [brokerId],
+  )
+  return rows[0]?.balance ?? 0
+}
+
+export type DeductFailure = 'insufficient' | 'invalid' | 'error'
 
 export async function deductCreditsForCampaign(
   brokerId: string,
   campaignId: string,
   campaignName: string,
   credits: number
-): Promise<{ ok: boolean; newBalance?: number; reason?: 'insufficient'; balance?: number }> {
+): Promise<{ ok: boolean; newBalance?: number; reason?: DeductFailure; balance?: number; alreadyCharged?: boolean }> {
+  // A non-integer, negative, NaN or absurd amount never reaches the ledger. A
+  // negative "spend" would ADD credits (the balance formula negates spends), and
+  // a float would be silently rounded by the INTEGER column.
+  if (!brokerId || !campaignId) return { ok: false, reason: 'invalid' }
+  if (!isValidCreditAmount(credits)) return { ok: false, reason: 'invalid' }
   try {
     await ensureCreditsSchema()
-    // Ensure the account row exists so it can be locked inside the transaction.
-    await query(`
-      INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
-      VALUES ($1, 'Starter', 0)
-      ON CONFLICT (broker_id) DO NOTHING
-    `, [brokerId])
 
-    // Atomic debit: lock the broker's account row, re-derive the balance from the
-    // ledger under that lock, and only insert the 'spend' when it stays >= 0. Two
-    // concurrent launches for the same broker now serialize on the row lock, so a
-    // broker can never overspend by racing (fail-closed on money).
+    // Atomic debit: create+lock the broker's account row, re-derive the balance
+    // from the ledger under that lock, and only insert the 'spend' when it stays
+    // >= 0. Two concurrent launches for the same broker serialise on the row
+    // lock, so a broker can never overspend by racing (fail-closed on money).
+    // The account upsert is INSIDE the transaction — done outside it, a missing
+    // row made `FOR UPDATE` match zero rows and take no lock at all.
     const result = await withTransaction(async (q) => {
-      await q(
-        `SELECT broker_id FROM broker_credit_accounts WHERE broker_id = $1 FOR UPDATE`,
-        [brokerId],
-      )
-      const balRows = await q<{ balance: number }>(
-        `SELECT COALESCE(SUM(CASE
-            WHEN type = 'allocation' THEN  amount
-            WHEN type = 'spend'      THEN -amount
-            WHEN type = 'refund'     THEN  amount
-            WHEN type = 'adjustment' THEN  amount
-            WHEN type = 'earn'       THEN  amount
-            ELSE 0
-          END), 0)::integer AS balance
-         FROM credit_ledger WHERE broker_id = $1`,
-        [brokerId],
-      )
-      const bal = balRows[0]?.balance ?? 0
-      if (credits > 0 && bal < credits) {
+      if (!await lockAccount(q, brokerId)) {
+        return { ok: false as const, reason: 'error' as const }
+      }
+      const bal = await lockedBalance(q, brokerId)
+      if (bal < credits) {
         return { ok: false as const, reason: 'insufficient' as const, balance: bal }
       }
+      // Idempotent per reservation reference: a retried launch with the same
+      // reference re-uses the debit already booked instead of charging twice.
+      const booked = await insertLedgerOnce(q, {
+        brokerId,
+        type: 'spend',
+        amount: credits,
+        note: `Campaign: ${campaignName}`,
+        reference: campaignId,
+        meta: { campaign_id: campaignId },
+      })
+      if (!booked) {
+        return { ok: true as const, newBalance: bal, alreadyCharged: true as const }
+      }
+      // The credits left the balance at launch, so the allocation row records
+      // them as spent — not merely allocated. Finance and agent analytics read
+      // `credits_spent`, which stayed 0 forever and reported AED 0 of ad spend.
       await q(
-        `INSERT INTO credit_ledger (broker_id, type, amount, note, meta)
-         VALUES ($1, 'spend', $2, $3, $4)`,
-        [brokerId, credits, `Campaign: ${campaignName}`, JSON.stringify({ campaign_id: campaignId })],
-      )
-      await q(
-        `INSERT INTO ad_spend_allocations (broker_id, campaign_id, campaign_name, credits_allocated)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO ad_spend_allocations
+           (broker_id, campaign_id, campaign_name, credits_allocated, credits_spent)
+         VALUES ($1, $2, $3, $4, $4)
          ON CONFLICT DO NOTHING`,
         [brokerId, campaignId, campaignName, credits],
       )
       return { ok: true as const, newBalance: bal - credits }
     })
 
-    if (result.ok) {
+    if (result.ok && !result.alreadyCharged) {
       // Low-balance warning (threshold 20) — best-effort, never blocks the spend.
-      const remaining = result.newBalance
+      const remaining = result.newBalance ?? 0
       if (remaining > 0 && remaining <= 20) {
         await notifyBrokerLowCredits(brokerId, remaining).catch(() => {})
       }
     }
     return result
   } catch {
-    return { ok: false }
+    return { ok: false, reason: 'error' }
   }
 }
 
@@ -224,6 +426,10 @@ export async function deductCreditsForCampaign(
  * on success we rewrite that placeholder to the true campaign id — keeping the
  * ledger note and the allocations list pointing at the live campaign. Best-effort
  * and cosmetic: the balance math never depends on the campaign id.
+ *
+ * `credit_ledger.reference` deliberately keeps the reservation id — it is the
+ * idempotency key of the debit, and rewriting it would let a retry charge again.
+ * Re-running this is a no-op (the second pass matches nothing).
  */
 export async function settleCampaignReservation(
   brokerId: string,
@@ -246,24 +452,47 @@ export async function settleCampaignReservation(
   } catch { /* Non-fatal — reconciliation is cosmetic; the debit already stands. */ }
 }
 
-/** Return credits to a broker — reverses a deduction when a campaign launch
- *  fails after the spend was recorded. */
+/**
+ * Return credits to a broker — reverses a deduction when a campaign launch fails
+ * after the spend was recorded.
+ *
+ * Idempotent per (broker, campaign reference): a retried release, or a webhook
+ * firing twice, credits exactly once. The refunded campaign's allocation row is
+ * cancelled in the same breath, otherwise Finance keeps reporting AED of ad
+ * spend for a campaign that never served.
+ */
 export async function refundCredits(
   brokerId: string,
   campaignId: string,
   credits: number,
   note = 'Refund: campaign launch failed'
-): Promise<{ ok: boolean }> {
-  if (!brokerId || credits <= 0) return { ok: true }
+): Promise<{ ok: boolean; reason?: 'invalid' | 'error'; alreadyRefunded?: boolean }> {
+  if (!brokerId || !campaignId) return { ok: false, reason: 'invalid' }
+  if (!isValidCreditAmount(credits)) return { ok: false, reason: 'invalid' }
   try {
     await ensureCreditsSchema()
-    await query(`
-      INSERT INTO credit_ledger (broker_id, type, amount, note, meta)
-      VALUES ($1, 'refund', $2, $3, $4)
-    `, [brokerId, credits, note, JSON.stringify({ campaign_id: campaignId })])
-    return { ok: true }
+    return await withTransaction(async (q) => {
+      // Same row lock as the debit path: every ledger mutation for a broker
+      // serialises on their account row, so the idempotency check cannot race.
+      if (!await lockAccount(q, brokerId)) return { ok: false as const, reason: 'error' as const }
+      const credited = await insertLedgerOnce(q, {
+        brokerId,
+        type: 'refund',
+        amount: credits,
+        note,
+        reference: campaignId,
+        meta: { campaign_id: campaignId },
+      })
+      await q(
+        `UPDATE ad_spend_allocations
+         SET status = 'cancelled', credits_spent = 0, updated_at = now()
+         WHERE broker_id = $1 AND campaign_id = $2 AND status <> 'cancelled'`,
+        [brokerId, campaignId],
+      )
+      return credited ? { ok: true } : { ok: true, alreadyRefunded: true }
+    })
   } catch {
-    return { ok: false }
+    return { ok: false, reason: 'error' }
   }
 }
 
@@ -272,66 +501,72 @@ export async function allocateCredits(
   amount: number,
   note: string,
   allocatedBy: string
-): Promise<{ ok: boolean }> {
+): Promise<{ ok: boolean; reason?: 'invalid' | 'error' }> {
+  if (!brokerId) return { ok: false, reason: 'invalid' }
+  if (!isValidCreditAmount(amount)) return { ok: false, reason: 'invalid' }
   try {
     await ensureCreditsSchema()
-    await query(`
-      INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
-      VALUES ($1, 'Starter', $2)
-      ON CONFLICT (broker_id) DO UPDATE SET
-        allocated = broker_credit_accounts.allocated + $2,
-        updated_at = now()
-    `, [brokerId, amount])
-    await query(`
-      INSERT INTO credit_ledger (broker_id, type, amount, note, created_by)
-      VALUES ($1, 'allocation', $2, $3, $4)
-    `, [brokerId, amount, note, allocatedBy])
+    // One transaction: the quota bump and the ledger row are the same fact. Run
+    // as two statements, a failed ledger insert left `allocated` inflated while
+    // the balance never moved — the UI then showed "0 of 25 used" forever.
+    await withTransaction(async (q) => {
+      await q(
+        `INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
+         VALUES ($1, 'Starter', $2)
+         ON CONFLICT (broker_id) DO UPDATE SET
+           allocated = broker_credit_accounts.allocated + $2,
+           updated_at = now()`,
+        [brokerId, amount],
+      )
+      await q(
+        `INSERT INTO credit_ledger (broker_id, type, amount, note, created_by)
+         VALUES ($1, 'allocation', $2, $3, $4)`,
+        [brokerId, amount, note, allocatedBy],
+      )
+    })
     return { ok: true }
-  } catch { return { ok: false } }
+  } catch { return { ok: false, reason: 'error' } }
 }
 
 /**
  * Performance earn: credit a broker for a finally-approved/closed deal.
  * Rule: 1 credit per AED 1,000 of broker net commission, minimum 1.
- * Idempotent — the deal id is stored in `reference`, and a second call for the
- * same deal + broker is a no-op.
+ *
+ * Idempotent at the DATABASE, not just in application logic: the deal id is the
+ * ledger `reference`, and the insert is a single conditional statement guarded
+ * by a unique index. The previous read-then-insert could double-earn — approve
+ * and close firing together, or a double-clicked approval, both saw "no row yet".
  */
 export async function earnCreditsForDeal(
   brokerId: string,
   dealId: string,
   dealName: string,
   brokerTotalAED: number
-): Promise<{ ok: boolean; credits?: number; skipped?: 'already_earned' }> {
-  if (!brokerId || !dealId) return { ok: false }
+): Promise<{ ok: boolean; credits?: number; skipped?: 'already_earned'; reason?: 'error' }> {
+  if (!brokerId || !dealId) return { ok: false, reason: 'error' }
   try {
     await ensureCreditsSchema()
-    const existing = await query<{ id: string }>(
-      `SELECT id FROM credit_ledger
-       WHERE broker_id = $1 AND type = 'earn' AND reference = $2
-       LIMIT 1`,
-      [brokerId, dealId]
-    )
-    if (existing[0]) return { ok: true, skipped: 'already_earned' }
-    // Ensure the account row exists so the balances view picks the broker up.
-    await query(`
-      INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
-      VALUES ($1, 'Starter', 0)
-      ON CONFLICT (broker_id) DO NOTHING
-    `, [brokerId])
     const credits = creditsEarnedForCommission(brokerTotalAED)
-    await query(`
-      INSERT INTO credit_ledger (broker_id, type, amount, note, reference, meta)
-      VALUES ($1, 'earn', $2, $3, $4, $5)
-    `, [
-      brokerId,
-      credits,
-      `Deal earned: ${dealName}`,
-      dealId,
-      JSON.stringify({ deal_id: dealId, broker_total_aed: brokerTotalAED }),
-    ])
-    return { ok: true, credits }
+    if (!isValidCreditAmount(credits)) return { ok: false, reason: 'error' }
+    return await withTransaction(async (q) => {
+      // Creates the account row (so the balances view picks the broker up) AND
+      // locks it, so two approvals landing together cannot both pass the
+      // "already earned?" check.
+      if (!await lockAccount(q, brokerId)) return { ok: false as const, reason: 'error' as const }
+      const earned = await insertLedgerOnce(q, {
+        brokerId,
+        type: 'earn',
+        amount: credits,
+        note: `Deal earned: ${dealName}`,
+        reference: dealId,
+        meta: { deal_id: dealId, broker_total_aed: brokerTotalAED },
+      })
+      return earned
+        ? { ok: true as const, credits }
+        : { ok: true as const, skipped: 'already_earned' as const }
+    })
   } catch {
-    return { ok: false }
+    return { ok: false, reason: 'error' }
   }
 }
 
@@ -339,8 +574,8 @@ export async function earnCreditsForDeal(
 export async function setBrokerTier(
   brokerId: string,
   tier: CreditTier
-): Promise<{ ok: boolean }> {
-  if (!brokerId) return { ok: false }
+): Promise<{ ok: boolean; reason?: 'invalid' | 'error' }> {
+  if (!brokerId) return { ok: false, reason: 'invalid' }
   try {
     await ensureCreditsSchema()
     await query(`
@@ -351,7 +586,7 @@ export async function setBrokerTier(
         updated_at = now()
     `, [brokerId, tier])
     return { ok: true }
-  } catch { return { ok: false } }
+  } catch { return { ok: false, reason: 'error' } }
 }
 
 /**

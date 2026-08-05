@@ -28,6 +28,8 @@ export async function PATCH(req: Request) {
   }
 
   const result = await setBrokerTier(body.brokerId, body.tier)
-  if (!result.ok) return NextResponse.json({ error: 'Tier update failed' }, { status: 500 })
+  if (!result.ok) {
+    return NextResponse.json({ error: 'The tier was not saved. Please try again.' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true, brokerId: body.brokerId, tier: body.tier })
 }

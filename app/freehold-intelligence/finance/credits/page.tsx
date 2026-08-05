@@ -3,7 +3,10 @@
 import { useCallback, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Plus, Minus, CheckCircle, Trophy, Users, Zap, Coins, ArrowUpRight, Loader2 } from 'lucide-react'
+import {
+  Plus, Minus, CheckCircle, Trophy, Users, Zap, Coins, ArrowUpRight, Loader2,
+  History, ChevronDown, ChevronRight,
+} from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { CREDIT_TIERS, TIER_MONTHLY_QUOTA, type CreditTier } from '@/lib/freehold/credits-shared'
 import { useT } from '@/lib/i18n/provider'
@@ -18,6 +21,23 @@ type BrokerBalance = {
   balance: number
   earned: number
   cycle_end: string | null
+}
+
+type LedgerEntry = {
+  id: string
+  type: 'allocation' | 'spend' | 'refund' | 'adjustment' | 'earn'
+  amount: number
+  note: string | null
+  created_by: string | null
+  created_at: string
+}
+
+const LEDGER_LABEL_KEY: Record<LedgerEntry['type'], string> = {
+  allocation: 'finance.credits.ledgerAllocation',
+  spend: 'finance.credits.ledgerSpend',
+  refund: 'finance.credits.ledgerRefund',
+  adjustment: 'finance.credits.ledgerAdjustment',
+  earn: 'finance.credits.ledgerEarn',
 }
 
 const TIER_COLOR: Record<CreditTier, string> = {
@@ -36,6 +56,9 @@ export default function AgentCreditsPage() {
   const [loading, setLoading]         = useState(true)
   const [saved, setSaved]             = useState<string[]>([])
   const [adjustments, setAdjustments] = useState<Record<string, number>>({})
+  const [openLedger, setOpenLedger]   = useState<string | null>(null)
+  const [ledgers, setLedgers]         = useState<Record<string, LedgerEntry[]>>({})
+  const [ledgerLoading, setLedgerLoading] = useState<string | null>(null)
 
   const loadBalances = useCallback(async () => {
     const res = await fetch('/api/freehold/credits/admin/balances').catch(() => null)
@@ -55,6 +78,28 @@ export default function AgentCreditsPage() {
   useEffect(() => {
     loadBalances().finally(() => setLoading(false))
   }, [loadBalances])
+
+  // Drill-down: the real ledger behind a broker's balance. Fetched on demand and
+  // re-fetched after every allocation, so what Finance reads is what the ledger
+  // says — never a locally patched number.
+  const loadLedger = useCallback(async (id: string) => {
+    setLedgerLoading(id)
+    const res = await fetch(`/api/freehold/credits/admin/ledger?brokerId=${encodeURIComponent(id)}`, { cache: 'no-store' }).catch(() => null)
+    const data = res?.ok ? await res.json().catch(() => null) : null
+    if (!data || !Array.isArray(data.ledger)) {
+      toast.error(t('finance.credits.ledgerLoadFailed'))
+      setLedgerLoading(null)
+      return
+    }
+    setLedgers((prev) => ({ ...prev, [id]: data.ledger as LedgerEntry[] }))
+    setLedgerLoading(null)
+  }, [t])
+
+  function toggleLedger(id: string) {
+    if (openLedger === id) { setOpenLedger(null); return }
+    setOpenLedger(id)
+    if (!ledgers[id]) loadLedger(id)
+  }
 
   function markSaved(id: string) {
     setSaved((prev) => [...prev, id])
@@ -85,6 +130,7 @@ export default function AgentCreditsPage() {
     }
     setAdjustments((prev) => ({ ...prev, [id]: 0 }))
     await loadBalances()
+    if (openLedger === id) await loadLedger(id)
     markSaved(id)
   }
 
@@ -268,6 +314,59 @@ export default function AgentCreditsPage() {
                 </div>
 
               </div>
+
+              {/* Ledger drill-down — the real movements behind the balance */}
+              <button
+                type="button"
+                onClick={() => toggleLedger(agent.id)}
+                aria-expanded={openLedger === agent.id}
+                className="mt-4 flex items-center gap-1.5 text-[11px] font-medium text-slate-400 transition hover:text-slate-200"
+              >
+                {openLedger === agent.id ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                <History className="h-3.5 w-3.5" />
+                {openLedger === agent.id ? t('finance.credits.hideLedger') : t('finance.credits.viewLedger')}
+              </button>
+
+              {openLedger === agent.id && (
+                <div className="mt-2 rounded-[10px] border border-line bg-surface-2/50">
+                  {ledgerLoading === agent.id ? (
+                    <div className="flex items-center justify-center gap-2 px-4 py-5 text-xs text-slate-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('finance.credits.ledgerLoading')}
+                    </div>
+                  ) : (ledgers[agent.id]?.length ?? 0) === 0 ? (
+                    <div className="px-4 py-5 text-center text-xs text-slate-500">{t('finance.credits.ledgerEmpty')}</div>
+                  ) : (
+                    <>
+                      {(ledgers[agent.id] ?? []).map((entry, i) => {
+                        const isDebit = entry.type === 'spend'
+                        const signed  = isDebit ? -Math.abs(entry.amount) : entry.amount
+                        return (
+                          <div key={entry.id} className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-medium text-slate-200">
+                                {t(LEDGER_LABEL_KEY[entry.type] ?? 'finance.credits.ledgerAdjustment')}
+                              </div>
+                              {entry.note && <div className="mt-0.5 truncate text-[11px] text-slate-500">{entry.note}</div>}
+                            </div>
+                            <div className="shrink-0 text-end">
+                              <div className={`text-xs font-semibold tabular-nums ${isDebit ? 'text-red-400' : 'text-emerald-400'}`}>
+                                {signed > 0 ? `+${signed.toLocaleString()}` : signed.toLocaleString()}
+                              </div>
+                              <div className="mt-0.5 text-[10px] text-slate-500">
+                                {new Date(entry.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}
+                                {entry.created_by ? ` · ${entry.created_by}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <div className="border-t border-line px-4 py-2 text-[10px] text-slate-500">
+                        {t('finance.credits.ledgerFooter', { count: (ledgers[agent.id] ?? []).length })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
