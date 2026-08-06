@@ -170,6 +170,16 @@ export function wouldResetLearning(fromAed: number, toAed: number): boolean {
  *  safe. */
 export function safeBudgetStep(fromAed: number, targetAed: number): number {
   if (!wouldResetLearning(fromAed, targetAed)) return Math.round(targetAed)
-  const direction = targetAed > fromAed ? 1 : -1
-  return Math.round(fromAed * (1 + direction * LEARNING_RESET_BUDGET_CHANGE))
+  const up = targetAed > fromAed
+  // ROUND TOWARDS THE CURRENT BUDGET, never away from it. Math.round would
+  // cross the very threshold this function exists to respect: from 288, a
+  // rounded +20% is 346, which is 20.14% — a reset, produced by the guard
+  // against resets. Flooring a raise and ceiling a cut keeps the result inside
+  // the bound at every budget, at a cost of at most one dirham.
+  const bound = fromAed * (1 + (up ? 1 : -1) * LEARNING_RESET_BUDGET_CHANGE)
+  const stepped = up ? Math.floor(bound) : Math.ceil(bound)
+  // A budget so small that a whole-dirham step cannot move it without
+  // tripping the bound stays where it is. Returning `fromAed` means "no safe
+  // step exists", and callers already treat a non-increase as nothing to do.
+  return wouldResetLearning(fromAed, stepped) ? Math.round(fromAed) : stepped
 }

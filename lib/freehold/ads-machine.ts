@@ -44,6 +44,11 @@ export type ActivityKind =
   /** A trial's creative is worn out (high frequency). Reported, never
    *  auto-swapped — replacing a known winner's ad is a human decision. */
   | 'creative_fatigue'
+  /** A trial is buying inventory nobody else bid for — a placement that takes
+   *  real spend and converts provably worse than the rest of the campaign, or
+   *  one that is cropping the creative. Reported, never auto-excluded:
+   *  narrowing placements changes what a live campaign buys. */
+  | 'placement_drain'
   | 'error'
 
 async function ensure(): Promise<void> {

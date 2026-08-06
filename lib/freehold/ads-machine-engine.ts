@@ -36,6 +36,7 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 import {
   launchFullCampaign,
   getCampaignInsights,
+  getCampaignInsightsByPlacement,
   listAdSets,
   updateAdSet,
   updateCampaignStatus as metaUpdateCampaignStatus,
@@ -59,6 +60,9 @@ import {
 import { GoogleConfigError, type GoogleCampaign } from '@/lib/google/types'
 import { getCampaignQuality, badPhone, QUALIFIED_STATUSES } from '@/lib/freehold/campaign-quality'
 import { MIN_ATTRIBUTED_FOR_QUALITY } from '@/lib/freehold/min-evidence'
+import { samePace, SIGNIFICANT_P } from '@/lib/freehold/inventory-quality'
+import { safeBudgetStep } from '@/lib/freehold/learning-phase'
+import { auditPlacements } from '@/lib/freehold/placement-audit'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { createLocalCampaign } from '@/lib/google/local-store'
 import {
@@ -1041,25 +1045,47 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       const spendGated = (s: TrialState) => s.spendAed >= SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed
 
-      // (C) CPL-condemned vs best sibling — both sides need ≥3 leads for the
-      // ratio to mean anything, and both must be measured the SAME way.
-      //   · same channel  → native basis (identical on both sides, timelier)
-      //   · cross channel → CRM-attributed, the only shared basis
-      // Comparing Meta-reported against CRM-attributed condemned Google trials
-      // for being measured more conservatively, not for performing worse.
+      // (C) CPL-condemned vs best sibling. Both sides must be measured the
+      // SAME way — same channel uses the native basis, cross channel uses
+      // CRM-attributed, the only shared one. Comparing Meta-reported against
+      // CRM-attributed would condemn Google trials for being counted more
+      // conservatively rather than for performing worse.
+      //
+      // TWO CONDITIONS, AND THE FIRST USED TO BE MISSING. A 1.5x CPL gap on
+      // three leads a side is a coin flip: p ≈ 0.64. Measured against real
+      // numbers, a 2x gap needs about TWENTY leads a side before it means
+      // anything, and this branch was pausing trials at three. So the ratio is
+      // now the second test, not the only one:
+      //
+      //   1. STATISTICALLY REAL — the two lead rates differ at p < 0.05 on the
+      //      exact conditional test, so the gap is unlikely to be chance.
+      //   2. MATERIALLY REAL — and it is at least 1.5x, because a significant
+      //      5% difference is true and not worth pausing a campaign over.
+      //
+      // Significance alone would eventually condemn on trivial gaps at high
+      // volume; the ratio alone condemns on noise at low volume. Both, and the
+      // branch fires when a human would agree with it.
       const cplCondemnedBy = (s: TrialState): 'native' | 'attributed' | null => {
         if (!spendGated(s) || isProtected(s)) return null
+
+        const beatenBy = (
+          myLeads: number, mySpend: number, myCpl: number,
+          siblings: Array<{ leads: number; spend: number; cpl: number }>,
+        ) => siblings.some((o) =>
+          myCpl > CPL_CONDEMN_MULTIPLIER * o.cpl &&
+          samePace(myLeads, mySpend, o.leads, o.spend) < SIGNIFICANT_P)
+
         if (s.cplAed !== null && s.leads >= MIN_LEADS_FOR_CPL) {
           const same = group
             .filter((o) => o !== s && o.row.channel === s.row.channel && o.cplAed !== null && o.leads >= MIN_LEADS_FOR_CPL)
-            .map((o) => o.cplAed as number)
-          if (same.length && s.cplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...same)) return 'native'
+            .map((o) => ({ leads: o.leads, spend: o.spendAed, cpl: o.cplAed as number }))
+          if (beatenBy(s.leads, s.spendAed, s.cplAed, same)) return 'native'
         }
         if (s.attributedCplAed !== null && s.attributed >= MIN_LEADS_FOR_CPL) {
           const cross = group
             .filter((o) => o !== s && o.row.channel !== s.row.channel && o.attributedCplAed !== null && o.attributed >= MIN_LEADS_FOR_CPL)
-            .map((o) => o.attributedCplAed as number)
-          if (cross.length && s.attributedCplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...cross)) return 'attributed'
+            .map((o) => ({ leads: o.attributed, spend: o.spendAed, cpl: o.attributedCplAed as number }))
+          if (beatenBy(s.attributed, s.spendAed, s.attributedCplAed, cross)) return 'attributed'
         }
         return null
       }
@@ -1424,7 +1450,18 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       ))
       if (increase < MIN_GROW_AED) continue
 
-      const newBudget = proven.row.dailyBudgetAed + increase
+      // NEVER RESET THE WINNER'S LEARNING. Meta restarts the learning phase on
+      // a budget change past ~20%, so a +50% raise throws a trial that has
+      // just proven itself back into erratic delivery — the machine would be
+      // punishing the arm it is trying to reward. Step to the largest raise
+      // that stays under the threshold; the next cycle continues the climb.
+      const wanted = proven.row.dailyBudgetAed + increase
+      const newBudget = safeBudgetStep(proven.row.dailyBudgetAed, wanted)
+      // The clamp can land the actual raise below the floor that `increase`
+      // already cleared, so it is re-checked against what will REALLY be
+      // applied rather than against what was wanted.
+      const applied = newBudget - proven.row.dailyBudgetAed
+      if (applied < MIN_GROW_AED) continue
       try {
         if (proven.row.channel === 'google') {
           await googleUpdateCampaignBudget(proven.row.campaignId, newBudget)
@@ -1440,7 +1477,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           kind: 'budget_shift',
           detail: `Scaled "${proven.row.trialLabel}" (${projectSlug}, ${proven.row.channel}) from AED ${proven.row.dailyBudgetAed} to AED ${newBudget}/day using idle cap headroom — nothing was paused to fund this. Evidence: CPL AED ${proven.cplAed!.toFixed(0)} on ${proven.leads} ${proven.leadBasis === 'meta-reported' ? 'Meta-reported' : 'CRM-attributed'} lead(s), spend AED ${Math.round(proven.spendAed)}${proven.qualityScore !== null ? `, CRM quality ${proven.qualityScore}` : ''}. Ceiling for this trial is AED ${ceiling}/day (${GROW_MAX_PLAN_MULTIPLE}× the planned AED ${planned}).`,
           campaignId: proven.row.campaignId,
-          data: { projectSlug, amountAed: increase, fromAed: proven.row.dailyBudgetAed, toAed: newBudget, ceilingAed: ceiling, reason: 'grow_on_evidence' },
+          data: { projectSlug, amountAed: applied, wantedAed: increase, fromAed: proven.row.dailyBudgetAed, toAed: newBudget, ceilingAed: ceiling, reason: 'grow_on_evidence' },
         })
         result.budgetShifts.push(proven.row.campaignId)
       } catch (e) {
@@ -1485,6 +1522,39 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   // rescue. The machine has evidence that a refresh is needed; it has none
   // about whether any particular replacement is better. So it says so and
   // leaves the swap to a human with the Creative Suite.
+  // WHERE THE TRIAL'S MONEY ACTUALLY WENT. A trial can be 80% Audience Network
+  // and the machine would see one blended cost per lead — an audience judged
+  // on inventory it never chose. The placement breakdown is the only way to
+  // tell "this audience is weak" apart from "most of these impressions went
+  // somewhere nobody else bid for", and those need opposite responses.
+  //
+  // Only spend-gated trials are probed: an extra Graph call per trial is worth
+  // it once real money has gone through, and pointless before. Reported, never
+  // auto-excluded — narrowing placements changes what a live campaign buys,
+  // and that stays a human decision like every other spend change here.
+  if (machine.status === 'running') {
+    for (const s of states) {
+      if (s.row.status !== 'active' || s.row.channel !== 'meta') continue
+      if (s.spendAed < SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed) continue
+      const rows = await getCampaignInsightsByPlacement(s.row.campaignId).catch(() => [])
+      if (rows.length === 0) continue
+      const audit = auditPlacements(rows)
+      if (audit.cut.length === 0) continue
+      await logActivity({
+        machineId,
+        kind: 'placement_drain',
+        detail: `"${s.row.trialLabel}" (${s.row.projectSlug}): ${audit.headline} ${audit.cut.map((c) => c.sentence).join(' ')} ${audit.recommendation}`,
+        campaignId: s.row.campaignId,
+        data: {
+          projectSlug: s.row.projectSlug,
+          reason: 'placement_drain',
+          offPlatformImpressionShare: audit.offPlatformImpressionShare,
+          cut: audit.cut.map((c) => ({ id: c.id, spendShare: c.spendShare, verdict: c.verdict })),
+        },
+      })
+    }
+  }
+
   if (machine.status === 'running') {
     for (const s of states) {
       if (s.row.status !== 'active' || s.frequency === null) continue

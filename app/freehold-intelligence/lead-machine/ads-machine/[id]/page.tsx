@@ -115,6 +115,7 @@ const KIND_META: Record<ActivityKind, { Icon: typeof Rocket; color: string; bg: 
   delivery_blocked:      { Icon: EyeOff,         color: 'text-orange-300', bg: 'bg-orange-400/10', labelKey: 'lm.machine.kind.delivery_blocked' },
   machine_stalled:       { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.machine_stalled' },
   creative_fatigue:      { Icon: RefreshCw,      color: 'text-violet-300', bg: 'bg-violet-400/10', labelKey: 'lm.machine.kind.creative_fatigue' },
+  placement_drain:       { Icon: AlertTriangle,  color: 'text-amber-300',  bg: 'bg-amber-400/10',  labelKey: 'lm.machine.kind.placement_drain' },
   error:                 { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.error' },
   google_draft_prepared: { Icon: FileText,       color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.google_draft_prepared' },
   planned:               { Icon: ListChecks,     color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.planned' },
