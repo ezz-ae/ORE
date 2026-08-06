@@ -258,7 +258,7 @@ export interface DimensionRow {
   won: boolean
 }
 
-export type Dimension = 'behavior' | 'interest' | 'placement' | 'creative'
+export type Dimension = 'behavior' | 'interest' | 'placement' | 'creative' | 'destination'
 
 export function tablesFor(rows: DimensionRow[], kind: Dimension): AttributeCounts[] {
   const names = new Map<string, string>()
@@ -286,6 +286,9 @@ export interface EventRelevance {
   interest: RelevanceReport
   placement: RelevanceReport
   creative: RelevanceReport
+  /** Where the ad sent them. Usually the largest effect of the five, and the
+   *  one nothing recorded until the snapshot started carrying it. */
+  destination: RelevanceReport
 }
 
 export interface EventRow {
@@ -293,6 +296,7 @@ export interface EventRow {
   interestIds: string[]; interestNames: string[]
   placements: string[]
   creatives: string[]; creativeNames: string[]
+  destinations: string[]
   won: boolean
 }
 
@@ -304,6 +308,7 @@ export function assessEvents(rows: EventRow[], minLeads = MIN_LEADS_WITH_ATTRIBU
     interest: dim((r) => r.interestIds, (r) => r.interestNames, 'interest'),
     placement: dim((r) => r.placements, (r) => r.placements, 'placement'),
     creative: dim((r) => r.creatives, (r) => r.creativeNames, 'creative'),
+    destination: dim((r) => r.destinations, (r) => r.destinations, 'destination'),
   }
 }
 

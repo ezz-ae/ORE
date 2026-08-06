@@ -24,7 +24,7 @@ type Signal = {
 type Report = { signals: Signal[]; relevant: Signal[]; counter: Signal[]; undecided: Signal[]; tooRare: number; headline: string; nextTest: string }
 type Relevance = {
   events: number
-  all: { behavior: Report; interest: Report; placement: Report; creative: Report }
+  all: { behavior: Report; interest: Report; placement: Report; creative: Report; destination: Report }
   solo: { events: number; behavior: Report }
   note: string
 }
@@ -174,6 +174,9 @@ export default function AudienceLabPage() {
           <div className="space-y-3">
             <p className="text-xs leading-relaxed text-slate-400">{t('lab.rel.events', { n: rel.events })} {rel.note}</p>
             <div className="grid gap-3 md:grid-cols-2">
+              {/* Destination first: it is usually the largest of the five, and
+                  it is the one an operator can change today. */}
+              <Dimension title={t('lab.dim.destination')} report={rel.all.destination} />
               <Dimension title={t('lab.dim.behavior')} report={rel.all.behavior} />
               <Dimension title={t('lab.dim.interest')} report={rel.all.interest} />
               <Dimension title={t('lab.dim.placement')} report={rel.all.placement} />

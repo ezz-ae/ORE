@@ -35,7 +35,7 @@ const MAX_CACHE = 200
 const targetingCache = new Map<string, CampaignTargeting | null>()
 const creativeCache = new Map<string, Map<string, CreativeCopy>>()
 
-interface CreativeCopy { headline: string | null; body: string | null; image: string | null }
+interface CreativeCopy { headline: string | null; body: string | null; image: string | null; destination: string | null }
 
 function remember<T>(cache: Map<string, T>, key: string, value: T): T {
   if (cache.size >= MAX_CACHE) {
@@ -72,6 +72,10 @@ async function creativeFor(campaignId: string, adId: string): Promise<CreativeCo
           headline: ad.creative?.headline || null,
           body: ad.creative?.primaryText || null,
           image: ad.creative?.imageUrl || null,
+          // Where the ad actually sends people. Read from the live ad rather
+          // than from the plan, for the same reason targeting is: a human can
+          // repoint an ad at a landing page and the plan would not know.
+          destination: ad.destination || null,
         })
       }
     } catch { /* leave the map empty — no creative is better than a wrong one */ }
@@ -113,6 +117,7 @@ export async function captureForLead(req: CaptureRequest): Promise<boolean> {
       targeting,
       creative,
       placement: req.placement ?? null,
+      destination: creative?.destination ?? null,
     })
   } catch {
     return false

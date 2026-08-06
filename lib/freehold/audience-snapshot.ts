@@ -51,6 +51,11 @@ export interface AudienceSnapshot {
   creativeHeadline: string | null
   creativeBody: string | null
   creativeImage: string | null
+  /** Where the ad SENT them: instant form, landing page, WhatsApp, call.
+   *  The highest-leverage variable in the account and, until now, the one
+   *  nothing recorded — it was decided by `leadFormId ? 'form' : 'landing'`
+   *  and never compared against its alternative. */
+  destination: string | null
   /** The surface it was seen on, e.g. 'feed', 'instagram_stories'. Meta's
    *  {{placement}} URL macro, so it exists for landing-page leads and NOT for
    *  instant-form leads — there is no landing URL to carry it. Null means
@@ -80,6 +85,7 @@ async function ensureTable(): Promise<void> {
         creative_body  text,
         creative_image text,
         placement      text,
+        destination    text,
         captured_at    timestamptz NOT NULL DEFAULT now()
       )
     `)
@@ -131,6 +137,8 @@ export interface CaptureInput {
    *  leads — those have no URL, and guessing one would invent the fact this
    *  whole table exists to record. */
   placement?: string | null
+  /** 'form' | 'landing' | 'whatsapp' | 'phone', read from the ad. */
+  destination?: string | null
 }
 
 /**
@@ -152,8 +160,8 @@ export async function captureAudienceSnapshot(input: CaptureInput): Promise<bool
       `INSERT INTO freehold_lead_audience_snapshot
          (lead_id, campaign_id, adset_id, interest_ids, interest_names,
           behavior_ids, behavior_names, age_min, age_max, countries, languages, platforms,
-          ad_id, creative_headline, creative_body, creative_image, placement)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+          ad_id, creative_headline, creative_body, creative_image, placement, destination)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
        ON CONFLICT (lead_id) DO NOTHING`,
       [
         input.leadId, input.campaignId || null, input.adsetId || null,
@@ -164,6 +172,7 @@ export async function captureAudienceSnapshot(input: CaptureInput): Promise<bool
         input.creative?.headline || null, input.creative?.body || null, input.creative?.image || null,
         // Normalised so 'Feed' and 'feed' are one surface, not two.
         input.placement ? String(input.placement).trim().toLowerCase() : null,
+        input.destination ? String(input.destination).trim().toLowerCase() : null,
       ],
     )
     return true
@@ -213,6 +222,7 @@ export interface SnapshotOutcomeRow {
   placements: string[]
   creatives: string[]
   creativeNames: string[]
+  destinations: string[]
   won: boolean
 }
 
@@ -228,9 +238,10 @@ export async function snapshotOutcomes(): Promise<SnapshotOutcomeRow[]> {
       lead_id: string; behavior_ids: string[]; behavior_names: string[]
       interest_ids: string[]; interest_names: string[]; status: string | null
       placement: string | null; ad_id: string | null; creative_headline: string | null
+      destination: string | null
     }>(
       `SELECT s.lead_id, s.behavior_ids, s.behavior_names, s.interest_ids, s.interest_names,
-              s.placement, s.ad_id, s.creative_headline, l.status
+              s.placement, s.ad_id, s.creative_headline, s.destination, l.status
          FROM freehold_lead_audience_snapshot s
          JOIN freehold_site_leads l ON l.id = s.lead_id
         WHERE l.archived IS NOT TRUE`,
@@ -246,6 +257,7 @@ export async function snapshotOutcomes(): Promise<SnapshotOutcomeRow[]> {
       // The headline is what a human recognises an ad by; the id is what makes
       // it unique. Falling back to the id keeps an unnamed creative countable.
       creativeNames: r.ad_id ? [r.creative_headline || r.ad_id] : [],
+      destinations: r.destination ? [r.destination] : [],
       won: !!r.status && PROGRESSED.includes(r.status),
     }))
   } catch {

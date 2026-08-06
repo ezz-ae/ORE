@@ -28,7 +28,7 @@ const near = (a: number, b: number, tol = 1e-4) => Math.abs(a - b) <= tol
 
 const row = (o: Partial<EventRow>): EventRow => ({
   behaviorIds: [], behaviorNames: [], interestIds: [], interestNames: [],
-  placements: [], creatives: [], creativeNames: [], won: false, ...o,
+  placements: [], creatives: [], creativeNames: [], destinations: [], won: false, ...o,
 })
 
 console.log('\n── Fisher\'s exact test, against published values ──')
@@ -171,6 +171,8 @@ console.log('\n── every dimension of the registration event ──')
     e.creative.counter.some((s) => s.value === 'Lifestyle'), e.creative.headline)
   check('interests with no data produce an empty report',
     e.interest.signals.length === 0, e.interest.headline)
+  check('destination with no data produces an empty report',
+    e.destination.signals.length === 0, e.destination.headline)
 }
 
 console.log('\n── confounding is bounded, and the clean subset is reachable ──')
