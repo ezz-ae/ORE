@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Save, Scissors, Captions, Megaphone, Camera,
-  ArrowUpToLine, ArrowDownToLine, Info, Download, Upload, FileVideo, Wand2,
+  ArrowUpToLine, ArrowDownToLine, Info, Download, Upload, FileVideo, Wand2, AlertTriangle,
 } from 'lucide-react'
 import { upload } from '@vercel/blob/client'
 import { useT } from '@/lib/i18n/provider'
@@ -17,7 +17,7 @@ import {
   transferStatus, trimSamples, formatBytes, formatRate, formatEta,
   type ProgressSample, type TransferStatus,
 } from '@/lib/freehold/upload-progress'
-import { planCompress, probeVideo, compressVideo, type CompressPlan } from '@/lib/freehold/video-compress'
+import { planCompress, probeVideo, compressVideo, looksLikeVideo, type CompressPlan } from '@/lib/freehold/video-compress'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LibRow = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
@@ -141,6 +141,9 @@ export default function DriveVideoEditor() {
   const [compressing, setCompressing] = useState(false)
   const [compressPct, setCompressPct] = useState(0)
   const compressAbort = useRef<AbortController | null>(null)
+  // null = not asked yet. false means the capability is genuinely missing, and
+  // the screen says so instead of letting someone pick a file and fail late.
+  const [uploadReady, setUploadReady] = useState<boolean | null>(null)
   const [dropping, setDropping] = useState(false)
   const [saving, setSaving] = useState(false)
   const [capturing, setCapturing] = useState(false)
@@ -562,6 +565,15 @@ export default function DriveVideoEditor() {
   // ── Upload (source clip) ──────────────────────────────────────────────────────
   // A video can't start blank, so the "new" editor is an upload surface: the
   // clip goes straight to Blob, becomes a Library video, then opens the editor.
+  useEffect(() => {
+    let alive = true
+    fetch('/api/freehold/drive/upload-video', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { configured: false }))
+      .then((d) => { if (alive) setUploadReady(d?.configured !== false) })
+      .catch(() => { if (alive) setUploadReady(null) }) // unknown ≠ broken
+    return () => { alive = false }
+  }, [])
+
   /**
    * Pick a file. Before anything is sent, the clip is measured locally and —
    * if compressing would actually help — the offer is made with real numbers.
@@ -570,7 +582,10 @@ export default function DriveVideoEditor() {
    */
   async function onVideoFile(file: File) {
     if (uploading || compressing) return
-    if (!file.type.startsWith('video/')) { toast.error(t('ed.video.uploadInvalid')); return }
+    // NOT `file.type.startsWith('video/')`: browsers hand back an empty mime
+    // for .mov and .mkv, and for files from some Android pickers and cloud
+    // drives — that check refused perfectly good footage outright.
+    if (!looksLikeVideo(file)) { toast.error(t('ed.video.uploadInvalid')); return }
     setPending(file)
     setPlan(null)
     try {
@@ -585,8 +600,11 @@ export default function DriveVideoEditor() {
         return // the offer is rendered; the user chooses
       }
     } catch {
-      // Unreadable metadata is not a reason to block an upload the server may
-      // well accept — fall through and let the real attempt decide.
+      // Unreadable — or unreadable IN TIME. Either way it is not a reason to
+      // block an upload the server may well accept, and it must never be a
+      // reason to do nothing at all: this catch is the path a clip takes when
+      // the browser cannot decode its container, which is common for iPhone
+      // .mov footage in Chrome. Falling through is the whole point.
     }
     void startUpload(file)
   }
@@ -655,7 +673,11 @@ export default function DriveVideoEditor() {
       if (!res.ok || !d.item?.id) { toast.error(d.error || t('ed.video.uploadFailed')); return }
       router.replace(`/freehold-intelligence/creative-studio/video/${d.item.id}`)
     } catch (e) {
-      toast.error(e instanceof Error && e.message ? e.message : t('ed.video.uploadFailed'))
+      // The provider's own words, not a shrug — "failed to retrieve the client
+      // token" at least points at configuration, where "upload failed" points
+      // nowhere.
+      const detail = e instanceof Error && e.message ? e.message : ''
+      toast.error(detail ? `${t('ed.video.uploadFailed')} — ${detail}` : t('ed.video.uploadFailed'))
     } finally { setUploading(false); setProgress(null) }
   }
 
@@ -784,6 +806,17 @@ export default function DriveVideoEditor() {
     // ── Choose a file ──
     return (
       <div className="mx-auto flex h-[calc(100vh-56px)] w-full max-w-md flex-col items-center justify-center p-6">
+        {/* Named up front. Picking a file and waiting, only to be told the
+            provider could not issue a token, tells nobody what to do. */}
+        {uploadReady === false && (
+          <div className="mb-4 flex w-full items-start gap-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <div className="min-w-0 text-sm">
+              <div className="font-medium text-amber-100">{t('ed.video.notConfigured')}</div>
+              <p className="mt-0.5 text-xs leading-relaxed text-amber-200/80">{t('ed.video.notConfiguredBody')}</p>
+            </div>
+          </div>
+        )}
         <div
           onDragOver={(e) => { e.preventDefault(); setDropping(true) }}
           onDragLeave={() => setDropping(false)}

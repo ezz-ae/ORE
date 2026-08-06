@@ -83,23 +83,77 @@ export function planCompress(input: CompressPlanInput): CompressPlan {
   return { width, height, bitsPerSecond: bitrate, estimatedBytes, estimatedSecs: duration, worthDoing }
 }
 
-/** Read a local file's dimensions and duration without uploading it. */
+/**
+ * How long to wait for a browser to admit it can read a file.
+ *
+ * This exists because of a real hang: a video element handed a container the
+ * browser cannot decode — an iPhone .mov carrying HEVC, opened in Chrome —
+ * fires NEITHER `loadedmetadata` NOR `error`. It simply sits there. A promise
+ * awaiting those events never settles, and everything downstream stops with no
+ * message and nothing on screen: "the video is not uploading."
+ */
+const PROBE_TIMEOUT_MS = 8_000
+
+/**
+ * Read a local file's dimensions and duration without uploading it.
+ *
+ * Always settles. A file this browser cannot decode is a fact worth having
+ * quickly — it does not mean the file is bad, only that we cannot measure it
+ * here, and the upload must still be allowed to proceed.
+ */
 export function probeVideo(file: File): Promise<{ width: number; height: number; duration: number }> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
     const v = document.createElement('video')
     v.preload = 'metadata'
     v.muted = true
-    const done = (fn: () => void) => { URL.revokeObjectURL(url); fn() }
-    v.onloadedmetadata = () => done(() =>
+
+    let settled = false
+    const finish = (fn: () => void) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timer)
+      URL.revokeObjectURL(url)
+      // Detach the source, or the element keeps decoding a file nobody wants.
+      v.removeAttribute('src')
+      try { v.load() } catch { /* nothing to abort */ }
+      fn()
+    }
+
+    const timer = window.setTimeout(
+      () => finish(() => reject(new Error('Could not read that video’s details in time'))),
+      PROBE_TIMEOUT_MS,
+    )
+
+    v.onloadedmetadata = () => finish(() =>
       resolve({
         width: v.videoWidth || 0,
         height: v.videoHeight || 0,
         duration: Number.isFinite(v.duration) ? v.duration : 0,
       }))
-    v.onerror = () => done(() => reject(new Error('That file could not be read as a video')))
+    v.onerror = () => finish(() => reject(new Error('That file could not be read as a video')))
     v.src = url
   })
+}
+
+/** Extensions that are video even when the browser reports no mime at all. */
+const VIDEO_EXT = /\.(mp4|m4v|mov|webm|mkv|avi|3gp|mpe?g|ogv|wmv|flv|ts)$/i
+
+/**
+ * Is this a video the app should accept?
+ *
+ * `file.type` is NOT reliable. Browsers routinely hand back an empty string for
+ * .mov and .mkv, and for files arriving from some Android pickers, network
+ * shares and cloud drives. Refusing on that alone rejects perfectly good
+ * footage with "that is not a video" — so the extension gets a say, and when
+ * neither is conclusive the server is left to decide rather than the browser
+ * guessing on the user's behalf.
+ */
+export function looksLikeVideo(file: File): boolean {
+  if (file.type.toLowerCase().startsWith('video/')) return true
+  if (VIDEO_EXT.test(file.name)) return true
+  // A mime that clearly names something else (an image, a PDF) is a real no.
+  return file.type.trim() === ''
 }
 
 export interface CompressResult {

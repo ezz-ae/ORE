@@ -12,7 +12,7 @@ import {
   transferStatus, trimSamples, formatBytes, formatRate, formatEta, WINDOW_MS,
   type ProgressSample,
 } from '../lib/freehold/upload-progress'
-import { planCompress } from '../lib/freehold/video-compress'
+import { planCompress, looksLikeVideo } from '../lib/freehold/video-compress'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -115,6 +115,26 @@ console.log('\n── compression is only offered when it helps ──')
   const zero = planCompress({ sourceWidth: 0, sourceHeight: 0, durationSecs: 0, sourceBytes: 0 })
   check('degenerate input cannot produce a zero canvas', zero.width >= 2 && zero.height >= 2,
     `${zero.width}×${zero.height}`)
+}
+
+console.log('\n── what counts as a video ──')
+{
+  // The bug: `file.type.startsWith('video/')` refused perfectly good footage.
+  // Browsers routinely report an EMPTY mime for .mov and .mkv, and for files
+  // arriving from Android pickers, network shares and cloud drives.
+  const f = (name: string, type: string) => ({ name, type } as File)
+  check('a normal mp4 passes', looksLikeVideo(f('clip.mp4', 'video/mp4')))
+  check('a .mov with NO mime still passes', looksLikeVideo(f('IMG_4021.MOV', '')),
+    'this is the iPhone case that was being rejected')
+  check('.mkv with no mime passes', looksLikeVideo(f('a.mkv', '')))
+  check('.m4v passes', looksLikeVideo(f('a.m4v', '')))
+  check('uppercase extensions pass', looksLikeVideo(f('CLIP.MP4', '')))
+  check('an unknown extension with no mime is left to the server',
+    looksLikeVideo(f('recording.bin', '')))
+  // But something that clearly announces itself as another kind is a real no.
+  check('an image is refused', !looksLikeVideo(f('hero.png', 'image/png')))
+  check('a PDF is refused', !looksLikeVideo(f('brochure.pdf', 'application/pdf')))
+  check('a spreadsheet is refused', !looksLikeVideo(f('leads.csv', 'text/csv')))
 }
 
 if (failures > 0) {
