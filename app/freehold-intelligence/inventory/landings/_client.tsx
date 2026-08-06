@@ -10,7 +10,7 @@ import {
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
-import { PdfToListing } from '@/components/freehold/pdf-to-listing'
+import { CreateLandingChooser } from '@/components/freehold/create-landing-chooser'
 import { LANDING_TEMPLATES, type LandingTemplateKey } from '@/lib/landing-templates'
 
 type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
@@ -141,19 +141,16 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                 </span>
               )}
             </Link>
-            <button
-              data-coach="lm-landing-create"
-              onClick={bulkCreate}
-              disabled={bulkCreating || missing === 0}
-              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-gold-bright disabled:opacity-60"
-            >
-              {bulkCreating ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.landings.creatingAll')}</>
-              ) : (
-                <><Plus className="h-3.5 w-3.5" /> {t('lm.landings.createAll')}</>
-              )}
-            </button>
-            <PdfToListing />
+            {/* One Create, which asks what you are making and then takes you
+                there. The two buttons this replaces both failed the same way:
+                "Create all missing" was disabled with no explanation when
+                nothing was missing, and "Create from brochure" made a PROJECT
+                on a Landing Pages screen and then did nothing visible. */}
+            <CreateLandingChooser
+              missingCount={missing}
+              onCreateAllMissing={bulkCreate}
+              creatingAll={bulkCreating}
+            />
           </div>
         }
         className="mb-7"
