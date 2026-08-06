@@ -115,7 +115,10 @@ export function formatBytes(n: number): string {
  */
 export async function encodeGif(
   plan: GifPlan,
-  draw: (ctx: CanvasRenderingContext2D, t: number, w: number, h: number) => void,
+  // May be async: a video source has to be SEEKED to the frame time before it
+  // can be drawn, and drawing whatever frame happened to be showing would
+  // produce a GIF that is not the clip.
+  draw: (ctx: CanvasRenderingContext2D, t: number, w: number, h: number) => void | Promise<void>,
   onProgress?: (done: number, total: number) => void,
 ): Promise<Blob> {
   const { GIFEncoder, quantize, applyPalette } = await import('gifenc')
@@ -130,7 +133,7 @@ export async function encodeGif(
   const step = plan.coveredSecs / plan.frames
 
   for (let i = 0; i < plan.frames; i++) {
-    draw(ctx, i * step, plan.width, plan.height)
+    await draw(ctx, i * step, plan.width, plan.height)
     const { data } = ctx.getImageData(0, 0, plan.width, plan.height)
     const palette = quantize(data, 256)
     const index = applyPalette(data, palette)

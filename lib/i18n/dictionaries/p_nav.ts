@@ -3,7 +3,7 @@ import type { Locale } from '../config'
 // Navigation namespace (p_nav). Two families of keys:
 //
 //   nav.*    — the All-tools popup chrome and the global search box.
-//   tools.*  — one label per entry in lib/freehold/tools.ts (125 tools + 10
+//   tools.*  — one label per entry in lib/freehold/tools.ts (126 tools + 10
 //              group headings). Looked up dynamically as t(tool.labelKey), so
 //              the i18n audit's literal-key check does not see them; EN/AR/RU
 //              parity is what keeps them honest.
@@ -106,6 +106,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.drive.media': 'Media',
     'tools.drive.editor': 'Editor',
     'tools.drive.create': 'Create something',
+    'tools.drive.convert': 'Convert a file',
     'tools.drive.adDesigner': 'Ad Designer',
     'tools.drive.reel': 'Reel maker',
     'tools.drive.web': 'Web pages',
@@ -282,6 +283,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.drive.media': 'الوسائط',
     'tools.drive.editor': 'المحرّر',
     'tools.drive.create': 'أنشئ شيئًا',
+    'tools.drive.convert': 'تحويل ملف',
     'tools.drive.adDesigner': 'مصمّم الإعلانات',
     'tools.drive.reel': 'صانع الريلز',
     'tools.drive.web': 'صفحات الويب',
@@ -458,6 +460,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.drive.media': 'Медиа',
     'tools.drive.editor': 'Редактор',
     'tools.drive.create': 'Создать',
+    'tools.drive.convert': 'Конвертировать файл',
     'tools.drive.adDesigner': 'Дизайнер рекламы',
     'tools.drive.reel': 'Создание Reels',
     'tools.drive.web': 'Веб-страницы',

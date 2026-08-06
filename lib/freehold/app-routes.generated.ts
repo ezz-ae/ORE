@@ -70,6 +70,7 @@ export const APP_ROUTES: readonly string[] = [
   "/freehold-intelligence/crm/reports",
   "/freehold-intelligence/drive",
   "/freehold-intelligence/drive/ad-designer",
+  "/freehold-intelligence/drive/convert",
   "/freehold-intelligence/drive/create",
   "/freehold-intelligence/drive/editor",
   "/freehold-intelligence/drive/editor/doc/*",
