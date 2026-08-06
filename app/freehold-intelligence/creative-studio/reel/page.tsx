@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { upload } from '@vercel/blob/client'
 import {
   Loader2, Upload, FolderOpen, Play, Pause, Download, Save, Trash2,
-  Clapperboard, Sparkles, GripVertical,
+  Clapperboard, Sparkles, GripVertical, Image as ImageIcon,
 } from 'lucide-react'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-projects'
@@ -17,6 +17,8 @@ import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
 import { SUITE_LANGS, type SuiteLang } from '@/lib/freehold/creative-suite'
 import { drawReelFrame, reelDuration, reelPoster, REEL_DEFAULTS, REEL_FPS, type ReelOptions } from '@/lib/freehold/reel-compose'
 import { pickRecorderMime } from '@/lib/freehold/video-export'
+import { planGif, encodeGif, formatBytes } from '@/lib/freehold/gif-encode'
+import { saveBlob, safeFileName } from '@/lib/freehold/bundle'
 
 /**
  * PHOTO REEL — the motion tool of the Creative Suite.
@@ -49,6 +51,8 @@ export default function ReelMakerPage() {
 
   const [playing, setPlaying] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [gifBusy, setGifBusy] = useState(false)
+  const [gifPct, setGifPct] = useState(0)
   const [exportPct, setExportPct] = useState(0)
   const [saving, setSaving] = useState(false)
 
@@ -373,6 +377,47 @@ export default function ReelMakerPage() {
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }
 
+  // ── GIF ────────────────────────────────────────────────────────────────────
+  // Same frames as the reel, sampled: Meta takes GIF for ad creative, and a GIF
+  // plays inline where a video will not — a WhatsApp broadcast, an email, a
+  // portal that refuses MP4. Drawn through the SAME drawReelFrame, scaled down,
+  // so a GIF and a reel from one listing are one piece of work at two lengths.
+  async function downloadGif() {
+    if (!canRender || gifBusy) return
+    const { w: W, h: H } = FORMATS[format]
+    const plan = planGif({ sourceWidth: W, sourceHeight: H, durationSecs: duration })
+    setGifBusy(true)
+    setGifPct(0)
+    try {
+      await ensureAdFonts()
+      const blob = await encodeGif(
+        plan,
+        (ctx, t, w, h) => {
+          // drawReelFrame always composes at the format's native size, so the
+          // context is scaled rather than the design being re-laid out.
+          ctx.save()
+          ctx.clearRect(0, 0, w, h)
+          ctx.scale(w / W, h / H)
+          drawReelFrame(ctx, t, opts)
+          ctx.restore()
+        },
+        (done, total) => setGifPct(Math.round((done / total) * 100)),
+      )
+      saveBlob(blob, `${safeFileName(overlay.headline || 'reel')}-${format}.gif`)
+      // Say what actually came out — a GIF that quietly dropped half the reel
+      // is the kind of thing you only notice after sending it to a client.
+      toast.success(
+        plan.truncated
+          ? t('reel.gif.doneShort', { secs: plan.coveredSecs.toFixed(1), size: formatBytes(blob.size) })
+          : t('reel.gif.done', { size: formatBytes(blob.size) }),
+      )
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('reel.gif.failed'))
+    } finally {
+      setGifBusy(false)
+    }
+  }
+
   async function saveReel() {
     if (saving) return
     const out = await renderToBlob()
@@ -579,6 +624,25 @@ export default function ReelMakerPage() {
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
           {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} {t('reel.download')}
         </button>
+        {/* GIF — a smaller, looping cut of the same reel. The estimated size is
+            shown BEFORE the wait, because a GIF is big and the encode is slow. */}
+        <button type="button" onClick={downloadGif} disabled={!canRender || exporting || gifBusy}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+          {gifBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
+          {gifBusy ? t('reel.gif.working', { pct: gifPct }) : t('reel.gif.download')}
+        </button>
+        {canRender && !gifBusy && (
+          <p className="-mt-1 text-center text-[10px] text-slate-500">
+            {(() => {
+              const plan = planGif({ sourceWidth: FORMATS[format].w, sourceHeight: FORMATS[format].h, durationSecs: duration })
+              return t(plan.truncated ? 'reel.gif.hintShort' : 'reel.gif.hint', {
+                w: plan.width, h: plan.height,
+                secs: plan.coveredSecs.toFixed(1),
+                size: formatBytes(plan.estimatedBytes),
+              })
+            })()}
+          </p>
+        )}
         <button type="button" onClick={saveReel} disabled={!canRender || exporting || saving}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('reel.save')}
