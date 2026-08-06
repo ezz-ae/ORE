@@ -22,6 +22,7 @@ import { buildZip, saveBlob, safeFileName } from '@/lib/freehold/bundle'
 import { CreativeGallery, type GalleryItem } from '@/components/freehold/creative-gallery'
 import {
   PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts, fitHeadline,
+  isPayLayout, missingPayFields,
   type LayoutKey, type FormatKey, type Overlay,
 } from '@/lib/freehold/ad-compose'
 
@@ -802,15 +803,55 @@ export default function AdDesignerPage() {
         <div className="flex flex-wrap gap-1.5">
           {LAYOUTS.map((l) => {
             const on = layoutsOn.has(l)
+            // A payment layout with no payment numbers renders an ad with a
+            // blank where the price belongs — which looks finished and goes
+            // out. It stays unselectable until the fields exist, and the
+            // tooltip names which are missing rather than just refusing.
+            const gaps = missingPayFields(l, overlay)
+            const blocked = gaps.length > 0
             return (
-              <button key={l} type="button"
+              <button key={l} type="button" disabled={blocked}
+                title={blocked ? t('adz.pay.needs', { fields: gaps.map((g) => t(`adz.pay.f.${g}`)).join(', ') }) : undefined}
                 onClick={() => setLayoutsOn((prev) => { const n = new Set(prev); if (n.has(l)) { if (n.size > 1) n.delete(l) } else n.add(l); return n })}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                  blocked ? 'border-line text-slate-600 opacity-50'
+                  : on ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line text-slate-400 hover:text-slate-200'}`}>
                 {t(`adz.layout.${l}`)}
               </button>
             )
           })}
         </div>
+
+        {/* The payment-plan fields. Shown together, because these ads sell on
+            terms and a half-filled one is the failure mode. */}
+        <details className="mt-3 rounded-lg border border-line bg-surface-2/40 px-3 py-2">
+          <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            {t('adz.pay.section')}
+          </summary>
+          <div className="mt-2.5 space-y-2">
+            {([
+              ['financeHook', 'adz.pay.f.financeHook', '80% on handover · bank finance over 25 years'],
+              ['totalPrice', 'adz.pay.f.totalPrice', '2,830,000'],
+              ['totalLabel', 'adz.pay.f.totalLabel', 'Total price'],
+              ['downPct', 'adz.pay.f.downPct', '20%'],
+              ['downLabel', 'adz.pay.f.downLabel', 'down payment'],
+              ['returnvalue', 'adz.pay.f.returnValue', '75,000'],
+              ['returnLabel', 'adz.pay.f.returnLabel', 'Annual return'],
+              ['terms', 'adz.pay.f.terms', 'Balance on handover or by mortgage'],
+            ] as const).map(([key, labelKey, ph]) => (
+              <label key={key} className="block">
+                <span className="mb-1 block text-[10px] text-slate-500">{t(labelKey)}</span>
+                <input
+                  value={(overlay[key] as string | undefined) ?? ''}
+                  onChange={(e) => setOverlay((prev) => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={ph}
+                  className="w-full rounded-md border border-line bg-surface px-2 py-1.5 text-xs text-white placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
+                />
+              </label>
+            ))}
+          </div>
+        </details>
         <div className="mb-2 mt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('adz.opt.palettes')}</div>
         <div className="flex flex-wrap gap-2">
           {PALETTES.map((p, pi) => {

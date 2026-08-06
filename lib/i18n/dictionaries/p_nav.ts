@@ -3,7 +3,7 @@ import type { Locale } from '../config'
 // Navigation namespace (p_nav). Two families of keys:
 //
 //   nav.*    — the All-tools popup chrome and the global search box.
-//   tools.*  — one label per entry in lib/freehold/tools.ts (127 tools + 10
+//   tools.*  — one label per entry in lib/freehold/tools.ts (130 tools + 10
 //              group headings). Looked up dynamically as t(tool.labelKey), so
 //              the i18n audit's literal-key check does not see them; EN/AR/RU
 //              parity is what keeps them honest.
@@ -72,6 +72,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.ads.creatives': 'Creatives',
     'tools.ads.generate': 'Generate creative',
     'tools.ads.forms': 'Lead forms',
+    'tools.ads.formNew': 'Build a lead form',
     'tools.ads.audiences': 'Audiences',
     'tools.ads.targeting': 'Targeting',
     'tools.ads.pixel': 'Pixel & events',
@@ -85,6 +86,8 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.ads.liveGoogle': 'Google — live',
     'tools.google.campaigns': 'Google campaigns',
     'tools.google.ads': 'Google ads',
+    'tools.google.adsGen': 'Generate Google ad copy',
+    'tools.google.campNew': 'New Google campaign',
     'tools.google.keywords': 'Keywords',
     'tools.google.audiences': 'Google audiences',
     'tools.google.extensions': 'Assets & extensions',
@@ -250,6 +253,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.ads.creatives': 'التصاميم',
     'tools.ads.generate': 'توليد تصميم',
     'tools.ads.forms': 'نماذج العملاء',
+    'tools.ads.formNew': 'إنشاء نموذج عملاء',
     'tools.ads.audiences': 'الجماهير',
     'tools.ads.targeting': 'الاستهداف',
     'tools.ads.pixel': 'البكسل والأحداث',
@@ -263,6 +267,8 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.ads.liveGoogle': 'جوجل — مباشر',
     'tools.google.campaigns': 'حملات جوجل',
     'tools.google.ads': 'إعلانات جوجل',
+    'tools.google.adsGen': 'توليد نص إعلان جوجل',
+    'tools.google.campNew': 'حملة جوجل جديدة',
     'tools.google.keywords': 'الكلمات المفتاحية',
     'tools.google.audiences': 'جماهير جوجل',
     'tools.google.extensions': 'الأصول والإضافات',
@@ -428,6 +434,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.ads.creatives': 'Креативы',
     'tools.ads.generate': 'Создать креатив',
     'tools.ads.forms': 'Формы лидов',
+    'tools.ads.formNew': 'Создать форму лида',
     'tools.ads.audiences': 'Аудитории',
     'tools.ads.targeting': 'Таргетинг',
     'tools.ads.pixel': 'Пиксель и события',
@@ -441,6 +448,8 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.ads.liveGoogle': 'Google — сейчас',
     'tools.google.campaigns': 'Кампании Google',
     'tools.google.ads': 'Объявления Google',
+    'tools.google.adsGen': 'Сгенерировать текст объявления',
+    'tools.google.campNew': 'Новая кампания Google',
     'tools.google.keywords': 'Ключевые слова',
     'tools.google.audiences': 'Аудитории Google',
     'tools.google.extensions': 'Ассеты и расширения',

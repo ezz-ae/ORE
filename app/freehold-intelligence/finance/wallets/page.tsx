@@ -33,7 +33,15 @@ interface LedgerRow {
   actor: string | null; createdAt: string
 }
 interface Audit { ledgerNet: number; drifted: { walletId: string }[]; healthy: boolean }
-interface Payload { wallets: Wallet[]; postings: LedgerRow[]; position: TreasuryPosition; audit: Audit }
+interface CoinRequest {
+  id: string; walletId: string; amount: number; reason: string
+  state: 'pending' | 'approved' | 'declined'; requestedBy: string
+  decidedBy: string | null; createdAt: string
+}
+interface Payload {
+  wallets: Wallet[]; postings: LedgerRow[]; position: TreasuryPosition
+  audit: Audit; requests: CoinRequest[]
+}
 
 const coins = (n: number) => n.toLocaleString()
 
@@ -61,6 +69,23 @@ export default function WalletsPage() {
     setLoading(false)
   }, [])
   useEffect(() => { void refresh() }, [refresh])
+
+  /** Approve or decline. Approving IS the transfer — see decideRequest. */
+  async function decide(id: string, approve: boolean) {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/freehold/finance/wallets', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, approve, fromWalletId }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(d?.error ?? `${res.status}`)
+      toast.success(approve ? t('bank.req.approved') : t('bank.req.declined'))
+      await refresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('bank.err.failed'))
+    } finally { setBusy(false) }
+  }
 
   async function send(action: 'issue' | 'transfer') {
     const n = Number(amount)
@@ -139,6 +164,47 @@ export default function WalletsPage() {
         <StatCard label={t('bank.inUse')}     value={pos ? coins(pos.inUse) : '—'}         hint={t('bank.inUseHint')}     Icon={ArrowRightLeft} />
         <StatCard label={t('bank.undist')}    value={pos ? coins(pos.undistributed) : '—'} hint={t('bank.undistHint')}    Icon={Landmark} />
       </div>
+
+      {/* Requests — a top-up someone asked for, and what was decided. Without
+          this, funding a broker means a message somebody has to remember. */}
+      {(data?.requests?.length ?? 0) > 0 && (
+        <section className="mb-5">
+          <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            {t('bank.requests')}
+          </h2>
+          <Panel>
+            <ul className="divide-y divide-line">
+              {data!.requests.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                  <span className="text-sm font-semibold tabular-nums text-white">{coins(r.amount)}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs text-slate-300">
+                      {walletName(r.walletId)} · {r.requestedBy}
+                    </span>
+                    {r.reason && <span className="block truncate text-[11px] text-slate-600">{r.reason}</span>}
+                  </span>
+                  {r.state === 'pending' ? (
+                    <span className="flex shrink-0 gap-1.5">
+                      <button onClick={() => void decide(r.id, true)} disabled={busy}
+                        className={buttonClass('primary', 'sm')}>{t('bank.req.approve')}</button>
+                      <button onClick={() => void decide(r.id, false)} disabled={busy}
+                        className={buttonClass('ghost', 'sm')}>{t('bank.req.decline')}</button>
+                    </span>
+                  ) : (
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      r.state === 'approved'
+                        ? 'bg-emerald-400/10 text-emerald-300'
+                        : 'bg-white/[0.06] text-slate-400'
+                    }`}>
+                      {t(`bank.req.${r.state}`)}{r.decidedBy ? ` · ${r.decidedBy}` : ''}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </section>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Accounts */}
