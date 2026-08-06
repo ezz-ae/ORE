@@ -32,6 +32,8 @@ import type {
   PlacementCreativeOverride,
 } from './types'
 import { mergeLeadLanguages } from './lead-language'
+import { metaLeadCount } from './lead-count'
+import type { MetaInsightActions } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
 const API_VERSION = 'v20.0'
@@ -363,6 +365,70 @@ export async function getCampaignInsights(campaignId: string): Promise<MetaInsig
     date_preset: 'last_30d',
   })
   return res.data?.[0] ?? null
+}
+
+/** One placement's slice of a campaign's delivery. */
+export interface MetaPlacementInsight {
+  /** e.g. 'facebook', 'instagram', 'audience_network', 'messenger'. */
+  platform: string
+  /** e.g. 'feed', 'story', 'facebook_reels', 'instream_video', 'an_classic'. */
+  position: string
+  impressions: number
+  clicks: number
+  spend: number
+  leads: number
+}
+
+/**
+ * Delivery broken down by PLACEMENT — the answer to "where did the money
+ * actually go", which the campaign-level rollup cannot give.
+ *
+ * This matters for two separate reasons that look identical in a rollup:
+ *
+ *  1. Overflow inventory. Audience Network and Reels surplus are bundled into
+ *     every advertiser's delivery, and Meta will happily push a large share of
+ *     impressions there, priced in your own currency so it reads as ordinary
+ *     spend. A campaign can look fine on cost per lead while most of its
+ *     impressions went somewhere nobody else bid for.
+ *  2. Creative destruction. A 1:1 or 4:5 image placed into a 9:16 surface is
+ *     cropped, overlaid with UI chrome, or letterboxed. The ad that performs
+ *     in feed is not the ad that ran in Stories — same creative id, different
+ *     ad. Judging the creative on a blended number judges an average of two
+ *     different ads.
+ *
+ * Both are invisible above this call and both are fixable, because placements
+ * are one of the few things Meta still lets an advertiser control outright.
+ *
+ * Returns [] rather than throwing when the breakdown is unavailable, so a
+ * caller degrades to the rollup instead of losing the whole view.
+ */
+export async function getCampaignInsightsByPlacement(campaignId: string): Promise<MetaPlacementInsight[]> {
+  try {
+    const res = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/${campaignId}/insights`, undefined, {
+      fields: 'impressions,clicks,spend,actions',
+      // publisher_platform alone answers "is this Audience Network"; adding
+      // platform_position answers "is this Stories eating the creative". They
+      // are a legal breakdown pair and the second is what makes the aspect-
+      // ratio problem visible at all.
+      breakdowns: 'publisher_platform,platform_position',
+      // Same rolling window as the rollup, so the two can be compared without
+      // one of them silently covering a different span of time.
+      date_preset: 'last_30d',
+      limit: '200',
+    })
+    return (res.data ?? []).map((r) => ({
+      platform: String(r.publisher_platform ?? 'unknown'),
+      position: String(r.platform_position ?? 'unknown'),
+      impressions: Number(r.impressions) || 0,
+      clicks: Number(r.clicks) || 0,
+      spend: Number(r.spend) || 0,
+      // Same canonical lead rule as everywhere else — Meta reports one lead
+      // under several overlapping action types, and summing them multiplies it.
+      leads: metaLeadCount(r.actions as MetaInsightActions[] | undefined),
+    }))
+  } catch {
+    return []
+  }
 }
 
 /**

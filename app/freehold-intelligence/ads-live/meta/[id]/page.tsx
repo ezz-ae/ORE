@@ -17,6 +17,8 @@ type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
 type Analysis = { working: string[]; blocking: string[]; actions: string[] }
 type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number; pointValue: number | null }
+import type { PlacementAudit } from '@/lib/freehold/placement-audit'
+
 /** A rule the evidence could not decide yet — shown with its reason, so
  *  "nothing fired" never has to be taken on faith. */
 type RuleWithheld = { ruleId: string; name: string; metric: RuleMetric; reason: string }
@@ -98,6 +100,27 @@ export default function CampaignCommandPage() {
   const [rules, setRules] = useState<CampaignRule[]>([])
   const [matches, setMatches] = useState<RuleMatch[] | null>(null)
   const [withheld, setWithheld] = useState<RuleWithheld[]>([])
+
+  // WHERE THE MONEY WENT. The campaign rollup cannot distinguish "this
+  // audience is weak" from "most of these impressions went to overflow
+  // inventory" or "Stories cropped the ad" — all three read as one blended
+  // number. Placements are one of the few things Meta still lets an
+  // advertiser control outright, so the breakdown is worth its own call.
+  const [placements, setPlacements] = useState<PlacementAudit | null>(null)
+  const [placementsAvailable, setPlacementsAvailable] = useState(true)
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    fetch(`/api/freehold/ads/placements?campaignId=${encodeURIComponent(id)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return
+        setPlacements(d.audit ?? null)
+        setPlacementsAvailable(d.available !== false)
+      })
+      .catch(() => { /* panel simply does not render */ })
+    return () => { cancelled = true }
+  }, [id])
   const [checking, setChecking] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [applyingId, setApplyingId] = useState<string | null>(null)
@@ -549,6 +572,48 @@ export default function CampaignCommandPage() {
       </button>
 
       <div className={moreOpen ? '' : 'max-md:hidden'}>
+      {/* Placement truth — off-platform share, drains, cropped creative */}
+      {placements && placements.readings.length > 0 && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.place.title')}</div>
+          <p className="mt-1.5 text-sm leading-relaxed text-slate-200">{placements.headline}</p>
+          <div className="mt-3 divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-line bg-surface">
+            {placements.readings.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-xs">
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                  r.verdict === 'drain' ? 'border-red-400/30 bg-red-400/10 text-red-300'
+                  : r.verdict === 'mismatch' ? 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+                  : r.verdict === 'strong' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                  : 'border-line bg-surface-2 text-slate-500'}`}>
+                  {t(`lm.place.verdict.${r.verdict}`)}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-medium text-slate-200">{r.name}</span>
+                <span className="shrink-0 text-slate-400">{Math.round(r.impressionShare * 100)}% {t('lm.place.ofImpressions')}</span>
+                <span className="shrink-0 text-slate-400">{Math.round(r.spendShare * 100)}% {t('lm.place.ofSpend')}</span>
+                <span className="shrink-0 text-slate-500">{r.cpm !== null ? `CPM ${r.cpm.toFixed(2)}` : '—'}</span>
+                <span className="shrink-0 text-slate-300">{r.lpm !== null ? `${Math.round(r.lpm)}/M` : '—'}</span>
+              </div>
+            ))}
+          </div>
+          {placements.cut.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {placements.cut.map((r) => (
+                <li key={`cut-${r.id}`} className="text-[11px] leading-relaxed text-amber-100/85">· {r.sentence}</li>
+              ))}
+            </ul>
+          )}
+          {/* Read-only by design: excluding a placement is a real spend
+              decision and stays an explicit act in the ad set. */}
+          <p className="mt-3 text-xs leading-relaxed text-slate-400">{placements.recommendation}</p>
+        </section>
+      )}
+      {!placementsAvailable && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface-2 px-5 py-4">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.place.title')}</div>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t('lm.place.unavailable')}</p>
+        </section>
+      )}
+
       {/* Ad sets + budget steppers */}
       <section className="mt-8">
         <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.cmd.adSets')}</div>
