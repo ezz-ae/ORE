@@ -8,6 +8,8 @@ import {
 import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
 import { BRAND } from '@/lib/freehold/brand'
+import PatternBuilder from './PatternBuilder'
+import ArmPlanner from './ArmPlanner'
 
 // ─── Types mirrored from the API ──────────────────────────────────────────────
 
@@ -15,8 +17,10 @@ interface SavedAudience {
   id: string
   name: string
   description: string
-  kind: 'behavioral' | 'narrow' | 'lookalike' | 'custom_list'
-  spec: CampaignTargeting
+  kind: 'behavioral' | 'narrow' | 'lookalike' | 'custom_list' | 'pattern'
+  // Absent for pattern audiences, on purpose — the server never sends the
+  // recipe to the browser. The card describes the person instead.
+  spec?: CampaignTargeting
   uploadedCount: number
 }
 interface MetaAudienceRow {
@@ -370,6 +374,7 @@ export default function AudiencesPage() {
     narrow: t('lm.aud.kind.narrow'),
     lookalike: t('lm.aud.kind.lookalike'),
     custom_list: t('lm.aud.kind.custom_list'),
+    pattern: t('lm.aud.kind.pattern'),
   }
 
   const specSummary = (spec: CampaignTargeting) => {
@@ -400,6 +405,17 @@ export default function AudiencesPage() {
           <p className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-[12px] text-amber-300">{t('lm.aud.notConnected')}</p>
         )}
       </header>
+
+      {/* The order counter, first on the page. Describing a person is how an
+          audience should be made here; the interest-by-interest builder below
+          stays for the cases that genuinely need it. */}
+      <PatternBuilder onSaved={load} />
+
+      {/* How the budget would be split across ad sets, and why. A read, never
+          a launch — creating ad sets stays a separate, deliberate act. */}
+      {audiences.length > 0 && (
+        <ArmPlanner audiences={audiences.map((a) => ({ id: a.id, name: a.name, kind: a.kind }))} />
+      )}
 
       {/* AI best-match */}
       <section className="rounded-2xl border border-line bg-surface p-5">
@@ -477,7 +493,9 @@ export default function AudiencesPage() {
                 <p className="mt-1 text-[11px] text-slate-500">{t('lm.aud.mine.seeded').replace('{n}', a.uploadedCount.toLocaleString())}</p>
               )}
               <div className="mt-2 space-y-0.5">
-                {specSummary(a.spec).map((line) => <div key={line} className="text-[11px] text-slate-500">{line}</div>)}
+                {a.spec
+                  ? specSummary(a.spec).map((line) => <div key={line} className="text-[11px] text-slate-500">{line}</div>)
+                  : <div className="text-[11px] text-slate-500">{t('lm.aud.mine.patternHidden')}</div>}
               </div>
               <div className="mt-auto flex items-center justify-between gap-2 pt-3">
                 <Link href={useHref(a.id)} className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-black"><Rocket className="h-3 w-3" /> {t('lm.aud.mine.use')}</Link>

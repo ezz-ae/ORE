@@ -11,13 +11,37 @@
  * Pure, so the guard suite can prove the union rather than assume it.
  */
 
-/** The only languages the /lp landing pages actually serve. Narrowing to a
- *  language we cannot then show a page in buys a worse experience than no
- *  narrowing at all. */
+/** The only languages the /lp landing pages actually serve — so the only
+ *  languages an AD CAN BE WRITTEN IN. Sending someone to a page in a language
+ *  we do not publish buys a worse experience than no narrowing at all. */
 export const SUPPORTED_LEAD_LANGUAGES = ['en', 'ar', 'ru'] as const
-export type LeadLanguage = (typeof SUPPORTED_LEAD_LANGUAGES)[number]
+export type CreativeLanguage = (typeof SUPPORTED_LEAD_LANGUAGES)[number]
+
+/**
+ * WHO CAN BE SHOWN THE AD — a different question from what language it is
+ * written in, and conflating the two quietly threw away most of the reach.
+ *
+ * An Urdu speaker in Dubai reads the Arabic ad and lands on the Arabic page.
+ * A German speaker reads the Russian-language European creative. These are
+ * market facts, and they are the entire reason the audience bundles pair a
+ * creative language with additional speaker groups. Validating reach against
+ * the three PAGE languages deleted `ur`, `es`, `de`, `fr` and `it` on the way
+ * to Meta — so a bundle promising "Arabic and Urdu speakers" delivered to
+ * Arabic only, and every screen still said Urdu.
+ *
+ * Kept as a superset of the creative languages, never a replacement: an ad
+ * still has to be written in something we can publish.
+ */
+export const REACHABLE_LEAD_LANGUAGES = [
+  'en', 'ar', 'ru', 'ur', 'es', 'de', 'fr', 'it',
+] as const
+export type LeadLanguage = (typeof REACHABLE_LEAD_LANGUAGES)[number]
 
 const isSupported = (c: unknown): c is LeadLanguage =>
+  typeof c === 'string' && (REACHABLE_LEAD_LANGUAGES as readonly string[]).includes(c)
+
+/** Can an ad actually be written in this language? Reach is wider than this. */
+export const isCreativeLanguage = (c: unknown): c is CreativeLanguage =>
   typeof c === 'string' && (SUPPORTED_LEAD_LANGUAGES as readonly string[]).includes(c)
 
 /**
@@ -40,5 +64,5 @@ export function mergeLeadLanguages(...sources: (readonly unknown[] | undefined |
   }
   // Stable order so a launch's targeting is byte-identical across runs with
   // the same intent — an ad set diff should reflect a change, not a Set.
-  return SUPPORTED_LEAD_LANGUAGES.filter((c) => out.has(c))
+  return REACHABLE_LEAD_LANGUAGES.filter((c) => out.has(c))
 }

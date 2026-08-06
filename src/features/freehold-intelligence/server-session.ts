@@ -118,6 +118,11 @@ export type CRMLeadIntelligence = {
   /** One-click human 0–10 value judgment. The bottom of the scale is training
       signal (what the machine should stop buying); null = never judged. */
   valueRating?: number | null
+  /** Someone put this lead away. Both columns have existed since the schema
+      was written and neither reached the client, so every screen behaved as
+      though nobody had ever archived or blocked anything. */
+  archived?: boolean
+  blocked?: boolean
 }
 
 export type NotebookOutput = {

@@ -38,6 +38,7 @@
  * Pure — no I/O. The catalog ids are Meta's; the composition is ours.
  */
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
+import type { PositiveLevel } from '@/lib/freehold/level-arms'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE VOCABULARY. Real-estate words, not platform words.
@@ -109,10 +110,64 @@ export const emptyPattern = (name = ''): AudiencePattern => ({
   money: 'unknown', readiness: 'browsing', exclude: [], strictness: 50,
 })
 
+const RESIDENCIES: Residency[] = ['resident', 'expat', 'gcc', 'overseas']
+const SPEAKERS: SpeakerBundle[] = ['arabic', 'english', 'european']
+const LIFE_STAGES: LifeStage[] = ['single', 'couple', 'young_family', 'established_family', 'downsizing']
+const MOTIVES: Motive[] = ['first_home', 'upgrade', 'investment', 'holiday_home', 'golden_visa', 'relocation']
+const MONEYS: Money[] = ['cash', 'mortgage', 'payment_plan', 'unknown']
+const READINESSES: Readiness[] = ['browsing', 'comparing', 'ready']
+const DISQUALIFIERS: Disqualifier[] = ['renters_only', 'job_seekers', 'agents_and_brokers', 'bargain_hunters']
+
+/**
+ * Read an untrusted pattern off the wire.
+ *
+ * Unknown values are DROPPED, never coerced to a neighbour. A pattern that
+ * silently became a different person than the one described would produce an
+ * audience nobody asked for, and the describing sentence would still read
+ * correctly — the worst possible failure for a system whose whole promise is
+ * that the words mean something.
+ */
+export function parsePattern(raw: unknown): AudiencePattern {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const pick = <T extends string>(v: unknown, allowed: T[]): T[] =>
+    Array.isArray(v) ? [...new Set(v.filter((x): x is T => allowed.includes(x as T)))] : []
+  const one = <T extends string>(v: unknown, allowed: T[], dflt: T): T =>
+    allowed.includes(v as T) ? (v as T) : dflt
+  const strictness = Number(r.strictness)
+  return {
+    name: typeof r.name === 'string' ? r.name.trim().slice(0, 120) : '',
+    residency: pick(r.residency, RESIDENCIES),
+    speakers: pick(r.speakers, SPEAKERS),
+    lifeStage: pick(r.lifeStage, LIFE_STAGES),
+    motive: pick(r.motive, MOTIVES),
+    money: one(r.money, MONEYS, 'unknown'),
+    readiness: one(r.readiness, READINESSES, 'browsing'),
+    exclude: pick(r.exclude, DISQUALIFIERS),
+    strictness: Number.isFinite(strictness) ? clamp(Math.round(strictness), 0, 100) : 50,
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // THE TRANSLATION. Every entry carries WHY, because a mapping nobody can
 // argue with is a mapping nobody can improve.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * THE LEVEL SCHEMA, as the pattern traits map onto it.
+ *
+ *   1 persona   — who they are. Life stage, where they live, what they read.
+ *   2 money     — what they can pay with. Filtered before product interest
+ *                 because it is the cheaper cut: there is no point paying to
+ *                 find people interested in a villa who cannot buy one.
+ *   3 product   — why they are buying.
+ *   4 decision  — how close they are. Carried as temperature, not as targeting.
+ *   5           — experimental. Nothing maps here yet, and inventing something
+ *                 to fill it would be worse than leaving it empty.
+ */
+export const LEVEL_PERSONA: PositiveLevel = 1
+export const LEVEL_MONEY: PositiveLevel = 2
+export const LEVEL_PRODUCT: PositiveLevel = 3
+export const LEVEL_DECISION: PositiveLevel = 4
 
 interface Mapped {
   /** Meta behaviour/interest entities this trait implies. */
@@ -198,6 +253,27 @@ export const STRICT_ALL = 75
  *  a set of hints and Meta is left to find them. */
 export const STRICT_DEFINING = 30
 
+/**
+ * READINESS IS NOT AN INTEREST — it is a temperature.
+ *
+ * Nothing in Meta's catalog knows whether someone is ready to buy. Every
+ * product that claims to target "in-market" buyers is selling an interest
+ * stack that means "looked at a property page once", and the honest version of
+ * that signal is one we hold ourselves: who visited, who watched, who started
+ * a form. So readiness does not add entities. It says which ARM this pattern
+ * belongs in — and warm and hot arms need a real retargeting source, which a
+ * description of a person cannot invent.
+ *
+ * Reported rather than silently applied, because "we cannot build this until
+ * 300 people have visited" is information the operator needs before launch,
+ * not a surprise at it.
+ */
+export type Temperature = 'cold' | 'warm' | 'hot'
+
+const TEMPERATURE: Record<Readiness, Temperature> = {
+  browsing: 'cold', comparing: 'warm', ready: 'hot',
+}
+
 export interface PatternPlan {
   targeting: CampaignTargeting
   /** How many traits ended up binding. Shown as a shape, never as the list. */
@@ -206,6 +282,24 @@ export interface PatternPlan {
   hintedTraits: number
   /** Plain sentence describing the PERSON, for the operator. Never the spec. */
   describes: string
+  /** Which arm this pattern is. Prospecting, or built on people we have
+   *  already touched. */
+  temperature: Temperature
+  /** True when the pattern cannot be launched from targeting alone — it needs
+   *  a retargeting audience behind it. Warm and hot always do. */
+  needsRetargetingSource: boolean
+  /** Speaker groups asked for but not reachable, because no landing page is
+   *  written in the language their ad would be. Named, never dropped quietly:
+   *  the operator chose them and is entitled to know they did not survive. */
+  unreachable: string[]
+  /** Which level every segment sits at — the input the arm planner has always
+   *  asked for and nothing could produce. Derived from the trait that put the
+   *  segment there, never inferred from the segment itself. */
+  entityLevels: Array<{ id: string; kind: 'interest'; level: PositiveLevel }>
+  /** Segments claimed by more than one level, by name. Each one is a place the
+   *  translation is using a single Meta interest to stand for two different
+   *  things, which weakens any arm built on the boundary between them. */
+  sharedSegments: string[]
 }
 
 const uniqEntities = (xs: TargetingEntity[]): TargetingEntity[] => {
@@ -233,10 +327,15 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   const bindEverything = strictness >= STRICT_ALL
   const bindDefining = strictness >= STRICT_DEFINING
 
-  const traits: Array<{ m: Mapped; label: string }> = []
-  for (const m of p.motive) traits.push({ m: MOTIVE[m], label: m })
-  for (const l of p.lifeStage) traits.push({ m: LIFE_STAGE[l], label: l })
-  traits.push({ m: MONEY[p.money], label: p.money })
+  // Each trait carries the LEVEL it belongs to. This is the input the arm
+  // planner has always asked for and never had: nothing in the product could
+  // say which level a segment sat at, so `level-arms.ts` sat complete and
+  // unreachable. A pattern already knows — the operator chose "cash" under
+  // money and "investing" under why-they-are-buying, and that IS the schema.
+  const traits: Array<{ m: Mapped; label: string; level: PositiveLevel }> = []
+  for (const m of p.motive) traits.push({ m: MOTIVE[m], label: m, level: LEVEL_PRODUCT })
+  for (const l of p.lifeStage) traits.push({ m: LIFE_STAGE[l], label: l, level: LEVEL_PERSONA })
+  traits.push({ m: MONEY[p.money], label: p.money, level: LEVEL_MONEY })
 
   const binding: TargetingEntity[][] = []
   const hinting: TargetingEntity[] = []
@@ -259,14 +358,21 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   // stated floor rather than emit an inverted band Meta would reject.
   if (ageMin >= ageMax) ageMax = Math.min(65, ageMin + 10)
 
-  // Language: what the communities imply, intersected with what the landing
-  // page can actually serve. Narrowing to a language we cannot show a page in
-  // buys a worse experience than no narrowing.
-  // Every locale the chosen bundles reach — the creative language plus the
-  // speaker groups that read it. This is exact: locales are a real Meta field,
-  // so no part of it is inferred.
+  // Language. A bundle is only usable if the ad can be WRITTEN in its creative
+  // language — there has to be a landing page in it. When the caller says
+  // which pages exist, a bundle without one is dropped whole rather than
+  // reaching people we would then send to a page they cannot read.
+  //
+  // What it reaches is wider than what it is written in: the creative language
+  // plus the speaker groups who read that creative. Both halves are locales,
+  // a real Meta field, so none of it is inferred.
+  const usable = landingLanguages.length > 0
+    ? p.speakers.filter((b) => landingLanguages.includes(BUNDLE[b].creative))
+    : p.speakers
+  const droppedBundles = p.speakers.filter((b) => !usable.includes(b)).map((b) => BUNDLE[b].label)
+
   const langs = new Set<string>()
-  for (const b of p.speakers) {
+  for (const b of usable) {
     langs.add(BUNDLE[b].creative)
     for (const l of BUNDLE[b].alsoReach) langs.add(l)
   }
@@ -288,7 +394,50 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   }
   if (targeting.countries.length === 0) targeting.countries = ['AE']
 
-  return { targeting, boundTraits: bound, hintedTraits: hinted, describes: describePattern(p) }
+  // ── Which level each segment ended up at ────────────────────────────────
+  //
+  // SOME SEGMENTS ARE CLAIMED BY TWO LEVELS, and that is a fact about the
+  // mapping rather than a bug to hide. "Luxury goods" stands in for paying
+  // cash (level 2) AND for wanting a holiday home (level 3); "Investment"
+  // stands in for investing and for a golden visa (both level 3, so harmless).
+  // Meta has no income field in this market, so money is a proxy — and a proxy
+  // shared with a product interest is a weak one.
+  //
+  // The planner's premise is that levels are SEPARABLE: an arm adding level 3
+  // must buy different people than the arm that stopped at level 2. A segment
+  // in both cannot do that. It is assigned to the LOWER level — the cheaper
+  // cut, applied first — and reported, because a plan built on a collision
+  // nobody mentioned would read as precision it does not have.
+  const claimedBy = new Map<string, { entity: TargetingEntity; levels: Set<PositiveLevel> }>()
+  for (const { m, level } of traits) {
+    for (const e of m.entities) {
+      const seen = claimedBy.get(e.id)
+      if (seen) seen.levels.add(level)
+      else claimedBy.set(e.id, { entity: e, levels: new Set([level]) })
+    }
+  }
+  const entityLevels = Array.from(claimedBy.values()).map(({ entity, levels }) => ({
+    id: entity.id,
+    kind: 'interest' as const,
+    level: Math.min(...levels) as PositiveLevel,
+  }))
+  const sharedSegments = Array.from(claimedBy.values())
+    .filter((c) => c.levels.size > 1)
+    .map((c) => c.entity.name)
+
+  const temperature = TEMPERATURE[p.readiness] ?? 'cold'
+
+  return {
+    targeting,
+    boundTraits: bound,
+    hintedTraits: hinted,
+    describes: describePattern(p),
+    temperature,
+    needsRetargetingSource: temperature !== 'cold',
+    unreachable: droppedBundles,
+    entityLevels,
+    sharedSegments,
+  }
 }
 
 const uniqStrings = (xs: string[]) => [...new Set(xs.filter(Boolean))]

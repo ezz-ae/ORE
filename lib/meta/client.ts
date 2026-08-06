@@ -1785,7 +1785,14 @@ export async function searchAdLocales(q: string): Promise<MetaLocale[]> {
 // MANUAL QA BEFORE FIRST LIVE LAUNCH: with a connected ad account, launch with
 // a language narrowed and confirm the ad set's targeting.locales in Ads
 // Manager covers the expected variants (all "English (…)" entries, etc.).
-const LEAD_LANGUAGE_SEARCH_TERMS: Record<string, string> = { en: 'English', ar: 'Arabic', ru: 'Russian' }
+// Every language an ad can REACH, not just the three it can be written in.
+// A code missing from this table resolves to no locale at all and silently
+// stops narrowing for that language, so it must stay in step with
+// REACHABLE_LEAD_LANGUAGES — the guard suite checks that it does.
+const LEAD_LANGUAGE_SEARCH_TERMS: Record<string, string> = {
+  en: 'English', ar: 'Arabic', ru: 'Russian',
+  ur: 'Urdu', es: 'Spanish', de: 'German', fr: 'French', it: 'Italian',
+}
 // Only ever holds genuinely-resolved (non-empty) results — a language absent
 // from this cache is retried on the next call rather than treated as
 // "resolved to nothing".
