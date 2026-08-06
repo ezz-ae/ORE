@@ -26,7 +26,9 @@ import {
   assessTier, LADDER, FREQUENCY_CEILING, MIN_IMPRESSIONS_FOR_LADDER, type TierState,
 } from '../lib/freehold/lookalike-ladder'
 import {
-  coldArms, warmArms, planArms, MIN_ARM_DAILY_AED, RETARGET_WEIGHT, ARM_DOCTRINE,
+  coldArms, selectColdArms, warmArms, selectWarmArms, planArms,
+  MIN_ARM_DAILY_AED, MIN_ARM_DISTINCTION, MIN_RETARGET_AUDIENCE,
+  RETARGET_WEIGHT, ARM_DOCTRINE, type LevelEvidence,
 } from '../lib/freehold/level-arms'
 
 let failures = 0
@@ -421,6 +423,68 @@ console.log('\n── every level is an ad set, because Meta only knows MUST ─
     coldArms([1]).length === 1)
 }
 
+console.log('\n── evidence picks the arms, not the level number ──')
+{
+  // Level 4 has proven out; level 2 has not. The second arm should be
+  // persona + DECISION, skipping 2 — the schema order was about cost of
+  // filtering, and evidence beats a default whenever it exists.
+  const ev: LevelEvidence[] = [
+    { level: 2, verdict: 'undecided' },
+    { level: 3, verdict: 'undecided' },
+    { level: 4, verdict: 'relevant', lift: 3.2 },
+  ]
+  const sel = selectColdArms([1, 2, 3, 4], ev)
+  check('the second arm adds the PROVEN level, not level 2',
+    sel.arms[1].levels.join('+') === '1+4', sel.arms.map((a) => a.levels.join('+')).join(' | '))
+  check('the unproven levels still get arms, after it',
+    sel.arms.length === 4 && sel.arms[2].levels.includes(2))
+  check('the headline says it is ordered by evidence',
+    /ordered by what the funnel has proven/.test(sel.headline), sel.headline)
+  check('a proven level earns more weight than an unproven one',
+    sel.arms[1].weight > sel.arms[2].weight, `${sel.arms[1].weight} vs ${sel.arms[2].weight}`)
+  check('the proven arm cites the lift', /3.2x/.test(sel.arms[1].rationale), sel.arms[1].rationale)
+  check('an unproven arm says it exists to find out',
+    /exists to find out/.test(sel.arms[2].rationale), sel.arms[2].rationale)
+
+  // Two proven levels order by lift, strongest first.
+  const twoProven = selectColdArms([1, 2, 4], [
+    { level: 2, verdict: 'relevant', lift: 1.4 },
+    { level: 4, verdict: 'relevant', lift: 4.0 },
+  ])
+  check('the stronger proven level comes first',
+    twoProven.arms[1].levels.join('+') === '1+4',
+    twoProven.arms.map((a) => a.levels.join('+')).join(' | '))
+
+  // A COUNTER level never becomes an arm.
+  const counter = selectColdArms([1, 2, 3], [{ level: 3, verdict: 'counter', lift: 0.3 }])
+  check('a level that predicts a worse lead gets no arm',
+    !counter.arms.some((a) => a.levels.includes(3)),
+    counter.arms.map((a) => a.levels.join('+')).join(' | '))
+  check('…and is named as an exclusion candidate',
+    counter.excludeCandidates.includes(3), JSON.stringify(counter.excludeCandidates))
+  check('…with the reason spelled out',
+    /most expensive way to confirm/.test(counter.skipped.find((s) => s.level === 3)!.reason),
+    counter.skipped.find((s) => s.level === 3)!.reason)
+
+  // A level that narrows nothing would be a duplicate ad set.
+  const flat = selectColdArms([1, 2], [{ level: 2, verdict: 'relevant', lift: 9, narrowingPower: 0.01 }])
+  check('a level that removes almost nobody gets no arm, however good it looks',
+    flat.arms.length === 1, flat.arms.map((a) => a.levels.join('+')).join(' | '))
+  check('…because two arms would bid against each other',
+    /bidding against each other/.test(flat.skipped[0].reason), flat.skipped[0].reason)
+  check('a level that DOES narrow still gets its arm',
+    selectColdArms([1, 2], [{ level: 2, verdict: 'relevant', narrowingPower: MIN_ARM_DISTINCTION + 0.01 }]).arms.length === 2)
+
+  // No evidence: degrade to schema order, and SAY it is a default.
+  const blind = selectColdArms([1, 2, 3, 4])
+  check('with no evidence the arms fall back to schema order',
+    blind.arms.map((a) => a.levels.join('+')).join('|') === '1|1+2|1+2+3|1+2+3+4',
+    blind.arms.map((a) => a.levels.join('+')).join('|'))
+  check('…and the headline calls it a default, not a finding',
+    /default rather than a finding/.test(blind.headline), blind.headline)
+  check('coldArms still returns just the arms', coldArms([1, 2]).length === 2)
+}
+
 console.log('\n── weighting lives in the budget split ──')
 {
   const plan = planArms(coldArms([1, 2, 3, 4]), 1000)
@@ -470,6 +534,32 @@ console.log('\n── retargeting is its own axis ──')
     `${starter.dailyBudgetAed} vs ${deepest.dailyBudgetAed}`)
   check('the doctrine travels with the plan',
     ARM_DOCTRINE.length === 4 && ARM_DOCTRINE.some((d) => /only offers MUST/.test(d)))
+}
+
+console.log('\n── a retargeting arm is not launched before it has people ──')
+{
+  const sel = selectWarmArms([
+    { rung: 'visited', size: 4200 },
+    { rung: 'started_form', size: 90 },
+    { rung: 'engaged', size: 310 },
+  ])
+  check('only rungs above the floor become arms',
+    sel.arms.map((a) => a.rung).sort().join(',') === 'engaged,visited',
+    sel.arms.map((a) => a.rung).join(','))
+  check('the thin rung is reported, not silently dropped',
+    sel.notReady.length === 1 && sel.notReady[0].rung === 'started_form',
+    JSON.stringify(sel.notReady))
+  check('…with how many more people it needs',
+    sel.notReady[0].needs === MIN_RETARGET_AUDIENCE - 90, String(sel.notReady[0].needs))
+
+  const none = selectWarmArms([{ rung: 'visited', size: 12 }])
+  check('no rung ready means no arms', none.arms.length === 0)
+  check('…and the headline names the closest one',
+    /closest/.test(none.headline), none.headline)
+  check('an account with nothing touched says so',
+    /nothing has been touched/i.test(selectWarmArms([]).headline), selectWarmArms([]).headline)
+  check('a 40-person audience never becomes an arm',
+    selectWarmArms([{ rung: 'started_form', size: 40 }]).arms.length === 0)
 }
 
 if (failures > 0) {

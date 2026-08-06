@@ -117,16 +117,102 @@ export interface ArmPlan {
 export const MIN_ARM_DAILY_AED = 50
 
 /**
- * Build the cold arms from a level schema.
+ * What is already known about a level, BEFORE any of this runs.
  *
- * The arms are CUMULATIVE, not every combination: persona; persona + money;
- * persona + money + product; and so on. Every-combination would produce
- * fifteen arms from four levels, none of which could clear the budget floor,
- * and most of which nobody would ever read. Cumulative arms answer the
- * question actually being asked — what does each additional level buy me.
+ * Three sources, none of which costs a dirham of new spend: the relevance
+ * engine reading past registration events, the layer audit probing Meta's
+ * audience sizes, and the funnel's own profile facts. Together they answer
+ * "is this level worth an ad set" before an ad set exists.
  */
-export function coldArms(levels: PositiveLevel[]): ColdArm[] {
-  const ordered = Array.from(new Set(levels)).filter((l) => l !== 1).sort((a, b) => a - b)
+export interface LevelEvidence {
+  level: PositiveLevel
+  /** From `relevance.ts`, over the levels that have run before. */
+  verdict?: 'relevant' | 'counter' | 'undecided'
+  /** How much better leads carrying this level convert. Used only to ORDER
+   *  proven levels against each other, never to promote an unproven one. */
+  lift?: number | null
+  /** From `layer-audit.ts`: how much of the audience this level actually
+   *  removes. A level near zero here cannot make an arm that differs from the
+   *  arm above it. */
+  narrowingPower?: number | null
+}
+
+/**
+ * Below this narrowing power, an arm adding the level would be a near-copy of
+ * the arm above it — two ad sets buying the same people, bidding against each
+ * other in the same auction and splitting the learning between them. Meta
+ * calls this audience overlap; the account feels it as both arms
+ * underperforming for no visible reason.
+ */
+export const MIN_ARM_DISTINCTION = 0.05
+
+export interface ArmSelection {
+  arms: ColdArm[]
+  /** Levels deliberately not given an arm, and why. */
+  skipped: Array<{ level: PositiveLevel; reason: string }>
+  /** Levels that predict a WORSE lead — exclusion candidates, never arms. */
+  excludeCandidates: PositiveLevel[]
+  headline: string
+}
+
+/**
+ * Build the cold arms, ordered by what has been PROVEN rather than by level
+ * number.
+ *
+ * The naive version is strictly cumulative — persona, +money, +product,
+ * +decision — and it wastes the account's budget on whichever levels happen to
+ * come first in the schema. If the decision level has proven relevant and the
+ * money level has not, the right second arm is persona + DECISION. Skipping
+ * level 2 is not a violation of the order; the order was about cost of
+ * filtering, and evidence beats a default ordering every time it exists.
+ *
+ * The rules, in the order they apply:
+ *
+ *  · Level 1 is always the first arm. It is the buy.
+ *  · PROVEN levels get arms next, strongest first, whatever their number.
+ *  · UNDECIDED levels get arms after those, in schema order — they are the
+ *    exploration, and they go last because they are guesses.
+ *  · COUNTER levels get no arm at all. A level that predicts a worse lead is
+ *    an exclusion candidate, and building an arm to buy more of it would be
+ *    the most expensive possible way to confirm what we already know.
+ *  · A level that narrows almost nothing gets no arm either — it would be a
+ *    duplicate ad set competing with its own neighbour.
+ *
+ * Without evidence this degrades to the cumulative schema order, which is the
+ * right default and is described as a default rather than as a finding.
+ */
+export function coldArms(levels: PositiveLevel[], evidence: LevelEvidence[] = []): ColdArm[] {
+  return selectColdArms(levels, evidence).arms
+}
+
+export function selectColdArms(levels: PositiveLevel[], evidence: LevelEvidence[] = []): ArmSelection {
+  const byLevel = new Map(evidence.map((e) => [e.level, e]))
+  const candidates = Array.from(new Set(levels)).filter((l) => l !== 1).sort((a, b) => a - b)
+
+  const skipped: ArmSelection['skipped'] = []
+  const excludeCandidates: PositiveLevel[] = []
+  const proven: PositiveLevel[] = []
+  const undecided: PositiveLevel[] = []
+
+  for (const l of candidates) {
+    const e = byLevel.get(l)
+    if (e?.verdict === 'counter') {
+      excludeCandidates.push(l)
+      skipped.push({ level: l, reason: `${LEVEL_LABEL[l]} predicts a WORSE lead. Buying more of it would be the most expensive way to confirm that — it belongs in the exclusions.` })
+      continue
+    }
+    if (typeof e?.narrowingPower === 'number' && e.narrowingPower < MIN_ARM_DISTINCTION) {
+      skipped.push({ level: l, reason: `${LEVEL_LABEL[l]} removes almost nobody, so its arm would buy the same people as the arm above it — two ad sets bidding against each other in one auction.` })
+      continue
+    }
+    if (e?.verdict === 'relevant') proven.push(l)
+    else undecided.push(l)
+  }
+
+  // Proven levels strongest-first; ties fall back to schema order so the
+  // result is deterministic rather than dependent on input ordering.
+  proven.sort((a, b) => (byLevel.get(b)?.lift ?? 0) - (byLevel.get(a)?.lift ?? 0) || a - b)
+
   const arms: ColdArm[] = [{
     kind: 'cold', id: 'L1', label: LEVEL_LABEL[1], levels: [1],
     weight: LEVEL_WEIGHT[1],
@@ -134,21 +220,79 @@ export function coldArms(levels: PositiveLevel[]): ColdArm[] {
   }]
 
   const carried: PositiveLevel[] = [1]
-  for (const l of ordered) {
+  for (const l of [...proven, ...undecided]) {
     carried.push(l)
+    const e = byLevel.get(l)
+    const isProven = e?.verdict === 'relevant'
     arms.push({
       kind: 'cold',
       id: `L${carried.join('+')}`,
       label: carried.map((x) => LEVEL_LABEL[x]).join(' + '),
       levels: [...carried],
-      // The arm's weight is the DEEPEST level it adds, not the sum: this arm
-      // exists to test that level's contribution, and summing would make a
-      // long arm look valuable purely for being long.
-      weight: LEVEL_WEIGHT[l],
-      rationale: `Adds ${LEVEL_LABEL[l].toLowerCase()} as a MUST. Compared against the arm above it, the difference is exactly what that level is worth.`,
+      // Weighted by the level it ADDS, not by its length — otherwise a long
+      // arm looks valuable purely for being long. A proven level earns more
+      // budget than an unproven one of the same nominal weight.
+      weight: LEVEL_WEIGHT[l] * (isProven ? 1.5 : 1),
+      rationale: isProven
+        ? `Adds ${LEVEL_LABEL[l].toLowerCase()}, which the funnel has already shown converts better${typeof e?.lift === 'number' ? ` (${e.lift.toFixed(1)}x)` : ''}. Compared with the arm above it, the difference is what that level is worth on live delivery.`
+        : `Adds ${LEVEL_LABEL[l].toLowerCase()} as a MUST. Unproven — this arm exists to find out, and is funded accordingly.`,
     })
   }
-  return arms
+
+  const usedEvidence = evidence.length > 0
+  const headline = !usedEvidence
+    ? `${arms.length} arms in schema order — no prior evidence, so this is the default rather than a finding.`
+    : proven.length > 0
+    ? `${arms.length} arms, led by ${proven.map((l) => LEVEL_LABEL[l].toLowerCase()).join(' then ')} — ordered by what the funnel has proven, not by level number.`
+    : `${arms.length} arms. Nothing has proven out yet, so every level above the persona is exploration and is funded as such.`
+
+  return { arms, skipped, excludeCandidates, headline }
+}
+
+/**
+ * Below this many people, a retargeting audience cannot deliver: Meta throttles
+ * it, frequency climbs immediately, and the arm burns its budget showing the
+ * same forty people the same ad. The rung is real — it simply has not filled
+ * yet, and launching it early is how retargeting gets a reputation for not
+ * working.
+ */
+export const MIN_RETARGET_AUDIENCE = 300
+
+export interface RungState {
+  rung: RetargetRung
+  /** How many people are currently in this audience. */
+  size: number
+}
+
+export interface WarmSelection {
+  arms: WarmArm[]
+  /** Rungs that exist but are not yet big enough, and how many more are needed. */
+  notReady: Array<{ rung: RetargetRung; size: number; needs: number }>
+  headline: string
+}
+
+/**
+ * Choose the retargeting arms that can actually run.
+ *
+ * The point of doing this BEFORE launching is that a rung's readiness is
+ * knowable in advance — it is a count of people we already have. Launching a
+ * 40-person arm and discovering it three weeks later is the expensive version
+ * of the same information.
+ */
+export function selectWarmArms(rungs: RungState[]): WarmSelection {
+  const ready = rungs.filter((r) => r.size >= MIN_RETARGET_AUDIENCE)
+  const notReady = rungs
+    .filter((r) => r.size < MIN_RETARGET_AUDIENCE)
+    .map((r) => ({ rung: r.rung, size: r.size, needs: MIN_RETARGET_AUDIENCE - r.size }))
+    .sort((a, b) => a.needs - b.needs)
+
+  const headline = ready.length === 0
+    ? rungs.length === 0
+      ? 'No retargeting audience exists yet — nothing has been touched to retarget.'
+      : `No retargeting rung has reached ${MIN_RETARGET_AUDIENCE} people. ${notReady[0] ? `"${RETARGET_LABEL[notReady[0].rung]}" is closest, ${notReady[0].needs} short.` : ''}`
+    : `${ready.length} retargeting arm${ready.length === 1 ? '' : 's'} ready${notReady.length ? `, ${notReady.length} still filling` : ''}.`
+
+  return { arms: warmArms(ready.map((r) => r.rung)), notReady, headline }
 }
 
 /** Build the warm arms from whichever rungs actually have an audience. */
