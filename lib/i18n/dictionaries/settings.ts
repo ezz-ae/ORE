@@ -8,7 +8,7 @@ type Dict = Record<string, string>
 export const settings: Record<Locale, Dict> = {
   en: {
     'sd.title': 'Data Pool',
-    'sd.subtitle': 'Your historical leads power the network targeting brain — import them once, benefit on every campaign.',
+    'sd.subtitle': 'Import your past leads once to improve targeting on every campaign.',
     'sd.import': 'Bulk import',
     'sd.tenant.base': 'System base (operator data)',
     'sd.tenant.baseDesc': 'System-wide seed data used to bootstrap the shared network benchmarks.',
@@ -444,7 +444,7 @@ export const settings: Record<Locale, Dict> = {
 
   ar: {
     'sd.title': 'مجمع البيانات',
-    'sd.subtitle': 'عملاؤك التاريخيون يغذّون عقل الاستهداف الشبكي — استوردهم مرة واستفد في كل حملة.',
+    'sd.subtitle': 'استورد عملاءك السابقين مرة واحدة لتحسين الاستهداف في كل حملة.',
     'sd.import': 'استيراد جماعي',
     'sd.tenant.base': 'قاعدة النظام (بيانات المشغّل)',
     'sd.tenant.baseDesc': 'بيانات أساسية على مستوى النظام تُستخدم لتأسيس معايير الشبكة المشتركة.',
@@ -880,7 +880,7 @@ export const settings: Record<Locale, Dict> = {
 
   ru: {
     'sd.title': 'Пул данных',
-    'sd.subtitle': 'Ваши исторические лиды питают сетевой мозг таргетинга — импортируйте раз, выигрывайте в каждой кампании.',
+    'sd.subtitle': 'Импортируйте прошлые лиды один раз, чтобы улучшить таргетинг во всех кампаниях.',
     'sd.import': 'Массовый импорт',
     'sd.tenant.base': 'База системы (данные оператора)',
     'sd.tenant.baseDesc': 'Общесистемные исходные данные для запуска общих сетевых бенчмарков.',

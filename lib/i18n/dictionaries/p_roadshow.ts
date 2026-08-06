@@ -3,7 +3,7 @@ type Dict = Record<string, string>
 
 const en: Dict = {
   'proad.title': 'Roadshow',
-  'proad.subtitle': 'Turn a calendar event into a planned multi-channel campaign — a strategy, not a raw ad.',
+  'proad.subtitle': 'Turn a calendar event into a multi-channel campaign.',
   'proad.step.event': 'Event',
   'proad.step.brief': 'Brief',
   'proad.step.plan': 'Plan',
@@ -57,7 +57,7 @@ const en: Dict = {
 
 const ar: Dict = {
   'proad.title': 'العرض الترويجي',
-  'proad.subtitle': 'حوّل حدثًا في التقويم إلى حملة مخطّطة متعددة القنوات — استراتيجية لا إعلانًا خامًا.',
+  'proad.subtitle': 'حوّل حدثًا في التقويم إلى حملة متعددة القنوات.',
   'proad.step.event': 'الحدث',
   'proad.step.brief': 'الموجز',
   'proad.step.plan': 'الخطة',
@@ -110,7 +110,7 @@ const ar: Dict = {
 
 const ru: Dict = {
   'proad.title': 'Роуд-шоу',
-  'proad.subtitle': 'Превратите событие календаря в спланированную многоканальную кампанию — стратегию, а не просто рекламу.',
+  'proad.subtitle': 'Превратите событие календаря в многоканальную кампанию.',
   'proad.step.event': 'Событие',
   'proad.step.brief': 'Бриф',
   'proad.step.plan': 'План',
