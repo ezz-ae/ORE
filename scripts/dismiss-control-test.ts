@@ -164,6 +164,37 @@ console.log('\n── the signal has a writer, a reader and an eraser ──')
     /onExit=\{[^}]*clearAgentWaiting/.test(PULSE), 'the light survives being dismissed')
 }
 
+console.log('\n── it is a channel, not one hardcoded message ──')
+{
+  const SIG = readFileSync('lib/freehold/agent-signal.ts', 'utf8')
+  const PULSE = readFileSync('components/freehold/machine-pulse.tsx', 'utf8')
+  const NB = readFileSync('app/freehold-intelligence/notebook/page.tsx', 'utf8')
+
+  // The alarm summary that happens to be the first publisher is not special.
+  // The next message through here may be a recommendation, a daily summary or
+  // a question, and none of them should need this code changed.
+  check('the channel carries a line rather than composing one',
+    /line: string/.test(SIG) && !/lm\.pulse/.test(SIG),
+    'the transport knows about one publisher')
+  check('the panel renders whatever was said, not its own sentence',
+    /agentWaiting\(\)\?\.line/.test(PULSE), 'the panel re-authors the message')
+  check('…with a fallback so it is never blank',
+    /\?\? t\('lm\.pulse\.note'/.test(PULSE))
+
+  // A conversation is not an authorisation.
+  check('the channel distinguishes informing, discussing and deciding',
+    /'fyi' \| 'discuss' \| 'decide'/.test(SIG), 'every message asks the same thing')
+  check('an unknown kind degrades to asking for nothing',
+    /w\.kind === 'discuss' \|\| w\.kind === 'decide' \? w\.kind : 'fyi'/.test(SIG),
+    'a corrupt kind could imply a decision is pending')
+  check('the machine publishes as discuss, never as decide',
+    /kind: 'discuss'/.test(PULSE) && !/kind: 'decide'/.test(PULSE),
+    'things the machine COULD NOT do are being sold as things it wants permission for')
+  check('the chat says which of the three it is',
+    /nb\.agentNeedsWord/.test(NB) && /nb\.agentFyi/.test(NB),
+    'the reader has to infer it from tone')
+}
+
 console.log('\n── colour is spent once, so it weighs ──')
 {
   const NAV = readFileSync('components/freehold/spaces-nav.tsx', 'utf8')
