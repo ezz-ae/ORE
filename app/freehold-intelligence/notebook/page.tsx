@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { agentWaiting, clearAgentWaiting } from '@/lib/freehold/agent-signal'
+import { agentWaiting, clearAgentWaiting, type AgentMessageKind } from '@/lib/freehold/agent-signal'
 import { toast } from 'sonner'
 import {
   BookOpen, Pin, Sparkles, MessageSquare, FileText, Megaphone, GitBranch,
@@ -318,14 +318,23 @@ export default function NotebookPage() {
     if (!w) return
     setCenterTab('chat')
     setChatMessages((prev) =>
-      prev.some((m) => m.opened) ? prev : [{ role: 'assistant', content: w.line, opened: true }, ...prev])
+      prev.some((m) => m.opened)
+        ? prev
+        : [{ role: 'assistant', content: w.line, opened: true, kind: w.kind, href: w.href }, ...prev])
     clearAgentWaiting()
   }, [])
 
   /** `opened` marks the one message the agent started itself. Nothing else in
    *  this thread was unprompted, so it is the only one that gets its own
    *  background — the distinction IS the information. */
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string; opened?: boolean }[]>([])
+  const [chatMessages, setChatMessages] = useState<{
+    role: 'user' | 'assistant'
+    content: string
+    opened?: boolean
+    /** Only on an agent-started message: what it is asking of the reader. */
+    kind?: AgentMessageKind
+    href?: string
+  }[]>([])
   const [chatPending, setChatPending] = useState(false)
   /**
    * WHAT IT IS ACTUALLY DOING, not "Thinking…".
@@ -945,7 +954,18 @@ export default function NotebookPage() {
                       {m.role === 'assistant' ? t('nb.freeholdAi') : t('nb.you')}
                     </span>
                     {m.opened && (
-                      <span className="text-[10px] font-medium text-slate-500">{t('nb.agentOpened')}</span>
+                      <span className="text-[10px] font-medium text-slate-500">
+                        {/* WHAT IS BEING ASKED, said in the label rather than
+                            left for the reader to infer from tone. A message
+                            that merely informs and one that is blocking the
+                            agent look identical otherwise, and guessing wrong
+                            in either direction is expensive: ignore a decision
+                            it was waiting on, or answer something that needed
+                            nothing. */}
+                        {m.kind === 'decide' ? t('nb.agentNeedsWord')
+                          : m.kind === 'discuss' ? t('nb.agentOpened')
+                          : t('nb.agentFyi')}
+                      </span>
                     )}
                   </div>
                   <p className="whitespace-pre-wrap text-sm leading-[1.7] text-slate-100">{m.content}</p>

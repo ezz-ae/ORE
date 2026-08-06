@@ -30,9 +30,35 @@
 const KEY = 'fh.agent.waiting'
 const EVENT = 'fh:agent-waiting'
 
+/**
+ * WHAT KIND OF THING IS BEING SAID.
+ *
+ * The kind decides what the reader is being asked for, and nothing else about
+ * the channel changes. This is the whole reason it is a channel rather than a
+ * feature: the alarm summary that happens to be the first publisher is not
+ * special, and the next message through here may be a recommendation, a daily
+ * summary, a question, or something nobody has thought of yet.
+ *
+ *   'fyi'     — read it, nothing is being asked.
+ *   'discuss' — worth a conversation; the reply box means it.
+ *   'decide'  — the agent is BLOCKED and wants a yes or a no before it acts.
+ *
+ * 'decide' is deliberately not just a louder 'discuss'. A conversation is not
+ * an authorisation, and a channel that blurs the two would let the agent treat
+ * "interesting" as "go ahead".
+ */
+export type AgentMessageKind = 'fyi' | 'discuss' | 'decide'
+
 export interface AgentWaiting {
-  /** One short line — the same sentence the agent would open with. */
+  /** ONE SHORT LINE, written by whoever raised it. Deliberately not composed
+   *  here: this module carries messages, it does not author them, and a
+   *  channel that words things on the publisher's behalf ends up saying the
+   *  same sentence about everything. */
   line: string
+  kind: AgentMessageKind
+  /** Where the reader goes for the whole story, if there is more than a line.
+   *  Omitted when the line IS the message. */
+  href?: string
   /** What it is about, so the same news is not announced twice. */
   signature: string
   /** When it was raised, so the flash only plays for something genuinely new. */
@@ -47,7 +73,17 @@ export function agentWaiting(): AgentWaiting | null {
     if (!raw) return null
     const w = JSON.parse(raw) as Partial<AgentWaiting>
     if (!w || typeof w.line !== 'string' || typeof w.signature !== 'string') return null
-    return { line: w.line, signature: w.signature, at: Number(w.at) || 0 }
+    // An unknown kind reads as 'fyi': the safe failure is to ask for nothing,
+    // never to imply the agent is waiting on a decision it is not waiting on.
+    const kind: AgentMessageKind =
+      w.kind === 'discuss' || w.kind === 'decide' ? w.kind : 'fyi'
+    return {
+      line: w.line,
+      kind,
+      href: typeof w.href === 'string' ? w.href : undefined,
+      signature: w.signature,
+      at: Number(w.at) || 0,
+    }
   } catch { return null }
 }
 

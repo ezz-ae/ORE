@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DismissControl } from '@/components/freehold/dismiss-control'
-import { raiseAgentWaiting, clearAgentWaiting } from '@/lib/freehold/agent-signal'
+import { raiseAgentWaiting, clearAgentWaiting, agentWaiting } from '@/lib/freehold/agent-signal'
 
 type Entry = { id: string; kind: string; detail: string; at: string; machine: string; repeats?: number }
 type Pulse = {
@@ -149,7 +149,15 @@ export function MachinePulse() {
     // …and let the agent carry it into the chat, wherever the reader goes
     // next. Idempotent on the signature, so walking back onto this page does
     // not re-light anything.
-    raiseAgentWaiting({ line: t('lm.pulse.note', { n: p.alarms.length }), signature: sig })
+    raiseAgentWaiting({
+      line: t('lm.pulse.note', { n: p.alarms.length }),
+      // These are things the machine could not do, not things it wants
+      // permission for. Marking them 'decide' would let a conversation read
+      // as an authorisation.
+      kind: 'discuss',
+      href: '/freehold-intelligence/lead-machine/ads-machine',
+      signature: sig,
+    })
   }, [p, t])
 
   useEffect(() => {
@@ -316,8 +324,11 @@ export function MachinePulse() {
               word before I move" — is the machine reporting to them, which is
               what it actually is. The items are still all here, unedited and
               in full, underneath. */}
+          {/* Whatever the agent actually said. The channel carries a line; it
+              does not author one, and this panel does not second-guess it —
+              the next message through here may not be about alarms at all. */}
           <p className="mt-2.5 text-[13px] leading-relaxed text-slate-200">
-            {t('lm.pulse.note', { n: p.alarms.length })}
+            {agentWaiting()?.line ?? t('lm.pulse.note', { n: p.alarms.length })}
           </p>
           {/* IF YOU CAN ANSWER IT, IT IS A CHAT. IF YOU CAN ONLY LOOK AT IT,
               IT IS A MESSAGE — and a button labelled "discuss" that throws you
