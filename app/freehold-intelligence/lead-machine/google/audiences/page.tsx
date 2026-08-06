@@ -279,9 +279,9 @@ export default function GoogleAudiencesPage() {
 
       {/* ── Config error ── */}
       {isConfigErr && (
-        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5">
+        <div className="mt-8 rounded-[20px] border border-line bg-surface-2 p-5">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" />
             <div>
               <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
@@ -298,9 +298,9 @@ export default function GoogleAudiencesPage() {
 
       {/* ── General error ── */}
       {data.error && !isConfigErr && (
-        <div className="mt-8 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
+        <div className="mt-8 rounded-[18px] border border-line bg-surface-2 p-5">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
             <p className="text-sm text-slate-300">{data.error}</p>
           </div>
         </div>

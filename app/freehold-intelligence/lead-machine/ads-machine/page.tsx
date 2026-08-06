@@ -322,8 +322,8 @@ export default function AdsMachinePage() {
       </div>
 
       {loadError && (
-        <div className="mt-8 flex items-start gap-3 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
+        <div className="mt-8 flex items-start gap-3 rounded-[18px] border border-line bg-surface-2 p-5">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
           <p className="text-sm text-slate-300">{loadError}</p>
         </div>
       )}
@@ -376,8 +376,8 @@ export default function AdsMachinePage() {
               </div>
 
               {apiError && (
-                <div className="mt-4 flex items-start gap-2.5 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] px-4 py-3">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                <div className="mt-4 flex items-start gap-2.5 rounded-[14px] border border-line bg-surface-2 px-4 py-3">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" />
                   <p className="text-sm text-slate-300">{apiError}</p>
                 </div>
               )}
@@ -419,8 +419,8 @@ export default function AdsMachinePage() {
               </div>
 
               {apiError && (
-                <div className="mt-4 flex items-start gap-2.5 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] px-4 py-3">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                <div className="mt-4 flex items-start gap-2.5 rounded-[14px] border border-line bg-surface-2 px-4 py-3">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" />
                   <p className="text-sm text-slate-300">{apiError}</p>
                 </div>
               )}

@@ -270,14 +270,14 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
             {/* A hot pattern cannot be launched on targeting alone. Said here,
                 before saving, rather than discovered at launch. */}
             {preview?.needsRetargetingSource && (
-              <p className="mt-3 rounded-lg border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-[11.5px] leading-relaxed text-sky-300">
+              <p className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-[11.5px] leading-relaxed text-slate-400">
                 {t(`lm.aud.pat.warm.${temp}`)}
               </p>
             )}
             {/* A chosen group that did not survive is named. Never dropped in
                 silence — they picked it and would otherwise never know. */}
             {preview && preview.unreachable.length > 0 && (
-              <p className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11.5px] leading-relaxed text-amber-300">
+              <p className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-[11.5px] leading-relaxed text-slate-400">
                 {t('lm.aud.pat.unreachable').replace('{list}', preview.unreachable.join(', '))}
               </p>
             )}

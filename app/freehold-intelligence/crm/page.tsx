@@ -221,12 +221,12 @@ export default function FreeholdCrmPage() {
               href="/freehold-intelligence/crm/assignment"
               className="mb-5 flex items-start gap-3 rounded-[18px] border border-amber-400/30 bg-amber-400/[0.07] p-4 transition hover:border-amber-400/50"
             >
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-amber-200">
                   {t('crm.unassigned.title', { n: String(unassigned) })}
                 </p>
-                <p className="mt-0.5 text-xs leading-relaxed text-amber-200/80">
+                <p className="mt-0.5 text-xs leading-relaxed text-slate-400/80">
                   {t('crm.unassigned.body')}
                 </p>
               </div>

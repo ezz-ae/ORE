@@ -104,12 +104,6 @@ export default function AgentAIPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
 
-      {loadFailed && (
-        <div className="mb-4 flex items-center gap-2 rounded-[14px] border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-400">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {t('agent.integrationsLoadFailed')}
-        </div>
-      )}
 
       {/* Header */}
       <section className="flex items-start justify-between gap-4">
@@ -134,6 +128,16 @@ export default function AgentAIPage() {
           </div>
         )}
       </section>
+      {/* A page never OPENS on something being wrong. Nobody reading this
+          screen did anything — a read failed on our side — so it waits until
+          the page has introduced itself and speaks in the same voice as
+          everything else. Same condition, same words. */}
+      {loadFailed && (
+        <div className="mt-5 flex items-center gap-2 rounded-[14px] border border-line bg-surface-2 px-4 py-3 text-sm text-slate-400">
+          <AlertCircle className="h-4 w-4 shrink-0 text-slate-500" />
+          {t('agent.integrationsLoadFailed')}
+        </div>
+      )}
 
       {/* Three-route map */}
       <section className="mt-6">

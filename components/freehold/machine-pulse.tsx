@@ -19,9 +19,10 @@
  * compelling artefact in the product with nowhere to be seen.
  */
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Activity, AlertTriangle, Loader2, Play, Pause, TrendingUp, Rocket,
+  Activity, AlertTriangle, Loader2, Play, Pause, TrendingUp, Rocket, MessageSquare,
   ClipboardList, ShieldAlert, RefreshCw, Layers,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
@@ -57,6 +58,9 @@ function ago(iso: string, t: ReturnType<typeof useT>): string {
 }
 
 export function MachinePulse() {
+  const router = useRouter()
+  /** What the operator is typing back to the machine. */
+  const [reply, setReply] = useState('')
   const t = useT()
   const [p, setP] = useState<Pulse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -134,38 +138,7 @@ export function MachinePulse() {
         )}
       </div>
 
-      {/* 2 — what it cannot fix itself */}
-      {p.alarms.length > 0 && (
-        <div className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.05] p-5">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
-            <AlertTriangle className="h-3.5 w-3.5" /> {t('lm.pulse.needsYou', { n: p.alarms.length })}
-          </div>
-          <div className="mt-3 space-y-2">
-            {p.alarms.map((a) => {
-              const Icon = KIND_ICON[a.kind] ?? AlertTriangle
-              return (
-                <div key={a.id} className="flex items-start gap-2.5">
-                  <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300/80" />
-                  <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-amber-100/85">
-                    {a.detail}
-                    {/* A standing condition, said once with a count — not the
-                        same sentence N times. The number is the useful part:
-                        it says how long this has gone unfixed. */}
-                    {(a.repeats ?? 1) > 1 && (
-                      <span className="ms-1.5 whitespace-nowrap rounded-full border border-amber-300/25 px-1.5 py-0.5 text-[10px] text-amber-200/70">
-                        {t('lm.pulse.seenTimes', { n: a.repeats ?? 1 })}
-                      </span>
-                    )}
-                  </p>
-                  <span className="shrink-0 text-[10px] text-amber-200/50">{ago(a.at, t)}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 3 — what it decided, and why. The reason is already in the log. */}
+      {/* 2 — what it DID. The work comes first on this page. */}
       <div className="rounded-2xl border border-line bg-surface-2 p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -194,6 +167,105 @@ export function MachinePulse() {
           </div>
         )}
       </div>
+
+      {/* 3 — what it is waiting on. LAST, and deliberately not a warning wall.
+             A page that opens on amber tells the person reading it they did
+             something wrong. They did not — the machine ran, it did work, and a
+             couple of things need a human. That is a to-do, not a fault, so it
+             reads like one and it sits after the work rather than in front of
+             it. Nothing is hidden or softened away: same items, same detail,
+             same counts. Only the order and the volume change. */}
+      {p.alarms.length > 0 && (
+        <div className="rounded-2xl border border-line bg-surface-2 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold/70" /> {t('lm.pulse.needsYou', { n: p.alarms.length })}
+          </div>
+
+          {/* THE MACHINE SPEAKS, rather than flashing.
+              A list of errors makes the person reading it feel audited. The
+              same facts said in the first person — "I found these, I need your
+              word before I move" — is the machine reporting to them, which is
+              what it actually is. The items are still all here, unedited and
+              in full, underneath. */}
+          <p className="mt-2.5 text-[13px] leading-relaxed text-slate-200">
+            {t('lm.pulse.note', { n: p.alarms.length })}
+          </p>
+          {/* IF YOU CAN ANSWER IT, IT IS A CHAT. IF YOU CAN ONLY LOOK AT IT,
+              IT IS A MESSAGE — and a button labelled "discuss" that throws you
+              onto another page is still just a message with extra steps.
+              So the reply happens here. What is typed is carried into the
+              conversation verbatim and left UNSENT there, so the person sees
+              their own words before the agent answers. Nothing is auto-asked
+              on their behalf. */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const said = reply.trim()
+              if (!said) return
+              router.push(`/freehold-intelligence/notebook?ask=${encodeURIComponent(said)}`)
+            }}
+            className="mt-3 flex items-center gap-2"
+          >
+            <input
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder={t('lm.pulse.replyPlaceholder')}
+              aria-label={t('lm.pulse.replyPlaceholder')}
+              className="min-w-0 flex-1 rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40"
+            />
+            <button
+              type="submit"
+              disabled={!reply.trim()}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-[11px] font-semibold text-black transition hover:brightness-110 disabled:opacity-40"
+            >
+              <MessageSquare className="h-3 w-3" /> {t('lm.pulse.send')}
+            </button>
+          </form>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {/* Openers, for someone who would rather not compose a sentence.
+                They fill the box — they do not fire anything. */}
+            {(['lm.pulse.opener.explain', 'lm.pulse.opener.fix'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setReply(t(k))}
+                className="rounded-full border border-line px-3 py-1 text-[11px] text-slate-400 transition hover:border-gold/30 hover:text-white"
+              >
+                {t(k)}
+              </button>
+            ))}
+            <Link
+              href="/freehold-intelligence/lead-machine/ads-machine"
+              className="rounded-full border border-line px-3 py-1 text-[11px] text-slate-400 transition hover:border-gold/30 hover:text-white"
+            >
+              {t('lm.pulse.seeDetail')}
+            </Link>
+          </div>
+
+          <div className="mt-4 space-y-2 border-t border-line pt-3.5">
+            {p.alarms.map((a) => {
+              const Icon = KIND_ICON[a.kind] ?? AlertTriangle
+              return (
+                <div key={a.id} className="flex items-start gap-2.5">
+                  <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                  <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-slate-300">
+                    {a.detail}
+                    {/* A standing condition, said once with a count — not the
+                        same sentence N times. The number is the useful part:
+                        it says how long this has gone unfixed. */}
+                    {(a.repeats ?? 1) > 1 && (
+                      <span className="ms-1.5 whitespace-nowrap rounded-full border border-line px-1.5 py-0.5 text-[10px] text-slate-500">
+                        {t('lm.pulse.seenTimes', { n: a.repeats ?? 1 })}
+                      </span>
+                    )}
+                  </p>
+                  <span className="shrink-0 text-[10px] text-slate-600">{ago(a.at, t)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

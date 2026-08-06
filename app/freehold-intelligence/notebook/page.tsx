@@ -284,6 +284,25 @@ export default function NotebookPage() {
   // center panel
   const [centerTab, setCenterTab] = useState<CenterTab>('chat')
   const [chatInput, setChatInput] = useState('')
+
+  /**
+   * A question handed over from somewhere else in the system.
+   *
+   * The machine can now say "I have something worth discussing" and open the
+   * conversation here with the question already written. It is SEEDED, not
+   * sent: the person reads what they are about to ask and can change it or
+   * throw it away. Auto-sending would be the machine talking to itself and
+   * showing someone the transcript.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ask = new URLSearchParams(window.location.search).get('ask')
+    if (!ask) return
+    setCenterTab('chat')
+    setChatInput(ask.slice(0, 2000))
+    // Drop it from the URL so a refresh does not re-ask a stale question.
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [])
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
   const [chatPending, setChatPending] = useState(false)
   const [convQuery, setConvQuery] = useState('')

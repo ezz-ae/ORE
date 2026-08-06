@@ -107,7 +107,7 @@ export default function CrmAgentsPage() {
 
           {overloaded.length > 0 && (
             <div className="mt-7 flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" />
               <p className="text-sm text-slate-300">
                 {overloaded.length === 1
                   ? t('crm.overloadedWarningOne', { names: overloaded.map((a) => a.name).join(', ') })
