@@ -33,6 +33,10 @@ import type {
 } from './types'
 import { mergeLeadLanguages } from './lead-language'
 import { metaLeadCount } from './lead-count'
+import {
+  placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
+  findAdvantageInAdSet, describeViolations,
+} from './no-advantage'
 import type { MetaInsightActions } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -650,42 +654,38 @@ export async function createAdSet(params: {
     ? unionPlacementTargeting(manualKeys)
     : null
 
-  // Placements: an EMPTY platform list means Advantage+ placements (fully
-  // automatic — Meta's recommendation). Explicit platforms get the complete
-  // modern position set, Reels included, exactly as Ads Manager would.
+  // Placements are ALWAYS explicit. An empty platform list used to fall
+  // through to `{}`, which is precisely how a request enrols in Advantage+
+  // placements — Meta then buys wherever it likes, Audience Network included,
+  // and the cheap non-converting impressions that follow are indistinguishable
+  // from a weak audience. `placementSpecFor` never returns an empty spec.
   const platforms = params.targeting.publisherPlatforms
   const placementSpec: Record<string, unknown> = params.placementOverride
     ? { ...params.placementOverride }
     : manualPlacementSpec
     ? { ...manualPlacementSpec }
-    : platforms.length === 0 ? {} : {
-        publisher_platforms: platforms,
-        ...(platforms.includes('facebook')
-          ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'search'] }
-          : {}),
-        ...(platforms.includes('instagram')
-          ? { instagram_positions: ['stream', 'story', 'reels', 'explore'] }
-          : {}),
-      }
+    : placementSpecFor(platforms)
 
-  // Explicit Advantage-audience choice (required on newer accounts): any real
-  // audience definition (interests, behaviors, narrowing, custom audiences) →
-  // respect it; nothing at all → let the algorithm expand on our signals.
   const t = params.targeting
   const behaviors = t.behaviors ?? []
   const narrowing = (t.narrowing ?? []).filter((g) => (g.interests?.length || 0) + (g.behaviors?.length || 0) > 0)
   const excludedInterests = t.exclusions?.interests ?? []
   const excludedBehaviors = t.exclusions?.behaviors ?? []
   const customAudienceIds = t.customAudienceIds ?? []
-  const hasAudienceDefinition =
-    t.interests.length > 0 || behaviors.length > 0 || narrowing.length > 0 || customAudienceIds.length > 0
-  const advantageAudience = hasAudienceDefinition ? 0 : 1
-  // Advantage+ audiences treat the age band as a suggestion only — Meta
-  // rejects a hard age_min > 25 (subcode 1870188) or age_max < 65 (1870189).
-  // Clamp both bounds; the algorithm still skews delivery to the intended
-  // age band via its signals.
-  const ageMin = advantageAudience === 1 ? Math.min(t.ageMin, 25) : t.ageMin
-  const ageMax = advantageAudience === 1 ? Math.max(t.ageMax, 65) : t.ageMax
+  // Advantage audience is OFF, unconditionally. It used to switch on whenever
+  // an ad set had no interest/behaviour/custom-audience definition — which is
+  // exactly the broad control arm whose whole job is to measure ONE thing.
+  // Expansion made that arm deliver outside its own definition, so whatever it
+  // proved could not be reproduced and could not be compared with its
+  // siblings. A broad ad set is still a defined ad set: geo, age, gender,
+  // language. Meta must stay inside it.
+  //
+  // Consequence, deliberately kept: the age band is now honoured exactly as
+  // set. The old 25/65 clamp existed only to satisfy Advantage audiences
+  // (subcodes 1870188 / 1870189 reject a hard band under expansion). With
+  // expansion off, an operator who says 30–50 gets 30–50.
+  const ageMin = t.ageMin
+  const ageMax = t.ageMax
 
   // Base interests/behaviors + AND-narrowing groups → Meta flexible_spec: a
   // person must match at least one entry of EVERY group. Without narrowing,
@@ -734,7 +734,7 @@ export async function createAdSet(params: {
           },
         }
       : {}),
-    targeting_automation: { advantage_audience: advantageAudience },
+    targeting_automation: { ...ADVANTAGE_AUDIENCE_OFF },
   }
 
   // The wizard's CPL cap is a REAL Meta COST_CAP: the algorithm keeps the
@@ -780,6 +780,17 @@ export async function createAdSet(params: {
     }
   }
 
+  // LAST CHECK BEFORE MONEY MOVES. The opt-outs above are correct today; this
+  // is what keeps them correct after the next change to this function. Every
+  // Advantage feature is enrolled by OMISSION, so a refactor that drops a
+  // field would otherwise launch an expanded, auto-placed ad set and report
+  // success. Refusing here is loud and cheap; discovering it in Ads Manager a
+  // week later is neither.
+  const violations = findAdvantageInAdSet(body)
+  if (violations.length > 0) {
+    throw new Error(`Refusing to launch: Meta Advantage would be active — ${describeViolations(violations)}`)
+  }
+
   try {
     return await apiPost(`/${adAccountId}/adsets`, body)
   } catch (err) {
@@ -801,7 +812,8 @@ export async function createAdSet(params: {
  * Validate interests against Meta's LIVE vocabulary. Interest ids rot as
  * Meta prunes its graph — so we re-resolve by NAME at launch time and drop
  * anything Meta no longer recognises. A launch never fails on a stale id;
- * with no valid interests left, the ad set simply runs broad (Advantage+).
+ * with no valid interests left, the ad set runs on its remaining definition
+ * (geo, age, gender, language) — NOT on Advantage expansion, which is off.
  */
 export async function validateInterests(
   interests: { id: string; name: string }[],
@@ -1084,9 +1096,12 @@ export async function createAdCreative(params: {
     // Dynamic UTMs close the attribution loop: the lead that lands on the
     // page carries the REAL campaign/adset/ad ids into the CRM automatically.
     url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
-    // Note: the `standard_enhancements` field under degrees_of_freedom_spec is
-    // deprecated (Meta error subcode 3858504) — it must not be sent. We omit it
-    // and let the account's default creative-enhancement settings apply.
+    // Advantage+ creative OFF. Omitting this block does not mean "off" — it
+    // means the ad ACCOUNT's default applies, and on most accounts that
+    // default rewords the headline, recolours the image and adds music to a
+    // creative someone already approved. The bare `standard_enhancements`
+    // field is rejected (subcode 3858504); this is the current nested shape.
+    degrees_of_freedom_spec: { ...CREATIVE_ENHANCEMENTS_OFF },
   })
 }
 

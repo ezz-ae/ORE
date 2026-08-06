@@ -111,7 +111,7 @@ async function gatherPerformance(): Promise<{ connected: boolean; campaigns: Cam
   }
 }
 
-const STRATEGIES: TargetingStrategy[] = ['advantage_broad', 'lookalike_qualified', 'retargeting_warm', 'interest_refined']
+const STRATEGIES: TargetingStrategy[] = ['broad_manual', 'lookalike_qualified', 'retargeting_warm', 'interest_refined']
 
 function clampRecommendation(raw: Record<string, unknown>): TargetingRecommendation {
   const ids = new Set(UAE_INTERESTS.map((i) => i.id))
@@ -122,9 +122,11 @@ function clampRecommendation(raw: Record<string, unknown>): TargetingRecommendat
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : d
   }
   const txt = (v: unknown, max = 500) => String(v ?? '').slice(0, max)
-  const strategy = (STRATEGIES.includes(raw.strategy as TargetingStrategy) ? raw.strategy : 'advantage_broad') as TargetingStrategy
-  // Interests apply ONLY on the cold-start strategy; every other strategy runs
-  // broad and lets Meta's algorithm hunt on our signals.
+  const strategy = (STRATEGIES.includes(raw.strategy as TargetingStrategy) ? raw.strategy : 'broad_manual') as TargetingStrategy
+  // Interests apply ONLY on the cold-start strategy. Every other strategy runs
+  // on a WIDE definition we wrote — geo, age, gender, language — and Meta
+  // optimises inside it. It is not allowed to leave it: Advantage audience
+  // expansion is off at the ad-set level for every launch this system makes.
   const interestIds = strategy === 'interest_refined' ? arr(raw.interestIds).filter((i) => ids.has(i)) : []
   const seedRaw = String(raw.lookalikeSeed ?? '')
   const cities = arr(raw.cityKeys).filter((c) => cityKeys.has(c))
@@ -222,7 +224,9 @@ NETWORK BENCHMARKS (aggregated, anonymized signals from ALL tenants of the syste
 ${JSON.stringify(benchmarks)}
 
 STRATEGY MENU (pick ONE):
-- "advantage_broad": broad targeting + Advantage; the algorithm hunts using our conversion signals. Default when signal volume exists or nothing else is clearly better.
+- "broad_manual": broad but DEFINED BY US — geo, age, gender and language only, no interest stack. Meta optimises WITHIN that definition and never outside it. Default when signal volume exists or nothing else is clearly better.
+
+ADVANTAGE IS OFF ACROSS THIS ACCOUNT, AT EVERY LEVEL: no audience expansion, no automatic placements, no creative enhancements, no campaign budget optimisation. Never recommend any of them, and never describe broad targeting as "letting the algorithm find new audiences" — it cannot leave the definition. Broad here means a wide definition we wrote, not a definition Meta is allowed to widen.
 - "lookalike_qualified": seed a lookalike from the qualified/closed CRM cohort. Prefer this when the seed pool is ≥ 20.
 - "retargeting_warm": re-engage engaged-but-unconverted leads/visitors. Only when there is meaningful volume to re-engage.
 - "interest_refined": COLD START ONLY (no history, tiny pools). Even then, creative + landing page do the real selecting; interests come ONLY from this catalog: ${JSON.stringify(UAE_INTERESTS)}

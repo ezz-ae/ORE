@@ -5,7 +5,7 @@ import { getSiteUrl } from '@/lib/site'
  * buildMachinePlan turns "these projects + this hard daily cap" into a
  * persisted, launchable plan: 2–3 Meta audience trials per project — each from
  * a DISTINCT real source (the company's own buyer-match profile, an existing
- * saved audience/lookalike, and an Advantage+ broad baseline) — plus ONE
+ * saved audience/lookalike, and a defined-broad baseline) — plus ONE
  * Google SEARCH trial per project. Google is a LIVE channel: its trial takes a
  * share of the same budget split as the Meta trials and ONE combined daily cap
  * governs both channels. When the per-project share funds the Meta trials but
@@ -46,7 +46,7 @@ import { listPastCondemnations, type PastCondemnation } from '@/lib/freehold/dec
  * Google search trials to the same AED 50/day floor). */
 export const META_MIN_TRIAL_BUDGET_AED = 50
 
-export type TrialSource = 'buyer-match' | 'saved-audience' | 'lookalike' | 'advantage-broad' | 'google-search'
+export type TrialSource = 'buyer-match' | 'saved-audience' | 'lookalike' | 'broad-defined' | 'google-search'
 
 export interface MachineTrialPlan {
   /** Stable id within the plan — the engine matches launched campaigns to it. */
@@ -131,7 +131,7 @@ const ANGLE_FOR_SOURCE: Record<MetaTrialSource, CreativeAngle> = {
   'buyer-match': 'investor',
   'saved-audience': 'yield',
   'lookalike': 'yield',
-  'advantage-broad': 'end_user',
+  'broad-defined': 'end_user',
 }
 
 /** Layer 4: each Meta trial's landing URL carries the buyer intent its
@@ -406,19 +406,20 @@ export async function buildMachinePlan(
     }
 
     candidates.push({
-      source: 'advantage-broad',
-      label: 'Advantage Broad',
+      source: 'broad-defined',
+      label: 'Broad (defined)',
       targeting: {
         countries: ['AE'],
         cityKeys: [],
         ageMin: 25,
         ageMax: 65,
-        // Empty platform list = Advantage+ placements; no interests = Meta's
-        // Advantage audience expands on our conversion signals.
-        publisherPlatforms: [],
+        // Named explicitly. An empty list is how a request enrols in
+        // Advantage+ placements, and this arm exists to be a CONTROL — it
+        // cannot be the one buying different inventory from its siblings.
+        publisherPlatforms: ['facebook', 'instagram'],
         interests: [],
       },
-      rationale: 'Advantage+ baseline: broad delivery lets Meta’s algorithm hunt on our conversion signals — the control arm every trial set needs.',
+      rationale: 'The control arm every trial set needs: no interest stack, just geo/age/language. Meta optimises inside that definition and is not permitted to leave it — which is what makes this arm comparable with its siblings rather than a moving target.',
     })
 
     // The decision ledger ends planner amnesia: an audience family a PREVIOUS

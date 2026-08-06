@@ -10,7 +10,7 @@ const SOURCE_KEY: Record<TrialSource, string> = {
   'buyer-match': 'lm.machine.plan.source.buyer-match',
   'saved-audience': 'lm.machine.plan.source.saved-audience',
   'lookalike': 'lm.machine.plan.source.lookalike',
-  'advantage-broad': 'lm.machine.plan.source.advantage-broad',
+  'broad-defined': 'lm.machine.plan.source.broad-defined',
   'google-search': 'lm.machine.plan.source.google-search',
 }
 

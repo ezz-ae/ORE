@@ -250,7 +250,7 @@ export default function NewCampaignPage() {
     objective:    'LINK_CLICKS',
     campaignName: '',
     dqVerifiedChecks: [],
-    strategy:     'advantage_broad',
+    strategy:     'broad_manual',
     dailyBudgetAED: 200,
     lifetimeCapAED: 0,
     // Default-all, deselectable — bounded to the curated list above, never
