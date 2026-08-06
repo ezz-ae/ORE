@@ -9,6 +9,7 @@ import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
 import { BRAND } from '@/lib/freehold/brand'
 import PatternBuilder from './PatternBuilder'
+import ArmPlanner from './ArmPlanner'
 
 // ─── Types mirrored from the API ──────────────────────────────────────────────
 
@@ -409,6 +410,12 @@ export default function AudiencesPage() {
           audience should be made here; the interest-by-interest builder below
           stays for the cases that genuinely need it. */}
       <PatternBuilder onSaved={load} />
+
+      {/* How the budget would be split across ad sets, and why. A read, never
+          a launch — creating ad sets stays a separate, deliberate act. */}
+      {audiences.length > 0 && (
+        <ArmPlanner audiences={audiences.map((a) => ({ id: a.id, name: a.name, kind: a.kind }))} />
+      )}
 
       {/* AI best-match */}
       <section className="rounded-2xl border border-line bg-surface p-5">
