@@ -9,7 +9,16 @@
  * pixels — what you download is what Meta gets.
  */
 
-export type LayoutKey = 'heroPrice' | 'frame' | 'statFooter' | 'splitCard' | 'badge'
+export type LayoutKey =
+  | 'heroPrice' | 'frame' | 'statFooter' | 'splitCard' | 'badge'
+  // ── The Dubai payment-plan family ──
+  // Modelled on ads running in this market right now, which sell on TERMS
+  // rather than lifestyle: the finance hook is the first thing read, the total
+  // price is the largest thing on the page, and the down payment sits in a
+  // badge over the render. English lifestyle copy ("discover a vibrant
+  // community") is a different pitch entirely, and these layouts exist because
+  // the engine could not produce this one at all.
+  | 'payBands' | 'payBadge' | 'payReturn'
 export type Palette = { bg: string; bg2: string; ink: string; accent: string; chip: string }
 export const PALETTES: Palette[] = [
   { bg: '#D9C6A0', bg2: '#CBB488', ink: '#231d12', accent: '#8a6f3c', chip: '#EBDDBE' }, // sand
@@ -17,10 +26,66 @@ export const PALETTES: Palette[] = [
   { bg: '#F3EFE6', bg2: '#E7E0D0', ink: '#173B2C', accent: '#C69B3E', chip: '#FFFFFF' }, // ivory/green
   { bg: '#0C2621', bg2: '#14382F', ink: '#ECFDF5', accent: '#D4AF37', chip: '#1D4A3E' }, // emerald/gold
   { bg: '#F5F7FA', bg2: '#E4EAF2', ink: '#152238', accent: '#B48A2C', chip: '#FFFFFF' }, // pearl/navy
+  // Taken from ads running in Dubai now — the payment-plan family reads at a
+  // glance because the bands are high-contrast, not because they are subtle.
+  { bg: '#C8102E', bg2: '#F2C230', ink: '#111111', accent: '#1B2A5B', chip: '#F7E7A6' }, // red/gold — offer
+  { bg: '#125B57', bg2: '#8A7B3C', ink: '#FFFFFF', accent: '#C9A227', chip: '#0E3F3C' }, // teal/olive — plan
+  { bg: '#6E7A4E', bg2: '#1E88C7', ink: '#FFFFFF', accent: '#D8B45A', chip: '#123A57' }, // olive/blue — return
 ]
-export const LAYOUTS: LayoutKey[] = ['heroPrice', 'frame', 'statFooter', 'splitCard', 'badge']
+export const LAYOUTS: LayoutKey[] = [
+  'heroPrice', 'frame', 'statFooter', 'splitCard', 'badge',
+  'payBands', 'payBadge', 'payReturn',
+]
 
-export interface Overlay { eyebrow: string; headline: string; price: string; priceUnit: string; footnote: string }
+export interface Overlay {
+  eyebrow: string
+  headline: string
+  price: string
+  priceUnit: string
+  footnote: string
+  // ── Payment-plan fields ──
+  // Optional so every existing layout is untouched; REQUIRED by the pay*
+  // layouts, which refuse to render rather than print an ad with a blank
+  // where the price should be. See `missingPayFields`.
+  /** The band across the top — "80% on handover, bank finance over 25 years". */
+  financeHook?: string
+  /** Total price, already formatted — "2,830,000". */
+  totalPrice?: string
+  /** Label above it — "Total price" / "أجمالي السعر". */
+  totalLabel?: string
+  /** The badge figure — "20%". */
+  downPct?: string
+  /** Badge caption — "down payment" / "دفعة أولى". */
+  downLabel?: string
+  /** Second column on payReturn — "75,000". */
+  returnvalue?: string
+  /** Its label — "Annual return" / "استرد سنوياً". */
+  returnLabel?: string
+  /** The thin strip at the very bottom — remaining terms, or a phone number. */
+  terms?: string
+}
+
+/** Layouts that sell on terms and therefore need the payment numbers. */
+export const PAY_LAYOUTS: LayoutKey[] = ['payBands', 'payBadge', 'payReturn']
+export const isPayLayout = (l: LayoutKey): boolean => PAY_LAYOUTS.includes(l)
+
+/**
+ * Which required fields are empty for a payment layout.
+ *
+ * Returned rather than thrown so the UI can name them before anyone clicks
+ * generate. An ad that renders with a blank where the price belongs is worse
+ * than no ad: it looks finished, and it goes out.
+ */
+export function missingPayFields(layout: LayoutKey, o: Overlay): string[] {
+  if (!isPayLayout(layout)) return []
+  const missing: string[] = []
+  if (!o.headline?.trim()) missing.push('headline')
+  if (!o.financeHook?.trim()) missing.push('financeHook')
+  if (!o.totalPrice?.trim()) missing.push('totalPrice')
+  if (!o.downPct?.trim()) missing.push('downPct')
+  if (layout === 'payReturn' && !o.returnvalue?.trim()) missing.push('returnValue')
+  return missing
+}
 
 // Ad formats — real Meta placement resolutions.
 export type FormatKey = 'feed' | 'square' | 'story'
@@ -86,6 +151,12 @@ const HEADLINE_SPEC: Record<LayoutKey, { px: number; pad: number; maxLines: (f: 
   statFooter: { px: 52, pad: 120, maxLines: () => 2 },
   splitCard:  { px: 56, pad: 128, maxLines: () => 2 },
   badge:      { px: 52, pad: 128, maxLines: () => 2 },
+  // The pay family puts the headline in a full-width band, so it gets the
+  // whole width less a thin gutter, and two lines before it truncates —
+  // matching the real ads, where the headline is one or two dense lines.
+  payBands:   { px: 54, pad: 72, maxLines: () => 2 },
+  payBadge:   { px: 58, pad: 72, maxLines: () => 3 },
+  payReturn:  { px: 50, pad: 72, maxLines: () => 2 },
 }
 
 let fitCanvas: HTMLCanvasElement | null = null
@@ -424,6 +495,166 @@ export function composeVariant(
       ctx.fillText(v, cx, imgBottom + Math.round((H - imgBottom) * 0.62))
     })
   }
+
+  // ── The Dubai payment-plan family ────────────────────────────────────────
+  // Shared furniture first: a full-bleed band with one line of text fitted to
+  // it, and the circular down-payment badge. Both appear in every variant, and
+  // both are the parts that go wrong when hand-placed per layout.
+
+  /** A full-width band. Returns the y where the next thing may start. */
+  const band = (y: number, h: number, fill: string, text: string, ink: string, px: number, weight = 800) => {
+    ctx.fillStyle = fill
+    ctx.fillRect(0, y, W, h)
+    if (text.trim()) {
+      ctx.fillStyle = ink
+      ctx.textAlign = 'center'
+      // Fitted to the band, never clipped by it: Arabic finance lines run long
+      // and a fixed size loses the last word — which is usually the term.
+      const size = fitFont(text, px, weight, W - 56, 20)
+      ctx.font = font(size, weight)
+      ctx.fillText(text, W / 2, y + h / 2 + size * 0.35)
+    }
+    return y + h
+  }
+
+  /** The circular "20% down payment" badge that overlaps the render. */
+  const payBadgeCircle = (cx: number, cy: number, r: number) => {
+    if (!o.downPct?.trim()) return
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.fillStyle = p.accent
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    ctx.textAlign = 'center'
+    ctx.fillStyle = '#ffffff'
+    const pctSize = fitFont(o.downPct, r * 0.95, 900, r * 1.6)
+    ctx.font = font(pctSize, 900)
+    ctx.fillText(o.downPct, cx, cy + (o.downLabel ? 0 : pctSize * 0.35))
+    if (o.downLabel?.trim()) {
+      const lblSize = fitFont(o.downLabel, r * 0.30, 700, r * 1.6)
+      ctx.font = font(lblSize, 700)
+      ctx.fillText(o.downLabel, cx, cy + pctSize * 0.62)
+    }
+  }
+
+  /** A price block: small label, very large figure. The figure is the point. */
+  const priceBlock = (cx: number, y: number, maxW: number, label: string, value: string, ink: string) => {
+    ctx.textAlign = 'center'
+    if (label.trim()) {
+      ctx.fillStyle = ink
+      const ls = fitFont(label, 40, 600, maxW)
+      ctx.font = font(ls, 600)
+      ctx.fillText(label, cx, y)
+    }
+    if (!value.trim()) return
+    ctx.fillStyle = ink
+    // The number carries the ad, so it takes whatever width is left. Arabic
+    // ads still print the figure in Western digits — the browser keeps it LTR.
+    const vs = fitFont(value, 132, 900, maxW, 40)
+    ctx.font = font(vs, 900)
+    ctx.fillText(value, cx, y + vs * 0.86)
+  }
+
+  if (layout === 'payBands') {
+    // Ad 1: hook band · headline band · render · price band · terms strip.
+    const hookH = Math.round(H * 0.058)
+    const headH = Math.round(H * 0.062)
+    const termsH = o.terms?.trim() ? Math.round(H * 0.050) : 0
+    const priceH = Math.round(H * 0.150)
+
+    let y = band(0, hookH, p.bg, o.financeHook ?? '', '#ffffff', 40)
+    y = band(y, headH, p.bg2, o.headline, p.ink, 42)
+
+    const imgTop = y
+    const imgBottom = H - priceH - termsH
+    if (img) drawCover(ctx, img, 0, imgTop, W, imgBottom - imgTop)
+    else { ctx.fillStyle = p.chip; ctx.fillRect(0, imgTop, W, imgBottom - imgTop) }
+
+    ctx.fillStyle = p.bg2
+    ctx.fillRect(0, imgBottom, W, priceH)
+    // The badge is a square block at the trailing edge of the price band, the
+    // way the reference ad sets it — not a circle here.
+    const boxW = Math.round(W * 0.30)
+    if (o.downPct?.trim()) {
+      const bx = rtl ? 0 : W - boxW
+      ctx.fillStyle = p.accent
+      ctx.fillRect(bx, imgBottom, boxW, priceH)
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#ffffff'
+      const ps = fitFont(o.downPct, 96, 900, boxW - 40)
+      ctx.font = font(ps, 900)
+      ctx.fillText(o.downPct, bx + boxW / 2, imgBottom + priceH * 0.52)
+      if (o.downLabel?.trim()) {
+        const ls = fitFont(o.downLabel, 32, 700, boxW - 40)
+        ctx.font = font(ls, 700)
+        ctx.fillText(o.downLabel, bx + boxW / 2, imgBottom + priceH * 0.78)
+      }
+    }
+    const priceCx = o.downPct?.trim() ? (rtl ? (W + boxW) / 2 : (W - boxW) / 2) : W / 2
+    const priceMaxW = (o.downPct?.trim() ? W - boxW : W) - 56
+    priceBlock(priceCx, imgBottom + priceH * 0.30, priceMaxW, o.totalLabel ?? '', o.totalPrice ?? '', p.ink)
+
+    if (termsH) band(H - termsH, termsH, p.bg, o.terms ?? '', '#ffffff', 34, 700)
+  }
+
+  if (layout === 'payBadge') {
+    // Ad 2: headline band · hook band · render filling the rest, with the
+    // circular badge and the price sitting ON the image.
+    const headH = Math.round(H * 0.115)
+    const hookH = Math.round(H * 0.055)
+    let y = band(0, headH, p.bg, o.headline, p.ink, 52)
+    y = band(y, hookH, p.bg2, o.financeHook ?? '', '#ffffff', 36)
+
+    if (img) drawCover(ctx, img, 0, y, W, H - y)
+    else { ctx.fillStyle = p.chip; ctx.fillRect(0, y, W, H - y) }
+
+    // A scrim under the lower third, or white text on a bright render is gone.
+    const scrim = ctx.createLinearGradient(0, H * 0.60, 0, H)
+    scrim.addColorStop(0, 'rgba(0,0,0,0)')
+    scrim.addColorStop(1, 'rgba(0,0,0,0.62)')
+    ctx.fillStyle = scrim
+    ctx.fillRect(0, H * 0.60, W, H * 0.40)
+
+    const r = Math.round(W * 0.115)
+    payBadgeCircle(rtl ? W - r - 56 : r + 56, y + r + 56, r)
+    priceBlock(W / 2, H - Math.round(H * 0.115), W - 120, o.totalLabel ?? '', o.totalPrice ?? '', '#ffffff')
+  }
+
+  if (layout === 'payReturn') {
+    // Ad 3: two bands · render · a two-column footer (total + annual return).
+    const b1 = Math.round(H * 0.055)
+    const b2 = Math.round(H * 0.055)
+    const footH = Math.round(H * 0.185)
+
+    let y = band(0, b1, p.bg, o.headline, p.ink, 40)
+    y = band(y, b2, p.bg2, o.financeHook ?? '', '#ffffff', 38)
+
+    const imgBottom = H - footH
+    if (img) drawCover(ctx, img, 0, y, W, imgBottom - y)
+    else { ctx.fillStyle = p.chip; ctx.fillRect(0, y, W, imgBottom - y) }
+
+    const r = Math.round(W * 0.10)
+    payBadgeCircle(rtl ? W - r - 52 : r + 52, y + r + 52, r)
+
+    const g2 = ctx.createLinearGradient(0, imgBottom, W, H)
+    g2.addColorStop(0, p.bg)
+    g2.addColorStop(1, p.accent)
+    ctx.fillStyle = g2
+    ctx.fillRect(0, imgBottom, W, footH)
+
+    // Two columns, or one centred when there is no return figure — an empty
+    // half is the thing that makes an ad look unfinished.
+    const hasReturn = !!o.returnvalue?.trim()
+    const colW = hasReturn ? W / 2 : W
+    priceBlock(colW / 2, imgBottom + footH * 0.28, colW - 64, o.totalLabel ?? '', o.totalPrice ?? '', '#ffffff')
+    if (hasReturn) {
+      priceBlock(W - colW / 2, imgBottom + footH * 0.28, colW - 64,
+        o.returnLabel ?? '', o.returnvalue ?? '', '#ffffff')
+    }
+  }
+
   return canvas.toDataURL('image/png')
 }
 
