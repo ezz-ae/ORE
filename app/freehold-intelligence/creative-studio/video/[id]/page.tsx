@@ -12,6 +12,7 @@ import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import type { DriveKind } from '@/lib/freehold/drive'
 import { pickRecorderMime } from '@/lib/freehold/video-export'
+import { resolveVideoKey, HANDLED_KEYS } from '@/lib/freehold/video-shortcuts'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LibRow = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
@@ -224,6 +225,55 @@ export default function DriveVideoEditor() {
   const mark = () => setDirty(true)
   function setIn(v: number) { setTrimStart(clamp(v, 0, Math.max(0, (trimEnd || duration) - 0.1))); mark() }
   function setOut(v: number) { setTrimEnd(clamp(v, trimStart + 0.1, duration || v)); mark() }
+
+  // ── Editor keys ──────────────────────────────────────────────────────────────
+  // setIn/setOut existed but nothing was bound to a key, so a clean in-point
+  // meant scrubbing to the frame and then dragging a handle to the same place
+  // without nudging the playhead. I and O now set the points AT the playhead,
+  // which is how every editor has worked for thirty years. The mapping itself
+  // lives in lib/freehold/video-shortcuts.ts so the rule that matters — never
+  // fire while someone is typing a caption — is a test, not a hope.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Nothing may steal keys mid-export: the recorder is driving the clip in
+      // real time and a seek would land in the file.
+      if (exportingRef.current) return
+      const intent = resolveVideoKey(e)
+      if (!intent) return
+      const v = videoRef.current
+      if (!v) return
+      if (HANDLED_KEYS.has(e.key)) e.preventDefault()
+
+      const end = trimEnd > 0 ? trimEnd : duration
+      switch (intent.kind) {
+        case 'playPause':
+          if (v.paused) void v.play().catch(() => {}) ; else v.pause()
+          break
+        case 'pause':
+          v.pause()
+          break
+        case 'setIn':
+          setIn(v.currentTime)
+          break
+        case 'setOut':
+          setOut(v.currentTime)
+          break
+        case 'toIn':
+          v.currentTime = trimStart
+          break
+        case 'seekBy':
+          // Stay inside the trimmed region — scrubbing out of it and back is
+          // how you lose your place on a long clip.
+          v.currentTime = clamp(v.currentTime + intent.seconds, trimStart, end || v.duration || 0)
+          break
+        case 'captureFrame':
+          void captureCover()
+          break
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   // ── Poster capture ───────────────────────────────────────────────────────────
   async function captureCover() {
@@ -551,6 +601,19 @@ export default function DriveVideoEditor() {
           <ArrowUpToLine className="h-3.5 w-3.5" /> {t('ed.video.setOut')}
         </button>
         <p className="text-[11px] text-slate-500">{t('ed.video.trimmed')} · <span className="text-slate-300">{fmt(trimmed)}</span> / {fmt(duration)}</p>
+        {/* A shortcut nobody knows about helps nobody. Shown where the trim
+            controls are, because that is where the keys save the most work. */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-line pt-2 text-[10px] text-slate-500">
+          <span className="font-medium text-slate-400">{t('ed.video.keys')}</span>
+          {([['Space', 'ed.video.key.play'], ['I', 'ed.video.key.in'], ['O', 'ed.video.key.out'],
+             ['J / L', 'ed.video.key.step'], ['← →', 'ed.video.key.nudge'], ['E', 'ed.video.key.frame']] as const)
+            .map(([k, labelKey]) => (
+              <span key={k} className="inline-flex items-center gap-1">
+                <kbd className="rounded border border-white/[0.14] bg-white/[0.04] px-1 py-0.5 font-sans text-[9px] text-slate-300">{k}</kbd>
+                {t(labelKey)}
+              </span>
+            ))}
+        </div>
       </section>
 
       {/* Caption */}
