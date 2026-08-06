@@ -192,7 +192,7 @@ export default function TeamsPage() {
                       // Stated plainly. A team with no leader is not broken, but
                       // it grants nobody any authority, and that should not be
                       // something you have to work out.
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/25 bg-amber-400/[0.07] px-2 py-0.5 text-amber-200">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-amber-200">
                         <AlertTriangle className="h-3 w-3" /> {t('teams.noLeader')}
                       </span>
                     )}

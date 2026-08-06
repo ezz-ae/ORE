@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { agentWaiting, clearAgentWaiting } from '@/lib/freehold/agent-signal'
 import { toast } from 'sonner'
 import {
   BookOpen, Pin, Sparkles, MessageSquare, FileText, Megaphone, GitBranch,
@@ -284,8 +285,62 @@ export default function NotebookPage() {
   // center panel
   const [centerTab, setCenterTab] = useState<CenterTab>('chat')
   const [chatInput, setChatInput] = useState('')
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+
+  /**
+   * A question handed over from somewhere else in the system.
+   *
+   * The machine can now say "I have something worth discussing" and open the
+   * conversation here with the question already written. It is SEEDED, not
+   * sent: the person reads what they are about to ask and can change it or
+   * throw it away. Auto-sending would be the machine talking to itself and
+   * showing someone the transcript.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ask = new URLSearchParams(window.location.search).get('ask')
+    if (!ask) return
+    setCenterTab('chat')
+    setChatInput(ask.slice(0, 2000))
+    // Drop it from the URL so a refresh does not re-ask a stale question.
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [])
+  /**
+   * The agent's own opening line, delivered where a conversation happens.
+   *
+   * It is placed here rather than shown as a badge because a badge is a
+   * notification and this is a message — there is a difference, and the
+   * difference is whether you can answer it. Placed ONCE: the signal is
+   * cleared the moment it lands, so re-opening the notebook does not replay
+   * it. Nothing is auto-sent; the agent has spoken and the reply is theirs.
+   */
+  useEffect(() => {
+    const w = agentWaiting()
+    if (!w) return
+    setCenterTab('chat')
+    setChatMessages((prev) =>
+      prev.some((m) => m.opened) ? prev : [{ role: 'assistant', content: w.line, opened: true }, ...prev])
+    clearAgentWaiting()
+  }, [])
+
+  /** `opened` marks the one message the agent started itself. Nothing else in
+   *  this thread was unprompted, so it is the only one that gets its own
+   *  background — the distinction IS the information. */
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string; opened?: boolean }[]>([])
   const [chatPending, setChatPending] = useState(false)
+  /**
+   * WHAT IT IS ACTUALLY DOING, not "Thinking…".
+   *
+   * "Thinking" is true of every second of every request and therefore tells
+   * nobody anything. This endpoint answers in one call — there is no stream to
+   * report real per-step progress from — so inventing "Analysing…" then
+   * "Cross-referencing…" would be a progress bar that is choreography.
+   *
+   * What IS true and specific is what the question was handed: the sources
+   * actually ticked and travelling with it. Naming those is honest, it is
+   * different per request, and it tells someone why an answer will or will not
+   * know a thing.
+   */
+  const [workingOn, setWorkingOn] = useState('')
   const [convQuery, setConvQuery] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
   const [notebookTitle, setNotebookTitle] = useState(brandName)
@@ -427,6 +482,20 @@ export default function NotebookPage() {
     setChatMessages(m => [...m, { role: 'user', content: message }])
     setChatInput('')
     setChatPending(true)
+    {
+      const named: string[] = []
+      if (checkedSources.live_projects) named.push(t('nb.src.projects'))
+      if (checkedSources.crm_leads) named.push(t('nb.src.leads'))
+      if (checkedSources.campaigns) named.push(t('nb.src.campaigns'))
+      if (checkedSources.market_intel) named.push(t('nb.src.market'))
+      if (checkedSources.all_conversations) named.push(t('nb.src.history'))
+      const files = checkedSources.uploads
+        ? customSources.filter((x) => checkedSources[x.id] !== false).length : 0
+      if (files > 0) named.push(t('nb.src.files', { n: files }))
+      setWorkingOn(named.length === 0
+        ? t('nb.working.nothing')
+        : t('nb.working.reading', { what: named.join(t('nb.src.join')) }))
+    }
     try {
       // Use the PERSISTING notebook endpoint so the thread is real and shows up
       // in the sidebar / reloads (the old server-ai/chat call was ephemeral).
@@ -858,7 +927,14 @@ export default function NotebookPage() {
                   className={
                     m.role === 'user'
                       ? 'ml-8 rounded-2xl border border-line bg-surface px-4 py-3'
-                      : 'mr-8 rounded-2xl border border-gold/12 bg-gold/[0.04] px-4 py-3'
+                      : m.opened
+                        // A MODEL DOES NOT START CONVERSATIONS. Every chat
+                        // anyone has used opens because a person typed first,
+                        // so a message that simply appeared has to look unlike
+                        // a reply or it reads as one that lost its question.
+                        // One arrival, once — no looping motion afterwards.
+                        ? 'agent-opened mr-8 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.05] px-4 py-3'
+                        : 'mr-8 rounded-2xl border border-gold/12 bg-gold/[0.04] px-4 py-3'
                   }
                 >
                   <div className="mb-1.5 flex items-center gap-1.5">
@@ -868,14 +944,17 @@ export default function NotebookPage() {
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                       {m.role === 'assistant' ? t('nb.freeholdAi') : t('nb.you')}
                     </span>
+                    {m.opened && (
+                      <span className="text-[10px] font-medium text-slate-500">{t('nb.agentOpened')}</span>
+                    )}
                   </div>
                   <p className="whitespace-pre-wrap text-sm leading-[1.7] text-slate-100">{m.content}</p>
                 </div>
               ))}
               {chatPending && (
-                <div className="mr-8 flex items-center gap-2 rounded-2xl border border-gold/12 bg-gold/[0.04] px-4 py-3">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gold/60" />
-                  <span className="text-xs text-slate-500">{t('nb.thinking')}</span>
+                <div className="mr-8 flex items-center gap-2 rounded-2xl border border-line bg-surface px-4 py-3">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />
+                  <span className="text-xs text-slate-500">{workingOn || t('nb.thinking')}</span>
                 </div>
               )}
               <div ref={chatBottomRef} />
@@ -1452,6 +1531,14 @@ export default function NotebookPage() {
         </div>
       )}
 
+      <style jsx global>{`
+        @keyframes agentArrive {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: none; }
+        }
+        .agent-opened { animation: agentArrive 0.35s ease-out 1; }
+        @media (prefers-reduced-motion: reduce) { .agent-opened { animation: none; } }
+      `}</style>
     </div>
   )
 }

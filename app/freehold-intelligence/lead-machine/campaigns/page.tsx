@@ -131,9 +131,9 @@ export default async function CampaignsPage() {
 
       {/* Config error state */}
       {isConfigError && (
-        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
+        <div className="mt-8 rounded-[20px] border border-line bg-surface-2 p-5 sm:p-6">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" />
             <div>
               <div className="text-sm font-semibold text-white">{t('lm.campaigns.metaNotConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
@@ -152,9 +152,9 @@ export default async function CampaignsPage() {
 
       {/* API error (non-config) */}
       {data.error && !isConfigError && (
-        <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
+        <div className="mt-8 rounded-xl border border-line bg-surface-2 p-5">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
             <p className="text-sm text-slate-300">{data.error}</p>
           </div>
         </div>
@@ -182,7 +182,7 @@ export default async function CampaignsPage() {
       {!isConfigError && !data.error && campaigns.length === 0 && (hiddenByBrokerFilter || (scan && scan.elsewhere > 0)) && (
         <div className="mt-8 rounded-[20px] border border-amber-400/25 bg-amber-400/[0.06] p-5">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               {hiddenByBrokerFilter ? (
                 <>
@@ -211,7 +211,7 @@ export default async function CampaignsPage() {
                       all — sending someone to reconnect would waste their time
                       and make the app look broken a second time. */}
                   {scan!.accountSource === 'env' ? (
-                    <p className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/[0.07] px-3 py-2 text-xs leading-relaxed text-amber-200">
+                    <p className="mt-3 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs leading-relaxed text-slate-400">
                       {t('lm.campaigns.accountPinnedByEnv')}
                     </p>
                   ) : !isBroker && (

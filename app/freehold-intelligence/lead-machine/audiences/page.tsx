@@ -402,7 +402,7 @@ export default function AudiencesPage() {
         <h1 className="flex items-center gap-2.5 text-[22px] font-bold text-white"><Users className="h-5 w-5 text-gold" /> {t('lm.aud.title')}</h1>
         <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-slate-400">{t('lm.aud.subtitle')}</p>
         {!loading && !connected && (
-          <p className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-[12px] text-amber-300">{t('lm.aud.notConnected')}</p>
+          <p className="mt-3 rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-[12px] text-slate-400">{t('lm.aud.notConnected')}</p>
         )}
       </header>
 
@@ -629,7 +629,7 @@ export default function AudiencesPage() {
           <div className="flex items-center gap-2 text-[15px] font-semibold text-white"><Handshake className="h-4 w-4 text-gold" /> {t('lm.aud.buyers.title')}</div>
           <p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-slate-400">{t('lm.aud.buyers.sub')}</p>
           {!buyers.metaConnected ? (
-            <p className="mt-3 text-[12px] text-amber-300">{t('lm.aud.buyers.needMeta')}</p>
+            <p className="mt-3 text-[12px] text-slate-400">{t('lm.aud.buyers.needMeta')}</p>
           ) : (
             <div className="mt-4 space-y-3.5">
               <p className={`text-[12px] font-semibold ${buyers.count >= buyers.min ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -670,7 +670,7 @@ export default function AudiencesPage() {
         <div className="flex items-center gap-2 text-[15px] font-semibold text-white"><Upload className="h-4 w-4 text-gold" /> {t('lm.aud.seed.title')}</div>
         <p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-slate-400">{t('lm.aud.seed.sub')}</p>
         {!connected ? (
-          <p className="mt-3 text-[12px] text-amber-300">{t('lm.aud.seed.needMeta')}</p>
+          <p className="mt-3 text-[12px] text-slate-400">{t('lm.aud.seed.needMeta')}</p>
         ) : (
           <div className="mt-4 space-y-3.5">
             <div className="flex flex-wrap items-center gap-3">

@@ -14,7 +14,7 @@
  */
 
 import { useState } from 'react'
-import { Loader2, Layers, AlertTriangle } from 'lucide-react'
+import { Loader2, Layers } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
 interface Arm { id: string; label: string; kind: string; rationale: string; share: number; dailyBudgetAed: number }
@@ -151,16 +151,18 @@ export default function ArmPlanner({
             </div>
           )}
 
-          {/* THE CAVEATS. Not a footnote: a plan that hides what it did not
-              know reads as confidence and is a guess. */}
+          {/* WHAT THE PLAN IS WORKING FROM. Every word kept — a plan that hides
+              what it did not know reads as confidence and is a guess. But this
+              is context, not a fault: nobody did anything wrong by having a new
+              account with no history yet. Styled as the note it is. */}
           {plan.caveats.length > 0 && (
-            <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-3.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-amber-300">
-                <AlertTriangle className="h-3.5 w-3.5" /> {t('lm.aud.arms.caveats')}
+            <div className="rounded-xl border border-line bg-surface-2 p-3.5">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                {t('lm.aud.arms.caveats')}
               </div>
               <div className="mt-2 space-y-1.5">
                 {plan.caveats.map((c) => (
-                  <p key={c} className="text-[11.5px] leading-relaxed text-amber-100/80">{c}</p>
+                  <p key={c} className="text-[11.5px] leading-relaxed text-slate-400">{c}</p>
                 ))}
               </div>
             </div>

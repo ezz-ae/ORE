@@ -298,9 +298,9 @@ export default function GoogleAdsPage() {
 
       {/* Config error */}
       {configErr && (
-        <div className="mt-8 rounded-xl border border-red-400/20 bg-red-400/[0.05] p-5">
+        <div className="mt-8 rounded-xl border border-line bg-surface-2 p-5">
           <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" />
             <div>
               <div className="text-sm font-semibold text-white">{t('padsg.configTitle')}</div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
@@ -314,9 +314,9 @@ export default function GoogleAdsPage() {
 
       {/* Network error */}
       {error && !configErr && (
-        <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-4">
+        <div className="mt-8 rounded-xl border border-line bg-surface-2 p-4">
           <div className="flex items-center gap-2 text-sm text-slate-400">
-            <AlertCircle className="h-4 w-4 shrink-0 text-orange-400" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-slate-500" />
             {error}
           </div>
         </div>
