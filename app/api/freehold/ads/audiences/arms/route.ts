@@ -24,6 +24,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import { getAudience, normalizeSpec } from '@/lib/freehold/audiences'
+import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
+import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
 import { snapshotOutcomes } from '@/lib/freehold/audience-snapshot'
 import { assessEvents } from '@/lib/freehold/relevance'
 import { levelEvidenceFrom, narrowingByLevel, type EntityLevel } from '@/lib/freehold/level-evidence'
@@ -54,11 +56,22 @@ export async function POST(req: NextRequest) {
   }
 
   // The spec comes from a saved audience or straight from a draft.
+  //
+  // A PATTERN AUDIENCE ALSO BRINGS ITS LEVELS. That is the piece that made the
+  // arm planner reachable: levels were never assigned anywhere in the product,
+  // so `levelsByEntityId` had no producer and the planner had no input. A
+  // pattern already knows — the operator put "cash" under money and "investing"
+  // under why-they-are-buying — so the levels are rederived from the stored
+  // pattern rather than asked for again.
   let spec: CampaignTargeting
+  let fromPattern: ReturnType<typeof planPattern> | null = null
   if (typeof body.audienceId === 'string' && body.audienceId) {
     const saved = await getAudience(body.audienceId)
     if (!saved) return NextResponse.json({ error: 'Audience not found' }, { status: 404 })
     spec = saved.spec
+    if (saved.kind === 'pattern' && saved.pattern) {
+      fromPattern = planPattern(parsePattern(saved.pattern), [...SUPPORTED_LEAD_LANGUAGES])
+    }
   } else {
     spec = normalizeSpec(body.spec)
   }
@@ -84,9 +97,14 @@ export async function POST(req: NextRequest) {
     ]),
   ]
 
-  const assignment: EntityLevel[] = everyEntity
-    .map((e) => ({ id: e.id, kind: e.kind, level: Number(raw[e.id]) }))
-    .filter((e): e is EntityLevel => isLevel(e.level))
+  // A pattern's own levels win over anything posted: the pattern IS the
+  // assignment, and letting a caller override it would let the plan describe a
+  // schema the audience was not built to.
+  const assignment: EntityLevel[] = fromPattern
+    ? fromPattern.entityLevels
+    : everyEntity
+        .map((e) => ({ id: e.id, kind: e.kind, level: Number(raw[e.id]) }))
+        .filter((e): e is EntityLevel => isLevel(e.level))
 
   const unassigned = everyEntity.length - assignment.length
   const levels = Array.from(new Set<PositiveLevel>([1, ...assignment.map((a) => a.level)])).sort()
@@ -159,6 +177,12 @@ export async function POST(req: NextRequest) {
   }
   if (unassigned > 0) {
     caveats.push(`${unassigned} segment${unassigned === 1 ? '' : 's'} in this audience have no level, so nothing was planned around ${unassigned === 1 ? 'it' : 'them'}.`)
+  }
+  // A segment claimed by two levels cannot make the arms above and below it
+  // different, which is the one thing an arm has to do. Said plainly rather
+  // than left to make the plan look more precise than the mapping is.
+  if (fromPattern && fromPattern.sharedSegments.length > 0) {
+    caveats.push(`${fromPattern.sharedSegments.join(' and ')} stand${fromPattern.sharedSegments.length === 1 ? 's' : ''} for more than one thing in this audience, so the arms either side of it will overlap more than the split suggests.`)
   }
   if (plan.unallocatedAed > 0) {
     caveats.push(`AED ${plan.unallocatedAed} could not be allocated — an ad set under AED ${MIN_ARM_DAILY_AED}/day cannot leave the learning phase, so it was not created rather than being funded to fail.`)

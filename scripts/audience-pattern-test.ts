@@ -268,6 +268,40 @@ console.log('\n── the recipe never crosses the wire ──')
     'pattern' in forClient({ ...base, kind: 'pattern', pattern: { money: 'cash' } }))
 }
 
+console.log('\n── every segment carries the level it came from ──')
+{
+  // THE INPUT THE ARM PLANNER NEVER HAD. Levels were assigned nowhere in the
+  // product, so `level-arms.ts` sat complete and unreachable. A pattern knows,
+  // because the operator chose "cash" under money and "investing" under
+  // why-they-are-buying — that IS the schema.
+  const p = planPattern(pat({ motive: ['investment'], money: 'cash', strictness: 100 }))
+  const byId = new Map(p.entityLevels.map((e) => [e.id, e.level]))
+  check('a money segment lands at the money level',
+    byId.get('6003193636887') === 2, String(byId.get('6003193636887')))
+  check('a why-they-buy segment lands at the product level',
+    byId.get('6002714398372') === 3, String(byId.get('6002714398372')))
+  check('every segment in the spec has a level',
+    p.entityLevels.length > 0 && p.entityLevels.every((e) => e.level >= 1 && e.level <= 5),
+    JSON.stringify(p.entityLevels))
+  check('a pattern with no segments assigns no levels rather than inventing one',
+    planPattern(pat({ lifeStage: ['single'] })).entityLevels.length === 0)
+
+  // "Luxury goods" stands for paying cash AND for wanting a holiday home. One
+  // Meta interest doing double duty a level apart cannot make the arms either
+  // side of it different, which is the one thing an arm has to do.
+  const collide = planPattern(pat({ motive: ['holiday_home'], money: 'cash' }))
+  check('a segment claimed by two levels takes the LOWER one — the cheaper cut first',
+    collide.entityLevels.find((e) => e.id === '6003193636887')?.level === 2,
+    JSON.stringify(collide.entityLevels))
+  check('…and the collision is reported, never hidden',
+    collide.sharedSegments.includes('Luxury goods'), JSON.stringify(collide.sharedSegments))
+  check('a pattern with no collision reports none',
+    planPattern(pat({ motive: ['investment'] })).sharedSegments.length === 0,
+    JSON.stringify(planPattern(pat({ motive: ['investment'] })).sharedSegments))
+  check('two motives sharing a segment at the SAME level is not a collision',
+    planPattern(pat({ motive: ['investment', 'golden_visa'] })).sharedSegments.length === 0)
+}
+
 console.log('\n── the pattern and the spec beside it cannot drift ──')
 {
   // A stored pattern that no longer produces its stored spec shows one person

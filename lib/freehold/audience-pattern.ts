@@ -38,6 +38,7 @@
  * Pure — no I/O. The catalog ids are Meta's; the composition is ours.
  */
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
+import type { PositiveLevel } from '@/lib/freehold/level-arms'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE VOCABULARY. Real-estate words, not platform words.
@@ -150,6 +151,23 @@ export function parsePattern(raw: unknown): AudiencePattern {
 // THE TRANSLATION. Every entry carries WHY, because a mapping nobody can
 // argue with is a mapping nobody can improve.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * THE LEVEL SCHEMA, as the pattern traits map onto it.
+ *
+ *   1 persona   — who they are. Life stage, where they live, what they read.
+ *   2 money     — what they can pay with. Filtered before product interest
+ *                 because it is the cheaper cut: there is no point paying to
+ *                 find people interested in a villa who cannot buy one.
+ *   3 product   — why they are buying.
+ *   4 decision  — how close they are. Carried as temperature, not as targeting.
+ *   5           — experimental. Nothing maps here yet, and inventing something
+ *                 to fill it would be worse than leaving it empty.
+ */
+export const LEVEL_PERSONA: PositiveLevel = 1
+export const LEVEL_MONEY: PositiveLevel = 2
+export const LEVEL_PRODUCT: PositiveLevel = 3
+export const LEVEL_DECISION: PositiveLevel = 4
 
 interface Mapped {
   /** Meta behaviour/interest entities this trait implies. */
@@ -274,6 +292,14 @@ export interface PatternPlan {
    *  written in the language their ad would be. Named, never dropped quietly:
    *  the operator chose them and is entitled to know they did not survive. */
   unreachable: string[]
+  /** Which level every segment sits at — the input the arm planner has always
+   *  asked for and nothing could produce. Derived from the trait that put the
+   *  segment there, never inferred from the segment itself. */
+  entityLevels: Array<{ id: string; kind: 'interest'; level: PositiveLevel }>
+  /** Segments claimed by more than one level, by name. Each one is a place the
+   *  translation is using a single Meta interest to stand for two different
+   *  things, which weakens any arm built on the boundary between them. */
+  sharedSegments: string[]
 }
 
 const uniqEntities = (xs: TargetingEntity[]): TargetingEntity[] => {
@@ -301,10 +327,15 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   const bindEverything = strictness >= STRICT_ALL
   const bindDefining = strictness >= STRICT_DEFINING
 
-  const traits: Array<{ m: Mapped; label: string }> = []
-  for (const m of p.motive) traits.push({ m: MOTIVE[m], label: m })
-  for (const l of p.lifeStage) traits.push({ m: LIFE_STAGE[l], label: l })
-  traits.push({ m: MONEY[p.money], label: p.money })
+  // Each trait carries the LEVEL it belongs to. This is the input the arm
+  // planner has always asked for and never had: nothing in the product could
+  // say which level a segment sat at, so `level-arms.ts` sat complete and
+  // unreachable. A pattern already knows — the operator chose "cash" under
+  // money and "investing" under why-they-are-buying, and that IS the schema.
+  const traits: Array<{ m: Mapped; label: string; level: PositiveLevel }> = []
+  for (const m of p.motive) traits.push({ m: MOTIVE[m], label: m, level: LEVEL_PRODUCT })
+  for (const l of p.lifeStage) traits.push({ m: LIFE_STAGE[l], label: l, level: LEVEL_PERSONA })
+  traits.push({ m: MONEY[p.money], label: p.money, level: LEVEL_MONEY })
 
   const binding: TargetingEntity[][] = []
   const hinting: TargetingEntity[] = []
@@ -363,6 +394,37 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   }
   if (targeting.countries.length === 0) targeting.countries = ['AE']
 
+  // ── Which level each segment ended up at ────────────────────────────────
+  //
+  // SOME SEGMENTS ARE CLAIMED BY TWO LEVELS, and that is a fact about the
+  // mapping rather than a bug to hide. "Luxury goods" stands in for paying
+  // cash (level 2) AND for wanting a holiday home (level 3); "Investment"
+  // stands in for investing and for a golden visa (both level 3, so harmless).
+  // Meta has no income field in this market, so money is a proxy — and a proxy
+  // shared with a product interest is a weak one.
+  //
+  // The planner's premise is that levels are SEPARABLE: an arm adding level 3
+  // must buy different people than the arm that stopped at level 2. A segment
+  // in both cannot do that. It is assigned to the LOWER level — the cheaper
+  // cut, applied first — and reported, because a plan built on a collision
+  // nobody mentioned would read as precision it does not have.
+  const claimedBy = new Map<string, { entity: TargetingEntity; levels: Set<PositiveLevel> }>()
+  for (const { m, level } of traits) {
+    for (const e of m.entities) {
+      const seen = claimedBy.get(e.id)
+      if (seen) seen.levels.add(level)
+      else claimedBy.set(e.id, { entity: e, levels: new Set([level]) })
+    }
+  }
+  const entityLevels = Array.from(claimedBy.values()).map(({ entity, levels }) => ({
+    id: entity.id,
+    kind: 'interest' as const,
+    level: Math.min(...levels) as PositiveLevel,
+  }))
+  const sharedSegments = Array.from(claimedBy.values())
+    .filter((c) => c.levels.size > 1)
+    .map((c) => c.entity.name)
+
   const temperature = TEMPERATURE[p.readiness] ?? 'cold'
 
   return {
@@ -373,6 +435,8 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
     temperature,
     needsRetargetingSource: temperature !== 'cold',
     unreachable: droppedBundles,
+    entityLevels,
+    sharedSegments,
   }
 }
 
