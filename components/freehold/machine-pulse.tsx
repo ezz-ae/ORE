@@ -26,6 +26,7 @@ import {
   ClipboardList, ShieldAlert, RefreshCw, Layers,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { DismissControl } from '@/components/freehold/dismiss-control'
 
 type Entry = { id: string; kind: string; detail: string; at: string; machine: string; repeats?: number }
 type Pulse = {
@@ -57,13 +58,94 @@ function ago(iso: string, t: ReturnType<typeof useT>): string {
   return t('lm.pulse.daysAgo', { n: Math.round(hrs / 24) })
 }
 
+
+/**
+ * Putting the note away, without being able to lose a live problem.
+ *
+ * A dismissal is stored against WHAT WAS SHOWN, not against a date. The
+ * signature is the set of alarms by identity — so "I have read these" stays
+ * true only while "these" is true. One new alarm, or one that changes its
+ * wording because its numbers moved, and the note is back on its own.
+ *
+ * That is the difference between a close button being safe and being a way to
+ * make a real problem disappear by clicking it once on a Friday.
+ */
+const PUT_AWAY_KEY = 'fh.pulse.note.putAway'
+const SEEN_KEY = 'fh.pulse.note.seen'
+const TOMORROW_MS = 24 * 60 * 60 * 1000
+
+const alarmSignature = (alarms: Entry[]) =>
+  alarms.map((a) => `${a.kind}:${a.detail}`).sort().join('|')
+
+function setPutAway(signature: string, forMs?: number) {
+  try {
+    window.localStorage.setItem(PUT_AWAY_KEY, JSON.stringify({
+      signature,
+      // No `until` means "until the contents change" — Exit. A date means the
+      // same, PLUS it comes back on its own when the date passes — Later.
+      until: forMs ? Date.now() + forMs : null,
+    }))
+  } catch { /* private mode: the note simply stays, which is the safe failure */ }
+}
+
+/**
+ * ONCE, WHEN YOU ARE THERE. NOT WAITING FOR YOU.
+ *
+ * A note that sits on the page every visit stops being a note. Read the same
+ * sentence three mornings running and it has taught you that nothing here is
+ * worth reading — which is a worse outcome than never having said it, because
+ * it also costs the NEXT thing its attention.
+ *
+ * So it appears once per session for a given set of items and then steps
+ * aside. The items themselves stay listed on the page; it is the machine
+ * SPEAKING that is one-time. Say it, then stop saying it.
+ *
+ * Session-scoped, not permanent: tomorrow is a new visit and, if it is still
+ * true, still worth one sentence.
+ */
+function alreadySaid(signature: string): boolean {
+  try { return window.sessionStorage.getItem(SEEN_KEY) === signature } catch { return false }
+}
+
+function markSaid(signature: string) {
+  try { window.sessionStorage.setItem(SEEN_KEY, signature) } catch { /* private mode */ }
+}
+
+function isPutAway(signature: string): boolean {
+  try {
+    const raw = window.localStorage.getItem(PUT_AWAY_KEY)
+    if (!raw) return false
+    const s = JSON.parse(raw) as { signature?: string; until?: number | null }
+    if (s.signature !== signature) return false
+    if (typeof s.until === 'number') return Date.now() < s.until
+    return true
+  } catch { return false }
+}
+
 export function MachinePulse() {
   const router = useRouter()
   /** What the operator is typing back to the machine. */
   const [reply, setReply] = useState('')
+  /** Re-checked after mount and after every close, so the note disappears and
+   *  reappears without a page reload. */
+  const [putAwayTick, setPutAwayTick] = useState(0)
+  /** Set only AFTER the note has been rendered — marking it said while merely
+   *  deciding whether to render would silence it without anyone reading it. */
+  const [said, setSaid] = useState<string | null>(null)
+  /** Clicked its way back open from the side. */
+  const [reopened, setReopened] = useState(false)
   const t = useT()
   const [p, setP] = useState<Pulse | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Say it once this session. Runs after the note has actually rendered.
+  useEffect(() => {
+    if (!p || p.alarms.length === 0) return
+    const sig = alarmSignature(p.alarms)
+    if (isPutAway(sig) || alreadySaid(sig)) return
+    setSaid(sig)
+    markSaid(sig)
+  }, [p])
 
   useEffect(() => {
     fetch('/api/freehold/lead-machine/pulse', { cache: 'no-store' })
@@ -99,6 +181,14 @@ export function MachinePulse() {
 
   const live = p.machines.running > 0
   const pctOfCap = p.spend.capAed > 0 ? Math.min(100, Math.round((p.spend.committedAed / p.spend.capAed) * 100)) : 0
+
+  // Computed in render, not stored: the signature depends on the alarms that
+  // just arrived, so a put-away note un-hides itself the moment they differ.
+  const signature = alarmSignature(p.alarms)
+  const noteHidden = !reopened
+    && typeof window !== 'undefined'
+    && putAwayTick >= 0
+    && (isPutAway(signature) || (alreadySaid(signature) && said !== signature))
 
   return (
     <div className="mt-6 space-y-4">
@@ -175,10 +265,44 @@ export function MachinePulse() {
              reads like one and it sits after the work rather than in front of
              it. Nothing is hidden or softened away: same items, same detail,
              same counts. Only the order and the volume change. */}
-      {p.alarms.length > 0 && (
+      {/* IT IS NOT A NOTIFICATION AND IT IS NOT FURNITURE — IT IS A CHAT.
+          So once it has said its line it does not vanish and it does not keep
+          talking. It steps to the side of its own block and waits to be
+          clicked, the way a person who has already told you something waits
+          rather than repeating themselves. Deliberately inline rather than
+          another floating button: two corners are already taken, and a third
+          thing hovering over the page is exactly the pestering this avoids. */}
+      {p.alarms.length > 0 && noteHidden && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setReopened(true)}
+            className="group inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-[11px] text-slate-400 transition hover:border-gold/30 hover:text-white"
+            aria-label={t('lm.pulse.reopen')}
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-gold/60 transition group-hover:text-gold" />
+            <span className="h-1 w-1 rounded-full bg-gold/70" />
+          </button>
+        </div>
+      )}
+
+      {p.alarms.length > 0 && !noteHidden && (
         <div className="rounded-2xl border border-line bg-surface-2 p-5">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold/70" /> {t('lm.pulse.needsYou', { n: p.alarms.length })}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-gold/70" /> {t('lm.pulse.fromAgent')}
+            </div>
+            {/* Later genuinely returns — tomorrow, with the same items if they
+                are still true. Exit puts THIS set away, and a set is its
+                contents: the moment the machine finds something new, or the
+                same thing changes, it comes back on its own. Neither verb can
+                lose a live problem, which is the only reason a close button is
+                allowed near one. */}
+            <DismissControl
+              id="machine-pulse-note"
+              onExit={() => { setPutAway(alarmSignature(p.alarms)); setPutAwayTick((n) => n + 1) }}
+              onLater={() => { setPutAway(alarmSignature(p.alarms), TOMORROW_MS); setPutAwayTick((n) => n + 1) }}
+            />
           </div>
 
           {/* THE MACHINE SPEAKS, rather than flashing.
@@ -221,22 +345,10 @@ export function MachinePulse() {
               <MessageSquare className="h-3 w-3" /> {t('lm.pulse.send')}
             </button>
           </form>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {/* Openers, for someone who would rather not compose a sentence.
-                They fill the box — they do not fire anything. */}
-            {(['lm.pulse.opener.explain', 'lm.pulse.opener.fix'] as const).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setReply(t(k))}
-                className="rounded-full border border-line px-3 py-1 text-[11px] text-slate-400 transition hover:border-gold/30 hover:text-white"
-              >
-                {t(k)}
-              </button>
-            ))}
+          <div className="mt-2">
             <Link
               href="/freehold-intelligence/lead-machine/ads-machine"
-              className="rounded-full border border-line px-3 py-1 text-[11px] text-slate-400 transition hover:border-gold/30 hover:text-white"
+              className="text-[11px] text-slate-500 transition hover:text-slate-300"
             >
               {t('lm.pulse.seeDetail')}
             </Link>
