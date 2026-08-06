@@ -16,7 +16,10 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }[] }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
 type Analysis = { working: string[]; blocking: string[]; actions: string[] }
-type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number }
+type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number; pointValue: number | null }
+/** A rule the evidence could not decide yet — shown with its reason, so
+ *  "nothing fired" never has to be taken on faith. */
+type RuleWithheld = { ruleId: string; name: string; metric: RuleMetric; reason: string }
 
 // AI Advisor (see /api/freehold/ads/advisor) — every value here is a real
 // fetched/computed number or a real Gemini suggestion grounded in them.
@@ -94,6 +97,7 @@ export default function CampaignCommandPage() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [rules, setRules] = useState<CampaignRule[]>([])
   const [matches, setMatches] = useState<RuleMatch[] | null>(null)
+  const [withheld, setWithheld] = useState<RuleWithheld[]>([])
   const [checking, setChecking] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [applyingId, setApplyingId] = useState<string | null>(null)
@@ -293,14 +297,21 @@ export default function CampaignCommandPage() {
 
   async function checkRules() {
     if (!data || checking) return
-    setChecking(true); setMatches(null)
+    setChecking(true); setMatches(null); setWithheld([])
     try {
       const res = await fetch('/api/freehold/campaign-rules/evaluate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignId: id, campaignName: data.campaign.name, metrics: { cpl: kpis.cpl, leads: kpis.leads, spend: kpis.spend, ctr: kpis.ctr } }),
+        // COUNTS, not rates — the server derives every rate behind the
+        // minimum-evidence gate. Sending `cpl` from here is what let a
+        // campaign with zero leads report a cost per lead of zero.
+        body: JSON.stringify({
+          campaignId: id, campaignName: data.campaign.name,
+          metrics: { leads: kpis.leads, spend: kpis.spend, clicks: kpis.clicks, impressions: kpis.impressions },
+        }),
       })
       const d = await res.json().catch(() => ({}))
       setMatches(Array.isArray(d.matches) ? d.matches : [])
+      setWithheld(Array.isArray(d.withheld) ? d.withheld : [])
     } catch { setMatches([]) } finally { setChecking(false) }
   }
 
@@ -813,26 +824,37 @@ export default function CampaignCommandPage() {
         </div>
 
         {matches !== null && (
-          matches.length === 0 ? (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-2.5 text-xs text-emerald-200/90">
-              <CheckCircle2 className="h-3.5 w-3.5" /> {t('lm.rule.allClear')}
-            </div>
-          ) : (
-            <div className="mt-4 space-y-2">
-              {matches.map((m) => (
-                <div key={m.ruleId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3.5 py-2.5">
-                  <div className="min-w-0 text-xs text-amber-100">
-                    <span className="font-semibold">{ruleText(m)}</span>
-                    <span className="ms-1 text-amber-200/70">· {t('lm.rule.now', { v: m.currentValue })}</span>
-                  </div>
-                  <button type="button" onClick={() => applyMatch(m)} disabled={applyingId === m.ruleId}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
-                    {applyingId === m.ruleId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} {t('lm.rule.apply')}
-                  </button>
+          <div className="mt-4 space-y-2">
+            {matches.length === 0 && (
+              // "All clear" only when every rule could actually be judged.
+              // A rule the evidence cannot decide is not a rule that passed.
+              <div className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs ${
+                withheld.length > 0
+                  ? 'border-line-strong bg-surface text-slate-300'
+                  : 'border-emerald-400/20 bg-emerald-400/[0.06] text-emerald-200/90'}`}>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                {withheld.length > 0 ? t('lm.rule.noneDecided') : t('lm.rule.allClear')}
+              </div>
+            )}
+            {matches.map((m) => (
+              <div key={m.ruleId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3.5 py-2.5">
+                <div className="min-w-0 text-xs text-amber-100">
+                  <span className="font-semibold">{ruleText(m)}</span>
+                  <span className="ms-1 text-amber-200/70">· {t('lm.rule.now', { v: m.currentValue })}</span>
                 </div>
-              ))}
-            </div>
-          )
+                <button type="button" onClick={() => applyMatch(m)} disabled={applyingId === m.ruleId}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+                  {applyingId === m.ruleId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} {t('lm.rule.apply')}
+                </button>
+              </div>
+            ))}
+            {withheld.map((w) => (
+              <div key={`held-${w.ruleId}`} className="rounded-xl border border-line bg-surface-2/60 px-3.5 py-2.5">
+                <p className="text-xs font-semibold text-slate-300">{t('lm.rule.held', { name: w.name || w.metric })}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">{w.reason}</p>
+              </div>
+            ))}
+          </div>
         )}
 
         <div className="mt-4 space-y-2">

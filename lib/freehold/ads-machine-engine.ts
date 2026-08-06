@@ -58,6 +58,7 @@ import {
 } from '@/lib/google/client'
 import { GoogleConfigError, type GoogleCampaign } from '@/lib/google/types'
 import { getCampaignQuality, badPhone, QUALIFIED_STATUSES } from '@/lib/freehold/campaign-quality'
+import { MIN_ATTRIBUTED_FOR_QUALITY } from '@/lib/freehold/min-evidence'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { createLocalCampaign } from '@/lib/google/local-store'
 import {
@@ -1066,10 +1067,19 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       // (Q) Quality-condemned — this trial's CRM quality is bad while a
       // sibling proves the project itself converts.
+      //
+      // BOTH sides need enough attributed leads for their score to mean
+      // anything. The score is a weighted composite of funnel proportions, so
+      // a single attributed lead that went cold reads as 0/100 and a single
+      // one that closed reads as 100/100 — which is precisely the pair of
+      // numbers this branch looks for. Without the gate, one lead each side
+      // was enough to pause a trial.
+      const scored = (s: TrialState) =>
+        s.qualityScore !== null && s.attributed >= MIN_ATTRIBUTED_FOR_QUALITY
       const qualityCondemned = (s: TrialState) => {
         if (!spendGated(s) || isProtected(s)) return false
-        if (s.qualityScore === null || s.qualityScore >= QUALITY_CONDEMN_BELOW) return false
-        return group.some((o) => o !== s && o.qualityScore !== null && o.qualityScore >= QUALITY_SIBLING_AT_LEAST)
+        if (!scored(s) || (s.qualityScore as number) >= QUALITY_CONDEMN_BELOW) return false
+        return group.some((o) => o !== s && scored(o) && (o.qualityScore as number) >= QUALITY_SIBLING_AT_LEAST)
       }
 
       const candidates = group

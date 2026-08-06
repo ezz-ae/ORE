@@ -88,18 +88,31 @@ export async function runAutopilotPass(email: string): Promise<{ applied: Array<
       getCampaignInsights(campaign.id).catch(() => null),
       getCampaignQuality(campaign.id, campaign.name),
     ])
-    const impressions = Number(insights?.impressions ?? 0)
-    const clicks = Number(insights?.clicks ?? 0)
-    const spend = Number(insights?.spend ?? 0)
-    const leads = metaLeadCount(insights?.actions)
+    // RAW evidence only. Rates are derived inside `evaluateRules` through the
+    // minimum-evidence gate — this used to hand it `cpl: leads > 0 ? … : 0`,
+    // which told a `cpl < 100 → budget_up` rule that a campaign with no leads
+    // at all was the cheapest one running.
     const metrics: RuleMetrics = {
-      quality: quality.score,
-      cpl: leads > 0 ? spend / leads : 0,
-      leads, spend,
-      ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+      spend: Number(insights?.spend ?? 0),
+      leads: metaLeadCount(insights?.actions),
+      clicks: Number(insights?.clicks ?? 0),
+      impressions: Number(insights?.impressions ?? 0),
+      attributed: quality.attributed,
+      qualityScore: quality.score,
     }
 
-    for (const match of evaluateRules(campaignRules, metrics)) {
+    const evaluation = evaluateRules(campaignRules, metrics)
+    // Not acting is a decision too, and the operator has to be able to see it —
+    // otherwise a rule that is silently un-decidable looks identical to a rule
+    // that is being satisfied.
+    for (const w of evaluation.withheld) {
+      actions.push({
+        campaign: campaign.name, rule: w.rule.id, action: 'held',
+        metric: w.metric, reason: w.reason,
+      })
+    }
+
+    for (const match of evaluation.matches) {
       const rule = match.rule
       try {
         if (mode === 'approval' && rule.action !== 'notify') {
@@ -150,11 +163,16 @@ export async function runAutopilotPass(email: string): Promise<{ applied: Array<
   }
 
   // The manager-visible audit record of this pass — readable lines, not JSON.
-  if (actions.length > 0) {
+  // A pass that only WITHHELD is not worth a nightly note (a quality rule on a
+  // young campaign would write one every night forever); the held lines still
+  // ride along in the note whenever something else happened, and always come
+  // back in the response the UI renders.
+  if (actions.some((a) => a.action !== 'held')) {
     const lines = actions.map((a) => {
       const name = String(a.campaign ?? 'campaign')
       if (a.error) return `• ${name}: action failed — ${String(a.error)}`
       if (a.action === 'skipped') return `• ${name}: skipped (${String(a.reason ?? 'auto-enhancement off')})`
+      if (a.action === 'held') return `• ${name}: "${String(a.metric)}" rule NOT applied — ${String(a.reason)}`
       if (a.needsApproval) return `• ${name}: "${String(a.action)}" matched but is WAITING FOR YOUR APPROVAL (metric ${String(a.metric)} = ${String(a.value)})`
       if (a.action === 'budget_up' || a.action === 'budget_down') {
         return `• ${name} / ${String(a.adSet ?? 'ad set')}: budget ${a.action === 'budget_up' ? 'increased' : 'decreased'} AED ${String(a.fromAED)} → AED ${String(a.toAED)} (${String(a.appliedPct)}% applied)`
