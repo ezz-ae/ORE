@@ -63,6 +63,7 @@ import { MIN_ATTRIBUTED_FOR_QUALITY } from '@/lib/freehold/min-evidence'
 import { samePace, SIGNIFICANT_P } from '@/lib/freehold/inventory-quality'
 import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { auditPlacements } from '@/lib/freehold/placement-audit'
+import type { AdDestination } from '@/lib/meta/types'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { createLocalCampaign } from '@/lib/google/local-store'
 import {
@@ -211,6 +212,29 @@ interface TrialState {
 }
 
 const trialChannel = (t: MachineTrialPlan): MachineChannel => t.channel ?? 'meta'
+
+/**
+ * Where a trial actually sends people.
+ *
+ * The plan's choice wins when it made one — that is what makes a destination
+ * pair a real comparison rather than two ad sets that happen to differ. With
+ * no choice recorded, the historic behaviour is preserved exactly: a Page with
+ * a lead form connected sends to the form.
+ *
+ * A trial that asks for a form when no form exists is DOWNGRADED to the
+ * landing page rather than failing. Half of a pair silently becoming a
+ * duplicate of the other half is the bad outcome here — two identical ad sets
+ * bidding against each other and answering nothing — and the caller logs the
+ * downgrade so the plan is not read as having tested something it did not.
+ */
+const resolveDestination = (
+  planned: AdDestination | undefined,
+  leadFormId: string | undefined | null,
+): AdDestination => {
+  if (!planned) return leadFormId ? 'form' : 'landing'
+  if (planned === 'form' && !leadFormId) return 'landing'
+  return planned
+}
 
 /** Pause/resume a trial's campaign on its own platform. */
 async function setPlatformStatus(row: MachineCampaign, running: boolean): Promise<void> {
@@ -708,6 +732,17 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         const project = plan.projects.find((p) => p.slug === trial.projectSlug)
         const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
         // Compliance: surface the Trakheesi permit in the ad's own body copy.
+        // A pair that quietly collapsed is worse than a pair that never ran:
+        // two identical ad sets bid against each other and settle nothing. Say
+        // it out loud at launch so the plan is never read as having tested a
+        // destination it could not reach.
+        if (trial.destination === 'form' && !leadFormId) {
+          await logActivity({
+            machineId, kind: 'observation',
+            detail: `"${trial.label}" was planned to send to an instant form, but the connected Page has no lead form — it launched to the landing page instead. This half of the destination pair is now identical to its partner, so the destination comparison will not answer anything until a lead form exists.`,
+            data: { trialId: trial.id, plannedDestination: 'form', actualDestination: 'landing', reason: 'destination_downgraded' },
+          })
+        }
         const creativeWithPermit = {
           ...trial.creative,
           primaryText: appendPermitToText(trial.creative.primaryText, permit),
@@ -720,7 +755,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           targeting: trial.targeting,
           creative: creativeWithPermit,
           launchStatus: 'ACTIVE',
-          destination: leadFormId ? 'form' : 'landing',
+          destination: resolveDestination(trial.destination, leadFormId),
           ...(leadFormId ? { leadFormId } : {}),
         })
         await addMachineCampaign({
@@ -1210,7 +1245,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               targeting: unlaunched.targeting,
               creative: { ...unlaunched.creative, primaryText: appendPermitToText(unlaunched.creative.primaryText, reallocPermit) },
               launchStatus: 'ACTIVE',
-              destination: leadFormId ? 'form' : 'landing',
+              destination: resolveDestination(unlaunched.destination, leadFormId),
               ...(leadFormId ? { leadFormId } : {}),
             })
             newCampaignId = launch.campaignId
@@ -1308,7 +1343,10 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               targeting: newTargeting,
               creative: { ...winnerTrial.creative, primaryText: appendPermitToText(winnerTrial.creative.primaryText, permit) },
               launchStatus: 'ACTIVE',
-              destination: leadFormId ? 'form' : 'landing',
+              // An Explore arm inherits its winner's destination: it is
+              // broadening the AUDIENCE, and changing two variables at once
+              // would make the comparison with its parent unreadable.
+              destination: resolveDestination(winnerTrial.destination, leadFormId),
               ...(leadFormId ? { leadFormId } : {}),
             })
             platformLaunched = true

@@ -25,6 +25,9 @@ import { getSiteUrl } from '@/lib/site'
  */
 import { randomUUID } from 'node:crypto'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
+import type { AdDestination } from '@/lib/meta/types'
+import { snapshotOutcomes } from '@/lib/freehold/audience-snapshot'
+import { assessEvents } from '@/lib/freehold/relevance'
 import { readOpportunityScores } from '@/lib/freehold/opportunity'
 import { getBuyerMatchProfile } from '@/lib/freehold/buyer-match'
 import { listAudiences, type SavedAudience } from '@/lib/freehold/audiences'
@@ -72,6 +75,18 @@ export interface MachineTrialPlan {
   copySource: 'gemini' | 'template'
   /** Why this trial exists, grounded in the real inputs used to build it. */
   rationale: string
+  /**
+   * Where the ad SENDS people. Absent = the engine's historic behaviour
+   * (`leadFormId ? 'form' : 'landing'`), kept so plans persisted before this
+   * existed launch exactly as they did before.
+   *
+   * Set explicitly, this is what makes a destination PAIR possible: two trials
+   * identical in audience, creative, budget and geo, differing only in where
+   * the click lands. That is a controlled comparison of the variable that
+   * usually moves cost per lead more than targeting does — and it was decided
+   * by a boolean, unexamined, in every campaign this machine ever launched.
+   */
+  destination?: AdDestination
 }
 
 export interface MachineProjectPlan {
@@ -340,6 +355,32 @@ export async function buildMachinePlan(
   } catch { /* audiences unavailable → plan proceeds without that trial */ }
 
   const projects: MachineProjectPlan[] = []
+  // WHAT THE FUNNEL HAS ALREADY SETTLED ABOUT DESTINATION.
+  //
+  // Read once for the whole plan rather than per project: destination is a
+  // property of how this business converts, not of which tower is being sold,
+  // and splitting the evidence by project would leave every project short of
+  // the volume needed to decide anything.
+  //
+  // Null means "not established" — which is the normal state early on, and the
+  // reason the planner pairs rather than guesses. It is never defaulted to the
+  // one that happens to be configured.
+  const destinationVerdict: AdDestination | null = await (async () => {
+    try {
+      const report = assessEvents(await snapshotOutcomes()).destination
+      const winner = report.relevant[0]
+      if (!winner) return null
+      const value = winner.value.toLowerCase()
+      return value === 'form' || value === 'landing' || value === 'whatsapp' || value === 'phone'
+        ? (value as AdDestination)
+        : null
+    } catch {
+      // No snapshots, no table, no Meta — plan as if nothing is known, which
+      // is the honest position and the one that produces the pair.
+      return null
+    }
+  })()
+
   for (const slug of slugs) {
     // This project's share of the cap — opportunity-weighted when stored
     // scores existed above, otherwise the equal split. Never below the floor.
@@ -471,6 +512,23 @@ export async function buildMachinePlan(
     const aiVariants = await geminiCreatives({ ...basePayload, angle: 'investor' }).catch(() => null)
 
     const namePrefix = opts?.machineName ? `${opts.machineName} — ` : 'Ads Machine — '
+    // ── DESTINATION: test it, or use what the funnel already proved ──
+    //
+    // Every campaign this machine has ever launched decided where to send
+    // people with `leadFormId ? 'form' : 'landing'` — an accident of whoever
+    // connected a lead form to the Page, never a comparison. It typically
+    // moves cost per lead 2-5x and moves QUALITY in the opposite direction, so
+    // it deserves the same treatment as an audience: a controlled trial.
+    //
+    // If the registration snapshots have already settled it, the winner is
+    // simply used and no budget is spent re-asking. If they have not, the top
+    // candidate is duplicated with the other destination — identical audience,
+    // creative, budget and geo, one variable different. That pair is the only
+    // structure that can answer the question, and one extra ad set is a small
+    // price for the largest untested lever in the account.
+    const provenDestination = destinationVerdict
+    const canPair = !provenDestination && chosen.length > 0 && fundable >= trialCount + 1
+
     const trials: MachineTrialPlan[] = chosen.map((c, i) => {
       let variant: GeneratedCreativeVariant
       let copySource: 'gemini' | 'template'
@@ -495,9 +553,40 @@ export async function buildMachinePlan(
         creative: variantToCreative(variant, withIntent(landingUrl, INTENT_FOR_ANGLE[ANGLE_FOR_SOURCE[c.source]]), heroImage),
         ...(c.savedAudienceId ? { savedAudienceId: c.savedAudienceId, savedAudienceName: c.savedAudienceName } : {}),
         copySource,
-        rationale: c.rationale,
+        rationale: c.rationale +
+          (provenDestination
+            ? ` Sending to ${provenDestination === 'form' ? 'the instant form' : 'the landing page'} — the funnel has already established which converts better here.`
+            : ''),
+        ...(provenDestination ? { destination: provenDestination } : {}),
       }
     })
+
+    // The paired twin. Deliberately built from the SAME creative object and
+    // the SAME targeting reference as its partner: if the copy differed too,
+    // the comparison would be measuring two things and settling neither.
+    if (canPair && trials.length > 0) {
+      const base = trials[0]
+      // A is always the landing page: it is the destination that always
+      // exists. B is the instant form, which the engine downgrades to a
+      // landing page (and says so) if the Page has no form connected — a pair
+      // that silently became two identical ad sets would be worse than none.
+      const mine: AdDestination = 'landing'
+      const other: AdDestination = 'form'
+      trials[0] = {
+        ...base,
+        destination: mine,
+        campaignName: `${base.campaignName} — Page`,
+        rationale: `${base.rationale} Destination pair (A): sends to the landing page.`,
+      }
+      trials.push({
+        ...base,
+        id: `trial-${randomUUID()}`,
+        label: `${base.label} · Form`,
+        destination: other,
+        campaignName: `${base.campaignName} — Form`,
+        rationale: `${base.rationale} Destination pair (B): identical audience, creative and budget, sending to the instant form instead. The gap between A and B is what the destination is worth — measured on cost per QUALIFIED lead, because a form's lead is an easier lead and cost per lead flatters it by construction.`,
+      })
+    }
 
     // The Google SEARCH trial — a REAL trial in the same pool: same split,
     // same cap, launched live by the engine. RSA copy + keywords are derived
