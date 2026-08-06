@@ -16,10 +16,12 @@
  *
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
+import { readFileSync } from 'node:fs'
 import {
-  planPattern, describePattern, emptyPattern, BUNDLE,
+  planPattern, describePattern, emptyPattern, parsePattern, BUNDLE,
   STRICT_ALL, STRICT_DEFINING, type AudiencePattern,
 } from '../lib/freehold/audience-pattern'
+import { forClient } from '../lib/freehold/audiences'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -165,6 +167,122 @@ console.log('\n── the plan is always launchable ──')
   ok('every strictness from 0 to 100 produces a launchable spec')
   check('placements are explicit, so no plan can enrol in Advantage',
     planPattern(pat({})).targeting.publisherPlatforms.join(',') === 'facebook,instagram')
+}
+
+console.log('\n── readiness is a temperature, not an interest ──')
+{
+  // Readiness was in the vocabulary, in the describing sentence, and changed
+  // NOTHING in the targeting — the exact theatre this module's own header
+  // forbids. Nothing in Meta's catalog knows who is ready to buy; what it
+  // changes is which arm the pattern belongs in.
+  const browsing = planPattern(pat({ readiness: 'browsing' }))
+  const ready = planPattern(pat({ readiness: 'ready' }))
+  check('browsing is a cold, prospecting audience',
+    browsing.temperature === 'cold' && !browsing.needsRetargetingSource, browsing.temperature)
+  check('ready is hot and says so', ready.temperature === 'hot', ready.temperature)
+  check('a hot pattern declares it cannot launch on targeting alone',
+    ready.needsRetargetingSource === true)
+  check('comparing sits between them', planPattern(pat({ readiness: 'comparing' })).temperature === 'warm')
+  check('readiness still adds no invented interest — it is honest about not knowing',
+    ready.targeting.interests.length === browsing.targeting.interests.length &&
+    (ready.targeting.narrowing ?? []).length === (browsing.targeting.narrowing ?? []).length)
+}
+
+console.log('\n── a bundle with no landing page is named, not dropped in silence ──')
+{
+  // An ad has to be WRITTEN in something we can publish. Dropping a bundle is
+  // correct; dropping it quietly is the failure — the operator chose it and
+  // would never learn it did not survive.
+  const noArabicPage = planPattern(pat({ speakers: ['arabic', 'english'] }), ['en', 'ru'])
+  check('a bundle we cannot write an ad for is removed',
+    !(noArabicPage.targeting.leadLanguages ?? []).includes('ar'),
+    String(noArabicPage.targeting.leadLanguages))
+  check('…and it takes its second-half speakers with it, not leaving them stranded',
+    !(noArabicPage.targeting.leadLanguages ?? []).includes('ur'),
+    String(noArabicPage.targeting.leadLanguages))
+  check('…and the operator is told which one went',
+    noArabicPage.unreachable.join(',') === 'Arabic speakers', noArabicPage.unreachable.join(','))
+  check('the bundle that does have a page survives intact',
+    (noArabicPage.targeting.leadLanguages ?? []).sort().join(',') === 'en,es',
+    String(noArabicPage.targeting.leadLanguages))
+  check('naming no pages at all constrains nothing — the caller simply did not say',
+    planPattern(pat({ speakers: ['arabic'] })).unreachable.length === 0)
+  check('every bundle is writable against the languages this system actually serves',
+    planPattern(pat({ speakers: ['arabic', 'english', 'european'] }), ['en', 'ar', 'ru']).unreachable.length === 0)
+}
+
+console.log('\n── an untrusted pattern cannot smuggle anything in ──')
+{
+  const junk = parsePattern({
+    name: 'x'.repeat(500), residency: ['expat', 'martian', 42], speakers: 'arabic',
+    motive: ['investment', 'investment'], money: 'bitcoin', readiness: null,
+    exclude: ['agents_and_brokers', '../../etc/passwd'], strictness: 9999,
+  })
+  check('an unknown trait is dropped, never coerced to a neighbour',
+    junk.residency.join(',') === 'expat', junk.residency.join(','))
+  check('a non-array where a list belongs yields an empty list, not a character split',
+    junk.speakers.length === 0, JSON.stringify(junk.speakers))
+  check('an unknown single-choice falls back to the not-chosen state',
+    junk.money === 'unknown' && junk.readiness === 'browsing')
+  check('duplicates collapse', junk.motive.join(',') === 'investment')
+  check('an out-of-range dial is clamped, not wrapped', junk.strictness === 100, String(junk.strictness))
+  check('the name is bounded', junk.name.length === 120, String(junk.name.length))
+  check('a garbage exclusion cannot reach the spec',
+    planPattern(junk).targeting.exclusions?.interests?.length === 1,
+    JSON.stringify(planPattern(junk).targeting.exclusions))
+  check('nothing at all still parses to a usable pattern',
+    parsePattern(null).strictness === 50 && parsePattern('nope').money === 'unknown')
+}
+
+console.log('\n── the recipe never crosses the wire ──')
+{
+  // The whole arrangement: they order the burger, they never see the kitchen.
+  // Ship the spec to the browser once and it is in the network tab forever,
+  // and anyone who reads it rebuilds the same audience in Ads Manager free.
+  const ROUTES = [
+    'app/api/freehold/ads/audiences/pattern/route.ts',
+    'app/api/freehold/ads/audiences/route.ts',
+    'app/api/freehold/ads/audiences/[id]/route.ts',
+  ]
+  const patternRoute = readFileSync(ROUTES[0], 'utf8')
+  check('the pattern route never puts targeting in a response',
+    !/NextResponse\.json\([^)]*targeting/.test(patternRoute), 'targeting appears in a JSON response')
+  check('…and returns only the vetted public shape',
+    /publicPlan/.test(patternRoute))
+  check('a pattern audience is stripped before every route answers',
+    ROUTES.every((f) => /forClient/.test(readFileSync(f, 'utf8'))),
+    ROUTES.filter((f) => !/forClient/.test(readFileSync(f, 'utf8'))).join(','))
+
+  // forClient is the single chokepoint, so it is worth proving rather than
+  // trusting: a pattern loses its spec, a hand-built audience keeps its own.
+  const base = {
+    id: 'a', name: 'n', description: 'd', spec: { countries: ['AE'] } as never,
+    metaSourceAudienceId: null, metaLookalikeId: null, uploadedCount: 0,
+    pattern: null, createdBy: 'e', createdAt: '', updatedAt: '',
+  }
+  check('a pattern audience goes out without its spec',
+    forClient({ ...base, kind: 'pattern' }).spec === undefined)
+  check('an audience someone built by hand keeps the work they typed',
+    forClient({ ...base, kind: 'behavioral' }).spec !== undefined)
+  check('…and the pattern itself still travels, because re-opening needs it',
+    'pattern' in forClient({ ...base, kind: 'pattern', pattern: { money: 'cash' } }))
+}
+
+console.log('\n── the pattern and the spec beside it cannot drift ──')
+{
+  // A stored pattern that no longer produces its stored spec shows one person
+  // and launches another, and no screen can reveal the gap: the card renders
+  // the pattern, the ad set uses the spec. Rederiving in the ROUTE was the
+  // habit this codebase keeps repeating — an invariant applied at one call
+  // site, which holds until a second caller appears. It belongs in the writer.
+  const WRITER = readFileSync('lib/freehold/audiences.ts', 'utf8')
+  const fn = WRITER.slice(WRITER.indexOf('export async function updateAudience'))
+  check('the writer itself rederives the spec from the pattern',
+    /planPattern\(/.test(fn.slice(0, 2000)), 'updateAudience does not call planPattern')
+  check('…and does it for every pattern audience, not only when one was sent',
+    /current\.kind === 'pattern'/.test(fn.slice(0, 2000)))
+  check('a posted spec cannot override a pattern audience\'s targeting',
+    /spec: planPattern\(/.test(fn.slice(0, 2000)), 'a caller-supplied spec may still win')
 }
 
 if (failures > 0) {

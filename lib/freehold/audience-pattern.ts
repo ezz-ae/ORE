@@ -109,6 +109,43 @@ export const emptyPattern = (name = ''): AudiencePattern => ({
   money: 'unknown', readiness: 'browsing', exclude: [], strictness: 50,
 })
 
+const RESIDENCIES: Residency[] = ['resident', 'expat', 'gcc', 'overseas']
+const SPEAKERS: SpeakerBundle[] = ['arabic', 'english', 'european']
+const LIFE_STAGES: LifeStage[] = ['single', 'couple', 'young_family', 'established_family', 'downsizing']
+const MOTIVES: Motive[] = ['first_home', 'upgrade', 'investment', 'holiday_home', 'golden_visa', 'relocation']
+const MONEYS: Money[] = ['cash', 'mortgage', 'payment_plan', 'unknown']
+const READINESSES: Readiness[] = ['browsing', 'comparing', 'ready']
+const DISQUALIFIERS: Disqualifier[] = ['renters_only', 'job_seekers', 'agents_and_brokers', 'bargain_hunters']
+
+/**
+ * Read an untrusted pattern off the wire.
+ *
+ * Unknown values are DROPPED, never coerced to a neighbour. A pattern that
+ * silently became a different person than the one described would produce an
+ * audience nobody asked for, and the describing sentence would still read
+ * correctly — the worst possible failure for a system whose whole promise is
+ * that the words mean something.
+ */
+export function parsePattern(raw: unknown): AudiencePattern {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const pick = <T extends string>(v: unknown, allowed: T[]): T[] =>
+    Array.isArray(v) ? [...new Set(v.filter((x): x is T => allowed.includes(x as T)))] : []
+  const one = <T extends string>(v: unknown, allowed: T[], dflt: T): T =>
+    allowed.includes(v as T) ? (v as T) : dflt
+  const strictness = Number(r.strictness)
+  return {
+    name: typeof r.name === 'string' ? r.name.trim().slice(0, 120) : '',
+    residency: pick(r.residency, RESIDENCIES),
+    speakers: pick(r.speakers, SPEAKERS),
+    lifeStage: pick(r.lifeStage, LIFE_STAGES),
+    motive: pick(r.motive, MOTIVES),
+    money: one(r.money, MONEYS, 'unknown'),
+    readiness: one(r.readiness, READINESSES, 'browsing'),
+    exclude: pick(r.exclude, DISQUALIFIERS),
+    strictness: Number.isFinite(strictness) ? clamp(Math.round(strictness), 0, 100) : 50,
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // THE TRANSLATION. Every entry carries WHY, because a mapping nobody can
 // argue with is a mapping nobody can improve.
@@ -198,6 +235,27 @@ export const STRICT_ALL = 75
  *  a set of hints and Meta is left to find them. */
 export const STRICT_DEFINING = 30
 
+/**
+ * READINESS IS NOT AN INTEREST — it is a temperature.
+ *
+ * Nothing in Meta's catalog knows whether someone is ready to buy. Every
+ * product that claims to target "in-market" buyers is selling an interest
+ * stack that means "looked at a property page once", and the honest version of
+ * that signal is one we hold ourselves: who visited, who watched, who started
+ * a form. So readiness does not add entities. It says which ARM this pattern
+ * belongs in — and warm and hot arms need a real retargeting source, which a
+ * description of a person cannot invent.
+ *
+ * Reported rather than silently applied, because "we cannot build this until
+ * 300 people have visited" is information the operator needs before launch,
+ * not a surprise at it.
+ */
+export type Temperature = 'cold' | 'warm' | 'hot'
+
+const TEMPERATURE: Record<Readiness, Temperature> = {
+  browsing: 'cold', comparing: 'warm', ready: 'hot',
+}
+
 export interface PatternPlan {
   targeting: CampaignTargeting
   /** How many traits ended up binding. Shown as a shape, never as the list. */
@@ -206,6 +264,16 @@ export interface PatternPlan {
   hintedTraits: number
   /** Plain sentence describing the PERSON, for the operator. Never the spec. */
   describes: string
+  /** Which arm this pattern is. Prospecting, or built on people we have
+   *  already touched. */
+  temperature: Temperature
+  /** True when the pattern cannot be launched from targeting alone — it needs
+   *  a retargeting audience behind it. Warm and hot always do. */
+  needsRetargetingSource: boolean
+  /** Speaker groups asked for but not reachable, because no landing page is
+   *  written in the language their ad would be. Named, never dropped quietly:
+   *  the operator chose them and is entitled to know they did not survive. */
+  unreachable: string[]
 }
 
 const uniqEntities = (xs: TargetingEntity[]): TargetingEntity[] => {
@@ -259,14 +327,21 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   // stated floor rather than emit an inverted band Meta would reject.
   if (ageMin >= ageMax) ageMax = Math.min(65, ageMin + 10)
 
-  // Language: what the communities imply, intersected with what the landing
-  // page can actually serve. Narrowing to a language we cannot show a page in
-  // buys a worse experience than no narrowing.
-  // Every locale the chosen bundles reach — the creative language plus the
-  // speaker groups that read it. This is exact: locales are a real Meta field,
-  // so no part of it is inferred.
+  // Language. A bundle is only usable if the ad can be WRITTEN in its creative
+  // language — there has to be a landing page in it. When the caller says
+  // which pages exist, a bundle without one is dropped whole rather than
+  // reaching people we would then send to a page they cannot read.
+  //
+  // What it reaches is wider than what it is written in: the creative language
+  // plus the speaker groups who read that creative. Both halves are locales,
+  // a real Meta field, so none of it is inferred.
+  const usable = landingLanguages.length > 0
+    ? p.speakers.filter((b) => landingLanguages.includes(BUNDLE[b].creative))
+    : p.speakers
+  const droppedBundles = p.speakers.filter((b) => !usable.includes(b)).map((b) => BUNDLE[b].label)
+
   const langs = new Set<string>()
-  for (const b of p.speakers) {
+  for (const b of usable) {
     langs.add(BUNDLE[b].creative)
     for (const l of BUNDLE[b].alsoReach) langs.add(l)
   }
@@ -288,7 +363,17 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   }
   if (targeting.countries.length === 0) targeting.countries = ['AE']
 
-  return { targeting, boundTraits: bound, hintedTraits: hinted, describes: describePattern(p) }
+  const temperature = TEMPERATURE[p.readiness] ?? 'cold'
+
+  return {
+    targeting,
+    boundTraits: bound,
+    hintedTraits: hinted,
+    describes: describePattern(p),
+    temperature,
+    needsRetargetingSource: temperature !== 'cold',
+    unreachable: droppedBundles,
+  }
 }
 
 const uniqStrings = (xs: string[]) => [...new Set(xs.filter(Boolean))]

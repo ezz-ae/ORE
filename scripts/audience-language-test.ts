@@ -10,8 +10,10 @@
  *
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
-import { mergeLeadLanguages, SUPPORTED_LEAD_LANGUAGES } from '../lib/meta/lead-language'
+import { readFileSync } from 'node:fs'
+import { mergeLeadLanguages, SUPPORTED_LEAD_LANGUAGES, REACHABLE_LEAD_LANGUAGES } from '../lib/meta/lead-language'
 import { normalizeSpec } from '../lib/freehold/audiences'
+import { BUNDLE } from '../lib/freehold/audience-pattern'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -34,16 +36,49 @@ console.log('\n── merging the two language sources ──')
   check('an empty array is not a narrowing', eq(mergeLeadLanguages([], []), []))
 }
 
-console.log('\n── only real, servable languages ──')
+console.log('\n── reach is wider than the language the ad is written in ──')
 {
-  check('an unsupported language is dropped, not passed to Meta',
-    eq(mergeLeadLanguages(['fr', 'ar', 'zh']), ['ar']), JSON.stringify(mergeLeadLanguages(['fr', 'ar', 'zh'])))
+  // TWO DIFFERENT QUESTIONS, and answering them with one list threw away most
+  // of the reach. What the ad is WRITTEN in needs a landing page: en, ar, ru.
+  // Who can be SHOWN it does not — an Urdu speaker in Dubai reads the Arabic
+  // ad and lands on the Arabic page. Validating reach against the three page
+  // languages deleted ur/es/de/fr/it on the way to Meta, so a bundle sold as
+  // "Arabic and Urdu speakers" delivered Arabic-only and every screen lied.
+  check('a language a bundle reaches survives the merge',
+    eq(mergeLeadLanguages(['ar', 'ur']), ['ar', 'ur']), JSON.stringify(mergeLeadLanguages(['ar', 'ur'])))
+  check('…including the European bundle\'s second half',
+    eq(mergeLeadLanguages(['ru', 'de', 'fr', 'it']), ['ru', 'de', 'fr', 'it']),
+    JSON.stringify(mergeLeadLanguages(['ru', 'de', 'fr', 'it'])))
+  check('a language nothing reaches is still dropped, not passed to Meta',
+    eq(mergeLeadLanguages(['zh', 'ar', 'ja']), ['ar']), JSON.stringify(mergeLeadLanguages(['zh', 'ar', 'ja'])))
   check('junk types cannot become a locale',
     eq(mergeLeadLanguages([null, 42, {}, 'ar'] as unknown[]), ['ar']))
   check('a non-array source is ignored rather than throwing',
     eq(mergeLeadLanguages('ar' as unknown as string[]), []))
-  check('every supported language is actually supported',
-    eq(mergeLeadLanguages([...SUPPORTED_LEAD_LANGUAGES]), ['en', 'ar', 'ru']))
+  check('every creative language is reachable — an ad we can write must be deliverable',
+    SUPPORTED_LEAD_LANGUAGES.every((c) => (REACHABLE_LEAD_LANGUAGES as readonly string[]).includes(c)),
+    SUPPORTED_LEAD_LANGUAGES.join(','))
+
+  // Every bundle's promise, end to end. This is the assertion that would have
+  // caught the original bug: the pattern module said "ar,ur", the merge said
+  // "ar", and nothing compared the two.
+  for (const [name, b] of Object.entries(BUNDLE)) {
+    const promised = [b.creative, ...b.alsoReach]
+    check(`the ${name} bundle delivers every language it promises`,
+      promised.every((c) => mergeLeadLanguages(promised).includes(c as never)),
+      `${promised.join(',')} -> ${mergeLeadLanguages(promised).join(',')}`)
+  }
+}
+
+console.log('\n── a reachable language resolves to a real Meta locale ──')
+{
+  // A code the resolver has no search term for silently narrows NOTHING for
+  // that language — the exact failure again, one layer lower. The table and
+  // the reach list have to stay in step, so the suite compares them.
+  const CLIENT = readFileSync('lib/meta/client.ts', 'utf8')
+  const table = /const LEAD_LANGUAGE_SEARCH_TERMS[^=]*=\s*\{([^}]*)\}/.exec(CLIENT)?.[1] ?? ''
+  const missing = REACHABLE_LEAD_LANGUAGES.filter((c) => !new RegExp(`\\b${c}:`).test(table))
+  check('every reachable language has a locale search term', missing.length === 0, missing.join(','))
 }
 
 console.log('\n── the order is stable ──')

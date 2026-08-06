@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import type { CampaignTargeting } from '@/lib/meta/types'
+import { REACHABLE_LEAD_LANGUAGES, SUPPORTED_LEAD_LANGUAGES, type LeadLanguage } from '@/lib/meta/lead-language'
+import { planPattern, parsePattern, describePattern } from '@/lib/freehold/audience-pattern'
 
 // ─── Saved audiences ──────────────────────────────────────────────────────────
 // The persistent home for audience work. Everything a marketer builds — a
@@ -8,7 +10,7 @@ import type { CampaignTargeting } from '@/lib/meta/types'
 // an uploaded lead list — lives here as a named, reusable asset that the
 // campaign wizard attaches in one click. Nothing is UI-only state anymore.
 
-export type AudienceKind = 'behavioral' | 'narrow' | 'lookalike' | 'custom_list'
+export type AudienceKind = 'behavioral' | 'narrow' | 'lookalike' | 'custom_list' | 'pattern'
 
 export interface SavedAudience {
   id: string
@@ -22,12 +24,14 @@ export interface SavedAudience {
   metaLookalikeId: string | null
   /** How many seed contacts were uploaded (lookalikes only). */
   uploadedCount: number
+  /** For 'pattern' audiences: the person-description it was built from. */
+  pattern: unknown | null
   createdBy: string
   createdAt: string
   updatedAt: string
 }
 
-const KINDS = new Set<AudienceKind>(['behavioral', 'narrow', 'lookalike', 'custom_list'])
+const KINDS = new Set<AudienceKind>(['behavioral', 'narrow', 'lookalike', 'custom_list', 'pattern'])
 
 const ensure = async () => {
   await query(`
@@ -40,11 +44,20 @@ const ensure = async () => {
       meta_source_audience_id  text,
       meta_lookalike_id        text,
       uploaded_count           int NOT NULL DEFAULT 0,
+      -- The PATTERN a 'pattern' audience was built from. The spec beside it is
+      -- the resolved targeting; this is the description of the person that
+      -- produced it. Kept so the audience can be re-opened and re-tuned in the
+      -- words it was created in — a saved spec alone can be launched but never
+      -- edited, because nobody can read a narrowing group back into a person.
+      pattern                  jsonb,
       created_by               text NOT NULL DEFAULT '',
       created_at               timestamptz NOT NULL DEFAULT now(),
       updated_at               timestamptz NOT NULL DEFAULT now()
     )
   `)
+  // The table predates patterns. CREATE TABLE IF NOT EXISTS is a no-op on every
+  // deployment that already has it, so the column above would never arrive.
+  await query(`ALTER TABLE freehold_site_audiences ADD COLUMN IF NOT EXISTS pattern jsonb`)
 }
 const ensureOnce = () => dbEnsureOnce('freehold_site_audiences', ensure)
 
@@ -94,11 +107,14 @@ export function normalizeSpec(raw: unknown): CampaignTargeting {
     interests: entities(r.interests),
     genders: Array.isArray(r.genders) ? r.genders.map(Number).filter((n) => n === 1 || n === 2) : undefined,
     locales: Array.isArray(r.locales) ? r.locales.map(Number).filter((n) => Number.isFinite(n) && n > 0).slice(0, 10) : undefined,
-    // Only the three languages the landing pages actually serve. An audience
-    // narrowed to a language we cannot then show a page in would spend money
-    // to deliver a worse experience than no narrowing at all.
+    // Every language the ad can REACH, which is wider than the three the
+    // landing pages are written in. Filtering to the page languages here was
+    // silently deleting the second half of every language bundle: an audience
+    // saved as "Arabic and Urdu speakers" came back Arabic-only, with nothing
+    // on any screen saying it had been narrowed.
     leadLanguages: Array.isArray(r.leadLanguages)
-      ? Array.from(new Set(r.leadLanguages.map(String).filter((c) => c === 'en' || c === 'ar' || c === 'ru')))
+      ? Array.from(new Set(r.leadLanguages.map(String))).filter((c): c is LeadLanguage =>
+          (REACHABLE_LEAD_LANGUAGES as readonly string[]).includes(c))
       : undefined,
     behaviors: entities(r.behaviors),
     narrowing: groups(r.narrowing),
@@ -116,10 +132,32 @@ const mapRow = (r: Record<string, unknown>): SavedAudience => ({
   metaSourceAudienceId: r.meta_source_audience_id ? String(r.meta_source_audience_id) : null,
   metaLookalikeId: r.meta_lookalike_id ? String(r.meta_lookalike_id) : null,
   uploadedCount: Number(r.uploaded_count ?? 0) || 0,
+  pattern: r.pattern == null ? null : typeof r.pattern === 'string' ? JSON.parse(r.pattern) : r.pattern,
   createdBy: String(r.created_by ?? ''),
   createdAt: String(r.created_at ?? ''),
   updatedAt: String(r.updated_at ?? ''),
 })
+
+/**
+ * An audience as the BROWSER is allowed to see it.
+ *
+ * A pattern audience's spec is the recipe — the interest ids, the narrowing
+ * groups, the locales that a description of a person was translated into. Ship
+ * it to the client once and it lives in the network tab, and anyone who reads
+ * it can rebuild the same audience in Ads Manager for nothing. So it does not
+ * go. The pattern itself does: it is the operator's own words back, and it is
+ * what re-opening the builder needs.
+ *
+ * Audiences the operator built by hand keep their spec — it is theirs, they
+ * typed it, and the screens that show it are showing them their own work.
+ */
+export type PublicAudience = Omit<SavedAudience, 'spec'> & { spec?: CampaignTargeting }
+
+export function forClient(a: SavedAudience): PublicAudience {
+  if (a.kind !== 'pattern') return a
+  const { spec: _spec, ...rest } = a
+  return rest
+}
 
 export async function listAudiences(): Promise<SavedAudience[]> {
   await ensureOnce()
@@ -146,6 +184,9 @@ export async function createAudience(params: {
   metaSourceAudienceId?: string | null
   metaLookalikeId?: string | null
   uploadedCount?: number
+  /** Only for kind 'pattern'. Stored verbatim so the audience stays editable
+   *  in the vocabulary it was created in. */
+  pattern?: unknown
   createdBy: string
 }): Promise<SavedAudience> {
   await ensureOnce()
@@ -154,8 +195,8 @@ export async function createAudience(params: {
   const spec = normalizeSpec(params.spec)
   const rows = await query<Record<string, unknown>>(
     `INSERT INTO freehold_site_audiences
-       (id, name, description, kind, spec, meta_source_audience_id, meta_lookalike_id, uploaded_count, created_by)
-     VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9)
+       (id, name, description, kind, spec, meta_source_audience_id, meta_lookalike_id, uploaded_count, created_by, pattern)
+     VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10::jsonb)
      RETURNING *`,
     [
       id,
@@ -167,6 +208,7 @@ export async function createAudience(params: {
       params.metaLookalikeId ?? null,
       Math.max(0, Math.round(params.uploadedCount ?? 0)),
       params.createdBy.slice(0, 200),
+      params.pattern == null ? null : JSON.stringify(params.pattern),
     ],
   )
   return mapRow(rows[0])
@@ -174,21 +216,52 @@ export async function createAudience(params: {
 
 export async function updateAudience(
   id: string,
-  patch: { name?: string; description?: string; spec?: unknown },
+  patch: { name?: string; description?: string; spec?: unknown; pattern?: unknown },
 ): Promise<SavedAudience | null> {
   await ensureOnce()
   const current = await getAudience(id)
   if (!current) return null
+
+  // RE-TUNING REWRITES BOTH HALVES, HERE.
+  //
+  // A stored pattern that no longer produces the stored spec shows the
+  // operator one person and launches a different one, and nothing on any
+  // screen can reveal the gap — the card renders the pattern, the ad set uses
+  // the spec. So the spec is REDERIVED from the pattern rather than trusted
+  // from the caller.
+  //
+  // This lives in the writer, not in the route that happens to call it. The
+  // route enforcing it was the same mistake this codebase keeps making: an
+  // invariant stated in a comment and applied at one of the call sites, which
+  // holds exactly until a second caller appears.
+  let patched = patch
+  if (current.kind === 'pattern') {
+    // A posted spec is discarded outright on a pattern audience, whether or
+    // not a pattern came with it. Honouring one would let a caller set
+    // targeting the pattern never produced — the same drift by another route.
+    const next = parsePattern(patch.pattern !== undefined ? patch.pattern : current.pattern)
+    patched = {
+      ...patch,
+      spec: planPattern(next, [...SUPPORTED_LEAD_LANGUAGES]).targeting,
+      description: patch.description ?? describePattern(next),
+      pattern: next,
+    }
+  }
+
   const rows = await query<Record<string, unknown>>(
     `UPDATE freehold_site_audiences
-     SET name = $2, description = $3, spec = $4::jsonb, updated_at = now()
+     SET name = $2, description = $3, spec = $4::jsonb, pattern = $5::jsonb, updated_at = now()
      WHERE id = $1
      RETURNING *`,
     [
       id,
-      (patch.name ?? current.name).trim().slice(0, 120),
-      (patch.description ?? current.description).trim().slice(0, 500),
-      JSON.stringify(patch.spec !== undefined ? normalizeSpec(patch.spec) : current.spec),
+      (patched.name ?? current.name).trim().slice(0, 120),
+      (patched.description ?? current.description).trim().slice(0, 500),
+      JSON.stringify(patched.spec !== undefined ? normalizeSpec(patched.spec) : current.spec),
+      (() => {
+        const p = patched.pattern !== undefined ? patched.pattern : current.pattern
+        return p == null ? null : JSON.stringify(p)
+      })(),
     ],
   )
   return rows[0] ? mapRow(rows[0]) : null
