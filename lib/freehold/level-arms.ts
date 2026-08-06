@@ -37,6 +37,7 @@
  * Pure — no I/O. The launcher turns these into real ad sets.
  */
 import { LEVEL_WEIGHT, LEVEL_LABEL, type AudienceLevel } from '@/lib/freehold/layer-audit'
+import { chooseOptimisation, type EventCosts, type LearningVerdict } from '@/lib/freehold/learning-phase'
 
 export type PositiveLevel = 1 | 2 | 3 | 4 | 5
 
@@ -106,6 +107,10 @@ export interface ArmPlan {
   unallocatedAed: number
   headline: string
   notes: string[]
+  /** Whether these arms can actually exit Meta's learning phase, and on which
+   *  optimisation event. Null when no cost data was supplied — in which case
+   *  the plan is a budget split only and does NOT claim the arms will learn. */
+  learning: LearningVerdict | null
 }
 
 /**
@@ -321,11 +326,47 @@ export function warmArms(available: RetargetRung[]): WarmArm[] {
  * weights say — it is the only arm that can reach the four-out-of-five person,
  * so starving it defeats the entire structure.
  */
-export function planArms(arms: Arm[], dailyBudgetAed: number, personaFloor = 0.25): ArmPlan {
+export function planArms(
+  arms: Arm[],
+  dailyBudgetAed: number,
+  personaFloor = 0.25,
+  costs?: EventCosts,
+): ArmPlan {
   const notes: string[] = []
   if (arms.length === 0 || dailyBudgetAed <= 0) {
-    return { arms: [], unallocatedAed: Math.max(0, dailyBudgetAed), headline: 'No arms to plan.', notes }
+    return { arms: [], unallocatedAed: Math.max(0, dailyBudgetAed), headline: 'No arms to plan.', notes, learning: null }
   }
+
+  // THE LEARNING-PHASE CEILING, applied before the budget split.
+  //
+  // The delivery floor below (AED 50/day) only asks whether Meta will serve an
+  // ad set at all. It says nothing about whether the ad set can EXIT LEARNING,
+  // which needs ~50 optimisation events a week — a completely different and
+  // much higher bar. Planning four arms that each deliver but none of which
+  // ever stabilises produces four broken instruments that still print results,
+  // and that is worse than one arm that works.
+  let planning = [...arms]
+  let learning: LearningVerdict | null = null
+  if (costs) {
+    learning = chooseOptimisation(planning.length, dailyBudgetAed, costs)
+    if (!learning.fits) {
+      const keep = Math.max(1, learning.supportedArms)
+      if (keep < planning.length) {
+        // Keep the heaviest arms — the persona arm is never among those cut,
+        // because it is the structure rather than a test within it.
+        const persona = planning.find((a) => a.kind === 'cold' && a.levels.length === 1)
+        const rest = planning.filter((a) => a !== persona).sort((x, y) => y.weight - x.weight)
+        const kept = persona ? [persona, ...rest.slice(0, keep - 1)] : rest.slice(0, keep)
+        notes.push(`Cut from ${planning.length} arms to ${kept.length}: at AED ${Math.round(dailyBudgetAed)}/day only ${learning.supportedArms} can clear Meta's learning phase, and an arm stuck in Learning Limited reports numbers that are not a fair read of its audience.`)
+        planning = kept
+        learning = chooseOptimisation(planning.length, dailyBudgetAed, costs)
+      }
+    }
+    if (learning.event && learning.event !== 'lead') {
+      notes.push(learning.recommendation)
+    }
+  }
+  arms = planning
 
   // Iteratively drop arms that cannot clear the floor, re-splitting each time.
   let live = [...arms]
@@ -364,7 +405,7 @@ export function planArms(arms: Arm[], dailyBudgetAed: number, personaFloor = 0.2
     return {
       arms: [], unallocatedAed: dailyBudgetAed,
       headline: `AED ${dailyBudgetAed}/day cannot support even one arm at the AED ${MIN_ARM_DAILY_AED} floor.`,
-      notes,
+      notes, learning,
     }
   }
 
@@ -375,6 +416,7 @@ export function planArms(arms: Arm[], dailyBudgetAed: number, personaFloor = 0.2
   return {
     arms: planned.sort((a, b) => b.dailyBudgetAed - a.dailyBudgetAed),
     unallocatedAed: Math.max(0, dailyBudgetAed - allocated),
+    learning,
     headline: `${planned.length} arms — ${cold} cold${warm ? `, ${warm} retargeting` : ''} — splitting AED ${dailyBudgetAed}/day. Each arm is one level combination, so each one is also a clean experiment.`,
     notes,
   }

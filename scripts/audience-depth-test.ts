@@ -30,6 +30,10 @@ import {
   MIN_ARM_DAILY_AED, MIN_ARM_DISTINCTION, MIN_RETARGET_AUDIENCE,
   RETARGET_WEIGHT, ARM_DOCTRINE, type LevelEvidence,
 } from '../lib/freehold/level-arms'
+import {
+  chooseOptimisation, dailyBudgetToLearn, armsThatCanLearn, wouldResetLearning,
+  safeBudgetStep, LEARNING_EVENTS, LEARNING_WINDOW_DAYS,
+} from '../lib/freehold/learning-phase'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -560,6 +564,101 @@ console.log('\n── a retargeting arm is not launched before it has people ─
     /nothing has been touched/i.test(selectWarmArms([]).headline), selectWarmArms([]).headline)
   check('a 40-person audience never becomes an arm',
     selectWarmArms([{ rung: 'started_form', size: 40 }]).arms.length === 0)
+}
+
+console.log('\n── the learning phase is a harder bar than the delivery floor ──')
+{
+  // The account: AED 848/day, blended CPL 195.69, CPC 12.50.
+  const daily = 848, cpl = 195.69, cpc = 12.50
+
+  check('one arm on lead optimisation needs about AED 1,398/day',
+    Math.round(dailyBudgetToLearn(cpl)) === 1398, String(dailyBudgetToLearn(cpl)))
+  check('…so this account cannot get even ONE arm out of learning on leads',
+    armsThatCanLearn(daily, cpl) === 0, String(armsThatCanLearn(daily, cpl)))
+  check('the same budget supports nine arms on link clicks',
+    armsThatCanLearn(daily, cpc) === 9, String(armsThatCanLearn(daily, cpc)))
+  check('the threshold is Meta\'s documented one',
+    LEARNING_EVENTS === 50 && LEARNING_WINDOW_DAYS === 7)
+
+  // The ladder: prefer leads, step down only when the arithmetic refuses.
+  const rich = chooseOptimisation(4, 20_000, { lead: cpl, link_click: cpc })
+  check('a budget that CAN afford lead optimisation uses it',
+    rich.event === 'lead' && rich.fits, `${rich.event} ${rich.fits}`)
+  check('…and says there is nothing to trade off',
+    /Nothing to trade off/.test(rich.recommendation), rich.recommendation)
+
+  const real = chooseOptimisation(4, daily, { lead: cpl, link_click: cpc })
+  check('this account steps down to link clicks to fit four arms',
+    real.event === 'link_click' && real.fits, `${real.event} ${real.fits}`)
+  check('…and explains that the read does not depend on Meta\'s target',
+    /not from Meta's optimisation target/.test(real.recommendation), real.recommendation)
+
+  // Some arms fit, but not all four.
+  const partial = chooseOptimisation(4, 300, { lead: cpl, link_click: cpc })
+  check('a budget that carries some arms says how many', !partial.fits && partial.supportedArms === 3,
+    `${partial.supportedArms}: ${partial.headline}`)
+  check('…and tells you to cut to that number',
+    /Cut to 3 arms/.test(partial.recommendation), partial.recommendation)
+
+  // Nothing on the ladder fits — not even one arm.
+  const hopeless = chooseOptimisation(4, 50, { lead: cpl, link_click: cpc })
+  check('a budget too small for even one arm admits it',
+    !hopeless.fits && hopeless.supportedArms === 0, hopeless.headline)
+  check('…and says to run a single ad set instead',
+    /single ad set/.test(hopeless.recommendation), hopeless.recommendation)
+  check('…and names what one arm would actually need',
+    /cannot bring even one arm out of the learning phase/.test(hopeless.headline), hopeless.headline)
+
+  const unknown = chooseOptimisation(3, 1000, {})
+  check('with no cost data the calculation refuses rather than guesses',
+    unknown.event === null && !unknown.fits, JSON.stringify(unknown.event))
+  check('…and says a number it depends on is missing',
+    /cannot be computed/.test(unknown.headline), unknown.headline)
+}
+
+console.log('\n── the planner cannot produce arms that will never learn ──')
+{
+  const arms = coldArms([1, 2, 3, 4])
+  const costs = { lead: 195.69, link_click: 12.50 }
+
+  // Without cost data the plan is a budget split and claims nothing about
+  // learning — it must not silently imply the arms will stabilise.
+  const blind = planArms(arms, 848)
+  check('a plan with no cost data reports no learning verdict',
+    blind.learning === null, JSON.stringify(blind.learning))
+
+  // With cost data at a budget that supports the arms on clicks.
+  const real = planArms(arms, 848, 0.25, costs)
+  check('four arms survive when the event steps down to clicks',
+    real.arms.length === 4, String(real.arms.length))
+  check('…and the plan says which event it had to use',
+    real.learning?.event === 'link_click', String(real.learning?.event))
+  check('…and notes why, in the plan itself',
+    real.notes.some((n) => /out of reach at this budget/.test(n)), real.notes.join(' | '))
+
+  // A budget that cannot carry four arms on ANY event must cut them.
+  const tight = planArms(arms, 200, 0.25, { lead: 195.69, link_click: 150 })
+  check('arms are cut to what can actually clear learning',
+    tight.arms.length < 4, String(tight.arms.length))
+  check('…and the cut is explained as a learning limit, not a budget floor',
+    tight.notes.some((n) => /Learning Limited/.test(n)), tight.notes.join(' | '))
+  check('…and the persona arm is never the one cut',
+    tight.arms.length === 0 || tight.arms.some((p) => p.arm.kind === 'cold' && p.arm.levels.length === 1),
+    tight.arms.map((p) => p.arm.label).join(' | '))
+}
+
+console.log('\n── tuning an ad set resets what it learned ──')
+{
+  check('a 30% budget rise resets learning', wouldResetLearning(100, 130))
+  check('a 15% rise does not', !wouldResetLearning(100, 115))
+  check('a 30% CUT resets it too — direction is irrelevant', wouldResetLearning(100, 70))
+  check('starting from nothing always counts as a reset', wouldResetLearning(0, 100))
+  check('a safe step stops short of the threshold',
+    safeBudgetStep(100, 200) === 120, String(safeBudgetStep(100, 200)))
+  check('…and a target already within reach is taken whole',
+    safeBudgetStep(100, 110) === 110, String(safeBudgetStep(100, 110)))
+  check('a safe step downward is also bounded',
+    safeBudgetStep(100, 10) === 80, String(safeBudgetStep(100, 10)))
 }
 
 if (failures > 0) {
