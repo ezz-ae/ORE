@@ -2220,14 +2220,55 @@ export async function listCustomAudiences(): Promise<CustomAudienceSummary[]> {
   }))
 }
 
-export async function createCustomAudience(name: string, description: string): Promise<{ id: string }> {
+export async function createCustomAudience(
+  name: string,
+  description: string,
+  opts?: { valueBased?: boolean },
+): Promise<{ id: string }> {
   const { adAccountId } = await creds()
   return apiPost(`/${adAccountId}/customaudiences`, {
     name,
     description,
     subtype: 'CUSTOM',
     customer_file_source: 'USER_PROVIDED_ONLY',
+    // A value-based source is what unlocks a value-based lookalike: Meta
+    // weights similarity by the number attached to each row instead of
+    // treating every seed member as equally worth copying. The flag must be
+    // set AT CREATION — it cannot be added to an audience that already exists,
+    // which is why it is a parameter here rather than a later patch.
+    ...(opts?.valueBased ? { is_value_based: true } : {}),
   })
+}
+
+/**
+ * Upload hashed identifiers WITH a per-person value.
+ *
+ * The difference from `addHashedBuyers` is the whole thesis of a deeper seed:
+ * a closed AED 4m buyer and a lead who merely answered the phone are both
+ * "seed members", and without a weight Meta copies them equally. With one, it
+ * looks hardest for people like the buyer.
+ *
+ * Rows with no usable identifier are skipped, as are rows with a value of zero
+ * or less — Meta discards those silently, and a silently discarded row is a
+ * row we thought we sent.
+ */
+export async function addWeightedBuyers(
+  audienceId: string,
+  contacts: Array<BuyerContact & { value: number }>,
+): Promise<number> {
+  const rows = contacts
+    .filter((c) => Number.isFinite(c.value) && c.value > 0)
+    .map((c) => [hashEmail(c.email || ''), hashPhone(c.phone || ''), String(Math.round(c.value))])
+    .filter(([e, p]) => e || p)
+  if (!rows.length) return 0
+  for (let i = 0; i < rows.length; i += 5000) {
+    await apiPost(`/${audienceId}/users`, {
+      // LOOKALIKE_VALUE is Meta's name for the weight column; it is only
+      // honoured when the audience was created with is_value_based.
+      payload: { schema: ['EMAIL', 'PHONE', 'LOOKALIKE_VALUE'], data: rows.slice(i, i + 5000) },
+    })
+  }
+  return rows.length
 }
 
 // Upload hashed identifiers to a custom audience. Rows missing both a usable
