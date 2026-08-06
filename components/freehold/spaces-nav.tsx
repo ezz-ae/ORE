@@ -9,6 +9,7 @@ import { useBrand } from '@/components/whitelabel/brand-provider'
 import { useSession } from '@/lib/freehold/use-session'
 import { clearSession } from '@/lib/freehold/session'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
+import { agentWaiting, onAgentWaiting, shouldFlash, markFlashed, type AgentWaiting } from '@/lib/freehold/agent-signal'
 import { useT } from '@/lib/i18n/provider'
 import { LanguageSwitcher } from '@/components/freehold/language-switcher'
 import { useCoach } from '@/components/freehold/coach/coach-marks'
@@ -30,6 +31,28 @@ const NAV_KEYS: Record<string, string> = {
 }
 
 export function SpacesNav() {
+  // What the agent is waiting to say, if anything. Read from the browser
+  // rather than fetched: this is "have YOU seen it", not a fact about the
+  // account, and it must not follow someone onto a machine they are not at.
+  const [waiting, setWaiting] = useState<AgentWaiting | null>(null)
+  const [flashNow, setFlashNow] = useState(false)
+
+  useEffect(() => {
+    const sync = () => {
+      const w = agentWaiting()
+      setWaiting(w)
+      if (w && shouldFlash(w.signature)) {
+        markFlashed(w.signature)
+        setFlashNow(true)
+        // Two flashes, then stop animating and stay lit. Kept short on
+        // purpose: motion that outlasts its message becomes a fidget.
+        window.setTimeout(() => setFlashNow(false), 1900)
+      }
+    }
+    sync()
+    return onAgentWaiting(sync)
+  }, [])
+
   const pathname = usePathname()
   const router   = useRouter()
   const { user } = useSession()
@@ -118,19 +141,35 @@ export function SpacesNav() {
             // (e.g. Drive while inside Notebook).
             const active = app.match ? app.match.some((p) => isActive(p)) : isActive(app.href)
             const key = NAV_KEYS[app.id]
+            // The chat's own entry carries the signal. WE NEVER OPEN THE CHAT
+            // ON SOMEONE'S BEHALF — a window that opens by itself reads as
+            // something going wrong, even when the news is good.
+            const lit = app.id === 'notebook' && !!waiting && !active
             return (
               <Link
                 key={app.id}
                 href={app.href}
                 data-coach={`nav-${app.id}`}
+                title={lit ? waiting?.line : undefined}
                 className={[
-                  'flex h-full items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
+                  'relative flex h-full items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
                   active
                     ? 'border-gold text-white'
-                    : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
+                    : lit
+                      ? 'border-transparent text-slate-300 hover:text-white'
+                      : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
                 ].join(' ')}
               >
                 {key ? t(key) : app.label}
+                {lit && (
+                  // Two soft flashes, then it simply stays lit. The flash is
+                  // missable — someone is looking elsewhere, or is not at the
+                  // desk — so the steady light is what actually carries it.
+                  <span
+                    aria-hidden
+                    className={`ms-2 h-1.5 w-1.5 rounded-full bg-emerald-400 ${flashNow ? 'agent-flash' : 'opacity-70'}`}
+                  />
+                )}
               </Link>
             )
           })}
@@ -247,6 +286,19 @@ export function SpacesNav() {
       <WhatsNew />
       {/* Account memory: apply this account's saved settings on any device */}
       <PrefsSync />
+
+      <style jsx global>{`
+        @keyframes agentFlash {
+          0%, 100% { opacity: 0.35; transform: scale(1); }
+          50%      { opacity: 1;    transform: scale(1.35); }
+        }
+        .agent-flash { animation: agentFlash 0.85s ease-in-out 2; }
+        @media (prefers-reduced-motion: reduce) {
+          /* The light still arrives — it just does not move. The signal was
+             never the motion; the motion was only to catch an eye. */
+          .agent-flash { animation: none; opacity: 1; }
+        }
+      `}</style>
 
     </div>
   )

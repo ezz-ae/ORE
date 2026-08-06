@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DismissControl } from '@/components/freehold/dismiss-control'
+import { raiseAgentWaiting, clearAgentWaiting } from '@/lib/freehold/agent-signal'
 
 type Entry = { id: string; kind: string; detail: string; at: string; machine: string; repeats?: number }
 type Pulse = {
@@ -145,7 +146,11 @@ export function MachinePulse() {
     if (isPutAway(sig) || alreadySaid(sig)) return
     setSaid(sig)
     markSaid(sig)
-  }, [p])
+    // …and let the agent carry it into the chat, wherever the reader goes
+    // next. Idempotent on the signature, so walking back onto this page does
+    // not re-light anything.
+    raiseAgentWaiting({ line: t('lm.pulse.note', { n: p.alarms.length }), signature: sig })
+  }, [p, t])
 
   useEffect(() => {
     fetch('/api/freehold/lead-machine/pulse', { cache: 'no-store' })
@@ -300,8 +305,8 @@ export function MachinePulse() {
                 allowed near one. */}
             <DismissControl
               id="machine-pulse-note"
-              onExit={() => { setPutAway(alarmSignature(p.alarms)); setPutAwayTick((n) => n + 1) }}
-              onLater={() => { setPutAway(alarmSignature(p.alarms), TOMORROW_MS); setPutAwayTick((n) => n + 1) }}
+              onExit={() => { setPutAway(alarmSignature(p.alarms)); clearAgentWaiting(); setPutAwayTick((n) => n + 1) }}
+              onLater={() => { setPutAway(alarmSignature(p.alarms), TOMORROW_MS); clearAgentWaiting(); setPutAwayTick((n) => n + 1) }}
             />
           </div>
 

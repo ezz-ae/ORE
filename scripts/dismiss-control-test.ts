@@ -119,6 +119,80 @@ console.log('\n── on time, one time ──')
     /changed nothing|nothing has changed/i.test(note), note)
 }
 
+console.log('\n── the agent can start a conversation, and it is never startling ──')
+{
+  const NAV = readFileSync('components/freehold/spaces-nav.tsx', 'utf8')
+  const NB = readFileSync('app/freehold-intelligence/notebook/page.tsx', 'utf8')
+
+  // A window that opens by itself reads as something going wrong, even when
+  // the news is good. Closed stays closed; the menu entry lights instead.
+  check('nothing navigates or opens the chat on the reader\'s behalf',
+    !/router\.push\([^)]*notebook/.test(NAV) && !/window\.open/.test(NAV),
+    'the chat is being opened for them')
+  check('the flash plays twice, then stops',
+    /ease-in-out 2;/.test(NAV), 'the animation loops or never ends')
+  check('…and the light STAYS after it, because a flash is missable',
+    /flashNow \? 'agent-flash' : 'opacity-70'/.test(NAV), 'the signal disappears with the motion')
+  check('the same news never flashes twice',
+    /shouldFlash\(/.test(NAV) && /markFlashed\(/.test(NAV))
+  check('motion is dropped for anyone who asked for less of it',
+    /prefers-reduced-motion/.test(NAV) && /prefers-reduced-motion/.test(NB))
+
+  // If the chat IS open the message belongs in the thread, looking unlike a
+  // reply — because it is the one message nobody asked for.
+  check('an agent-started message is marked as such',
+    /opened\?: boolean/.test(NB), 'nothing distinguishes it from a reply')
+  check('…and the signal clears once it has landed, so it never replays',
+    /clearAgentWaiting\(\)/.test(NB))
+  check('…and it arrives once, with no looping motion',
+    /agentArrive 0\.35s ease-out 1;/.test(NB), 'the arrival animation repeats')
+}
+
+console.log('\n── the signal has a writer, a reader and an eraser ──')
+{
+  // Every one of these three has to exist or the light is decoration: a
+  // signal nothing raises never appears, one nothing reads never shows, and
+  // one nothing clears never goes away.
+  const PULSE = readFileSync('components/freehold/machine-pulse.tsx', 'utf8')
+  const NAV = readFileSync('components/freehold/spaces-nav.tsx', 'utf8')
+  const NB = readFileSync('app/freehold-intelligence/notebook/page.tsx', 'utf8')
+  check('something raises it', /raiseAgentWaiting\(\{/.test(PULSE), 'the signal has no writer')
+  check('something shows it', /agentWaiting\(\)/.test(NAV), 'the signal has no reader')
+  check('something clears it', /clearAgentWaiting\(\)/.test(NB) && /clearAgentWaiting\(\)/.test(PULSE),
+    'the signal can never be put out')
+  check('closing the note counts as reading it',
+    /onExit=\{[^}]*clearAgentWaiting/.test(PULSE), 'the light survives being dismissed')
+}
+
+console.log('\n── colour is spent once, so it weighs ──')
+{
+  const NAV = readFileSync('components/freehold/spaces-nav.tsx', 'utf8')
+  const NB = readFileSync('app/freehold-intelligence/notebook/page.tsx', 'utf8')
+  // Green carries exactly one meaning in this product: your agent started
+  // this. Spend it on a border AND an icon AND a label in the same component
+  // and it has stopped meaning anything in particular.
+  check('the lit menu entry spends green on one mark only',
+    (NAV.match(/emerald/g) ?? []).length === 1,
+    `${(NAV.match(/emerald/g) ?? []).length} uses`)
+  check('the agent-started bubble spends it on its surface only',
+    (NB.match(/emerald/g) ?? []).length === 2,
+    `${(NB.match(/emerald/g) ?? []).length} uses`)
+  check('the thinking state borrows no accent at all',
+    /animate-spin text-slate-500/.test(NB), 'the pending spinner is still tinted')
+}
+
+console.log('\n── it says what it is doing, not that it is thinking ──')
+{
+  const NB = readFileSync('app/freehold-intelligence/notebook/page.tsx', 'utf8')
+  check('the working line is built from the sources actually sent',
+    /checkedSources\.crm_leads\) named\.push/.test(NB), 'the message is still generic')
+  check('…and says so plainly when it was given nothing',
+    /nb\.working\.nothing/.test(NB))
+  // Naming steps the request cannot observe would be choreography, not progress.
+  check('no invented step sequence — this endpoint answers in one call',
+    !/setTimeout\([^)]*setWorkingOn/.test(NB), 'fake progress stages are being played')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} dismiss rule(s) broken.`)
   process.exit(1)
