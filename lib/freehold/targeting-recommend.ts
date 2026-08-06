@@ -5,6 +5,7 @@ import { query } from '@/lib/db'
 import { getNetworkBenchmarks, refreshLiveTenantSignals } from '@/lib/entrestate/targeting-base'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
+import { rank, junkInventory, type Ranking, type ArmReading } from '@/lib/freehold/inventory-quality'
 
 // The learning loop's SHARED brain: reads what actually happened (spend, CPL,
 // how each campaign's leads progressed in the CRM), folds in the network's
@@ -22,6 +23,18 @@ interface CampaignPerf {
   metaLeads: number
   crm: { total: number; qualified: number; closed: number; lost: number }
   cpl: number | null
+  /** Delivery volume. These were fetched all along and dropped before the model
+   *  saw them, which left the recommendation resting on `cpl` — a figure built
+   *  from a handful of leads — while the hundreds of thousands of impressions
+   *  that actually separate one audience from another went unread. */
+  impressions: number
+  clicks: number
+  /** Cost per thousand impressions: what this audience costs to reach. */
+  cpm: number | null
+  /** Leads per million impressions: how well it converts once reached. This is
+   *  the audience-quality number, and it is the one that reaches significance
+   *  in days rather than months. */
+  leadsPerMillion: number | null
 }
 
 async function crmOutcomesByCampaign(): Promise<Map<string, CampaignPerf['crm']>> {
@@ -61,10 +74,14 @@ async function gatherPerformance(): Promise<{ connected: boolean; campaigns: Cam
     const rows: CampaignPerf[] = await Promise.all(campaigns.slice(0, 15).map(async (c) => {
       let spend = 0
       let leads = 0
+      let impressions = 0
+      let clicks = 0
       try {
         const ins = await getCampaignInsights(c.id)
         spend = Number(ins?.spend) || 0
         leads = metaLeadCount(ins?.actions)
+        impressions = Number(ins?.impressions) || 0
+        clicks = Number(ins?.clicks) || 0
       } catch { /* insights unavailable for this campaign */ }
       return {
         id: c.id,
@@ -74,6 +91,10 @@ async function gatherPerformance(): Promise<{ connected: boolean; campaigns: Cam
         metaLeads: leads,
         crm: outcomes.get(c.id) ?? { total: 0, qualified: 0, closed: 0, lost: 0 },
         cpl: leads > 0 ? Math.round((spend / leads) * 10) / 10 : null,
+        impressions,
+        clicks,
+        cpm: impressions > 0 ? Math.round((spend / impressions) * 1000 * 100) / 100 : null,
+        leadsPerMillion: impressions > 0 ? Math.round((leads / impressions) * 1_000_000) : null,
       }
     }))
     return { connected: true, campaigns: rows }
@@ -84,6 +105,7 @@ async function gatherPerformance(): Promise<{ connected: boolean; campaigns: Cam
       connected: false,
       campaigns: [...outcomes.entries()].map(([id, crm]) => ({
         id, name: id, status: 'UNKNOWN', spendAED: 0, metaLeads: crm.total, crm, cpl: null,
+        impressions: 0, clicks: 0, cpm: null, leadsPerMillion: null,
       })),
     }
   }
@@ -129,6 +151,10 @@ export async function recommendTargeting(listing: ListingCtx | null, sessionKey:
   recommendation: TargetingRecommendation
   performance: CampaignPerf[]
   connected: boolean
+  /** The computed evidence behind the recommendation. Returned, not just fed
+   *  to the model — a system that establishes which audience is better and
+   *  shows only the model's prose has kept the finding to itself. */
+  evidence: { ranking: Ranking | null; junk: ArmReading[] }
 }> {
   // Keep this tenant's contribution to the shared brain fresh, then read the
   // NETWORK's aggregated benchmarks — every system user's learning combined,
@@ -139,6 +165,38 @@ export async function recommendTargeting(listing: ListingCtx | null, sessionKey:
   const qualifiedPool = perf.campaigns.reduce((n, c) => n + c.crm.qualified, 0)
   const closedPool = perf.campaigns.reduce((n, c) => n + c.crm.closed, 0)
 
+  // WHAT THE DATA ACTUALLY ESTABLISHES. Handing a model eight rows of CPL and
+  // asking which audience is best guarantees a confident answer, because a
+  // 3.6× spread across 26 leads looks decisive and reads as a finding. This
+  // computes the comparisons on IMPRESSIONS instead — the basis with 10,000×
+  // more observations — and passes the verdicts in, so the model reasons from
+  // established differences rather than rediscovering noise.
+  const arms = perf.campaigns
+    .filter((c) => c.impressions > 0)
+    .map((c) => ({ id: c.id, name: c.name, spend: c.spendAED, leads: c.metaLeads, impressions: c.impressions, clicks: c.clicks }))
+  const ranking = arms.length >= 2 ? rank(arms) : null
+  const junk = arms.length >= 2 ? junkInventory(arms) : []
+  const established = ranking ? ranking.comparisons.filter((c) => c.established) : []
+
+  const establishedBlock = ranking
+    ? [
+        'ESTABLISHED DIFFERENCES (computed, not guessed — exact conditional binomial on impressions, p < 0.05):',
+        established.length
+          ? established.slice(0, 8).map((c) => `· ${c.sentence}`).join('\n')
+          : '· NONE. No two campaigns have separated on audience quality yet.',
+        ranking.undecided.length
+          ? `NOT SEPARATED — do not rank or act on these against each other: ${ranking.undecided.map((r) => `"${r.name}"`).join(', ')}`
+          : '',
+        `SUMMARY: ${ranking.headline}`,
+      ].filter(Boolean).join('\n')
+    : 'ESTABLISHED DIFFERENCES: not enough campaigns with delivery to compare.'
+
+  const junkBlock = junk.length
+    ? `CHEAP JUNK INVENTORY (low cpm AND proven-low conversion — these buy impressions that do not convert, which is invisible in cpl): ${junk
+        .map((r) => `"${r.name}" (cpm ${r.cpm?.toFixed(2)}, ${Math.round(r.lpm ?? 0)} leads/million)`)
+        .join(', ')}. Recommend narrowing placements away from this inventory rather than changing the audience.`
+    : ''
+
   const prompt = `You are the head of performance at a full-service marketing agency running a Dubai real-estate lead machine. Your doctrine is ALGORITHM vs ALGORITHM: Meta's delivery system finds the buyers — your job is to feed it better signals, seeds, exclusions and creative than the competition. You NEVER ship a lazy interest stack like "real estate + Dubai" as a strategy; that is what juniors do.
 
 CAMPAIGN PERFORMANCE (real):
@@ -148,6 +206,17 @@ SEED POOLS AVAILABLE FOR LOOKALIKES: ${qualifiedPool} qualified leads, ${closedP
 ${listing && listing.name ? `\nTHIS CAMPAIGN'S LISTING (tailor cities, age band, budget and the creative angle to THIS asset and its price band — a Marina short-let investor is not a Hills villa family):\n${JSON.stringify(listing)}` : ''}
 
 QUALITY SIGNAL: crm.qualified/closed vs crm.lost per campaign shows which delivery produced REAL buyers. A cheap-CPL campaign whose leads mark "lost" is worse than a pricier one that closes.
+
+HOW TO READ THESE NUMBERS — this is the part juniors get wrong:
+· cpl is built from a handful of leads. A 3× spread in cpl across single-digit lead counts is usually noise. NEVER name a "winning" or "losing" audience on cpl alone, and never recommend a targeting change because one campaign's cpl looks high.
+· leadsPerMillion (leads per million impressions) is the audience-QUALITY number. Impressions run to the hundreds of thousands, so differences here are real long before cpl moves.
+· cpm is what the inventory COSTS. A very low cpm is not a bargain — it is the price of impressions nobody else bid for.
+· The two combine: an audience with a high cpm and a high leadsPerMillion, and one with a low cpm and a low leadsPerMillion, can land on the SAME cpl while being completely different buys. Only leadsPerMillion tells them apart.
+
+${establishedBlock}
+${junkBlock}
+
+Base your recommendation on the ESTABLISHED list. Where nothing is established, say so plainly in the "analysis" field and recommend gathering evidence — more spend on the current split, not a new audience. Inventing a targeting change to look decisive is the failure mode; "the data does not support a change yet" is a valid and often correct answer.
 
 NETWORK BENCHMARKS (aggregated, anonymized signals from ALL tenants of the system — use them especially when this tenant's own history is thin):
 ${JSON.stringify(benchmarks)}
@@ -186,5 +255,10 @@ If there is no history at all, choose interest_refined honestly, say so, and put
     rec.rationale = 'Connect the AI service for data-driven recommendations from your lead outcomes.'
   }
 
-  return { recommendation: rec, performance: perf.campaigns, connected: perf.connected }
+  return {
+    recommendation: rec,
+    performance: perf.campaigns,
+    connected: perf.connected,
+    evidence: { ranking, junk },
+  }
 }
