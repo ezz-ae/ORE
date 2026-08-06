@@ -7,10 +7,14 @@ import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
   AlignLeft, AlignCenter, AlignRight, Bold, Move, Palette, RotateCcw,
-  Crop, SlidersHorizontal, Sparkles, ZoomIn, ZoomOut, Maximize2,
+  Crop, SlidersHorizontal, Sparkles, ZoomIn, ZoomOut, Maximize2, Undo2, Redo2,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
+import {
+  createHistory, present, push as pushHistory, undo as undoHistory, redo as redoHistory,
+  reset as resetHistory, canUndo, canRedo, historyIntent, type History,
+} from '@/lib/freehold/history'
 import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
 import { type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
@@ -30,6 +34,26 @@ type BrandFrame = { on: boolean; color: string; width: number }
 // brightness/contrast/saturate are percentages (100 = untouched);
 // grayscale/sepia are 0–100 (0 = off).
 type ColorAdj = { brightness: number; contrast: number; saturate: number; grayscale: number; sepia: number }
+
+/**
+ * The DOCUMENT — everything undo must restore.
+ *
+ * UI state is deliberately absent: `tab`, `saving`, `dropping` and the busy
+ * flags are not edits, and putting them here would make ⌘Z jump the tool rail
+ * around. `title` is excluded for the same reason — undoing a rename together
+ * with the whole canvas is not what anyone means by ⌘Z.
+ */
+interface EditorSnapshot {
+  sourceUrl: string
+  preset: PresetKey
+  zoom: number
+  pan: { x: number; y: number }
+  texts: TextLayer[]
+  logo: LogoLayer | null
+  qr: QrLayer | null
+  frame: BrandFrame
+  colors: ColorAdj
+}
 type Drag =
   | { kind: 'image'; startPx: number; startPy: number; startPanX: number; startPanY: number }
   | { kind: 'text'; id: string; ox: number; oy: number }
@@ -385,6 +409,72 @@ export default function DriveImageEditor() {
     try { canvasRef.current?.releasePointerCapture(e.pointerId) } catch { /* ignore */ }
   }
 
+  // ── Undo / redo ──────────────────────────────────────────────────────────────
+  // Everything a person does by hand — a text layer, the crop, the logo, the
+  // colour sliders — had no way back at all. Only an AI edit could be undone,
+  // by swapping the source photo, and `revision` existed purely to warn that
+  // doing so would discard manual work. This makes the whole document
+  // reversible, so that warning is about the last irreversible thing left.
+  const snapshot: EditorSnapshot = useMemo(
+    () => ({ sourceUrl, preset, zoom, pan, texts, logo, qr, frame, colors }),
+    [sourceUrl, preset, zoom, pan, texts, logo, qr, frame, colors],
+  )
+  const [hist, setHist] = useState<History<EditorSnapshot>>(() => createHistory(snapshot))
+  // Set while applying a past state, so restoring does not record itself and
+  // turn undo into an infinite pair of steps.
+  const restoring = useRef(false)
+
+  useEffect(() => {
+    if (restoring.current) { restoring.current = false; return }
+    // Coalesced: dragging a slider fires continuously, and one step per frame
+    // would bury the real edit under hundreds of no-ops. The timer resets while
+    // the drag continues, so the whole drag lands as a single step.
+    const id = window.setTimeout(() => setHist((h) => pushHistory(h, snapshot)), 400)
+    return () => window.clearTimeout(id)
+  }, [snapshot])
+
+  // A different asset is a different document. Without this, undo would walk
+  // backwards out of the image you opened and into the one before it.
+  // The snapshot is read through a ref rather than being a dependency —
+  // depending on it would re-reset the history on every edit, wiping the
+  // timeline it is supposed to keep.
+  const snapshotRef = useRef(snapshot)
+  useEffect(() => { snapshotRef.current = snapshot }, [snapshot])
+  useEffect(() => { setHist((h) => resetHistory(h, snapshotRef.current)) }, [id])
+
+  const applySnapshot = useCallback((snap: EditorSnapshot) => {
+    restoring.current = true
+    setPreset(snap.preset); setZoom(snap.zoom); setPan(snap.pan)
+    setTexts(snap.texts); setLogo(snap.logo); setQr(snap.qr)
+    setFrame(snap.frame); setColors(snap.colors)
+    // A selection pointing at a layer that no longer exists would leave the
+    // rail editing nothing.
+    setSelText((cur) => (cur && snap.texts.some((l) => l.id === cur) ? cur : null))
+    if (snap.sourceUrl !== sourceUrl) {
+      if (snap.sourceUrl) void applySource(snap.sourceUrl, { cross: /^https?:/.test(snap.sourceUrl) })
+      else { setImg(null); setSourceUrl('') }
+    }
+    setDirty(true)
+  }, [sourceUrl, applySource])
+
+  const stepBack = useCallback(() => {
+    setHist((h) => { const next = undoHistory(h); if (next !== h) applySnapshot(present(next)); return next })
+  }, [applySnapshot])
+  const stepForward = useCallback(() => {
+    setHist((h) => { const next = redoHistory(h); if (next !== h) applySnapshot(present(next)); return next })
+  }, [applySnapshot])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const intent = historyIntent(e)
+      if (!intent) return
+      e.preventDefault()
+      if (intent === 'undo') stepBack(); else stepForward()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [stepBack, stepForward])
+
   // ── Layer ops ────────────────────────────────────────────────────────────────
   const mark = () => { setDirty(true); setRevision((r) => r + 1) }
   function addText() {
@@ -729,9 +819,24 @@ export default function DriveImageEditor() {
       toolRail={toolContent}
       aiRail={aiRail}
       actions={hasSource ? (
-        <button type="button" onClick={download} title={t('ed.download')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white">
-          <Download className="h-3.5 w-3.5" />
-        </button>
+        <>
+          {/* Visible, because a keyboard-only undo is an undo most people never
+              discover — and the disabled state is what tells you there is
+              nothing further back, rather than a click that does nothing. */}
+          <button type="button" onClick={stepBack} disabled={!canUndo(hist)}
+            title={`${t('ed.undo')} (⌘Z)`} aria-label={t('ed.undo')}
+            className="rounded-full border border-line p-1.5 text-slate-400 transition enabled:hover:text-white disabled:opacity-35">
+            <Undo2 className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" onClick={stepForward} disabled={!canRedo(hist)}
+            title={`${t('ed.redo')} (⌘⇧Z)`} aria-label={t('ed.redo')}
+            className="rounded-full border border-line p-1.5 text-slate-400 transition enabled:hover:text-white disabled:opacity-35">
+            <Redo2 className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" onClick={download} title={t('ed.download')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white">
+            <Download className="h-3.5 w-3.5" />
+          </button>
+        </>
       ) : undefined}
     >
       {/* Hidden file inputs (always mounted) */}
