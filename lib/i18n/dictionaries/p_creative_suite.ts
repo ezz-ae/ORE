@@ -119,6 +119,14 @@ export const p_creative_suite: Record<Locale, Dict> = {
     'conv.sizeChange': '{from} → {to}',
     'conv.saveAgain': 'Save again',
     'conv.privacy': 'Everything runs on your machine — the file is never uploaded. Large videos take about as long as they run.',
+
+    // ── Creative gallery ──
+    'gallery.title': 'The set',
+    'gallery.next': 'Next',
+    'gallery.prev': 'Previous',
+    'gallery.close': 'Close',
+    'gallery.downloadOne': 'Download this',
+    'gallery.downloadAll': 'Download the set',
     'reel.save': 'Save to Drive',
     'reel.saved': 'Reel saved to your Drive.',
     'reel.backToSuite': 'Back to the suite',
@@ -246,6 +254,14 @@ export const p_creative_suite: Record<Locale, Dict> = {
     'conv.sizeChange': '{from} ← {to}',
     'conv.saveAgain': 'حفظ مرة أخرى',
     'conv.privacy': 'كل شيء يجري على جهازك — ولا يُرفع الملف إطلاقًا. والفيديوهات الكبيرة تستغرق نحو مدة تشغيلها.',
+
+    // ── Creative gallery ──
+    'gallery.title': 'المجموعة',
+    'gallery.next': 'التالي',
+    'gallery.prev': 'السابق',
+    'gallery.close': 'إغلاق',
+    'gallery.downloadOne': 'تنزيل هذا',
+    'gallery.downloadAll': 'تنزيل المجموعة',
     'reel.save': 'حفظ في Drive',
     'reel.saved': 'تم حفظ الريل في Drive.',
     'reel.backToSuite': 'العودة إلى الاستوديو',
@@ -373,6 +389,14 @@ export const p_creative_suite: Record<Locale, Dict> = {
     'conv.sizeChange': '{from} → {to}',
     'conv.saveAgain': 'Сохранить снова',
     'conv.privacy': 'Всё выполняется на вашем устройстве — файл не загружается. Большие видео занимают примерно столько, сколько идут.',
+
+    // ── Creative gallery ──
+    'gallery.title': 'Набор',
+    'gallery.next': 'Дальше',
+    'gallery.prev': 'Назад',
+    'gallery.close': 'Закрыть',
+    'gallery.downloadOne': 'Скачать это',
+    'gallery.downloadAll': 'Скачать набор',
     'reel.save': 'Сохранить в Drive',
     'reel.saved': 'Рил сохранён в вашем Drive.',
     'reel.backToSuite': 'Назад в студию',
