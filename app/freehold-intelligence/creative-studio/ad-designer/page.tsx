@@ -18,6 +18,7 @@ import { fieldClass, Modal } from '@/components/freehold/ui'
 import { SUITE_COPY, type SuiteCopy, type SuiteLang } from '@/lib/freehold/creative-suite'
 import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
 import { BROCHURE_MAX_BYTES, postBrochureForParse } from '@/lib/freehold/parse-brochure-client'
+import { buildZip, saveBlob, safeFileName } from '@/lib/freehold/bundle'
 import {
   PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts, fitHeadline,
   type LayoutKey, type FormatKey, type Overlay,
@@ -638,8 +639,24 @@ export default function AdDesignerPage() {
     else toast.error(t('adz.err.save'))
   }
 
+  // ONE file, not one click per size. A loop of anchor clicks makes Chrome ask
+  // "Download multiple files?" and makes Safari keep only the first — so the
+  // button looked like it worked while the broker quietly got one of the three
+  // sizes. The caption rides along as a .txt, because it is what gets pasted
+  // beside the images in the ad.
   function downloadSet() {
-    finalSet.forEach((item) => download(item.dataUrl, `ad-${item.fmt}.png`))
+    if (finalSet.length === 0) return
+    try {
+      const base = safeFileName(overlay.headline || 'ad-set', 'ad-set')
+      const zip = buildZip(
+        finalSet.map((item) => ({ dataUrl: item.dataUrl, name: `${base}-${item.fmt}` })),
+        caption.trim() ? { [`${base}-caption`]: caption.trim() } : {},
+      )
+      saveBlob(zip, `${base}.zip`)
+    } catch (err) {
+      // Never fail silently — a download that does nothing is the bug above.
+      toast.error(err instanceof Error ? err.message : t('adz.err.download'))
+    }
   }
 
   const stepIndex = STEPS.findIndex((s) => s.key === step)

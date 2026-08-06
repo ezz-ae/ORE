@@ -13,7 +13,7 @@
     "smoke:tenancy": "tsx scripts/tenancy-smoke.ts",
     "i18n": "tsx scripts/i18n-audit.ts",
     "routes": "tsx scripts/gen-app-routes.ts",
-    "guards": "tsx scripts/gen-app-routes.ts && tsx scripts/guards.ts && tsx scripts/authority-test.ts && tsx scripts/evidence-test.ts && tsx scripts/video-export-test.ts",
+    "guards": "tsx scripts/gen-app-routes.ts && tsx scripts/guards.ts && tsx scripts/authority-test.ts && tsx scripts/evidence-test.ts && tsx scripts/video-export-test.ts && tsx scripts/bundle-test.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "typecheck": "tsc --noEmit",
     "db:smoke": "tsx scripts/db-smoke.ts"
@@ -70,6 +70,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "fflate": "^0.8.3",
     "formidable": "^3.5.4",
     "framer-motion": "12.23.27",
     "google-auth-library": "^10.7.0",
