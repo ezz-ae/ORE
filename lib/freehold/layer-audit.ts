@@ -317,33 +317,48 @@ export function auditGroupBalance(
 /**
  * THE LEVEL SCHEMA.
  *
- * Ten levels, five that include and five that exclude, mirrored. Every layer
- * in a stack belongs to exactly one, and the level decides where it is applied
- * — which is what decides the cost.
+ * Ten levels, five including and five excluding, mirrored:
  *
- *    +1  PERSONA        who this is: the shape of the person we sell to
- *    +2  MONEY          can they complete: income, assets, purchasing power
- *    +3  PRODUCT        what they want: apartment, villa, off-plan
- *    +4  DECISION       are they deciding now: in-market, actively looking
- *    +5  EXPERIMENTAL   the deliberate unknown — the slot that learns
+ *    +1  PERSONA        who we sell to          — the TARGET. This is the buy.
+ *    +2  MONEY          can they complete        — EXPECTED of them
+ *    +3  PRODUCT        what they want           — APPRECIATED when present
+ *    +4  DECISION       deciding now             — VALUED highly
+ *    +5  EXPERIMENTAL   the deliberate unknown   — TRIED, never relied on
  *
  *    -1  OUT OF TARGET  not the persona at all
  *    -2  POOR           cannot complete
  *    -3  NOT INTERESTED wrong product
- *    -4  NOT SERIOUS    browsing, scared, or never going to sign
+ *    -4  NOT SERIOUS    browsing, scared, never going to sign
  *    -5  EXPERIMENTAL   the deliberate negative test
  *
- * ORDER IS THE WHOLE COST ARGUMENT. Applied ascending, each level filters the
- * public before the next one has to pay to look at them. Applied inverted —
- * product interest at the base — you bid into twelve million people who want
- * an apartment and pay Meta to discover most of them cannot buy one. Same
- * segments, same account, a completely different bill. It is nothing like
- * running the whole track every time.
+ * NARROWING IS NOT FEWER PEOPLE. IT IS A CLOSER TOUCH.
  *
- * THE MIRROR MATTERS TOO. -2 is the negative of +2. A stack that includes a
- * money level AND excludes a poor level is doing one job twice, and the second
- * copy only narrows delivery further for no additional filtering. Naming the
- * pairs is what lets that be seen.
+ * This is the correction that makes the schema work, and getting it backwards
+ * is the standard way a stack destroys itself. Stacking every level as a hard
+ * AND does shrink the audience — and what it actually does is REFUSE the
+ * person who matches four levels out of five. Someone who is the persona, has
+ * the money, wants the product and is deciding now, but whom Meta never tagged
+ * with one of those five labels, is thrown away by an AND. Meta's segments are
+ * inferences with wide error bars; treating each one as a gate compounds five
+ * uncertain guesses into one confident exclusion.
+ *
+ * So we do not RULE with the levels. We WEIGHT with them.
+ *
+ *    We target level 1.
+ *    We expect level 2.
+ *    We appreciate level 3.
+ *    We value level 4.
+ *    We try level 5.
+ *
+ * Level 1 is what you buy — the ad set runs on the persona. Levels 2 to 5 are
+ * how closely each person matches, and a person carrying more of them is a
+ * multi-touched person: the same audience, reached with a closer touch, worth
+ * more per impression. That is a weight, a bid, a separate arm to measure —
+ * never a gate that discards the four-out-of-five.
+ *
+ * The exclusions are different, and they are the one place hard rules belong.
+ * -1 to -4 are things we have PROVEN bad, not things we merely hope for. A
+ * negative fact earns a rule; a positive hope earns a weight.
  *
  * This is a DOCTRINE, written down so a stack can be checked against it and
  * argued with, rather than each operator holding a private version in their
@@ -364,18 +379,67 @@ export const LEVEL_LABEL: Record<AudienceLevel, string> = {
   [-5]: 'Experimental (negative)',
 }
 
-/** The order inclusion levels must be applied in. */
+/** What each level is FOR. The verb is the whole doctrine in one word. */
+export type LevelRole = 'target' | 'expect' | 'appreciate' | 'value' | 'try'
+export const LEVEL_ROLE: Record<1 | 2 | 3 | 4 | 5, LevelRole> = {
+  1: 'target', 2: 'expect', 3: 'appreciate', 4: 'value', 5: 'try',
+}
+
+/**
+ * How much a match at each level is worth, relative to the persona.
+ *
+ * Ascending, because a person who is deciding NOW is worth more than one who
+ * merely has the money — but level 1 still anchors at 1.0 because it is the
+ * thing being bought, not a bonus. Level 5 is worth the least: it is a guess
+ * being tested, and paying a premium for an untested guess is how an
+ * experiment stops being an experiment.
+ */
+export const LEVEL_WEIGHT: Record<1 | 2 | 3 | 4 | 5, number> = {
+  1: 1.0, 2: 1.5, 3: 1.8, 4: 2.5, 5: 1.1,
+}
+
 export const INCLUSION_ORDER: readonly AudienceLevel[] = [1, 2, 3, 4, 5]
-/** The exclusion levels, in the order they mirror the inclusions. */
 export const EXCLUSION_ORDER: readonly AudienceLevel[] = [-1, -2, -3, -4, -5]
 
 /** The exclusion that does the same job as a given inclusion, and vice versa. */
 export const mirrorOf = (l: AudienceLevel): AudienceLevel => -l as AudienceLevel
 
+/**
+ * TOUCH DEPTH — how close a given person's match is.
+ *
+ * Not a filter and not a probability: an ordering, used to weight a bid, to
+ * rank a seed, or to decide which arm deserves more budget. A person matching
+ * only the persona still scores; they are simply touched less closely than one
+ * who also has the money and is deciding now.
+ *
+ * Returns 0 when the persona is absent, because level 1 is the buy — someone
+ * outside the persona who happens to have money is not a closer touch, they
+ * are a different person.
+ */
+export function touchDepth(matched: Array<1 | 2 | 3 | 4 | 5>): {
+  score: number
+  levels: Array<1 | 2 | 3 | 4 | 5>
+  /** Plain description, e.g. "persona + money + decision". */
+  description: string
+} {
+  const uniq = Array.from(new Set(matched)).sort((a, b) => a - b) as Array<1 | 2 | 3 | 4 | 5>
+  if (!uniq.includes(1)) {
+    return { score: 0, levels: uniq, description: 'outside the persona — not a closer touch, a different person' }
+  }
+  const score = uniq.reduce((n, l) => n + LEVEL_WEIGHT[l], 0)
+  return {
+    score: Math.round(score * 100) / 100,
+    levels: uniq,
+    description: uniq.map((l) => LEVEL_LABEL[l].toLowerCase()).join(' + '),
+  }
+}
+
 export interface OrderedLevel {
   name: string
   level: AudienceLevel | null
-  /** Position in the stack as written, 0 = applied first. */
+  /** True when this layer is applied as a hard AND / narrowing constraint
+   *  rather than carried as a weight or run as its own arm. */
+  hardRule?: boolean
   index: number
 }
 
@@ -384,38 +448,38 @@ export type PlacedLevel = OrderedLevel & { level: AudienceLevel }
 
 export interface OrderVerdict {
   correct: boolean
-  /** Inclusion levels applied before a level that should precede them. */
-  misplaced: Array<{ level: PlacedLevel; shouldFollow: PlacedLevel }>
-  /** Inclusion levels with no layer at all — gaps in the filter. */
+  /** Positive levels above 1 applied as hard rules — ruling where they should
+   *  weight, which throws away the four-out-of-five match. */
+  ruledNotWeighted: PlacedLevel[]
+  /** True when nothing in the stack is the persona — there is no buy, only
+   *  qualifiers on an audience nobody defined. */
+  missingPersona: boolean
+  /** Inclusion levels absent from the stack entirely. */
   missing: AudienceLevel[]
-  /** Pairs where an inclusion and its mirror exclusion both appear, doing the
-   *  same job twice. */
+  /** An inclusion and its mirror exclusion both present: one job twice. */
   redundantMirrors: Array<{ include: PlacedLevel; exclude: PlacedLevel; level: AudienceLevel }>
-  /** True when an experimental level sits above a proven one — the explore
-   *  slot must be the last thing applied, never a constraint on everything. */
-  experimentalTooEarly: boolean
+  /** Level 5 applied as a hard rule — an untested guess gating a real buy. */
+  experimentalAsRule: boolean
   headline: string
   recommendation: string
 }
 
 /**
- * Check a stack against the schema.
+ * Check a stack against the doctrine.
  *
- * Unclassified layers are skipped rather than assumed wrong. A layer we could
- * not place is not evidence of a bad stack, and guessing its level in order to
+ * Unplaced layers are skipped rather than assumed wrong: a layer we could not
+ * classify is not evidence of a bad stack, and guessing its level in order to
  * have an opinion would be exactly the imagining this file exists against.
  */
 export function assessLevelOrder(levelsIn: OrderedLevel[]): OrderVerdict {
   const classified = levelsIn.filter((l): l is PlacedLevel => l.level !== null)
-  const includes = classified.filter((l) => l.level > 0).sort((a, b) => a.index - b.index)
+  const includes = classified.filter((l) => l.level > 0)
   const excludes = classified.filter((l) => l.level < 0)
 
-  const misplaced: OrderVerdict['misplaced'] = []
-  for (let i = 0; i < includes.length; i++) {
-    for (let j = i + 1; j < includes.length; j++) {
-      if (includes[i].level > includes[j].level) { misplaced.push({ level: includes[i], shouldFollow: includes[j] }); break }
-    }
-  }
+  const missingPersona = !includes.some((l) => l.level === 1)
+  // The core violation: a positive level ABOVE the persona used as a gate.
+  const ruledNotWeighted = includes.filter((l) => l.level > 1 && l.hardRule === true)
+  const experimentalAsRule = includes.some((l) => l.level === 5 && l.hardRule === true)
 
   const present = new Set(includes.map((l) => l.level))
   // Level 5 is optional by design — an experiment you do not have is not a gap.
@@ -427,38 +491,39 @@ export function assessLevelOrder(levelsIn: OrderedLevel[]): OrderVerdict {
     if (mirror) redundantMirrors.push({ include: inc, exclude: mirror, level: inc.level })
   }
 
-  const experimental = includes.find((l) => l.level === 5)
-  const experimentalTooEarly = !!experimental && includes.some((l) => l.level < 5 && l.index > experimental.index)
-
-  const correct = misplaced.length === 0 && !experimentalTooEarly
+  const correct = ruledNotWeighted.length === 0 && !missingPersona
 
   const headline = classified.length === 0
-    ? 'No layer in this stack could be placed on the level schema — the order cannot be checked.'
-    : correct
-    ? `The ${includes.length} inclusion level${includes.length === 1 ? '' : 's'} are applied in order${missing.length ? `, with ${missing.map((l) => LEVEL_LABEL[l].toLowerCase()).join(' and ')} missing` : ''}.`
-    : `${misplaced.length + (experimentalTooEarly ? 1 : 0)} level${misplaced.length === 1 && !experimentalTooEarly ? ' is' : 's are'} out of order — this stack pays to reach people it filters out later.`
+    ? 'No layer in this stack could be placed on the level schema — it cannot be checked.'
+    : missingPersona
+    ? 'No persona level in this stack. Every layer here qualifies an audience nobody has defined.'
+    : ruledNotWeighted.length > 0
+    ? `${ruledNotWeighted.length} level${ruledNotWeighted.length === 1 ? ' is' : 's are'} ruling where ${ruledNotWeighted.length === 1 ? 'it should' : 'they should'} weight — this stack discards people who match four levels out of five.`
+    : `Level 1 is the buy; ${includes.length - 1} further level${includes.length === 2 ? '' : 's'} carried as weight${includes.length === 2 ? '' : 's'}.`
 
   const parts: string[] = []
-  for (const m of misplaced) {
-    parts.push(`Apply "${m.shouldFollow.name}" (level ${m.shouldFollow.level}, ${LEVEL_LABEL[m.shouldFollow.level].toLowerCase()}) before "${m.level.name}" (level ${m.level.level}) — the earlier level removes people you would otherwise pay to reach.`)
+  if (missingPersona) {
+    parts.push('Add the persona as the base — level 1 is what you actually buy, and every other level only describes how closely a person matches it.')
   }
-  if (experimentalTooEarly) {
-    parts.push(`"${experimental!.name}" is experimental and is constraining levels that are not. An experiment belongs last, where it can be judged and dropped without taking the proven levels with it.`)
+  for (const r of ruledNotWeighted) {
+    const role = LEVEL_ROLE[r.level as 1 | 2 | 3 | 4 | 5]
+    parts.push(`"${r.name}" is level ${r.level} (${LEVEL_LABEL[r.level].toLowerCase()}) and is applied as a hard constraint. We ${role} this level, we do not require it — Meta's segments are inferences, and gating on one throws away the person who has the money but was never labelled with it. Carry it as a weight, or run it as its own arm and measure the difference.`)
+  }
+  if (experimentalAsRule) {
+    parts.push('An experimental level is gating the buy. An untested guess must never be a requirement — that is how an experiment quietly becomes an assumption.')
   }
   for (const r of redundantMirrors) {
-    parts.push(`"${r.include.name}" (level ${r.level}) and "${r.exclude.name}" (level ${mirrorOf(r.level)}) do the same job. Keep the inclusion — the exclusion only narrows delivery further without filtering anything the inclusion has not.`)
+    parts.push(`"${r.include.name}" (level ${r.level}) and "${r.exclude.name}" (level ${mirrorOf(r.level)}) do the same job. Keep the exclusion — a proven-bad fact earns a rule, where a hoped-for positive earns only a weight.`)
   }
-  if (missing.includes(2)) {
-    parts.push('No money level anywhere in this stack. Every level here filters for what someone WANTS, none for whether they can complete — which is the difference between a lead and a buyer.')
-  } else if (missing.length > 0) {
-    parts.push(`No ${missing.map((l) => LEVEL_LABEL[l].toLowerCase()).join(' or ')} level — the filter has a gap the spend will fall through.`)
+  if (missing.includes(2) && !missingPersona) {
+    parts.push('No money level anywhere in this stack — not even as a weight. Nothing here distinguishes someone who can complete from someone who cannot, which is the difference between a lead and a buyer.')
   }
 
   return {
-    correct, misplaced, missing, redundantMirrors, experimentalTooEarly,
+    correct, ruledNotWeighted, missingPersona, missing, redundantMirrors, experimentalAsRule,
     headline,
     recommendation: parts.length > 0
       ? parts.join(' ')
-      : 'The order is right and the levels are complete. The remaining question is whether each one bites, which is what the layer audit answers.',
+      : 'The persona is the buy and the deeper levels are weights. The remaining question is whether each one bites, which is what the layer audit answers.',
   }
 }

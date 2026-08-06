@@ -114,6 +114,7 @@ export const APP_ROUTES: readonly string[] = [
   "/freehold-intelligence/lead-machine/ad-requests",
   "/freehold-intelligence/lead-machine/ads-machine",
   "/freehold-intelligence/lead-machine/ads-machine/*",
+  "/freehold-intelligence/lead-machine/audience-lab",
   "/freehold-intelligence/lead-machine/audiences",
   "/freehold-intelligence/lead-machine/campaigns",
   "/freehold-intelligence/lead-machine/campaigns/attribution",

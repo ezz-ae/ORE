@@ -18,13 +18,16 @@ import {
   META_MIN_MATCHED, SEED_QUALITY_FLOOR, type SeedLead,
 } from '../lib/freehold/seed-cohort'
 import {
-  auditStack, levels, orDominance, auditGroupBalance, assessLevelOrder,
-  mirrorOf, LEVEL_LABEL, INCLUSION_ORDER, EXCLUSION_ORDER,
+  auditStack, levels, orDominance, auditGroupBalance, assessLevelOrder, touchDepth,
+  mirrorOf, LEVEL_LABEL, LEVEL_ROLE, LEVEL_WEIGHT, INCLUSION_ORDER, EXCLUSION_ORDER,
   IGNORED_BELOW, type LayerProbe, type OrderedLevel,
 } from '../lib/freehold/layer-audit'
 import {
   assessTier, LADDER, FREQUENCY_CEILING, MIN_IMPRESSIONS_FOR_LADDER, type TierState,
 } from '../lib/freehold/lookalike-ladder'
+import {
+  coldArms, warmArms, planArms, MIN_ARM_DAILY_AED, RETARGET_WEIGHT, ARM_DOCTRINE,
+} from '../lib/freehold/level-arms'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -235,81 +238,114 @@ console.log('\n── the leak: a mass segment beside a narrow one ──')
     groups.length === 1 && groups[0].label === 'base', groups.map((g) => g.label).join(','))
 }
 
-console.log('\n── the level schema: order, gaps and mirrors ──')
+console.log('\n── narrowing is a closer touch, not fewer people ──')
+{
+  // The doctrine: target 1, expect 2, appreciate 3, value 4, try 5.
+  const weighted: OrderedLevel[] = [
+    { name: 'Dubai property buyer persona', level: 1, hardRule: true,  index: 0 },
+    { name: 'Household income top 10%',     level: 2, hardRule: false, index: 1 },
+    { name: 'Interested in apartments',     level: 3, hardRule: false, index: 2 },
+    { name: 'Actively looking to move',     level: 4, hardRule: false, index: 3 },
+  ]
+  const good = assessLevelOrder(weighted)
+  check('the persona as the buy with the rest as weights is correct',
+    good.correct, good.headline)
+  check('…and the headline says level 1 is the buy',
+    /Level 1 is the buy/.test(good.headline), good.headline)
+
+  // THE DESTRUCTIVE STACK: every level as a hard AND.
+  const allRules: OrderedLevel[] = weighted.map((l) => ({ ...l, hardRule: true }))
+  const bad = assessLevelOrder(allRules)
+  check('levels 2-4 as hard rules is flagged', !bad.correct, bad.headline)
+  check('…and the headline names what it costs',
+    /discards people who match four levels out of five/.test(bad.headline), bad.headline)
+  check('…and the advice uses the level\'s own verb',
+    /We expect this level, we do not require it/.test(bad.recommendation), bad.recommendation)
+  check('the persona itself is never flagged for being a rule',
+    !bad.ruledNotWeighted.some((l) => l.level === 1),
+    bad.ruledNotWeighted.map((l) => l.level).join(','))
+
+  const noPersona = assessLevelOrder([
+    { name: 'Household income top 10%', level: 2, hardRule: false, index: 0 },
+  ])
+  check('a stack with no persona has no buy', noPersona.missingPersona, noPersona.headline)
+  check('…and is not called correct', !noPersona.correct)
+
+  const expRule = assessLevelOrder([
+    ...weighted,
+    { name: 'New behaviour trial', level: 5, hardRule: true, index: 4 },
+  ])
+  check('an experimental level used as a gate is called out',
+    expRule.experimentalAsRule, JSON.stringify(expRule.ruledNotWeighted.map((l) => l.level)))
+  check('…and the reason says an experiment must not become an assumption',
+    /quietly becomes an assumption/.test(expRule.recommendation), expRule.recommendation)
+  const expWeight = assessLevelOrder([...weighted, { name: 'New behaviour trial', level: 5, hardRule: false, index: 4 }])
+  check('the same experiment carried as a weight is fine',
+    expWeight.correct && !expWeight.experimentalAsRule, expWeight.headline)
+}
+
+console.log('\n── touch depth: more levels, closer touch ──')
+{
+  const only1 = touchDepth([1])
+  const deep = touchDepth([1, 2, 4])
+  const deepest = touchDepth([1, 2, 3, 4])
+  check('matching the persona alone still scores', only1.score > 0, String(only1.score))
+  check('more levels is a closer touch', deep.score > only1.score, `${deep.score} vs ${only1.score}`)
+  check('and more again is closer still', deepest.score > deep.score, `${deepest.score} vs ${deep.score}`)
+  check('a decision match is worth more than a money match',
+    LEVEL_WEIGHT[4] > LEVEL_WEIGHT[2], `${LEVEL_WEIGHT[4]} vs ${LEVEL_WEIGHT[2]}`)
+  check('an experimental match is worth the least of the positives',
+    LEVEL_WEIGHT[5] < LEVEL_WEIGHT[2] && LEVEL_WEIGHT[5] < LEVEL_WEIGHT[3],
+    String(LEVEL_WEIGHT[5]))
+
+  // Outside the persona is not a weaker touch — it is a different person.
+  const outside = touchDepth([2, 3, 4])
+  check('money and intent without the persona scores zero', outside.score === 0, String(outside.score))
+  check('…and says why', /different person/.test(outside.description), outside.description)
+
+  check('the description is legible', deep.description === 'targeted persona + money + decision',
+    deep.description)
+  check('duplicates do not inflate the score',
+    touchDepth([1, 2, 2, 2]).score === touchDepth([1, 2]).score)
+
+  // The verbs are the doctrine.
+  check('the roles are target, expect, appreciate, value, try',
+    LEVEL_ROLE[1] === 'target' && LEVEL_ROLE[2] === 'expect' && LEVEL_ROLE[3] === 'appreciate' &&
+    LEVEL_ROLE[4] === 'value' && LEVEL_ROLE[5] === 'try')
+}
+
+console.log('\n── a proven-bad fact earns a rule; a hoped-for positive earns a weight ──')
 {
   const full: OrderedLevel[] = [
-    { name: 'Dubai property buyer persona', level: 1, index: 0 },
-    { name: 'Household income top 10%',     level: 2, index: 1 },
-    { name: 'Interested in apartments',     level: 3, index: 2 },
-    { name: 'Actively looking to move',     level: 4, index: 3 },
+    { name: 'Buyer persona', level: 1, hardRule: true, index: 0 },
+    { name: 'Household income top 10%', level: 2, hardRule: false, index: 1 },
+    { name: 'Interested in apartments', level: 3, hardRule: false, index: 2 },
+    { name: 'Actively looking', level: 4, hardRule: false, index: 3 },
   ]
-  const good = assessLevelOrder(full)
-  check('persona, money, product, decision is correct', good.correct, good.headline)
-  check('…with no gaps', good.missing.length === 0, JSON.stringify(good.missing))
-
-  // THE EXPENSIVE INVERSION: product interest applied before money.
-  const inverted: OrderedLevel[] = [
-    { name: 'Interested in apartments', level: 3, index: 0 },
-    { name: 'Household income top 10%', level: 2, index: 1 },
-  ]
-  const bad = assessLevelOrder(inverted)
-  check('product interest above money is out of order', !bad.correct, bad.headline)
-  check('…and the headline says the stack pays to reach people it filters out',
-    /pays to reach people it filters out/.test(bad.headline), bad.headline)
-  check('…and the fix names both levels and the reason',
-    /Apply "Household income top 10%" \(level 2, money\) before "Interested in apartments"/.test(bad.recommendation),
-    bad.recommendation)
-
-  // A stack with no money level at all.
-  const noMoney = assessLevelOrder([
-    { name: 'Buyer persona', level: 1, index: 0 },
-    { name: 'Interested in apartments', level: 3, index: 1 },
-    { name: 'Actively looking', level: 4, index: 2 },
-  ])
-  check('a missing money level is reported', noMoney.missing.includes(2), JSON.stringify(noMoney.missing))
-  check('…with the difference between a lead and a buyer stated',
-    /difference between a lead and a buyer/.test(noMoney.recommendation), noMoney.recommendation)
-
-  // The mirror: including level 2 AND excluding level -2 is one job twice.
-  const mirrored = assessLevelOrder([
-    ...full,
-    { name: 'Exclude low-income', level: -2, index: 4 },
-  ])
+  const mirrored = assessLevelOrder([...full, { name: 'Exclude low-income', level: -2, hardRule: true, index: 4 }])
   check('an inclusion and its mirror exclusion are flagged as the same job',
     mirrored.redundantMirrors.length === 1 && mirrored.redundantMirrors[0].level === 2,
     JSON.stringify(mirrored.redundantMirrors.map((r) => r.level)))
-  check('…and the advice is to keep the inclusion',
-    /Keep the inclusion/.test(mirrored.recommendation), mirrored.recommendation)
+  check('…and the advice keeps the EXCLUSION, not the inclusion',
+    /Keep the exclusion/.test(mirrored.recommendation), mirrored.recommendation)
   check('mirrorOf is symmetric', mirrorOf(2) === -2 && mirrorOf(-2) === 2)
 
-  // An exclusion with no matching inclusion is NOT redundant. -5 mirrors +5,
-  // and this stack has no experimental level, so nothing is being done twice.
-  const cleanExclusion = assessLevelOrder([
-    ...full,
-    { name: 'Negative behaviour trial', level: -5, index: 4 },
-  ])
+  const cleanExclusion = assessLevelOrder([...full, { name: 'Negative trial', level: -5, hardRule: true, index: 4 }])
   check('an exclusion whose mirror inclusion is absent is not flagged',
-    cleanExclusion.redundantMirrors.length === 0,
-    JSON.stringify(cleanExclusion.redundantMirrors))
+    cleanExclusion.redundantMirrors.length === 0, JSON.stringify(cleanExclusion.redundantMirrors))
 
-  // The experimental slot must be last — it may not constrain proven levels.
-  const expEarly = assessLevelOrder([
-    { name: 'New behaviour trial', level: 5, index: 0 },
-    { name: 'Household income top 10%', level: 2, index: 1 },
+  const noMoney = assessLevelOrder([
+    { name: 'Buyer persona', level: 1, hardRule: true, index: 0 },
+    { name: 'Interested in apartments', level: 3, hardRule: false, index: 1 },
   ])
-  check('an experimental level above a proven one is called out',
-    expEarly.experimentalTooEarly, JSON.stringify(expEarly))
-  check('…and the reason says it must be droppable on its own',
-    /without taking the proven levels with it/.test(expEarly.recommendation), expEarly.recommendation)
-  const expLast = assessLevelOrder([...full, { name: 'New behaviour trial', level: 5, index: 4 }])
-  check('an experimental level applied last is fine',
-    !expLast.experimentalTooEarly && expLast.correct, expLast.headline)
-  check('…and level 5 is never reported as a gap', !expLast.missing.includes(5 as never))
+  check('a missing money level is reported even in a weighted stack',
+    noMoney.missing.includes(2), JSON.stringify(noMoney.missing))
+  check('…with the difference between a lead and a buyer stated',
+    /difference between a lead and a buyer/.test(noMoney.recommendation), noMoney.recommendation)
 
-  // An unclassifiable layer must not become an accusation.
   const unknown = assessLevelOrder([{ name: 'Mystery', level: null, index: 0 }])
   check('an unplaced layer is skipped, not guessed at',
-    unknown.correct && /could be placed/.test(unknown.headline), unknown.headline)
+    /could be placed/.test(unknown.headline), unknown.headline)
   check('the schema labels are the operator\'s own',
     LEVEL_LABEL[1] === 'Targeted persona' && LEVEL_LABEL[2] === 'Money' &&
     LEVEL_LABEL[4] === 'Decision' && LEVEL_LABEL[-4] === 'Not serious or scared')
@@ -365,6 +401,75 @@ console.log('\n── the ladder climbs for the right reason ──')
   const noRef = assessTier(base)
   check('without an account reference the test is described as weak',
     /weak test/.test(noRef.reason), noRef.reason)
+}
+
+console.log('\n── every level is an ad set, because Meta only knows MUST ──')
+{
+  const arms = coldArms([1, 2, 3, 4])
+  check('there is one arm per cumulative level', arms.length === 4, String(arms.length))
+  check('the first arm is the persona alone',
+    arms[0].levels.length === 1 && arms[0].levels[0] === 1, JSON.stringify(arms[0].levels))
+  check('each arm adds exactly one level to the one before it',
+    arms.every((a, i) => i === 0 || a.levels.length === arms[i - 1].levels.length + 1),
+    arms.map((a) => a.levels.join('+')).join(' | '))
+  check('the deepest arm carries every level', arms[3].levels.length === 4)
+  check('an arm is weighted by the level it ADDS, not by its length',
+    arms[3].weight === 2.5, String(arms[3].weight))
+  check('the persona arm explains why it must exist',
+    /never labelled/.test(arms[0].rationale), arms[0].rationale)
+  check('a schema with only a persona produces exactly one arm',
+    coldArms([1]).length === 1)
+}
+
+console.log('\n── weighting lives in the budget split ──')
+{
+  const plan = planArms(coldArms([1, 2, 3, 4]), 1000)
+  check('every arm clears the delivery floor',
+    plan.arms.every((p) => p.dailyBudgetAed >= MIN_ARM_DAILY_AED),
+    plan.arms.map((p) => `${p.arm.label}:${p.dailyBudgetAed}`).join(' | '))
+  const persona = plan.arms.find((p) => p.arm.kind === 'cold' && p.arm.levels.length === 1)!
+  check('the persona arm keeps its floor', persona.share >= 0.25 - 1e-9, String(persona.share))
+  check('shares sum to 1', Math.abs(plan.arms.reduce((n, p) => n + p.share, 0) - 1) < 1e-9)
+  check('the headline says each arm is also an experiment',
+    /clean experiment/.test(plan.headline), plan.headline)
+
+  // A budget too small to split: arms are DROPPED, not launched starved.
+  const tight = planArms(coldArms([1, 2, 3, 4]), 200)
+  check('a tight budget drops arms rather than starving them',
+    tight.arms.every((p) => p.dailyBudgetAed >= MIN_ARM_DAILY_AED),
+    tight.arms.map((p) => p.dailyBudgetAed).join(','))
+  check('…and says which were dropped and why',
+    tight.notes.length > 0 && /below the AED 50/.test(tight.notes[0]), tight.notes.join(' '))
+  check('…and keeps the persona arm', tight.arms.some((p) => p.arm.kind === 'cold' && p.arm.levels.length === 1))
+
+  const hopeless = planArms(coldArms([1, 2, 3, 4]), 30)
+  check('a budget below one arm plans nothing rather than something broken',
+    hopeless.arms.length === 0, JSON.stringify(hopeless.arms.length))
+  check('…and says so', /cannot support even one arm/.test(hopeless.headline), hopeless.headline)
+
+  check('no budget produces no plan', planArms([], 500).arms.length === 0)
+}
+
+console.log('\n── retargeting is its own axis ──')
+{
+  const warm = warmArms(['saw_ad', 'visited', 'started_form'])
+  check('the form-starter outweighs everyone', RETARGET_WEIGHT.started_form > RETARGET_WEIGHT.visited &&
+    RETARGET_WEIGHT.visited > RETARGET_WEIGHT.saw_ad)
+  check('and outweighs every cold level', RETARGET_WEIGHT.started_form > 2.5,
+    String(RETARGET_WEIGHT.started_form))
+  check('the form-starter arm says why it is usually starved',
+    /usually starved/.test(warm.find((a) => a.rung === 'started_form')!.rationale))
+
+  const mixed = planArms([...coldArms([1, 2, 4]), ...warm], 2000)
+  check('cold and warm arms plan together',
+    mixed.arms.some((p) => p.arm.kind === 'cold') && mixed.arms.some((p) => p.arm.kind === 'warm'))
+  const starter = mixed.arms.find((p) => p.arm.kind === 'warm' && p.arm.rung === 'started_form')!
+  const deepest = mixed.arms.find((p) => p.arm.kind === 'cold' && p.arm.levels.length === 3)!
+  check('the form-starter arm outfunds the deepest cold arm',
+    starter.dailyBudgetAed > deepest.dailyBudgetAed,
+    `${starter.dailyBudgetAed} vs ${deepest.dailyBudgetAed}`)
+  check('the doctrine travels with the plan',
+    ARM_DOCTRINE.length === 4 && ARM_DOCTRINE.some((d) => /only offers MUST/.test(d)))
 }
 
 if (failures > 0) {
