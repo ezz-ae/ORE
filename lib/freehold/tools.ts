@@ -185,6 +185,7 @@ export const TOOLS: ToolDef[] = [
   { id: 'fin.invoices',    href: `${FI}/finance/invoices`,     labelKey: 'tools.fin.invoices',    group: 'money', app: 'finance', Icon: Receipt,       keywords: 'invoices billing charge client' },
   { id: 'fin.payments',    href: `${FI}/finance/payments`,     labelKey: 'tools.fin.payments',    group: 'money', app: 'finance', Icon: CreditCard,    keywords: 'payments expenses received paid' },
   { id: 'fin.credits',     href: `${FI}/finance/credits`,      labelKey: 'tools.fin.credits',     group: 'money', app: 'finance', Icon: Coins,         keywords: 'credits points allocate top up balance' },
+  { id: 'fin.wallets',     href: `${FI}/finance/wallets`,      labelKey: 'tools.fin.wallets',     group: 'money', app: 'finance', Icon: Landmark,      keywords: 'bank wallet ads coin account number transfer treasury capital liquidity ledger' },
   { id: 'fin.creditRules', href: `${FI}/finance/credit-rules`, labelKey: 'tools.fin.creditRules', group: 'money', app: 'finance', Icon: Scale,         keywords: 'credit rules earning quota tiers' },
   { id: 'fin.contracts',   href: `${FI}/finance/contracts`,    labelKey: 'tools.fin.contracts',   group: 'money', app: 'finance', Icon: FileSignature, keywords: 'contracts agreements signatures' },
   { id: 'fin.reports',     href: `${FI}/finance/reports`,      labelKey: 'tools.fin.reports',     group: 'money', app: 'finance', Icon: BarChart3,     keywords: 'finance reports p&l statements' },

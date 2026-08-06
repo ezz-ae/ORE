@@ -90,6 +90,7 @@ export const APP_ROUTES: readonly string[] = [
   "/freehold-intelligence/finance/invoices",
   "/freehold-intelligence/finance/payments",
   "/freehold-intelligence/finance/reports",
+  "/freehold-intelligence/finance/wallets",
   "/freehold-intelligence/help",
   "/freehold-intelligence/integrations",
   "/freehold-intelligence/integrations/github",

@@ -3,7 +3,7 @@ import type { Locale } from '../config'
 // Navigation namespace (p_nav). Two families of keys:
 //
 //   nav.*    — the All-tools popup chrome and the global search box.
-//   tools.*  — one label per entry in lib/freehold/tools.ts (126 tools + 10
+//   tools.*  — one label per entry in lib/freehold/tools.ts (127 tools + 10
 //              group headings). Looked up dynamically as t(tool.labelKey), so
 //              the i18n audit's literal-key check does not see them; EN/AR/RU
 //              parity is what keeps them honest.
@@ -151,6 +151,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.fin.invoices': 'Invoices',
     'tools.fin.payments': 'Payments & expenses',
     'tools.fin.credits': 'Credits',
+    'tools.fin.wallets': 'Ads Coin bank',
     'tools.fin.creditRules': 'Credit rules',
     'tools.fin.contracts': 'Contracts',
     'tools.fin.reports': 'Finance reports',
@@ -328,6 +329,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.fin.invoices': 'الفواتير',
     'tools.fin.payments': 'المدفوعات والمصروفات',
     'tools.fin.credits': 'النقاط',
+    'tools.fin.wallets': 'بنك عملة الإعلانات',
     'tools.fin.creditRules': 'قواعد النقاط',
     'tools.fin.contracts': 'العقود',
     'tools.fin.reports': 'التقارير المالية',
@@ -505,6 +507,7 @@ export const p_nav: Record<Locale, Dict> = {
     'tools.fin.invoices': 'Счета',
     'tools.fin.payments': 'Платежи и расходы',
     'tools.fin.credits': 'Кредиты',
+    'tools.fin.wallets': 'Банк Ads Coin',
     'tools.fin.creditRules': 'Правила кредитов',
     'tools.fin.contracts': 'Договоры',
     'tools.fin.reports': 'Финансовые отчёты',
