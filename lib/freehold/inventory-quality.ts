@@ -40,8 +40,9 @@ export interface Arm {
 }
 
 /** log Γ(x) — Lanczos, g = 7, n = 9. Accurate to ~15 digits for x > 0.
- *  Needed so the binomial below stays exact at any lead count. */
-function lgamma(x: number): number {
+ *  Needed so the binomial below stays exact at any lead count. Exported
+ *  because `relevance.ts` needs the same exact-test machinery. */
+export function lgamma(x: number): number {
   const g = [
     0.99999999999980993, 676.5203681218851, -1259.1392167224028,
     771.32342877765313, -176.61502916214059, 12.507343278686905,

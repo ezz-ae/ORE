@@ -25,6 +25,15 @@ export function collectUtm(): Record<string, string> {
       const v = params.get(`utm_${key}`)
       if (v) utm[key] = v
     }
+    // Meta's placement macros, carried on the ad's url_tags under their own
+    // prefix (they are not utm_* parameters and must not be renamed into
+    // them — utm_term already means the ad set). This is what makes the CLICK
+    // event carry the surface it came from, so a placement that draws clicks
+    // and no leads is distinguishable from one that draws nothing at all.
+    for (const [param, key] of [['fh_placement', 'placement'], ['fh_site', 'site']] as const) {
+      const v = params.get(param)
+      if (v) utm[key] = v
+    }
     if (Object.keys(utm).length > 0) {
       sessionStorage.setItem('_fp_utm', JSON.stringify(utm))
       return utm

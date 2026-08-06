@@ -1041,7 +1041,7 @@ export async function createAdCreative(params: {
       name:              params.name,
       object_story_spec: { page_id: pageId },
       asset_feed_spec:   assetFeedSpec,
-      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     })
   }
 
@@ -1070,7 +1070,7 @@ export async function createAdCreative(params: {
       name:              params.name,
       object_story_spec: { page_id: pageId },
       asset_feed_spec:   assetFeedSpec,
-      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     })
   }
 
@@ -1095,7 +1095,7 @@ export async function createAdCreative(params: {
     object_story_spec:  { page_id: pageId, link_data: linkData },
     // Dynamic UTMs close the attribution loop: the lead that lands on the
     // page carries the REAL campaign/adset/ad ids into the CRM automatically.
-    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     // Advantage+ creative OFF. Omitting this block does not mean "off" — it
     // means the ad ACCOUNT's default applies, and on most accounts that
     // default rewords the headline, recolours the image and adds music to a
