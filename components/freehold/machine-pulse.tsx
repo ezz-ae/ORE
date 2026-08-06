@@ -26,13 +26,15 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-type Entry = { id: string; kind: string; detail: string; at: string; machine: string }
+type Entry = { id: string; kind: string; detail: string; at: string; machine: string; repeats?: number }
 type Pulse = {
   machines: { total: number; running: number; names: string[] }
   spend: { committedAed: number; capAed: number; liveCampaigns: number }
   lastActivityAt: string | null
   decisions: Entry[]
   alarms: Entry[]
+  /** Duplicate alarm rows folded away on the server. */
+  alarmsSuppressed?: number
 }
 
 /** One icon per kind, so the feed can be scanned rather than read. */
@@ -144,7 +146,17 @@ export function MachinePulse() {
               return (
                 <div key={a.id} className="flex items-start gap-2.5">
                   <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300/80" />
-                  <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-amber-100/85">{a.detail}</p>
+                  <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-amber-100/85">
+                    {a.detail}
+                    {/* A standing condition, said once with a count — not the
+                        same sentence N times. The number is the useful part:
+                        it says how long this has gone unfixed. */}
+                    {(a.repeats ?? 1) > 1 && (
+                      <span className="ms-1.5 whitespace-nowrap rounded-full border border-amber-300/25 px-1.5 py-0.5 text-[10px] text-amber-200/70">
+                        {t('lm.pulse.seenTimes', { n: a.repeats ?? 1 })}
+                      </span>
+                    )}
+                  </p>
                   <span className="shrink-0 text-[10px] text-amber-200/50">{ago(a.at, t)}</span>
                 </div>
               )

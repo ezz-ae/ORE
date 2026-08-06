@@ -305,6 +305,62 @@ export async function logActivity(params: {
   }
 }
 
+/**
+ * How long a standing problem stays said once instead of being re-said.
+ *
+ * A condition that has not changed is not news on the second cycle. The hub
+ * opened on "NEEDS YOU (8)" that was two real problems re-reported four times
+ * each, and the six duplicates pushed everything else off the screen — which
+ * is worse than not reporting at all, because it buries the alarms that ARE
+ * new.
+ *
+ * Twelve hours, not forever: a problem nobody has fixed by the next working
+ * day genuinely is worth saying again.
+ */
+export const REPEAT_ALARM_AFTER_HOURS = 12
+
+/**
+ * Log an activity UNLESS the same thing was already said recently.
+ *
+ * Same machine, same kind, same campaign, same words. Deliberately compares
+ * the full detail: a message whose numbers changed is a different state and
+ * should appear. Only an unchanged, unresolved condition is suppressed.
+ *
+ * Returns whether it wrote, so a caller can count what it suppressed rather
+ * than lose it silently.
+ */
+export async function logActivityOnce(params: {
+  machineId: string
+  kind: ActivityKind
+  detail: string
+  campaignId?: string | null
+  data?: unknown
+  withinHours?: number
+}): Promise<boolean> {
+  const detail = params.detail.slice(0, 2000)
+  try {
+    await ensure()
+    const dupes = await query<{ id: string }>(
+      `SELECT id FROM freehold_site_ads_machine_activity
+        WHERE machine_id = $1 AND kind = $2 AND detail = $3
+          AND campaign_id IS NOT DISTINCT FROM $4
+          AND created_at > now() - ($5 || ' hours')::interval
+        LIMIT 1`,
+      [
+        params.machineId, params.kind, detail, params.campaignId ?? null,
+        String(Math.max(1, Math.round(params.withinHours ?? REPEAT_ALARM_AFTER_HOURS))),
+      ],
+    )
+    if (dupes.length > 0) return false
+  } catch (err) {
+    // A failed dedup check must not swallow the alarm — losing a real problem
+    // is far worse than showing it twice.
+    console.error('[ads-machine] logActivityOnce dedup check failed', err)
+  }
+  await logActivity({ ...params, detail })
+  return true
+}
+
 export async function listActivity(machineId: string, limit = 100): Promise<MachineActivity[]> {
   await ensure()
   const rows = await query<Record<string, unknown>>(

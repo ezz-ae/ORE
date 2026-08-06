@@ -80,6 +80,7 @@ import {
   activeSpendAed,
   insertLeadVerdictRequests,
   getVerdictStats,
+  logActivityOnce,
   type AdsMachine,
   type MachineCampaign,
   type MachineChannel,
@@ -88,6 +89,7 @@ import {
   type QuestionKind,
 } from '@/lib/freehold/ads-machine'
 import { META_MIN_TRIAL_BUDGET_AED, type MachinePlan, type MachineProjectPlan, type MachineTrialPlan } from '@/lib/freehold/ads-machine-planner'
+import { metaErrorKind, isWorthAlarming, explainMetaError } from '@/lib/meta/error-kind'
 import { getMachineDeliveryMap, type CampaignDelivery } from '@/lib/freehold/campaign-delivery'
 import {
   appendPermitToText,
@@ -920,7 +922,11 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
     try {
       googleMetricsById = new Map((await listGoogleCampaigns('LAST_30_DAYS')).map((c) => [c.id, c]))
     } catch (e) {
-      await logActivity({ machineId, kind: 'error', detail: `Google metrics read failed: ${errMsg(e)}` })
+      // A read that fails on the same condition every cycle is a standing
+      // problem, not fresh news. Actions below (launch, pause, resume) still
+      // log every time — those are events, and a second pause failure is a
+      // second thing that happened.
+      await logActivityOnce({ machineId, kind: 'error', detail: `Google metrics read failed: ${errMsg(e)}` })
       result.errors.push('google:metrics')
     }
   }
@@ -942,7 +948,28 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         const f = Number(insights?.frequency)
         frequency = Number.isFinite(f) && f > 0 ? f : null
       } catch (e) {
-        await logActivity({ machineId, kind: 'error', detail: `Insights read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
+        // WHAT KIND OF FAILURE THIS IS DECIDES WHETHER A HUMAN HEARS ABOUT IT.
+        //
+        // A rate limit clears on the next cycle and is not an alarm. An
+        // unreadable campaign is, but only once: it is the same condition
+        // every cycle until someone acts, and re-logging it four times turned
+        // two real problems into "NEEDS YOU (8)".
+        //
+        // Nothing is stopped or reset on this path. Meta returns the identical
+        // error for a campaign deleted in Ads Manager and for a live campaign
+        // the token lost access to, so acting on it would be acting on a
+        // guess — and the guess that pauses a spending campaign is the
+        // expensive one.
+        const kind = metaErrorKind(e)
+        if (isWorthAlarming(kind)) {
+          await logActivityOnce({
+            machineId,
+            kind: 'error',
+            detail: explainMetaError(kind, row.trialLabel),
+            campaignId: row.campaignId,
+            data: { raw: errMsg(e), metaErrorKind: kind },
+          })
+        }
         result.errors.push(`insights:${row.campaignId}`)
       }
     } else {
@@ -962,7 +989,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
     } catch (e) {
       // Fail-soft (quality stays null — honest "no signal", never invented),
       // but observable: symmetric with the insights-read failure above.
-      await logActivity({ machineId, kind: 'error', detail: `CRM quality read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
+      await logActivityOnce({ machineId, kind: 'error', detail: `CRM quality read failed for ${row.trialLabel}: ${errMsg(e)}`, campaignId: row.campaignId })
       result.errors.push(`quality:${row.campaignId}`)
     }
 
