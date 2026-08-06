@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon, Bot, ClipboardList } from 'lucide-react'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
+import { MachinePulse } from '@/components/freehold/machine-pulse'
 import { getServerT } from '@/lib/i18n/server'
 
 // The Lead Machine pipeline — LIVE data only. The mental model on this page:
@@ -93,11 +94,18 @@ export default async function LeadMachineOverviewPage() {
         }
       />
 
-      {/* Live stats — straight from the inventory the site runs on. Hidden
-          entirely when there's no inventory so a fresh instance never shows a
-          wall of zeros above the empty-state below. */}
+      {/* THE MACHINE, FIRST. This page used to open with inventory readiness —
+          how many projects have a landing page and what their data-quality
+          score is. Useful, and not the subject: the subject is a machine
+          spending money on decisions it can explain, and none of that was
+          visible without clicking into an individual machine. */}
+      <MachinePulse />
+
+      {/* Inventory readiness — still here, now below the machine. It answers
+          "what could I launch next", which is a real question and a second
+          one. */}
       {props.length > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label={t('lm.hub.stat.projects')} value={props.length} hint={t('lm.hub.stat.fromInventory')} />
           <StatCard label={t('lm.hub.stat.landingsReady')} value={livePages} hint={t('lm.hub.stat.canLaunch')} />
           <StatCard label={t('lm.hub.stat.missingPages')} value={missingPages} hint={t('lm.hub.stat.generateThem')} />
