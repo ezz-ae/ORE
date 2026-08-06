@@ -2056,6 +2056,23 @@ export async function getFormLeads(
 
 // ─── Ad Set Updates ───────────────────────────────────────────────────────────
 
+/**
+ * Turn a single AD on or off.
+ *
+ * The one level of the hierarchy that had no status control anywhere — the
+ * campaign could be paused and so could an ad set, but an individual ad could
+ * only be edited or left alone. That is the control you need when one creative
+ * in a working ad set is the problem: pausing the ad set to stop one ad throws
+ * away the ad set's learning along with it.
+ */
+export async function updateAdStatus(
+  adId: string,
+  status: MetaCampaignStatus,
+): Promise<{ success: boolean }> {
+  await apiPost(`/${adId}`, { status })
+  return { success: true }
+}
+
 export async function updateAdSet(
   adSetId: string,
   params: {

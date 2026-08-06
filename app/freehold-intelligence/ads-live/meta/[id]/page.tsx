@@ -87,6 +87,15 @@ export default function CampaignCommandPage() {
   const [notFound, setNotFound] = useState(false)
   const [data, setData] = useState<Detail | null>(null)
   const [statusBusy, setStatusBusy] = useState(false)
+  // One id at a time: two simultaneous status writes to the same campaign is
+  // a race whose loser silently reverts the winner.
+  const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
+  const [openAds, setOpenAds] = useState<Set<string>>(new Set())
+  const toggleAds = (id: string) => setOpenAds((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
   const [budgetBusy, setBudgetBusy] = useState<string | null>(null)
   const [quality, setQuality] = useState<CampaignQuality | null>(null)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
@@ -379,6 +388,53 @@ export default function CampaignCommandPage() {
   // The ONE ad-set budget mutation path — used by the manual +/- steppers AND
   // by accepted advisor actions, so every budget change flows through the same
   // optimistic update + PATCH + revert-on-failure.
+  /**
+   * Turn one AD SET on or off.
+   *
+   * The control that was missing: the campaign could be paused and an ad set's
+   * budget could be nudged, but there was no way to stop or start a single ad
+   * set. Pausing the whole campaign to silence one audience takes the others
+   * down with it.
+   */
+  async function setAdSetStatus(adSet: AdSetRow, next: 'ACTIVE' | 'PAUSED') {
+    if (statusBusyId) return
+    setStatusBusyId(adSet.id)
+    // Optimistic, then reconciled from the server's answer — a toggle that
+    // waits on a round trip feels broken even when it works.
+    setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id === adSet.id ? { ...x, status: next } : x) } : d)
+    try {
+      const res = await fetch(`/api/meta/adsets/${encodeURIComponent(adSet.id)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success(next === 'ACTIVE' ? t('lm.cmd.adSetOn') : t('lm.cmd.adSetOff'))
+    } catch {
+      // Put the real state back rather than leave a lie on screen.
+      setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id === adSet.id ? { ...x, status: adSet.status } : x) } : d)
+      toast.error(t('lm.cmd.statusFailed'))
+    } finally { setStatusBusyId(null) }
+  }
+
+  /** Turn a single AD on or off, without touching its ad set's learning. */
+  async function setAdStatus(adSetId: string, adId: string, current: string, next: 'ACTIVE' | 'PAUSED') {
+    if (statusBusyId) return
+    setStatusBusyId(adId)
+    setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id !== adSetId ? x
+      : { ...x, ads: x.ads?.map((ad) => ad.id === adId ? { ...ad, status: next } : ad) }) } : d)
+    try {
+      const res = await fetch(`/api/meta/ads/${encodeURIComponent(adId)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id !== adSetId ? x
+        : { ...x, ads: x.ads?.map((ad) => ad.id === adId ? { ...ad, status: current } : ad) }) } : d)
+      toast.error(t('lm.cmd.statusFailed'))
+    } finally { setStatusBusyId(null) }
+  }
+
   async function setAdSetBudget(adSet: AdSetRow, target: number): Promise<boolean> {
     if (budgetBusy) return false
     const current = Math.round(Number(adSet.daily_budget) / 100) || 0
@@ -624,28 +680,82 @@ export default function CampaignCommandPage() {
             {data.adSets.map((a) => {
               const budget = Math.round(Number(a.daily_budget) / 100) || 0
               const busy = budgetBusy === a.id
+              const adSetLive = a.status === 'ACTIVE'
+              const adsOpen = openAds.has(a.id)
               return (
-                <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface-2 px-4 py-3.5">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-slate-100">{a.name}</div>
-                    <div className="mt-0.5 text-[11px] text-slate-500">{a.ads?.length ? `${a.ads.length} ${t('lm.cmd.adsLabel')}` : '—'}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-end">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('lm.cmd.dailyBudget')}</div>
-                      <div className="text-sm font-semibold text-white">{budget > 0 ? fmtAED(budget) : '—'}</div>
+                <div key={a.id} className="rounded-2xl border border-line bg-surface-2 px-4 py-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {/* The state, stated. Without it a toggle is a guess. */}
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                          adSetLive ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                                    : 'border-line bg-surface text-slate-500'}`}>
+                          {adSetLive ? t('lm.cmd.live') : t('lm.cmd.paused')}
+                        </span>
+                        <div className="truncate text-sm font-semibold text-slate-100">{a.name}</div>
+                      </div>
+                      {a.ads?.length ? (
+                        <button type="button" onClick={() => toggleAds(a.id)}
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500 transition hover:text-slate-300">
+                          {a.ads.length} {t('lm.cmd.adsLabel')}
+                          <ChevronDown className={`h-3 w-3 transition ${adsOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      ) : <div className="mt-0.5 text-[11px] text-slate-500">—</div>}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => nudgeBudget(a, 'down')} disabled={busy || budget <= 50} aria-label={t('lm.cmd.budgetDown')}
-                        className="grid h-8 w-8 place-items-center rounded-lg border border-line text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-40">
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <button type="button" onClick={() => nudgeBudget(a, 'up')} disabled={busy} aria-label={t('lm.cmd.budgetUp')}
-                        className="grid h-8 w-8 place-items-center rounded-lg border border-line text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-40">
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                    <div className="flex items-center gap-3">
+                      <div className="text-end">
+                        <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('lm.cmd.dailyBudget')}</div>
+                        <div className="text-sm font-semibold text-white">{budget > 0 ? fmtAED(budget) : '—'}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => nudgeBudget(a, 'down')} disabled={busy || budget <= 50} aria-label={t('lm.cmd.budgetDown')}
+                          className="grid h-8 w-8 place-items-center rounded-lg border border-line text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-40">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <button type="button" onClick={() => nudgeBudget(a, 'up')} disabled={busy} aria-label={t('lm.cmd.budgetUp')}
+                          className="grid h-8 w-8 place-items-center rounded-lg border border-line text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-40">
+                          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      {/* THE CONTROL THAT WAS MISSING — turn this ad set on or off. */}
+                      <button type="button"
+                        onClick={() => setAdSetStatus(a, adSetLive ? 'PAUSED' : 'ACTIVE')}
+                        disabled={statusBusyId !== null}
+                        title={adSetLive ? t('lm.cmd.turnOff') : t('lm.cmd.turnOn')}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-40 ${
+                          adSetLive ? 'border-line-strong bg-surface text-slate-200 hover:border-red-400/40 hover:text-red-200'
+                                    : 'border-gold/40 bg-gold/15 text-gold hover:bg-gold/25'}`}>
+                        {statusBusyId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          : adSetLive ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                        {adSetLive ? t('lm.cmd.turnOff') : t('lm.cmd.turnOn')}
                       </button>
                     </div>
                   </div>
+
+                  {/* Per-AD control. Pausing an ad set to stop one bad creative
+                      throws away the ad set's learning with it. */}
+                  {adsOpen && a.ads?.length ? (
+                    <div className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-line bg-surface">
+                      {a.ads.map((ad) => {
+                        const adLive = ad.status === 'ACTIVE'
+                        return (
+                          <div key={ad.id} className="flex items-center gap-3 px-3.5 py-2">
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${adLive ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                            <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{ad.name}</span>
+                            <button type="button"
+                              onClick={() => setAdStatus(a.id, ad.id, ad.status, adLive ? 'PAUSED' : 'ACTIVE')}
+                              disabled={statusBusyId !== null}
+                              className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-[10px] font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white disabled:opacity-40">
+                              {statusBusyId === ad.id ? <Loader2 className="h-3 w-3 animate-spin" />
+                                : adLive ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                              {adLive ? t('lm.cmd.turnOff') : t('lm.cmd.turnOn')}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
