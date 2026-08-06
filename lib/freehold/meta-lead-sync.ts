@@ -4,6 +4,7 @@ import { ensureLeadsTable } from '@/lib/data'
 import { getFormLeads, listAccessiblePages } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
+import { captureForLead } from '@/lib/freehold/snapshot-capture'
 import { handleNewLead } from '@/lib/automation/engine'
 import {
   getLeadershipLeadRecipients,
@@ -174,6 +175,19 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
     }
     if (inserted.length) {
       synced += 1
+      // CATCH THE REGISTRATION EVENT. Freeze the ad set's targeting and the
+      // ad's copy as they stand right now, against this lead. Awaited rather
+      // than fired-and-forgotten because this is a background sync that owes
+      // nobody a response, and losing the snapshot loses the only chance to
+      // record what this person actually arrived through — the ad set can be
+      // edited an hour from now. Instant-form leads carry no placement: there
+      // is no landing URL for Meta's {{placement}} macro to ride on.
+      await captureForLead({
+        leadId: inserted[0].id,
+        campaignId: lead.campaign_id || null,
+        adsetId: lead.adset_id || null,
+        adId: lead.ad_id || null,
+      }).catch(() => false)
       await handleNewLead(inserted[0].id).catch((error) => {
         console.error('[meta-leads] automation handoff failed', error)
       })

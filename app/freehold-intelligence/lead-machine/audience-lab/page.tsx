@@ -82,6 +82,11 @@ export default function AudienceLabPage() {
   const [seedLoading, setSeedLoading] = useState(true)
   const [building, setBuilding] = useState(false)
   const [buildMsg, setBuildMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  // Capture coverage. Shown because the relevance panel above is empty for two
+  // completely different reasons — no paid leads yet, or capture not reaching
+  // them — and an empty panel that cannot say which is useless.
+  const [snap, setSnap] = useState<{ captured: number; pending: number; note: string } | null>(null)
+  const [backfilling, setBackfilling] = useState(false)
 
   useEffect(() => {
     fetch('/api/freehold/ads/relevance', { cache: 'no-store' })
@@ -90,6 +95,23 @@ export default function AudienceLabPage() {
     fetch('/api/freehold/ads/audiences/deep-seed', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null)).then(setSeed).catch(() => {})
       .finally(() => setSeedLoading(false))
+    fetch('/api/freehold/ads/snapshots', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null)).then(setSnap).catch(() => {})
+  }, [])
+
+  const backfill = useCallback(async () => {
+    setBackfilling(true)
+    try {
+      const res = await fetch('/api/freehold/ads/snapshots', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 200 }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setSnap((p) => (p ? { ...p, captured: p.captured + (d.written ?? 0), pending: Math.max(0, p.pending - (d.written ?? 0)), note: String(d.note ?? p.note) } : p))
+      }
+    } catch { /* the panel keeps its previous numbers */ }
+    finally { setBackfilling(false) }
   }, [])
 
   const build = useCallback(async () => {
@@ -126,6 +148,19 @@ export default function AudienceLabPage() {
         <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
           <ShieldCheck className="h-3.5 w-3.5 text-gold" /> {t('lab.rel.title')}
         </div>
+        {snap && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+            <span className="text-[11px] uppercase tracking-wider text-slate-500">{t('lab.snap.title')}</span>
+            <span className="text-lg font-semibold text-white">{snap.captured.toLocaleString()}</span>
+            <span className="min-w-0 flex-1 text-[11px] leading-relaxed text-slate-400">{snap.note}</span>
+            {snap.pending > 0 && (
+              <button type="button" onClick={backfill} disabled={backfilling}
+                className="shrink-0 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+                {backfilling ? <Loader2 className="h-3 w-3 animate-spin" /> : t('lab.snap.backfill')}
+              </button>
+            )}
+          </div>
+        )}
         {relLoading ? (
           <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-5 text-sm text-slate-400">
             <Loader2 className="h-4 w-4 animate-spin" /> {t('lab.loading')}
