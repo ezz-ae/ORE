@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, BellOff, X, Timer } from 'lucide-react'
+import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, BellOff, X, Timer, Archive, ChevronDown, ChevronUp } from 'lucide-react'
 import type { CRMFollowUpItem } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { LeadValueChips } from '@/components/freehold/lead-value-chips'
+import { triage, type SetAsideReason } from '@/lib/freehold/queue-priority'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
 
@@ -66,7 +67,13 @@ const urgencyActiveStyle: Record<Urgency, string> = {
   Low:      'border-line-strong bg-surface-2 text-slate-300',
 }
 
-type QueueItem = CRMFollowUpItem & { snoozeUntil: string | null; slaBreachMinutes: number | null; valueRating?: number | null }
+type QueueItem = CRMFollowUpItem & {
+  snoozeUntil: string | null
+  slaBreachMinutes: number | null
+  valueRating: number | null
+  archived: boolean
+  blocked: boolean
+}
 
 // The response-time clock, as served by /api/freehold/crm/response-clock.
 type ResponseClock = { leadId: string; assignedAt: string; firstResponseAt: string | null; responseMinutes: number | null }
@@ -75,6 +82,9 @@ export default function FollowUpQueuePage() {
   const t = useT()
   const { leads } = useLiveLeads()
   const [activeUrgency, setActiveUrgency] = useState<Urgency>('All')
+  // Collapsed by default. The point of the section is that these leads are out
+  // of the way — opening it is a deliberate act, not the resting state.
+  const [showSetAside, setShowSetAside] = useState(false)
   const [activeAgent, setActiveAgent] = useState<string>('All')
   const [done, setDone] = useState<Set<string>>(new Set())
   // Optimistic snooze overrides keyed by lead id (ISO string or null = cleared)
@@ -156,6 +166,8 @@ export default function FollowUpQueuePage() {
           duplicateRisk: l.duplicateRisk,
           wrongNumberRisk: l.wrongNumberRisk,
           valueRating:   l.valueRating ?? null,
+          archived:      l.archived === true,
+          blocked:       l.blocked === true,
           snoozeUntil:   effectiveSnooze(l.id, l.snoozeUntil ?? null),
           slaBreachMinutes: breachMinutesOf(l.id),
         } satisfies QueueItem
@@ -168,11 +180,20 @@ export default function FollowUpQueuePage() {
     [followUpQueue],
   )
 
-  // SLA breaches always sort first (worst breach on top), then by overdue hours.
-  const sortedQueue = useMemo(
-    () => [...followUpQueue].sort((a, b) =>
-      (b.slaBreachMinutes ?? -1) - (a.slaBreachMinutes ?? -1) || b.overdueHours - a.overdueHours),
-    [followUpQueue],
+  // Call order and triage both live in `queue-priority.ts` so the rules can be
+  // proven in the guard suite rather than read off a comparator inside a
+  // component. Breaches first, then what is actually known about the lead.
+  const triaged = useMemo(() => triage(followUpQueue), [followUpQueue])
+  const sortedQueue = triaged.queue
+
+  // Leads someone judged poorly, archived, blocked, or that cannot be dialled.
+  // Out of the way, never gone — a broker who disagrees opens the list and
+  // calls them. Nothing here is inferred about who the person is; every reason
+  // is something a human recorded or a phone number that does not work.
+  const setAside = useMemo(
+    () => triaged.setAside.filter((s) => !done.has(s.lead.leadId)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [triaged, done],
   )
 
   const visible = useMemo(() => {
@@ -413,6 +434,50 @@ export default function FollowUpQueuePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Set aside — leads a human judged poorly, put away, or whose phone
+              does not work. Collapsed, counted, and one click from being
+              called anyway. It is a second list, never a delete: a queue that
+              silently drops rows is the same lie as a list capped at 200 next
+              to a counter reading 443. */}
+          {setAside.length > 0 && (
+            <div className="mt-8">
+              <button
+                type="button"
+                onClick={() => setShowSetAside((v) => !v)}
+                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 transition hover:text-slate-300"
+              >
+                <Archive className="h-3.5 w-3.5" />
+                {t('crm.setAside.count', { count: setAside.length })}
+                {showSetAside ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+              {showSetAside && (
+                <div className="space-y-2">
+                  {setAside.map(({ lead: item, reason }) => (
+                    <div key={item.leadId} className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface-2/40 px-4 py-3">
+                      <Link href={`/freehold-intelligence/crm/leads/${item.leadId}`} className="text-sm font-medium text-slate-400 transition hover:text-gold">
+                        {item.leadName}
+                      </Link>
+                      <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-500">
+                        {t(`crm.setAside.reason.${reason}`)}
+                      </span>
+                      {item.valueRating !== null && (
+                        <span className="text-xs text-slate-600">{item.valueRating}/10</span>
+                      )}
+                      <span className="text-xs text-slate-600">· {item.assignedAgent}</span>
+                      <a
+                        href={`tel:${item.phone}`}
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white"
+                      >
+                        {t('crm.setAside.callAnyway')}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-600">{t('crm.setAside.note')}</p>
             </div>
           )}
 

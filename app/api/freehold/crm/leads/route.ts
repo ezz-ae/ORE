@@ -73,6 +73,8 @@ interface DbLead {
   utm_id: string | null
   utm_campaign: string | null
   value_rating: number | null
+  archived: boolean | null
+  blocked: boolean | null
 }
 
 function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
@@ -127,6 +129,14 @@ function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
     duplicateDismissedAt: row.duplicate_dismissed_at ?? null,
     /** Human 0–10 value judgment; null = not yet rated. */
     valueRating: row.value_rating ?? null,
+    // Both columns have existed and neither has ever left the server, so no
+    // screen could act on them: a lead someone archived still appeared in the
+    // working queue as though nothing had happened. The list itself still
+    // returns those rows on purpose — team analytics count against them, and
+    // dropping them here would quietly change every denominator — but a
+    // consumer can now tell the difference.
+    archived: row.archived === true,
+    blocked: row.blocked === true,
   }
 }
 
@@ -148,7 +158,7 @@ export async function GET() {
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
                       snooze_until::text, lead_code, duplicate_dismissed_at::text,
-                      utm_id, utm_campaign, value_rating
+                      utm_id, utm_campaign, value_rating, archived, blocked
                FROM freehold_site_leads`
 
     if (isBroker && ownerKeys.length) {
