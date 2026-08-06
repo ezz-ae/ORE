@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import {
-  Loader2, Upload, Sparkles, Check, Download, QrCode, MessageSquareText,
+  Loader2, Upload, Sparkles, Check, Download, QrCode, MessageSquareText, Maximize2,
   Monitor, ArrowRight, ArrowLeft, RefreshCw, Save, ExternalLink, Megaphone, FolderOpen, FileText,
   ImagePlus, LayoutGrid, ChevronDown, Building2,
 } from 'lucide-react'
@@ -19,6 +19,7 @@ import { SUITE_COPY, type SuiteCopy, type SuiteLang } from '@/lib/freehold/creat
 import { writeAdCopy, BRIEF_MAX } from '@/lib/freehold/ad-copy-writer'
 import { BROCHURE_MAX_BYTES, postBrochureForParse } from '@/lib/freehold/parse-brochure-client'
 import { buildZip, saveBlob, safeFileName } from '@/lib/freehold/bundle'
+import { CreativeGallery, type GalleryItem } from '@/components/freehold/creative-gallery'
 import {
   PALETTES, LAYOUTS, FORMATS, composeVariant, stampQr, loadImage, fmtPrice, isRtl, ensureAdFonts, fitHeadline,
   type LayoutKey, type FormatKey, type Overlay,
@@ -659,6 +660,20 @@ export default function AdDesignerPage() {
     }
   }
 
+  // ── Gallery ────────────────────────────────────────────────────────────────
+  // null = closed. A number is the index it opens at, so clicking a card lands
+  // on that card rather than always on the first.
+  const [galleryAt, setGalleryAt] = useState<number | null>(null)
+  const galleryItems: GalleryItem[] = useMemo(
+    () => finalSet.map((item) => ({
+      id: item.fmt,
+      src: item.dataUrl,
+      label: FMT_LABEL[item.fmt],
+      aspect: FORMATS[item.fmt].w / FORMATS[item.fmt].h,
+    })),
+    [finalSet],
+  )
+
   const stepIndex = STEPS.findIndex((s) => s.key === step)
 
   // ── Left rail: SOURCES as visual cards + the filmstrip ────────────────────
@@ -1123,10 +1138,21 @@ export default function AdDesignerPage() {
 
             {/* Deliverables tray — every placement as a framed card */}
             <div className="lg:col-span-2">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('adz.set.title')}</div>
+              <div className="mb-2 flex items-center gap-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('adz.set.title')}</span>
+                {/* A 176px thumbnail is a file listing. This is the version you
+                    can actually judge — and show someone. */}
+                {finalSet.length > 0 && (
+                  <button type="button" onClick={() => setGalleryAt(0)}
+                    className="ms-auto inline-flex items-center gap-1.5 rounded-full border border-line-strong px-2.5 py-1 text-[11px] font-medium text-slate-300 transition hover:border-gold/40 hover:text-white">
+                    <Maximize2 className="h-3 w-3" /> {t('adz.set.view')}
+                  </button>
+                )}
+              </div>
               <div className="flex gap-4 overflow-x-auto pb-2">
-                {finalSet.map((item) => (
-                  <div key={item.fmt} className="group w-44 shrink-0 overflow-hidden rounded-xl border border-line bg-surface shadow-lg shadow-black/20 transition hover:border-gold/40">
+                {finalSet.map((item, itemIdx) => (
+                  <div key={item.fmt} onClick={() => setGalleryAt(itemIdx)}
+                    className="group w-44 shrink-0 cursor-zoom-in overflow-hidden rounded-xl border border-line bg-surface shadow-lg shadow-black/20 transition hover:border-gold/40">
                     <div className="relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.dataUrl} alt="" className="w-full object-cover"
@@ -1169,6 +1195,20 @@ export default function AdDesignerPage() {
           </div>
         )}
       </Modal>
+
+      {/* The kit, presented. Opens on whichever card was clicked. */}
+      {galleryAt !== null && (
+        <CreativeGallery
+          items={galleryItems}
+          startAt={galleryAt}
+          onClose={() => setGalleryAt(null)}
+          onDownloadOne={(item) => {
+            const found = finalSet.find((f) => f.fmt === item.id)
+            if (found) download(found.dataUrl, `${safeFileName(overlay.headline || 'ad', 'ad')}-${found.fmt}.png`)
+          }}
+          onDownloadAll={downloadSet}
+        />
+      )}
     </DriveEditorFrame>
   )
 }
