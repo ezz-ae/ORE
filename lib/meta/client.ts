@@ -31,6 +31,13 @@ import type {
   PlacementKey,
   PlacementCreativeOverride,
 } from './types'
+import { mergeLeadLanguages } from './lead-language'
+import { metaLeadCount } from './lead-count'
+import {
+  placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
+  findAdvantageInAdSet, describeViolations,
+} from './no-advantage'
+import type { MetaInsightActions } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
 const API_VERSION = 'v20.0'
@@ -364,6 +371,70 @@ export async function getCampaignInsights(campaignId: string): Promise<MetaInsig
   return res.data?.[0] ?? null
 }
 
+/** One placement's slice of a campaign's delivery. */
+export interface MetaPlacementInsight {
+  /** e.g. 'facebook', 'instagram', 'audience_network', 'messenger'. */
+  platform: string
+  /** e.g. 'feed', 'story', 'facebook_reels', 'instream_video', 'an_classic'. */
+  position: string
+  impressions: number
+  clicks: number
+  spend: number
+  leads: number
+}
+
+/**
+ * Delivery broken down by PLACEMENT — the answer to "where did the money
+ * actually go", which the campaign-level rollup cannot give.
+ *
+ * This matters for two separate reasons that look identical in a rollup:
+ *
+ *  1. Overflow inventory. Audience Network and Reels surplus are bundled into
+ *     every advertiser's delivery, and Meta will happily push a large share of
+ *     impressions there, priced in your own currency so it reads as ordinary
+ *     spend. A campaign can look fine on cost per lead while most of its
+ *     impressions went somewhere nobody else bid for.
+ *  2. Creative destruction. A 1:1 or 4:5 image placed into a 9:16 surface is
+ *     cropped, overlaid with UI chrome, or letterboxed. The ad that performs
+ *     in feed is not the ad that ran in Stories — same creative id, different
+ *     ad. Judging the creative on a blended number judges an average of two
+ *     different ads.
+ *
+ * Both are invisible above this call and both are fixable, because placements
+ * are one of the few things Meta still lets an advertiser control outright.
+ *
+ * Returns [] rather than throwing when the breakdown is unavailable, so a
+ * caller degrades to the rollup instead of losing the whole view.
+ */
+export async function getCampaignInsightsByPlacement(campaignId: string): Promise<MetaPlacementInsight[]> {
+  try {
+    const res = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/${campaignId}/insights`, undefined, {
+      fields: 'impressions,clicks,spend,actions',
+      // publisher_platform alone answers "is this Audience Network"; adding
+      // platform_position answers "is this Stories eating the creative". They
+      // are a legal breakdown pair and the second is what makes the aspect-
+      // ratio problem visible at all.
+      breakdowns: 'publisher_platform,platform_position',
+      // Same rolling window as the rollup, so the two can be compared without
+      // one of them silently covering a different span of time.
+      date_preset: 'last_30d',
+      limit: '200',
+    })
+    return (res.data ?? []).map((r) => ({
+      platform: String(r.publisher_platform ?? 'unknown'),
+      position: String(r.platform_position ?? 'unknown'),
+      impressions: Number(r.impressions) || 0,
+      clicks: Number(r.clicks) || 0,
+      spend: Number(r.spend) || 0,
+      // Same canonical lead rule as everywhere else — Meta reports one lead
+      // under several overlapping action types, and summing them multiplies it.
+      leads: metaLeadCount(r.actions as MetaInsightActions[] | undefined),
+    }))
+  } catch {
+    return []
+  }
+}
+
 /**
  * Real delivery/learning state for a campaign — Meta's own effective_status
  * plus the ad set's learning phase. This is the honest "what is actually
@@ -583,42 +654,38 @@ export async function createAdSet(params: {
     ? unionPlacementTargeting(manualKeys)
     : null
 
-  // Placements: an EMPTY platform list means Advantage+ placements (fully
-  // automatic — Meta's recommendation). Explicit platforms get the complete
-  // modern position set, Reels included, exactly as Ads Manager would.
+  // Placements are ALWAYS explicit. An empty platform list used to fall
+  // through to `{}`, which is precisely how a request enrols in Advantage+
+  // placements — Meta then buys wherever it likes, Audience Network included,
+  // and the cheap non-converting impressions that follow are indistinguishable
+  // from a weak audience. `placementSpecFor` never returns an empty spec.
   const platforms = params.targeting.publisherPlatforms
   const placementSpec: Record<string, unknown> = params.placementOverride
     ? { ...params.placementOverride }
     : manualPlacementSpec
     ? { ...manualPlacementSpec }
-    : platforms.length === 0 ? {} : {
-        publisher_platforms: platforms,
-        ...(platforms.includes('facebook')
-          ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'search'] }
-          : {}),
-        ...(platforms.includes('instagram')
-          ? { instagram_positions: ['stream', 'story', 'reels', 'explore'] }
-          : {}),
-      }
+    : placementSpecFor(platforms)
 
-  // Explicit Advantage-audience choice (required on newer accounts): any real
-  // audience definition (interests, behaviors, narrowing, custom audiences) →
-  // respect it; nothing at all → let the algorithm expand on our signals.
   const t = params.targeting
   const behaviors = t.behaviors ?? []
   const narrowing = (t.narrowing ?? []).filter((g) => (g.interests?.length || 0) + (g.behaviors?.length || 0) > 0)
   const excludedInterests = t.exclusions?.interests ?? []
   const excludedBehaviors = t.exclusions?.behaviors ?? []
   const customAudienceIds = t.customAudienceIds ?? []
-  const hasAudienceDefinition =
-    t.interests.length > 0 || behaviors.length > 0 || narrowing.length > 0 || customAudienceIds.length > 0
-  const advantageAudience = hasAudienceDefinition ? 0 : 1
-  // Advantage+ audiences treat the age band as a suggestion only — Meta
-  // rejects a hard age_min > 25 (subcode 1870188) or age_max < 65 (1870189).
-  // Clamp both bounds; the algorithm still skews delivery to the intended
-  // age band via its signals.
-  const ageMin = advantageAudience === 1 ? Math.min(t.ageMin, 25) : t.ageMin
-  const ageMax = advantageAudience === 1 ? Math.max(t.ageMax, 65) : t.ageMax
+  // Advantage audience is OFF, unconditionally. It used to switch on whenever
+  // an ad set had no interest/behaviour/custom-audience definition — which is
+  // exactly the broad control arm whose whole job is to measure ONE thing.
+  // Expansion made that arm deliver outside its own definition, so whatever it
+  // proved could not be reproduced and could not be compared with its
+  // siblings. A broad ad set is still a defined ad set: geo, age, gender,
+  // language. Meta must stay inside it.
+  //
+  // Consequence, deliberately kept: the age band is now honoured exactly as
+  // set. The old 25/65 clamp existed only to satisfy Advantage audiences
+  // (subcodes 1870188 / 1870189 reject a hard band under expansion). With
+  // expansion off, an operator who says 30–50 gets 30–50.
+  const ageMin = t.ageMin
+  const ageMax = t.ageMax
 
   // Base interests/behaviors + AND-narrowing groups → Meta flexible_spec: a
   // person must match at least one entry of EVERY group. Without narrowing,
@@ -667,7 +734,7 @@ export async function createAdSet(params: {
           },
         }
       : {}),
-    targeting_automation: { advantage_audience: advantageAudience },
+    targeting_automation: { ...ADVANTAGE_AUDIENCE_OFF },
   }
 
   // The wizard's CPL cap is a REAL Meta COST_CAP: the algorithm keeps the
@@ -713,6 +780,17 @@ export async function createAdSet(params: {
     }
   }
 
+  // LAST CHECK BEFORE MONEY MOVES. The opt-outs above are correct today; this
+  // is what keeps them correct after the next change to this function. Every
+  // Advantage feature is enrolled by OMISSION, so a refactor that drops a
+  // field would otherwise launch an expanded, auto-placed ad set and report
+  // success. Refusing here is loud and cheap; discovering it in Ads Manager a
+  // week later is neither.
+  const violations = findAdvantageInAdSet(body)
+  if (violations.length > 0) {
+    throw new Error(`Refusing to launch: Meta Advantage would be active — ${describeViolations(violations)}`)
+  }
+
   try {
     return await apiPost(`/${adAccountId}/adsets`, body)
   } catch (err) {
@@ -734,7 +812,8 @@ export async function createAdSet(params: {
  * Validate interests against Meta's LIVE vocabulary. Interest ids rot as
  * Meta prunes its graph — so we re-resolve by NAME at launch time and drop
  * anything Meta no longer recognises. A launch never fails on a stale id;
- * with no valid interests left, the ad set simply runs broad (Advantage+).
+ * with no valid interests left, the ad set runs on its remaining definition
+ * (geo, age, gender, language) — NOT on Advantage expansion, which is off.
  */
 export async function validateInterests(
   interests: { id: string; name: string }[],
@@ -962,7 +1041,7 @@ export async function createAdCreative(params: {
       name:              params.name,
       object_story_spec: { page_id: pageId },
       asset_feed_spec:   assetFeedSpec,
-      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     })
   }
 
@@ -991,7 +1070,7 @@ export async function createAdCreative(params: {
       name:              params.name,
       object_story_spec: { page_id: pageId },
       asset_feed_spec:   assetFeedSpec,
-      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     })
   }
 
@@ -1016,10 +1095,13 @@ export async function createAdCreative(params: {
     object_story_spec:  { page_id: pageId, link_data: linkData },
     // Dynamic UTMs close the attribution loop: the lead that lands on the
     // page carries the REAL campaign/adset/ad ids into the CRM automatically.
-    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
-    // Note: the `standard_enhancements` field under degrees_of_freedom_spec is
-    // deprecated (Meta error subcode 3858504) — it must not be sent. We omit it
-    // and let the account's default creative-enhancement settings apply.
+    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
+    // Advantage+ creative OFF. Omitting this block does not mean "off" — it
+    // means the ad ACCOUNT's default applies, and on most accounts that
+    // default rewords the headline, recolours the image and adds music to a
+    // creative someone already approved. The bare `standard_enhancements`
+    // field is rejected (subcode 3858504); this is the current nested shape.
+    degrees_of_freedom_spec: { ...CREATIVE_ENHANCEMENTS_OFF },
   })
 }
 
@@ -2138,14 +2220,55 @@ export async function listCustomAudiences(): Promise<CustomAudienceSummary[]> {
   }))
 }
 
-export async function createCustomAudience(name: string, description: string): Promise<{ id: string }> {
+export async function createCustomAudience(
+  name: string,
+  description: string,
+  opts?: { valueBased?: boolean },
+): Promise<{ id: string }> {
   const { adAccountId } = await creds()
   return apiPost(`/${adAccountId}/customaudiences`, {
     name,
     description,
     subtype: 'CUSTOM',
     customer_file_source: 'USER_PROVIDED_ONLY',
+    // A value-based source is what unlocks a value-based lookalike: Meta
+    // weights similarity by the number attached to each row instead of
+    // treating every seed member as equally worth copying. The flag must be
+    // set AT CREATION — it cannot be added to an audience that already exists,
+    // which is why it is a parameter here rather than a later patch.
+    ...(opts?.valueBased ? { is_value_based: true } : {}),
   })
+}
+
+/**
+ * Upload hashed identifiers WITH a per-person value.
+ *
+ * The difference from `addHashedBuyers` is the whole thesis of a deeper seed:
+ * a closed AED 4m buyer and a lead who merely answered the phone are both
+ * "seed members", and without a weight Meta copies them equally. With one, it
+ * looks hardest for people like the buyer.
+ *
+ * Rows with no usable identifier are skipped, as are rows with a value of zero
+ * or less — Meta discards those silently, and a silently discarded row is a
+ * row we thought we sent.
+ */
+export async function addWeightedBuyers(
+  audienceId: string,
+  contacts: Array<BuyerContact & { value: number }>,
+): Promise<number> {
+  const rows = contacts
+    .filter((c) => Number.isFinite(c.value) && c.value > 0)
+    .map((c) => [hashEmail(c.email || ''), hashPhone(c.phone || ''), String(Math.round(c.value))])
+    .filter(([e, p]) => e || p)
+  if (!rows.length) return 0
+  for (let i = 0; i < rows.length; i += 5000) {
+    await apiPost(`/${audienceId}/users`, {
+      // LOOKALIKE_VALUE is Meta's name for the weight column; it is only
+      // honoured when the audience was created with is_value_based.
+      payload: { schema: ['EMAIL', 'PHONE', 'LOOKALIKE_VALUE'], data: rows.slice(i, i + 5000) },
+    })
+  }
+  return rows.length
 }
 
 // Upload hashed identifiers to a custom audience. Rows missing both a usable
@@ -2275,8 +2398,14 @@ export async function launchFullCampaign(params: {
   // real numeric locale IDs (live search — Meta publishes no static table)
   // and merge with any locales the targeting spec already carries. An empty
   // resolution (Meta unreachable) narrows nothing rather than mis-targeting.
-  const leadLanguageLocales = params.leadLanguages?.length
-    ? await resolveLeadLanguageLocaleIds(params.leadLanguages)
+  // Languages come from two places and BOTH must count: the wizard's own
+  // selection for this launch, and the language a SAVED audience carries in
+  // its spec. Reading only the wizard param would silently drop the narrowing
+  // whenever someone attached a saved "Arabic-speaking buyers" audience —
+  // the audience would look right in the UI and deliver unnarrowed.
+  const languageCodes = mergeLeadLanguages(params.leadLanguages, params.targeting.leadLanguages)
+  const leadLanguageLocales = languageCodes.length
+    ? await resolveLeadLanguageLocaleIds(languageCodes)
     : []
   const mergedLocales = Array.from(new Set([...(params.targeting.locales ?? []), ...leadLanguageLocales]))
   const baseTargeting = {

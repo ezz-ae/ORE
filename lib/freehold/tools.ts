@@ -27,7 +27,7 @@
 
 import type { LucideIcon } from 'lucide-react'
 import {
-  Users, UserPlus, UserCheck, UsersRound, Inbox, Kanban, ListChecks, Copy, Activity,
+  Users, UserPlus, UserCheck, UsersRound, Inbox, Kanban, ListChecks, Copy, Activity, FlaskConical,
   CalendarDays, Flag, CheckSquare,
   Megaphone, Rocket, Target, Wand2, SlidersHorizontal, GitBranch, FileInput, Crosshair,
   Radio, Link2, ShieldCheck, ClipboardList, Presentation, Search as SearchIcon, KeyRound,
@@ -108,6 +108,7 @@ export const TOOLS: ToolDef[] = [
   { id: 'ads.forms',       href: `${FI}/lead-machine/forms`,                 labelKey: 'tools.ads.forms',       group: 'advertise', app: 'ads', Icon: FileInput,        keywords: 'instant forms lead forms questions' },
   { id: 'ads.formNew',     href: `${FI}/lead-machine/forms/new`,             labelKey: 'tools.ads.formNew',     group: 'advertise', app: 'ads', Icon: PlusSquare,       keywords: 'build a lead form new instant form questions' },
   { id: 'ads.audiences',   href: `${FI}/lead-machine/audiences`,             labelKey: 'tools.ads.audiences',   group: 'advertise', app: 'ads', Icon: UsersRound,       keywords: 'audiences lookalike custom retargeting' },
+  { id: 'ads.audienceLab', href: `${FI}/lead-machine/audience-lab`,          labelKey: 'tools.ads.audienceLab', group: 'advertise', app: 'ads', Icon: FlaskConical,     keywords: 'audience lab relevance seed lookalike behaviour layers evidence proven' },
   { id: 'ads.targeting',   href: `${FI}/lead-machine/targeting`,             labelKey: 'tools.ads.targeting',   group: 'advertise', app: 'ads', Icon: Crosshair,        keywords: 'targeting interests geo demographics' },
   { id: 'ads.pixel',       href: `${FI}/lead-machine/pixel`,                 labelKey: 'tools.ads.pixel',       group: 'advertise', app: 'ads', Icon: Radio,            keywords: 'pixel dataset events conversions capi tracking' },
   { id: 'ads.links',       href: `${FI}/lead-machine/links`,                 labelKey: 'tools.ads.links',       group: 'advertise', app: 'ads', Icon: Link2,            keywords: 'short links utm qr tracking urls' },

@@ -250,7 +250,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       const name = s(args.listingName)
       if (!name) return { error: 'listingName is required' }
       const listing = { name, area: s(args.area), price: n(args.priceAED) || 0 }
-      const { recommendation, connected } = await recommendTargeting(listing, ctx.email)
+      const { recommendation, connected, evidence } = await recommendTargeting(listing, ctx.email)
       const interestNames = recommendation.interestIds
         .map((id) => UAE_INTERESTS.find((i) => i.id === id)?.name)
         .filter(Boolean)
@@ -274,8 +274,21 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
           learningPhase: recommendation.learningPhase,
         },
         metaConnected: connected,
+        // The COMPUTED evidence, separate from the model's prose. These are
+        // significance-tested comparisons on impressions — the basis that
+        // separates audiences long before cost per lead can. Quote them as
+        // established; anything in `notSeparated` must not be ranked or acted
+        // on, however different the cost per lead looks.
+        evidence: evidence.ranking ? {
+          summary: evidence.ranking.headline,
+          established: evidence.ranking.comparisons.filter((c) => c.established).slice(0, 6).map((c) => c.sentence),
+          notSeparated: evidence.ranking.undecided.map((r) => r.name),
+          cheapJunkInventory: evidence.junk.map((r) => ({
+            name: r.name, cpm: r.cpm, leadsPerMillion: r.lpm === null ? null : Math.round(r.lpm),
+          })),
+        } : null,
         wizardUrl: `/freehold-intelligence/lead-machine/campaigns/new?${qs.toString()}`,
-        note: 'Present the plan in plain language. Offer BOTH follow-ups: open the prefilled wizard (navigate to wizardUrl) or launch it paused via ads_launch_campaign after the user confirms.',
+        note: 'Present the plan in plain language. Cite `evidence.established` for any claim that one audience beats another — never infer a winner from a cost-per-lead difference. If `evidence.established` is empty, say plainly that nothing has separated yet. Offer BOTH follow-ups: open the prefilled wizard (navigate to wizardUrl) or launch it paused via ads_launch_campaign after the user confirms.',
       }
     },
   },

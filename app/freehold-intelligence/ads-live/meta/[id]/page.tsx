@@ -16,7 +16,12 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }[] }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
 type Analysis = { working: string[]; blocking: string[]; actions: string[] }
-type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number }
+type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number; pointValue: number | null }
+import type { PlacementAudit } from '@/lib/freehold/placement-audit'
+
+/** A rule the evidence could not decide yet — shown with its reason, so
+ *  "nothing fired" never has to be taken on faith. */
+type RuleWithheld = { ruleId: string; name: string; metric: RuleMetric; reason: string }
 
 // AI Advisor (see /api/freehold/ads/advisor) — every value here is a real
 // fetched/computed number or a real Gemini suggestion grounded in them.
@@ -94,6 +99,28 @@ export default function CampaignCommandPage() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [rules, setRules] = useState<CampaignRule[]>([])
   const [matches, setMatches] = useState<RuleMatch[] | null>(null)
+  const [withheld, setWithheld] = useState<RuleWithheld[]>([])
+
+  // WHERE THE MONEY WENT. The campaign rollup cannot distinguish "this
+  // audience is weak" from "most of these impressions went to overflow
+  // inventory" or "Stories cropped the ad" — all three read as one blended
+  // number. Placements are one of the few things Meta still lets an
+  // advertiser control outright, so the breakdown is worth its own call.
+  const [placements, setPlacements] = useState<PlacementAudit | null>(null)
+  const [placementsAvailable, setPlacementsAvailable] = useState(true)
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    fetch(`/api/freehold/ads/placements?campaignId=${encodeURIComponent(id)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return
+        setPlacements(d.audit ?? null)
+        setPlacementsAvailable(d.available !== false)
+      })
+      .catch(() => { /* panel simply does not render */ })
+    return () => { cancelled = true }
+  }, [id])
   const [checking, setChecking] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [applyingId, setApplyingId] = useState<string | null>(null)
@@ -293,14 +320,21 @@ export default function CampaignCommandPage() {
 
   async function checkRules() {
     if (!data || checking) return
-    setChecking(true); setMatches(null)
+    setChecking(true); setMatches(null); setWithheld([])
     try {
       const res = await fetch('/api/freehold/campaign-rules/evaluate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignId: id, campaignName: data.campaign.name, metrics: { cpl: kpis.cpl, leads: kpis.leads, spend: kpis.spend, ctr: kpis.ctr } }),
+        // COUNTS, not rates — the server derives every rate behind the
+        // minimum-evidence gate. Sending `cpl` from here is what let a
+        // campaign with zero leads report a cost per lead of zero.
+        body: JSON.stringify({
+          campaignId: id, campaignName: data.campaign.name,
+          metrics: { leads: kpis.leads, spend: kpis.spend, clicks: kpis.clicks, impressions: kpis.impressions },
+        }),
       })
       const d = await res.json().catch(() => ({}))
       setMatches(Array.isArray(d.matches) ? d.matches : [])
+      setWithheld(Array.isArray(d.withheld) ? d.withheld : [])
     } catch { setMatches([]) } finally { setChecking(false) }
   }
 
@@ -538,6 +572,48 @@ export default function CampaignCommandPage() {
       </button>
 
       <div className={moreOpen ? '' : 'max-md:hidden'}>
+      {/* Placement truth — off-platform share, drains, cropped creative */}
+      {placements && placements.readings.length > 0 && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.place.title')}</div>
+          <p className="mt-1.5 text-sm leading-relaxed text-slate-200">{placements.headline}</p>
+          <div className="mt-3 divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-line bg-surface">
+            {placements.readings.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-xs">
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                  r.verdict === 'drain' ? 'border-red-400/30 bg-red-400/10 text-red-300'
+                  : r.verdict === 'mismatch' ? 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+                  : r.verdict === 'strong' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                  : 'border-line bg-surface-2 text-slate-500'}`}>
+                  {t(`lm.place.verdict.${r.verdict}`)}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-medium text-slate-200">{r.name}</span>
+                <span className="shrink-0 text-slate-400">{Math.round(r.impressionShare * 100)}% {t('lm.place.ofImpressions')}</span>
+                <span className="shrink-0 text-slate-400">{Math.round(r.spendShare * 100)}% {t('lm.place.ofSpend')}</span>
+                <span className="shrink-0 text-slate-500">{r.cpm !== null ? `CPM ${r.cpm.toFixed(2)}` : '—'}</span>
+                <span className="shrink-0 text-slate-300">{r.lpm !== null ? `${Math.round(r.lpm)}/M` : '—'}</span>
+              </div>
+            ))}
+          </div>
+          {placements.cut.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {placements.cut.map((r) => (
+                <li key={`cut-${r.id}`} className="text-[11px] leading-relaxed text-amber-100/85">· {r.sentence}</li>
+              ))}
+            </ul>
+          )}
+          {/* Read-only by design: excluding a placement is a real spend
+              decision and stays an explicit act in the ad set. */}
+          <p className="mt-3 text-xs leading-relaxed text-slate-400">{placements.recommendation}</p>
+        </section>
+      )}
+      {!placementsAvailable && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface-2 px-5 py-4">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.place.title')}</div>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t('lm.place.unavailable')}</p>
+        </section>
+      )}
+
       {/* Ad sets + budget steppers */}
       <section className="mt-8">
         <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.cmd.adSets')}</div>
@@ -813,26 +889,37 @@ export default function CampaignCommandPage() {
         </div>
 
         {matches !== null && (
-          matches.length === 0 ? (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-2.5 text-xs text-emerald-200/90">
-              <CheckCircle2 className="h-3.5 w-3.5" /> {t('lm.rule.allClear')}
-            </div>
-          ) : (
-            <div className="mt-4 space-y-2">
-              {matches.map((m) => (
-                <div key={m.ruleId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3.5 py-2.5">
-                  <div className="min-w-0 text-xs text-amber-100">
-                    <span className="font-semibold">{ruleText(m)}</span>
-                    <span className="ms-1 text-amber-200/70">· {t('lm.rule.now', { v: m.currentValue })}</span>
-                  </div>
-                  <button type="button" onClick={() => applyMatch(m)} disabled={applyingId === m.ruleId}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
-                    {applyingId === m.ruleId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} {t('lm.rule.apply')}
-                  </button>
+          <div className="mt-4 space-y-2">
+            {matches.length === 0 && (
+              // "All clear" only when every rule could actually be judged.
+              // A rule the evidence cannot decide is not a rule that passed.
+              <div className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs ${
+                withheld.length > 0
+                  ? 'border-line-strong bg-surface text-slate-300'
+                  : 'border-emerald-400/20 bg-emerald-400/[0.06] text-emerald-200/90'}`}>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                {withheld.length > 0 ? t('lm.rule.noneDecided') : t('lm.rule.allClear')}
+              </div>
+            )}
+            {matches.map((m) => (
+              <div key={m.ruleId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3.5 py-2.5">
+                <div className="min-w-0 text-xs text-amber-100">
+                  <span className="font-semibold">{ruleText(m)}</span>
+                  <span className="ms-1 text-amber-200/70">· {t('lm.rule.now', { v: m.currentValue })}</span>
                 </div>
-              ))}
-            </div>
-          )
+                <button type="button" onClick={() => applyMatch(m)} disabled={applyingId === m.ruleId}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+                  {applyingId === m.ruleId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />} {t('lm.rule.apply')}
+                </button>
+              </div>
+            ))}
+            {withheld.map((w) => (
+              <div key={`held-${w.ruleId}`} className="rounded-xl border border-line bg-surface-2/60 px-3.5 py-2.5">
+                <p className="text-xs font-semibold text-slate-300">{t('lm.rule.held', { name: w.name || w.metric })}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">{w.reason}</p>
+              </div>
+            ))}
+          </div>
         )}
 
         <div className="mt-4 space-y-2">

@@ -262,6 +262,11 @@ export default function AudiencesPage() {
     interests: [] as TargetingEntity[], behaviors: [] as TargetingEntity[],
     narrowInterests: [] as TargetingEntity[], narrowBehaviors: [] as TargetingEntity[],
     excludeInterests: [] as TargetingEntity[],
+    // Language of the CREATIVE this audience is built for. Empty = no
+    // narrowing, which stays the default: narrowing language is a choice an
+    // operator makes because the ad is written in that language, never
+    // something that should happen by accident.
+    leadLanguages: [] as string[],
   }), [])
   const [b, setB] = useState(emptySpec)
   const [bName, setBName] = useState('')
@@ -282,6 +287,7 @@ export default function AudiencesPage() {
       ? [{ interests: b.narrowInterests, behaviors: b.narrowBehaviors }]
       : [],
     exclusions: b.excludeInterests.length ? { interests: b.excludeInterests } : undefined,
+    leadLanguages: b.leadLanguages.length ? b.leadLanguages : undefined,
   }), [b])
 
   async function checkBuilderReach() {
@@ -374,6 +380,12 @@ export default function AudiencesPage() {
     const ex = [...(spec.exclusions?.interests ?? []), ...(spec.exclusions?.behaviors ?? [])]
     if (ex.length) bits.push(`${t('lm.aud.mine.excludes')}: ${ex.map((e) => e.name).slice(0, 2).join(', ')}`)
     if (spec.customAudienceIds?.length) bits.push(t('lm.aud.mine.metaIds'))
+    // Language belongs in the summary: it is the one part of a saved audience
+    // that changes WHO sees the ad without appearing in any interest list, so
+    // leaving it off the card hides a real narrowing from the person reusing it.
+    if (spec.leadLanguages?.length) {
+      bits.push(`${t('lm.aud.mine.language')}: ${spec.leadLanguages.map((c) => t(`lm.aud.build.language.${c}`)).join(', ')}`)
+    }
     return bits
   }
 
@@ -529,6 +541,30 @@ export default function AudiencesPage() {
                     )
                   })}
                 </div>
+              </div>
+              {/* LANGUAGE. Multi-select, because a buyer who reads Arabic often
+                  reads English too — forcing one language is usually narrower
+                  than the truth. Empty = no narrowing, which stays the default. */}
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.language')}</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(['ar', 'en', 'ru'] as const).map((code) => {
+                    const on = b.leadLanguages.includes(code)
+                    return (
+                      <button key={code} type="button"
+                        onClick={() => setB((p) => ({
+                          ...p,
+                          leadLanguages: on ? p.leadLanguages.filter((c) => c !== code) : [...p.leadLanguages, code],
+                        }))}
+                        className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
+                        {t(`lm.aud.build.language.${code}`)}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+                  {b.leadLanguages.length ? t('lm.aud.build.language.on') : t('lm.aud.build.language.off')}
+                </p>
               </div>
             </div>
           </div>

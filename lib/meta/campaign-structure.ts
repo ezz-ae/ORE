@@ -114,12 +114,14 @@ export function audienceFingerprintFromTargeting(t: CampaignTargeting | undefine
   const groups: Group[] = narrowing.length > 0
     ? [base, ...narrowing.map((n) => ({ interests: (n.interests ?? []).map((i) => i.id), behaviors: (n.behaviors ?? []).map((b) => b.id) }))]
     : [base]
-  // Broad (Advantage+) audiences get their age band clamped to 25/65 by
-  // createAdSet — mirror that here so the wizard key matches the live read-back
-  // (else an identical broad audience never matches → duplicate ad sets).
-  const isBroad = (g?.interests?.length ?? 0) === 0 && behaviors.length === 0 && narrowing.length === 0 && customAudienceIds.length === 0
-  const ageMin = isBroad ? Math.min(g?.ageMin ?? 25, 25) : (g?.ageMin ?? '')
-  const ageMax = isBroad ? Math.max(g?.ageMax ?? 65, 65) : (g?.ageMax ?? '')
+  // Age is now sent verbatim. createAdSet used to clamp a broad audience's
+  // band to 25/65 because Advantage audiences reject a hard band, and this
+  // fingerprint mirrored the clamp so the wizard key would match the live
+  // read-back. With Advantage audience off, nothing clamps — and mirroring a
+  // clamp that no longer happens would make an identical ad set fail to match
+  // itself and be created twice.
+  const ageMin = g?.ageMin ?? ''
+  const ageMax = g?.ageMax ?? ''
   return keyFrom({
     countries: sortStr(g?.countries ?? []),
     cities: sortStr(g?.cityKeys ?? []),

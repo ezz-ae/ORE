@@ -36,7 +36,26 @@ function countryName(code: string): string {
 
 type UseCaseFilter = 'All' | 'investor' | 'end_user' | 'golden_visa' | 'secondary' | 'international' | 'custom'
 
-type LoopPerf = { id: string; name: string; spendAED: number; cpl: number | null; crm: { total: number; qualified: number; closed: number; lost: number } }
+type LoopPerf = {
+  id: string; name: string; spendAED: number; cpl: number | null
+  crm: { total: number; qualified: number; closed: number; lost: number }
+  /** Delivery volume — the basis that separates audiences. `leadsPerMillion`
+   *  is worth far more than `cpl` here: impressions outnumber leads by four
+   *  orders of magnitude, so it settles differences cost per lead never can. */
+  impressions?: number; cpm?: number | null; leadsPerMillion?: number | null
+}
+
+/** The significance-tested findings behind the recommendation, computed
+ *  server-side. Shown next to the AI's prose so a claim about which audience
+ *  wins can be checked rather than taken on trust. */
+type LoopEvidence = {
+  ranking: {
+    headline: string
+    comparisons: { sentence: string; established: boolean }[]
+    undecided: { id: string; name: string }[]
+  } | null
+  junk: { id: string; name: string; cpm: number | null; lpm: number | null }[]
+}
 
 export default function TargetingPage() {
   const t = useT()
@@ -45,14 +64,14 @@ export default function TargetingPage() {
 
   // The learning loop: what the last campaigns' LEADS actually did, and the
   // AI's recommendation for the next round — same engine as the wizard.
-  const [loop, setLoop] = useState<{ recommendation: TargetingRecommendation; performance: LoopPerf[] } | null>(null)
+  const [loop, setLoop] = useState<{ recommendation: TargetingRecommendation; performance: LoopPerf[]; evidence: LoopEvidence | null } | null>(null)
   const [loopLoading, setLoopLoading] = useState(false)
   async function fetchLoop() {
     setLoopLoading(true)
     try {
       const res = await fetch('/api/freehold/ai/targeting', { cache: 'no-store' })
       const d = await res.json()
-      if (res.ok && d?.recommendation) setLoop({ recommendation: d.recommendation, performance: d.performance ?? [] })
+      if (res.ok && d?.recommendation) setLoop({ recommendation: d.recommendation, performance: d.performance ?? [], evidence: d.evidence ?? null })
     } catch { /* panel stays collapsed */ }
     finally { setLoopLoading(false) }
   }
@@ -186,11 +205,51 @@ export default function TargetingPage() {
               <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">AED {loop.recommendation.dailyBudgetAED}/d</span>
             </div>
             <p className="text-xs leading-relaxed text-slate-400">{loop.recommendation.rationale}</p>
+
+            {/* WHAT IS ACTUALLY ESTABLISHED — computed and significance-tested
+                on impressions, shown apart from the AI's prose above. Cost per
+                lead is built from a handful of leads and rarely separates
+                anything; impressions run to the hundreds of thousands and do. */}
+            {loop.evidence?.ranking && (
+              <div className="rounded-xl border border-line bg-surface p-3.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gold/80">{t('lm.targeting.loop.evidence')}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-200">{loop.evidence.ranking.headline}</p>
+                {loop.evidence.ranking.comparisons.filter((c) => c.established).length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {loop.evidence.ranking.comparisons.filter((c) => c.established).slice(0, 5).map((c) => (
+                      <li key={c.sentence} className="text-[11px] leading-relaxed text-slate-300">· {c.sentence}</li>
+                    ))}
+                  </ul>
+                )}
+                {loop.evidence.ranking.undecided.length > 0 && (
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                    {t('lm.targeting.loop.notSeparated', { names: loop.evidence.ranking.undecided.map((u) => u.name).join(', ') })}
+                  </p>
+                )}
+                {loop.evidence.junk.length > 0 && (
+                  <p className="mt-2 text-[11px] leading-relaxed text-amber-200/80">
+                    {t('lm.targeting.loop.junk', {
+                      names: loop.evidence.junk.map((j) => `${j.name} (CPM ${j.cpm?.toFixed(2) ?? '—'}, ${Math.round(j.lpm ?? 0)}/M)`).join(', '),
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
+
             {loop.performance.length > 0 && (
               <div className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-line bg-surface">
                 {loop.performance.slice(0, 6).map((c) => (
-                  <div key={c.id} className="flex items-center gap-3 px-4 py-2.5 text-xs">
+                  <div key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-xs">
                     <span className="min-w-0 flex-1 truncate font-medium text-slate-200">{c.name}</span>
+                    {/* Leads per million impressions leads the row: it is the
+                        number that separates audiences, and it belongs ahead
+                        of the one that usually cannot. */}
+                    <span className="shrink-0 text-slate-300">
+                      {c.leadsPerMillion !== null && c.leadsPerMillion !== undefined
+                        ? t('lm.targeting.loop.perMillion', { n: c.leadsPerMillion })
+                        : '—'}
+                    </span>
+                    <span className="shrink-0 text-slate-500">{c.cpm ? `CPM ${c.cpm}` : '—'}</span>
                     <span className="shrink-0 text-slate-500">{c.cpl ? `AED ${c.cpl}/lead` : '—'}</span>
                     <span className="shrink-0 text-gold">{c.crm.qualified} {t('lm.targeting.loop.qualified')}</span>
                     <span className="shrink-0 text-red-300">{c.crm.lost} {t('lm.targeting.loop.lost')}</span>

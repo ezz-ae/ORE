@@ -3,6 +3,7 @@ import { getSiteUrl } from "@/lib/site"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
+import { captureLater } from '@/lib/freehold/snapshot-capture'
 import { handleNewLead } from "@/lib/automation/engine"
 import { sendLeadConversion } from "@/lib/meta/capi"
 import { parseIntent } from "@/lib/meta/intent"
@@ -208,6 +209,25 @@ export async function POST(req: NextRequest) {
         clickIntent,
       ],
     )
+
+    // CATCH THE REGISTRATION EVENT. Freeze the ad set's targeting and the ad's
+    // copy as they stand right now, against this lead — the ad set can be
+    // edited an hour from now, and then nothing could ever say what this
+    // person actually arrived through.
+    //
+    // Fired and NOT awaited: this path owes a human a response, and a slow
+    // Graph call must never cost a lead. Landing-page leads are the ones that
+    // carry Meta's {{placement}} macro, so this is the only path where the
+    // surface someone saw the ad on is knowable at all.
+    if (!isRepeatInquiry) {
+      captureLater({
+        leadId,
+        campaignId: toText(utm.id) || null,
+        adsetId: toText(utm.term) || null,
+        adId: toText(utm.content) || null,
+        placement: toText(utm.placement) || null,
+      })
+    }
 
     // Run the automation engine for brand-new leads: auto-distribution + any
     // matching lead.created rules. Never throws — intake must not be blocked.

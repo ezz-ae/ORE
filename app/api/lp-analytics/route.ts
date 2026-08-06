@@ -47,6 +47,12 @@ const ensureAnalyticsSchema = async () => {
       ADD COLUMN IF NOT EXISTS utm_term text,
       ADD COLUMN IF NOT EXISTS utm_content text,
       ADD COLUMN IF NOT EXISTS utm_id text,
+      -- Meta's {{placement}} macro, carried on the ad's url_tags. This is the
+      -- CLICK half of the pair: a click event and a lead event per success, so
+      -- a surface that gets clicks but no leads is distinguishable from one
+      -- that gets nothing. Null for traffic that did not come from a Meta ad.
+      ADD COLUMN IF NOT EXISTS fh_placement text,
+      ADD COLUMN IF NOT EXISTS fh_site text,
       ADD COLUMN IF NOT EXISTS device jsonb,
       ADD COLUMN IF NOT EXISTS geo_country text,
       ADD COLUMN IF NOT EXISTS geo_region text,
@@ -83,12 +89,13 @@ export async function POST(req: NextRequest) {
       `INSERT INTO freehold_site_lp_analytics (
         id, landing_slug, project_slug, event_name, event_value, session_id, path, referrer,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
-        device, geo_country, geo_region, geo_city, meta, intent, created_at
+        device, geo_country, geo_region, geo_city, meta, intent, fh_placement, fh_site, created_at
       )
       VALUES (
         $1, $2, NULLIF($3, ''), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''),
         NULLIF($9, ''), NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''),
-        $15::jsonb, NULLIF($16, ''), NULLIF($17, ''), NULLIF($18, ''), $19::jsonb, NULLIF($20, ''), now()
+        $15::jsonb, NULLIF($16, ''), NULLIF($17, ''), NULLIF($18, ''), $19::jsonb, NULLIF($20, ''),
+        NULLIF($21, ''), NULLIF($22, ''), now()
       )`,
       [
         randomUUID(),
@@ -120,6 +127,10 @@ export async function POST(req: NextRequest) {
         // Click-carried buyer intent (Layer 4) — validated against the shared
         // vocabulary so junk from the wild never lands in the column.
         parseIntent(toText(body.intent)) ?? "",
+        // Meta's {{placement}} / {{site_source_name}}, lower-cased so 'Feed'
+        // and 'feed' are one surface rather than two rows that never compare.
+        toText(utm.placement ?? body.placement).toLowerCase(),
+        toText(utm.site ?? body.site).toLowerCase(),
       ],
     )
 

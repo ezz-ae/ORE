@@ -1,4 +1,5 @@
 import { query, ensureOnce } from '@/lib/db'
+import { support, isWithheld, displayMetrics, type Evidence, type Withheld } from '@/lib/freehold/min-evidence'
 
 /**
  * Campaign automation rules — "if a metric crosses a threshold, do X". The
@@ -10,6 +11,16 @@ import { query, ensureOnce } from '@/lib/db'
  * (which pauses a campaign or changes a real budget) is an explicit, separate
  * step in the UI that reuses the tested control endpoints — this module never
  * spends or pauses money on its own.
+ *
+ * Second safety, and the harder one: a rule fires on EVIDENCE, not on
+ * arithmetic. Evaluation takes raw counts and derives every rate through
+ * `min-evidence`, which hands back the confidence bound facing the threshold
+ * rather than the point estimate. This is not a refinement — it closes a real
+ * hole. The old signature took a pre-computed `cpl`, and both callers passed
+ * `leads > 0 ? spend / leads : 0`, so a campaign that had produced NOTHING
+ * arrived here as "cost per lead: 0" and a `cpl < 100 → budget_up` rule read
+ * it as the cheapest campaign in the account. There is deliberately no way to
+ * hand this function a rate any more.
  */
 
 export type RuleMetric = 'quality' | 'cpl' | 'leads' | 'spend' | 'ctr'
@@ -34,19 +45,30 @@ export interface CampaignRule {
   createdAt: string
 }
 
-/** The live metric snapshot a rule set is evaluated against. `quality` is null
- *  when the campaign has no attributed leads yet (that rule simply can't fire). */
-export interface RuleMetrics {
-  quality: number | null
-  cpl: number
-  leads: number
-  spend: number
-  ctr: number
-}
+/** What a rule set is evaluated against: raw evidence, never derived rates.
+ *  Re-exported from min-evidence so callers have one import for the contract. */
+export type RuleMetrics = Evidence
 
 export interface RuleMatch {
   rule: CampaignRule
+  /** The bound that cleared the threshold — the conservative number, not the
+   *  point estimate. For `cpl > 300` on 2 leads this is the LOW end of the
+   *  cost range, so the rule fired only because even the optimistic reading is
+   *  over budget. */
   currentValue: number
+  /** The plain point estimate, for showing beside it. Null when undefined
+   *  (e.g. cost per lead with no leads). */
+  pointValue: number | null
+}
+
+/** A rule that did not fire because the evidence could not decide it — kept
+ *  and surfaced, because "we are not acting yet, and here is why" is the part
+ *  an operator needs to trust the ones that DO fire. */
+export type RuleWithheld = Withheld & { rule: CampaignRule }
+
+export interface RuleEvaluation {
+  matches: RuleMatch[]
+  withheld: RuleWithheld[]
 }
 
 async function ensureRulesTable(): Promise<void> {
@@ -146,15 +168,29 @@ export async function deleteRule(id: string, email: string): Promise<void> {
   await query(`DELETE FROM freehold_campaign_rules WHERE id = $1 AND owner_email = $2`, [id, email])
 }
 
-/** Pure, side-effect-free evaluation. Returns only the rules that currently fire. */
-export function evaluateRules(rules: CampaignRule[], metrics: RuleMetrics): RuleMatch[] {
+/**
+ * Pure, side-effect-free evaluation.
+ *
+ * A rule fires only when the evidence can carry the specific comparison. The
+ * number compared is the bound facing the threshold, so firing means "even
+ * read in this campaign's favour, it crosses the line" — which is the only
+ * reading that justifies pausing something a human set running.
+ */
+export function evaluateRules(rules: CampaignRule[], evidence: RuleMetrics): RuleEvaluation {
   const matches: RuleMatch[] = []
+  const withheld: RuleWithheld[] = []
   for (const rule of rules) {
     if (!rule.enabled) continue
-    const cur = metrics[rule.metric]
-    if (cur === null || cur === undefined || Number.isNaN(cur)) continue // e.g. quality with no leads yet
-    const fires = rule.operator === 'lt' ? cur < rule.threshold : cur > rule.threshold
-    if (fires) matches.push({ rule, currentValue: cur })
+    const s = support(rule.metric, rule.operator, evidence)
+    if (isWithheld(s)) {
+      withheld.push({ ...s, rule })
+      continue
+    }
+    if (!Number.isFinite(s.value)) continue
+    const fires = rule.operator === 'lt' ? s.value < rule.threshold : s.value > rule.threshold
+    if (fires) matches.push({ rule, currentValue: s.value, pointValue: s.point })
   }
-  return matches
+  return { matches, withheld }
 }
+
+export { displayMetrics }

@@ -27,7 +27,7 @@ export const UAE_CITIES: CatalogCity[] = [
 // the right signals, seeds, exclusions and creative. Naive interest stacks
 // ("real estate + Dubai") are only ever a cold-start refinement.
 export type TargetingStrategy =
-  | 'advantage_broad'      // broad + Advantage: let the algorithm hunt on conversion signals
+  | 'broad_manual'         // broad but DEFINED: geo/age/language only, no interests, no Advantage expansion
   | 'lookalike_qualified'  // seed a lookalike from QUALIFIED/CLOSED leads (our unfair advantage)
   | 'retargeting_warm'     // re-engage pixel visitors / engaged leads
   | 'interest_refined'     // cold-start only: catalog interests as a starting constraint
@@ -60,7 +60,7 @@ export interface TargetingRecommendation {
 }
 
 export const STRATEGY_LABELS: Record<TargetingStrategy, string> = {
-  advantage_broad: 'Signal engine — auto-optimizes on our lead data',
+  broad_manual: 'Broad, defined by us — no Advantage expansion',
   lookalike_qualified: 'Lookalike of qualified leads',
   retargeting_warm: 'Warm retargeting',
   interest_refined: 'Refined interests (cold start)',

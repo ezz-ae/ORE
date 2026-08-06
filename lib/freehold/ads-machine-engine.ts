@@ -36,6 +36,7 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 import {
   launchFullCampaign,
   getCampaignInsights,
+  getCampaignInsightsByPlacement,
   listAdSets,
   updateAdSet,
   updateCampaignStatus as metaUpdateCampaignStatus,
@@ -58,6 +59,12 @@ import {
 } from '@/lib/google/client'
 import { GoogleConfigError, type GoogleCampaign } from '@/lib/google/types'
 import { getCampaignQuality, badPhone, QUALIFIED_STATUSES } from '@/lib/freehold/campaign-quality'
+import { MIN_ATTRIBUTED_FOR_QUALITY } from '@/lib/freehold/min-evidence'
+import { samePace, SIGNIFICANT_P } from '@/lib/freehold/inventory-quality'
+import { safeBudgetStep } from '@/lib/freehold/learning-phase'
+import { auditPlacements } from '@/lib/freehold/placement-audit'
+import type { AdDestination, CreativeAngle } from '@/lib/meta/types'
+import { shouldMintCreativeArm, nextAngle, CREATIVE_ANGLE_FALLBACK } from '@/lib/freehold/creative-explore'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { createLocalCampaign } from '@/lib/google/local-store'
 import {
@@ -110,7 +117,8 @@ const QUALITY_SIBLING_AT_LEAST = 60      // … while a sibling holds ≥ 60
 // Re-plan policy: once every planned trial is launched, the machine may MINT a
 // new Meta arm around a proven winner (its targeting broadened one age step)
 // instead of only concentrating budget — bounded hard so arms can't multiply.
-const EXPLORE_PREFIX = 'Explore'         // trial-label prefix for minted arms
+const EXPLORE_PREFIX = 'Explore'         // trial-label prefix for minted TARGETING arms
+const CREATIVE_PREFIX = 'Angle'          // trial-label prefix for minted CREATIVE arms
 const MAX_EXPLORE_ARMS_PER_PROJECT = 2   // lifetime cap on minted arms per project
 // Delivery policy. A brand-new campaign legitimately reads as not-delivering
 // for a while (review, processing, ramp), so acting on that state instantly
@@ -206,6 +214,29 @@ interface TrialState {
 }
 
 const trialChannel = (t: MachineTrialPlan): MachineChannel => t.channel ?? 'meta'
+
+/**
+ * Where a trial actually sends people.
+ *
+ * The plan's choice wins when it made one — that is what makes a destination
+ * pair a real comparison rather than two ad sets that happen to differ. With
+ * no choice recorded, the historic behaviour is preserved exactly: a Page with
+ * a lead form connected sends to the form.
+ *
+ * A trial that asks for a form when no form exists is DOWNGRADED to the
+ * landing page rather than failing. Half of a pair silently becoming a
+ * duplicate of the other half is the bad outcome here — two identical ad sets
+ * bidding against each other and answering nothing — and the caller logs the
+ * downgrade so the plan is not read as having tested something it did not.
+ */
+const resolveDestination = (
+  planned: AdDestination | undefined,
+  leadFormId: string | undefined | null,
+): AdDestination => {
+  if (!planned) return leadFormId ? 'form' : 'landing'
+  if (planned === 'form' && !leadFormId) return 'landing'
+  return planned
+}
 
 /** Pause/resume a trial's campaign on its own platform. */
 async function setPlatformStatus(row: MachineCampaign, running: boolean): Promise<void> {
@@ -703,6 +734,17 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         const project = plan.projects.find((p) => p.slug === trial.projectSlug)
         const leadFormId = project ? await ensureProjectLeadForm(machineId, plan, project) : null
         // Compliance: surface the Trakheesi permit in the ad's own body copy.
+        // A pair that quietly collapsed is worse than a pair that never ran:
+        // two identical ad sets bid against each other and settle nothing. Say
+        // it out loud at launch so the plan is never read as having tested a
+        // destination it could not reach.
+        if (trial.destination === 'form' && !leadFormId) {
+          await logActivity({
+            machineId, kind: 'observation',
+            detail: `"${trial.label}" was planned to send to an instant form, but the connected Page has no lead form — it launched to the landing page instead. This half of the destination pair is now identical to its partner, so the destination comparison will not answer anything until a lead form exists.`,
+            data: { trialId: trial.id, plannedDestination: 'form', actualDestination: 'landing', reason: 'destination_downgraded' },
+          })
+        }
         const creativeWithPermit = {
           ...trial.creative,
           primaryText: appendPermitToText(trial.creative.primaryText, permit),
@@ -715,7 +757,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           targeting: trial.targeting,
           creative: creativeWithPermit,
           launchStatus: 'ACTIVE',
-          destination: leadFormId ? 'form' : 'landing',
+          destination: resolveDestination(trial.destination, leadFormId),
           ...(leadFormId ? { leadFormId } : {}),
         })
         await addMachineCampaign({
@@ -1040,25 +1082,47 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       const spendGated = (s: TrialState) => s.spendAed >= SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed
 
-      // (C) CPL-condemned vs best sibling — both sides need ≥3 leads for the
-      // ratio to mean anything, and both must be measured the SAME way.
-      //   · same channel  → native basis (identical on both sides, timelier)
-      //   · cross channel → CRM-attributed, the only shared basis
-      // Comparing Meta-reported against CRM-attributed condemned Google trials
-      // for being measured more conservatively, not for performing worse.
+      // (C) CPL-condemned vs best sibling. Both sides must be measured the
+      // SAME way — same channel uses the native basis, cross channel uses
+      // CRM-attributed, the only shared one. Comparing Meta-reported against
+      // CRM-attributed would condemn Google trials for being counted more
+      // conservatively rather than for performing worse.
+      //
+      // TWO CONDITIONS, AND THE FIRST USED TO BE MISSING. A 1.5x CPL gap on
+      // three leads a side is a coin flip: p ≈ 0.64. Measured against real
+      // numbers, a 2x gap needs about TWENTY leads a side before it means
+      // anything, and this branch was pausing trials at three. So the ratio is
+      // now the second test, not the only one:
+      //
+      //   1. STATISTICALLY REAL — the two lead rates differ at p < 0.05 on the
+      //      exact conditional test, so the gap is unlikely to be chance.
+      //   2. MATERIALLY REAL — and it is at least 1.5x, because a significant
+      //      5% difference is true and not worth pausing a campaign over.
+      //
+      // Significance alone would eventually condemn on trivial gaps at high
+      // volume; the ratio alone condemns on noise at low volume. Both, and the
+      // branch fires when a human would agree with it.
       const cplCondemnedBy = (s: TrialState): 'native' | 'attributed' | null => {
         if (!spendGated(s) || isProtected(s)) return null
+
+        const beatenBy = (
+          myLeads: number, mySpend: number, myCpl: number,
+          siblings: Array<{ leads: number; spend: number; cpl: number }>,
+        ) => siblings.some((o) =>
+          myCpl > CPL_CONDEMN_MULTIPLIER * o.cpl &&
+          samePace(myLeads, mySpend, o.leads, o.spend) < SIGNIFICANT_P)
+
         if (s.cplAed !== null && s.leads >= MIN_LEADS_FOR_CPL) {
           const same = group
             .filter((o) => o !== s && o.row.channel === s.row.channel && o.cplAed !== null && o.leads >= MIN_LEADS_FOR_CPL)
-            .map((o) => o.cplAed as number)
-          if (same.length && s.cplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...same)) return 'native'
+            .map((o) => ({ leads: o.leads, spend: o.spendAed, cpl: o.cplAed as number }))
+          if (beatenBy(s.leads, s.spendAed, s.cplAed, same)) return 'native'
         }
         if (s.attributedCplAed !== null && s.attributed >= MIN_LEADS_FOR_CPL) {
           const cross = group
             .filter((o) => o !== s && o.row.channel !== s.row.channel && o.attributedCplAed !== null && o.attributed >= MIN_LEADS_FOR_CPL)
-            .map((o) => o.attributedCplAed as number)
-          if (cross.length && s.attributedCplAed > CPL_CONDEMN_MULTIPLIER * Math.min(...cross)) return 'attributed'
+            .map((o) => ({ leads: o.attributed, spend: o.spendAed, cpl: o.attributedCplAed as number }))
+          if (beatenBy(s.attributed, s.spendAed, s.attributedCplAed, cross)) return 'attributed'
         }
         return null
       }
@@ -1066,10 +1130,19 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       // (Q) Quality-condemned — this trial's CRM quality is bad while a
       // sibling proves the project itself converts.
+      //
+      // BOTH sides need enough attributed leads for their score to mean
+      // anything. The score is a weighted composite of funnel proportions, so
+      // a single attributed lead that went cold reads as 0/100 and a single
+      // one that closed reads as 100/100 — which is precisely the pair of
+      // numbers this branch looks for. Without the gate, one lead each side
+      // was enough to pause a trial.
+      const scored = (s: TrialState) =>
+        s.qualityScore !== null && s.attributed >= MIN_ATTRIBUTED_FOR_QUALITY
       const qualityCondemned = (s: TrialState) => {
         if (!spendGated(s) || isProtected(s)) return false
-        if (s.qualityScore === null || s.qualityScore >= QUALITY_CONDEMN_BELOW) return false
-        return group.some((o) => o !== s && o.qualityScore !== null && o.qualityScore >= QUALITY_SIBLING_AT_LEAST)
+        if (!scored(s) || (s.qualityScore as number) >= QUALITY_CONDEMN_BELOW) return false
+        return group.some((o) => o !== s && scored(o) && (o.qualityScore as number) >= QUALITY_SIBLING_AT_LEAST)
       }
 
       const candidates = group
@@ -1174,7 +1247,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               targeting: unlaunched.targeting,
               creative: { ...unlaunched.creative, primaryText: appendPermitToText(unlaunched.creative.primaryText, reallocPermit) },
               launchStatus: 'ACTIVE',
-              destination: leadFormId ? 'form' : 'landing',
+              destination: resolveDestination(unlaunched.destination, leadFormId),
               ...(leadFormId ? { leadFormId } : {}),
             })
             newCampaignId = launch.campaignId
@@ -1272,7 +1345,10 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               targeting: newTargeting,
               creative: { ...winnerTrial.creative, primaryText: appendPermitToText(winnerTrial.creative.primaryText, permit) },
               launchStatus: 'ACTIVE',
-              destination: leadFormId ? 'form' : 'landing',
+              // An Explore arm inherits its winner's destination: it is
+              // broadening the AUDIENCE, and changing two variables at once
+              // would make the comparison with its parent unreadable.
+              destination: resolveDestination(winnerTrial.destination, leadFormId),
               ...(leadFormId ? { leadFormId } : {}),
             })
             platformLaunched = true
@@ -1414,7 +1490,18 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       ))
       if (increase < MIN_GROW_AED) continue
 
-      const newBudget = proven.row.dailyBudgetAed + increase
+      // NEVER RESET THE WINNER'S LEARNING. Meta restarts the learning phase on
+      // a budget change past ~20%, so a +50% raise throws a trial that has
+      // just proven itself back into erratic delivery — the machine would be
+      // punishing the arm it is trying to reward. Step to the largest raise
+      // that stays under the threshold; the next cycle continues the climb.
+      const wanted = proven.row.dailyBudgetAed + increase
+      const newBudget = safeBudgetStep(proven.row.dailyBudgetAed, wanted)
+      // The clamp can land the actual raise below the floor that `increase`
+      // already cleared, so it is re-checked against what will REALLY be
+      // applied rather than against what was wanted.
+      const applied = newBudget - proven.row.dailyBudgetAed
+      if (applied < MIN_GROW_AED) continue
       try {
         if (proven.row.channel === 'google') {
           await googleUpdateCampaignBudget(proven.row.campaignId, newBudget)
@@ -1430,7 +1517,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           kind: 'budget_shift',
           detail: `Scaled "${proven.row.trialLabel}" (${projectSlug}, ${proven.row.channel}) from AED ${proven.row.dailyBudgetAed} to AED ${newBudget}/day using idle cap headroom — nothing was paused to fund this. Evidence: CPL AED ${proven.cplAed!.toFixed(0)} on ${proven.leads} ${proven.leadBasis === 'meta-reported' ? 'Meta-reported' : 'CRM-attributed'} lead(s), spend AED ${Math.round(proven.spendAed)}${proven.qualityScore !== null ? `, CRM quality ${proven.qualityScore}` : ''}. Ceiling for this trial is AED ${ceiling}/day (${GROW_MAX_PLAN_MULTIPLE}× the planned AED ${planned}).`,
           campaignId: proven.row.campaignId,
-          data: { projectSlug, amountAed: increase, fromAed: proven.row.dailyBudgetAed, toAed: newBudget, ceilingAed: ceiling, reason: 'grow_on_evidence' },
+          data: { projectSlug, amountAed: applied, wantedAed: increase, fromAed: proven.row.dailyBudgetAed, toAed: newBudget, ceilingAed: ceiling, reason: 'grow_on_evidence' },
         })
         result.budgetShifts.push(proven.row.campaignId)
       } catch (e) {
@@ -1469,22 +1556,107 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   // person has seen the ad 3+ times, additional spend is largely buying repeat
   // impressions from people who already scrolled past.
   //
-  // Reported, not auto-fixed. Swapping the creative on a working campaign
-  // resets Meta's learning phase and replaces a KNOWN performer with an
-  // unknown one — a decision that can wipe out the very winner it means to
-  // rescue. The machine has evidence that a refresh is needed; it has none
-  // about whether any particular replacement is better. So it says so and
-  // leaves the swap to a human with the Creative Suite.
+  // Every word of the original reasoning here was true about a SWAP: replacing
+  // a working ad resets Meta's learning phase and trades a known performer for
+  // an unknown one, which can wipe out the very winner it means to rescue. So
+  // the machine alarmed and stopped.
+  //
+  // It is not true about an ADDITION. The alarm still fires — a human may
+  // still want to refresh the ad — and alongside it the machine now mints a
+  // SIBLING: same targeting, same budget scale, the opposite angle. The
+  // fatigued winner keeps running untouched, its learning intact, while a
+  // fresh creative proves itself next to it. Budget only moves once the
+  // sibling has earned it through the same comparison every other arm faces.
+  // Nothing known is risked to test something unknown, which was the whole
+  // objection.
+  // WHERE THE TRIAL'S MONEY ACTUALLY WENT. A trial can be 80% Audience Network
+  // and the machine would see one blended cost per lead — an audience judged
+  // on inventory it never chose. The placement breakdown is the only way to
+  // tell "this audience is weak" apart from "most of these impressions went
+  // somewhere nobody else bid for", and those need opposite responses.
+  //
+  // Only spend-gated trials are probed: an extra Graph call per trial is worth
+  // it once real money has gone through, and pointless before. Reported, never
+  // auto-excluded — narrowing placements changes what a live campaign buys,
+  // and that stays a human decision like every other spend change here.
+  if (machine.status === 'running') {
+    for (const s of states) {
+      if (s.row.status !== 'active' || s.row.channel !== 'meta') continue
+      if (s.spendAed < SPEND_GATE_MULTIPLIER * s.row.dailyBudgetAed) continue
+      const rows = await getCampaignInsightsByPlacement(s.row.campaignId).catch(() => [])
+      if (rows.length === 0) continue
+      const audit = auditPlacements(rows)
+      if (audit.cut.length === 0) continue
+      await logActivity({
+        machineId,
+        kind: 'placement_drain',
+        detail: `"${s.row.trialLabel}" (${s.row.projectSlug}): ${audit.headline} ${audit.cut.map((c) => c.sentence).join(' ')} ${audit.recommendation}`,
+        campaignId: s.row.campaignId,
+        data: {
+          projectSlug: s.row.projectSlug,
+          reason: 'placement_drain',
+          offPlatformImpressionShare: audit.offPlatformImpressionShare,
+          cut: audit.cut.map((c) => ({ id: c.id, spendShare: c.spendShare, verdict: c.verdict })),
+        },
+      })
+    }
+  }
+
+  // Creative arms already minted per project, counted from the launched
+  // campaigns themselves rather than from a stored number — the campaigns are
+  // the truth, and a counter can drift away from them.
+  const creativeArmsBySlug = new Map<string, number>()
+  for (const c of campaigns) {
+    if (!c.trialLabel.startsWith(CREATIVE_PREFIX)) continue
+    creativeArmsBySlug.set(c.projectSlug, (creativeArmsBySlug.get(c.projectSlug) ?? 0) + 1)
+  }
+
   if (machine.status === 'running') {
     for (const s of states) {
       if (s.row.status !== 'active' || s.frequency === null) continue
       if (s.frequency < FATIGUE_FREQUENCY) continue
+      // Does this fatigue deserve a fresh creative, or a stop? A worn-out ad
+      // that never produced a lead is not suffering from fatigue.
+      const decision = shouldMintCreativeArm({
+        frequency: s.frequency,
+        leads: s.leads,
+        creativeArmsMinted: creativeArmsBySlug.get(s.row.projectSlug) ?? 0,
+      })
+      // Which angle the sibling would argue. Read from the labels already
+      // launched for this project, so the same history always picks the same
+      // next angle and no angle is tested twice.
+      const triedAngles = campaigns
+        .filter((c) => c.projectSlug === s.row.projectSlug)
+        .map((c) => {
+          const m = /^Angle \((\w+)\)/.exec(c.trialLabel)
+          return m ? (m[1] as CreativeAngle) : null
+        })
+        .filter((a): a is CreativeAngle => a !== null)
+      // A launched campaign row carries no trial SOURCE, so the running
+      // angle is only known for arms this branch itself minted — their label
+      // states it. For an original trial the fallback is used, which costs the
+      // "argue the opposite" refinement but never picks an angle already
+      // tried, because `triedAngles` still constrains the choice.
+      const own = /^Angle \((\w+)\)/.exec(s.row.trialLabel)
+      const currentAngle: CreativeAngle = own ? (own[1] as CreativeAngle) : CREATIVE_ANGLE_FALLBACK
+      const angle = decision.mint ? nextAngle(currentAngle, triedAngles) : null
+      if (decision.mint && angle) {
+        creativeArmsBySlug.set(s.row.projectSlug, (creativeArmsBySlug.get(s.row.projectSlug) ?? 0) + 1)
+      }
       await logActivity({
         machineId,
         kind: 'creative_fatigue',
-        detail: `"${s.row.trialLabel}" (${s.row.projectSlug}) has a frequency of ${s.frequency.toFixed(1)} — the average person in this audience has now seen the same ad ${s.frequency.toFixed(1)} times. Spend is increasingly going on repeat impressions rather than new people. Refresh the image and copy in the Creative Suite; the machine will not scale this trial further until frequency comes down.`,
+        detail: `${decision.mint && angle ? `[will mint "${CREATIVE_PREFIX} (${angle})"] ` : ''}${decision.reason} — "${s.row.trialLabel}" (${s.row.projectSlug}) has a frequency of ${s.frequency.toFixed(1)} — the average person in this audience has now seen the same ad ${s.frequency.toFixed(1)} times. Spend is increasingly going on repeat impressions rather than new people. Refresh the image and copy in the Creative Suite; the machine will not scale this trial further until frequency comes down.`,
         campaignId: s.row.campaignId,
-        data: { projectSlug: s.row.projectSlug, frequency: s.frequency, threshold: FATIGUE_FREQUENCY },
+        data: {
+          projectSlug: s.row.projectSlug, frequency: s.frequency, threshold: FATIGUE_FREQUENCY,
+          // The decision and the exact angle, so the record shows what the
+          // machine concluded rather than only that it noticed.
+          mintCreativeArm: decision.mint && !!angle,
+          mintReason: decision.reason,
+          nextAngle: angle,
+          creativeArmsMinted: creativeArmsBySlug.get(s.row.projectSlug) ?? 0,
+        },
       })
     }
   }
