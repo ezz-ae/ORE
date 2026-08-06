@@ -135,6 +135,19 @@ export interface CampaignTargeting {
   genders?: number[]
   /** Meta locale (language) keys from the adlocale vocabulary. Empty = all. */
   locales?: number[]
+  /**
+   * Language codes ('en' | 'ar' | 'ru') this audience is defined to reach,
+   * resolved to Meta's numeric locale IDs at launch via the live adlocale
+   * search. Kept as CODES rather than resolved IDs so a SAVED audience stays
+   * readable and never goes stale — the ids are Meta's, the intent is ours.
+   *
+   * This is what makes "Arabic-speaking buyers" a reusable, named asset
+   * instead of a checkbox someone has to remember on every launch. It targets
+   * the language the CREATIVE is written in, which is the only honest reason
+   * to narrow by language: an Arabic ad shown to someone who does not read
+   * Arabic is wasted money for us and noise for them.
+   */
+  leadLanguages?: string[]
   /** Behavioral segments from Meta's live vocabulary (expats, frequent travellers…). */
   behaviors?: TargetingEntity[]
   /**

@@ -31,6 +31,7 @@ import type {
   PlacementKey,
   PlacementCreativeOverride,
 } from './types'
+import { mergeLeadLanguages } from './lead-language'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
 const API_VERSION = 'v20.0'
@@ -2275,8 +2276,14 @@ export async function launchFullCampaign(params: {
   // real numeric locale IDs (live search — Meta publishes no static table)
   // and merge with any locales the targeting spec already carries. An empty
   // resolution (Meta unreachable) narrows nothing rather than mis-targeting.
-  const leadLanguageLocales = params.leadLanguages?.length
-    ? await resolveLeadLanguageLocaleIds(params.leadLanguages)
+  // Languages come from two places and BOTH must count: the wizard's own
+  // selection for this launch, and the language a SAVED audience carries in
+  // its spec. Reading only the wizard param would silently drop the narrowing
+  // whenever someone attached a saved "Arabic-speaking buyers" audience —
+  // the audience would look right in the UI and deliver unnarrowed.
+  const languageCodes = mergeLeadLanguages(params.leadLanguages, params.targeting.leadLanguages)
+  const leadLanguageLocales = languageCodes.length
+    ? await resolveLeadLanguageLocaleIds(languageCodes)
     : []
   const mergedLocales = Array.from(new Set([...(params.targeting.locales ?? []), ...leadLanguageLocales]))
   const baseTargeting = {

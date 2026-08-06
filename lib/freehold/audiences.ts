@@ -94,6 +94,12 @@ export function normalizeSpec(raw: unknown): CampaignTargeting {
     interests: entities(r.interests),
     genders: Array.isArray(r.genders) ? r.genders.map(Number).filter((n) => n === 1 || n === 2) : undefined,
     locales: Array.isArray(r.locales) ? r.locales.map(Number).filter((n) => Number.isFinite(n) && n > 0).slice(0, 10) : undefined,
+    // Only the three languages the landing pages actually serve. An audience
+    // narrowed to a language we cannot then show a page in would spend money
+    // to deliver a worse experience than no narrowing at all.
+    leadLanguages: Array.isArray(r.leadLanguages)
+      ? Array.from(new Set(r.leadLanguages.map(String).filter((c) => c === 'en' || c === 'ar' || c === 'ru')))
+      : undefined,
     behaviors: entities(r.behaviors),
     narrowing: groups(r.narrowing),
     exclusions: exclusions.interests.length + exclusions.behaviors.length > 0 ? exclusions : undefined,
