@@ -312,5 +312,140 @@ export async function auditConservation(): Promise<ConservationAudit> {
   return { ledgerNet, drifted, healthy: ledgerNet === 0 && drifted.length === 0 }
 }
 
+// ── Requests ──────────────────────────────────────────────────────────────────
+
+/**
+ * "requests" — the other half of a bank a person actually uses.
+ *
+ * Without it, topping up a broker means them messaging someone, and someone
+ * remembering. A request is a row: who asked, how much, why, and what was
+ * decided. Approving one IS a transfer, so an approved request and the coin
+ * that moved are the same event rather than two things that can disagree.
+ */
+export type RequestState = 'pending' | 'approved' | 'declined'
+
+export interface CoinRequest {
+  id: string
+  walletId: string
+  amount: Coins
+  reason: string
+  state: RequestState
+  requestedBy: string
+  decidedBy: string | null
+  decidedAt: string | null
+  transferId: string | null
+  createdAt: string
+}
+
+async function ensureRequests(): Promise<void> {
+  await query(`
+    CREATE TABLE IF NOT EXISTS freehold_wallet_requests (
+      id           text PRIMARY KEY,
+      wallet_id    text NOT NULL,
+      amount       bigint NOT NULL CHECK (amount > 0),
+      reason       text NOT NULL DEFAULT '',
+      state        text NOT NULL DEFAULT 'pending',
+      requested_by text NOT NULL,
+      decided_by   text,
+      decided_at   timestamptz,
+      transfer_id  text,
+      created_at   timestamptz NOT NULL DEFAULT now()
+    )
+  `)
+  await query(`CREATE INDEX IF NOT EXISTS freehold_wallet_requests_state_idx
+               ON freehold_wallet_requests (state, created_at DESC)`)
+}
+export const ensureRequestSchema = () => ensureOnce('freehold_wallet_requests', ensureRequests)
+
+const mapRequest = (r: Record<string, unknown>): CoinRequest => ({
+  id: String(r.id),
+  walletId: String(r.wallet_id),
+  amount: Number(r.amount),
+  reason: String(r.reason ?? ''),
+  state: (['pending', 'approved', 'declined'] as const).includes(r.state as RequestState)
+    ? (r.state as RequestState) : 'pending',
+  requestedBy: String(r.requested_by),
+  decidedBy: r.decided_by == null ? null : String(r.decided_by),
+  decidedAt: r.decided_at == null ? null : String(r.decided_at),
+  transferId: r.transfer_id == null ? null : String(r.transfer_id),
+  createdAt: String(r.created_at),
+})
+
+export async function listRequests(state?: RequestState): Promise<CoinRequest[]> {
+  await ensureRequestSchema()
+  const rows = await query(
+    `SELECT id, wallet_id, amount, reason, state, requested_by, decided_by,
+            decided_at::text, transfer_id, created_at::text
+       FROM freehold_wallet_requests
+      ${state ? 'WHERE state = $1' : ''}
+      ORDER BY created_at DESC LIMIT 100`,
+    state ? [state] : [],
+  )
+  return rows.map(mapRequest)
+}
+
+export async function createRequest(input: {
+  id: string; walletId: string; amount: Coins; reason: string; requestedBy: string
+}): Promise<CoinRequest | null> {
+  await ensureRequestSchema()
+  if (!isValidAmount(input.amount)) return null
+  const rows = await query(
+    `INSERT INTO freehold_wallet_requests (id, wallet_id, amount, reason, requested_by)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, wallet_id, amount, reason, state, requested_by, decided_by,
+               decided_at::text, transfer_id, created_at::text`,
+    [input.id, input.walletId, input.amount, input.reason.slice(0, 300), input.requestedBy],
+  )
+  return rows[0] ? mapRequest(rows[0]) : null
+}
+
+/**
+ * Decide a request.
+ *
+ * Approving moves the coin in the SAME breath — the request is marked approved
+ * only if the transfer succeeded, and it carries that transfer's id. A request
+ * that says "approved" while no coin moved is the shape of lie this whole
+ * ledger exists to make impossible.
+ */
+export async function decideRequest(input: {
+  id: string
+  approve: boolean
+  fromWalletId: string
+  decidedBy: string
+}): Promise<{ ok: true; state: RequestState } | { ok: false; error: string }> {
+  await ensureRequestSchema()
+  const rows = await query(
+    `SELECT id, wallet_id, amount, reason, state, requested_by, decided_by,
+            decided_at::text, transfer_id, created_at::text
+       FROM freehold_wallet_requests WHERE id = $1`, [input.id])
+  const req = rows[0] ? mapRequest(rows[0]) : null
+  if (!req) return { ok: false, error: 'No such request' }
+  // Deciding twice must not move the coin twice.
+  if (req.state !== 'pending') return { ok: false, error: `Already ${req.state}` }
+
+  if (!input.approve) {
+    await query(
+      `UPDATE freehold_wallet_requests SET state='declined', decided_by=$2, decided_at=now() WHERE id=$1`,
+      [req.id, input.decidedBy])
+    return { ok: true, state: 'declined' }
+  }
+
+  const res = await postTransfer({
+    // Derived from the request id, so a retried approval is the same movement.
+    reference: `request:${req.id}`,
+    kind: 'transfer', amount: req.amount,
+    fromWalletId: input.fromWalletId, toWalletId: req.walletId,
+    memo: req.reason || 'Approved request', actor: input.decidedBy,
+  })
+  if (!res.ok) return { ok: false, error: res.refusal }
+
+  await query(
+    `UPDATE freehold_wallet_requests
+        SET state='approved', decided_by=$2, decided_at=now(), transfer_id=$3
+      WHERE id=$1`,
+    [req.id, input.decidedBy, res.transferId])
+  return { ok: true, state: 'approved' }
+}
+
 /** Amount validation, re-exported so callers need one import. */
 export { isValidAmount }

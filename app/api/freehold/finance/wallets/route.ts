@@ -15,7 +15,9 @@ import { OWNER_ROLES } from '@/lib/freehold/session-types'
 import {
   listWallets, listPostings, getPosition, auditConservation,
   openWallet, postTransfer, getWalletByAccountNo,
+  listRequests, createRequest, decideRequest,
 } from '@/lib/freehold/wallet-db'
+import { randomUUID } from 'node:crypto'
 import { isValidAmount, parseAccountNo } from '@/lib/freehold/wallet'
 
 export const runtime = 'nodejs'
@@ -33,10 +35,10 @@ export async function GET() {
   if ('res' in auth) return auth.res
   try {
     await ensureHouseWallets()
-    const [wallets, postings, position, audit] = await Promise.all([
-      listWallets(), listPostings({ limit: 60 }), getPosition(), auditConservation(),
+    const [wallets, postings, position, audit, requests] = await Promise.all([
+      listWallets(), listPostings({ limit: 60 }), getPosition(), auditConservation(), listRequests(),
     ])
-    return NextResponse.json({ wallets, postings, position, audit })
+    return NextResponse.json({ wallets, postings, position, audit, requests })
   } catch (err) {
     // Named, never an empty dashboard that reads as "no money".
     return NextResponse.json(
@@ -100,5 +102,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: res.refusal }, { status })
   }
 
+  if (action === 'request') {
+    const walletId = String(body.walletId ?? '')
+    if (!walletId) return NextResponse.json({ error: 'Which wallet is this for?' }, { status: 400 })
+    const created = await createRequest({
+      id: `req_${randomUUID()}`, walletId, amount,
+      reason: String(body.reason ?? ''), requestedBy: user.email,
+    })
+    return created
+      ? NextResponse.json({ ok: true, request: created }, { status: 201 })
+      : NextResponse.json({ error: 'Could not record that request' }, { status: 400 })
+  }
+
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+}
+
+/**
+ * Decide a pending request. Approving performs the transfer in the same call —
+ * the request is only marked approved if coin actually moved.
+ */
+export async function PATCH(req: NextRequest) {
+  const auth = await requireSession(MGMT_ROLES)
+  if ('res' in auth) return auth.res
+
+  let body: Record<string, unknown>
+  try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
+
+  const id = String(body.id ?? '')
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+
+  const res = await decideRequest({
+    id,
+    approve: body.approve === true,
+    fromWalletId: String(body.fromWalletId ?? 'w_operations'),
+    decidedBy: auth.user.email,
+  })
+  return res.ok
+    ? NextResponse.json({ ok: true, state: res.state })
+    : NextResponse.json({ error: res.error }, { status: res.error === 'insufficient_funds' ? 409 : 400 })
 }
