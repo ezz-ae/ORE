@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Save, Scissors, Captions, Megaphone, Camera,
-  ArrowUpToLine, ArrowDownToLine, Info, Download, Upload,
+  ArrowUpToLine, ArrowDownToLine, Info, Download, Upload, FileVideo, Wand2,
 } from 'lucide-react'
 import { upload } from '@vercel/blob/client'
 import { useT } from '@/lib/i18n/provider'
@@ -13,6 +13,11 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import type { DriveKind } from '@/lib/freehold/drive'
 import { pickRecorderMime } from '@/lib/freehold/video-export'
 import { resolveVideoKey, HANDLED_KEYS } from '@/lib/freehold/video-shortcuts'
+import {
+  transferStatus, trimSamples, formatBytes, formatRate, formatEta,
+  type ProgressSample, type TransferStatus,
+} from '@/lib/freehold/upload-progress'
+import { planCompress, probeVideo, compressVideo, type CompressPlan } from '@/lib/freehold/video-compress'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LibRow = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
@@ -36,6 +41,29 @@ const fmt = (s: number) => {
   const sec = Math.floor(s % 60)
   return `${m}:${String(sec).padStart(2, '0')}`
 }
+
+/** One bar, used by both the compress and the upload states. */
+function Bar({ pct }: { pct: number }) {
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
+      <div
+        className="h-full rounded-full bg-gold transition-[width] duration-200"
+        style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+        role="progressbar"
+        aria-valuenow={Math.round(pct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      />
+    </div>
+  )
+}
+
+/** Must match maximumSizeInBytes in /api/freehold/drive/upload-video. */
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
+/** Above this, offer to compress even though the file would be accepted. */
+const COMPRESS_SUGGEST_BYTES = 150 * 1024 * 1024
+/** Above this, upload in parallel parts so one bad chunk is not a restart. */
+const MULTIPART_ABOVE_BYTES = 50 * 1024 * 1024
 
 // ── Real video export helpers ────────────────────────────────────────────────
 // The container is chosen by lib/freehold/video-export.ts, which prefers MP4:
@@ -107,6 +135,12 @@ export default function DriveVideoEditor() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState<TransferStatus | null>(null)
+  const [pending, setPending] = useState<File | null>(null)
+  const [plan, setPlan] = useState<CompressPlan | null>(null)
+  const [compressing, setCompressing] = useState(false)
+  const [compressPct, setCompressPct] = useState(0)
+  const compressAbort = useRef<AbortController | null>(null)
   const [dropping, setDropping] = useState(false)
   const [saving, setSaving] = useState(false)
   const [capturing, setCapturing] = useState(false)
@@ -528,13 +562,91 @@ export default function DriveVideoEditor() {
   // ── Upload (source clip) ──────────────────────────────────────────────────────
   // A video can't start blank, so the "new" editor is an upload surface: the
   // clip goes straight to Blob, becomes a Library video, then opens the editor.
+  /**
+   * Pick a file. Before anything is sent, the clip is measured locally and —
+   * if compressing would actually help — the offer is made with real numbers.
+   * The old flow uploaded first and refused afterwards, which meant minutes of
+   * waiting to be told to go and use another website.
+   */
   async function onVideoFile(file: File) {
-    if (uploading) return
+    if (uploading || compressing) return
     if (!file.type.startsWith('video/')) { toast.error(t('ed.video.uploadInvalid')); return }
+    setPending(file)
+    setPlan(null)
+    try {
+      const meta = await probeVideo(file)
+      const p = planCompress({
+        sourceWidth: meta.width, sourceHeight: meta.height,
+        durationSecs: meta.duration, sourceBytes: file.size,
+      })
+      // Over the ceiling, or big enough that shrinking is a real favour.
+      if (file.size > MAX_UPLOAD_BYTES || (p.worthDoing && file.size > COMPRESS_SUGGEST_BYTES)) {
+        setPlan(p)
+        return // the offer is rendered; the user chooses
+      }
+    } catch {
+      // Unreadable metadata is not a reason to block an upload the server may
+      // well accept — fall through and let the real attempt decide.
+    }
+    void startUpload(file)
+  }
+
+  /** Compress locally, then upload the result. */
+  async function compressThenUpload() {
+    const file = pending
+    const p = plan
+    if (!file || !p) return
+    setCompressing(true)
+    setCompressPct(0)
+    const ac = new AbortController()
+    compressAbort.current = ac
+    try {
+      const { blob, ext } = await compressVideo(file, p, (f) => setCompressPct(Math.round(f * 100)), ac.signal)
+      if (blob.size > MAX_UPLOAD_BYTES) {
+        toast.error(t('ed.video.stillTooBig', { size: formatBytes(blob.size) }))
+        return
+      }
+      const base = file.name.replace(/\.[^.]+$/, '') || 'Video'
+      const smaller = new File([blob], `${base}.${ext}`, { type: blob.type })
+      toast.success(t('ed.video.compressed', {
+        from: formatBytes(file.size), to: formatBytes(blob.size),
+      }))
+      setPlan(null)
+      await startUpload(smaller)
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : t('ed.video.compressFailed'))
+    } finally {
+      setCompressing(false)
+      compressAbort.current = null
+    }
+  }
+
+  /** The upload itself — now reporting where it is, how fast, and how long. */
+  async function startUpload(file: File) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(t('ed.video.tooBig', { size: formatBytes(file.size), max: formatBytes(MAX_UPLOAD_BYTES) }))
+      return
+    }
     setUploading(true)
+    setPlan(null)
+    setPending(file)
+    setProgress(null)
+    const started = Date.now()
+    let samples: ProgressSample[] = []
     try {
       const name = file.name.replace(/\.[^.]+$/, '') || 'Video'
-      const blob = await upload(file.name, file, { access: 'public', handleUploadUrl: '/api/freehold/drive/upload-video' })
+      const blob = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/freehold/drive/upload-video',
+        // Large clips go up in parallel parts, with failed parts retried
+        // rather than restarting the whole transfer.
+        multipart: file.size > MULTIPART_ABOVE_BYTES,
+        onUploadProgress: ({ loaded }) => {
+          const now = Date.now() - started
+          samples = trimSamples([...samples, { loaded, atMs: now }], now)
+          setProgress(transferStatus(samples, file.size))
+        },
+      })
       const res = await fetch('/api/freehold/library', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind: 'video', title: name, url: blob.url }),
@@ -544,36 +656,157 @@ export default function DriveVideoEditor() {
       router.replace(`/freehold-intelligence/creative-studio/video/${d.item.id}`)
     } catch (e) {
       toast.error(e instanceof Error && e.message ? e.message : t('ed.video.uploadFailed'))
-    } finally { setUploading(false) }
+    } finally { setUploading(false); setProgress(null) }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="flex h-[calc(100vh-56px)] items-center justify-center text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
   )
-  // No source yet (a fresh "new" editor, or a stale link) → the upload dropzone.
-  if (notFound || !item) return (
-    <div className="mx-auto flex h-[calc(100vh-56px)] w-full max-w-md flex-col items-center justify-center p-6">
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDropping(true) }}
-        onDragLeave={() => setDropping(false)}
-        onDrop={(e) => { e.preventDefault(); setDropping(false); const f = e.dataTransfer.files?.[0]; if (f) onVideoFile(f) }}
-        className={`flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 text-center transition ${dropping ? 'border-gold bg-gold/5' : 'border-line bg-surface-2/30'}`}
-      >
-        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/10 text-gold">
-          {uploading ? <Loader2 className="h-7 w-7 animate-spin" /> : <Upload className="h-7 w-7" />}
-        </span>
-        {notFound && id !== 'new' && <p className="text-xs text-slate-500">{t('ed.notFound')}</p>}
-        <p className="text-sm font-semibold text-white">{uploading ? t('ed.video.uploading') : (dropping ? t('ed.video.dropHere') : t('ed.video.uploadTitle'))}</p>
-        <p className="text-xs text-slate-500">{t('ed.video.uploadHint')}</p>
-        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-          className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60">
-          <Upload className="h-3.5 w-3.5" /> {t('ed.video.uploadCta')}
-        </button>
-        <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onVideoFile(f); e.target.value = '' }} />
+  // No source yet → the upload surface. It has three distinct states, because
+  // a spinner that looks the same at 2% and 98% is what produced "it's been
+  // forever": choose a file · decide about compressing · watch it go up.
+  if (notFound || !item) {
+    const fileInput = (
+      <input ref={fileRef} type="file" accept="video/*" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) void onVideoFile(f); e.target.value = '' }} />
+    )
+
+    // ── Compressing, or being offered ──
+    if (plan && pending) {
+      const saves = Math.max(0, pending.size - plan.estimatedBytes)
+      const tooBig = pending.size > MAX_UPLOAD_BYTES
+      return (
+        <div className="mx-auto flex h-[calc(100vh-56px)] w-full max-w-md flex-col items-center justify-center p-6">
+          <div className="w-full rounded-3xl border border-line bg-surface-2/40 p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold/10 text-gold">
+                <FileVideo className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{pending.name}</p>
+                <p className="text-xs text-slate-500">{formatBytes(pending.size)}</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-300">
+              {tooBig
+                ? t('ed.video.tooBigTitle', { max: formatBytes(MAX_UPLOAD_BYTES) })
+                : t('ed.video.compressOfferTitle')}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+              {t('ed.video.compressOfferBody', {
+                w: plan.width, h: plan.height,
+                size: formatBytes(plan.estimatedBytes),
+                saved: formatBytes(saves),
+              })}
+            </p>
+            {/* Real time, stated. A silent bar for four minutes reads as a hang. */}
+            <p className="mt-1 text-xs text-amber-300/80">
+              {t('ed.video.compressTime', { mins: Math.max(1, Math.round(plan.estimatedSecs / 60)) })}
+            </p>
+
+            {compressing ? (
+              <div className="mt-5">
+                <Bar pct={compressPct} />
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">{t('ed.video.compressing', { pct: compressPct })}</span>
+                  <button onClick={() => compressAbort.current?.abort()} className="text-slate-500 hover:text-slate-300">
+                    {t('ed.video.cancel')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 flex flex-col gap-2">
+                <button type="button" onClick={() => void compressThenUpload()}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-xs font-semibold text-ink transition hover:bg-gold-bright">
+                  <Wand2 className="h-3.5 w-3.5" /> {t('ed.video.compressCta')}
+                </button>
+                {/* Only offered when it would actually be accepted. */}
+                {!tooBig && (
+                  <button type="button" onClick={() => void startUpload(pending)}
+                    className="rounded-full border border-line px-4 py-2.5 text-xs font-medium text-slate-300 transition hover:border-gold/30">
+                    {t('ed.video.uploadAnyway')}
+                  </button>
+                )}
+                <button type="button" onClick={() => { setPlan(null); setPending(null) }}
+                  className="py-1 text-xs text-slate-500 transition hover:text-slate-300">
+                  {t('ed.video.chooseAnother')}
+                </button>
+              </div>
+            )}
+          </div>
+          {fileInput}
+        </div>
+      )
+    }
+
+    // ── Uploading ──
+    if (uploading) {
+      const pct = progress?.percent ?? 0
+      const eta = formatEta(progress?.etaSecs ?? null)
+      return (
+        <div className="mx-auto flex h-[calc(100vh-56px)] w-full max-w-md flex-col items-center justify-center p-6">
+          <div className="w-full rounded-3xl border border-line bg-surface-2/40 p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold/10 text-gold">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{pending?.name ?? t('ed.video.uploading')}</p>
+                <p className="text-xs text-slate-500">
+                  {progress
+                    ? t('ed.video.ofTotal', { done: formatBytes(progress.loaded), total: formatBytes(progress.total) })
+                    : t('ed.video.starting')}
+                </p>
+              </div>
+            </div>
+
+            <Bar pct={pct} />
+
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="tabular-nums text-slate-300">{Math.floor(pct)}%</span>
+              <span className="text-slate-500">
+                {/* Rate and ETA appear only once they are known — never a
+                    fabricated "0 s left" while the connection is still being
+                    measured, and never a stale one while it is stalled. */}
+                {formatRate(progress?.bytesPerSec ?? null)}
+                {eta ? ` · ${t('ed.video.etaLeft', { eta })}` : ''}
+              </span>
+            </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-500">{t('ed.video.uploadKeepOpen')}</p>
+          </div>
+          {fileInput}
+        </div>
+      )
+    }
+
+    // ── Choose a file ──
+    return (
+      <div className="mx-auto flex h-[calc(100vh-56px)] w-full max-w-md flex-col items-center justify-center p-6">
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDropping(true) }}
+          onDragLeave={() => setDropping(false)}
+          onDrop={(e) => { e.preventDefault(); setDropping(false); const f = e.dataTransfer.files?.[0]; if (f) void onVideoFile(f) }}
+          className={`flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 text-center transition ${dropping ? 'border-gold bg-gold/5' : 'border-line bg-surface-2/30'}`}
+        >
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/10 text-gold">
+            <Upload className="h-7 w-7" />
+          </span>
+          {notFound && id !== 'new' && <p className="text-xs text-slate-500">{t('ed.notFound')}</p>}
+          <p className="text-sm font-semibold text-white">{dropping ? t('ed.video.dropHere') : t('ed.video.uploadTitle')}</p>
+          <p className="text-xs text-slate-500">{t('ed.video.uploadHint', { max: formatBytes(MAX_UPLOAD_BYTES) })}</p>
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
+            <Upload className="h-3.5 w-3.5" /> {t('ed.video.uploadCta')}
+          </button>
+          {fileInput}
+        </div>
+        {/* What happens next, so the upload has a visible purpose. */}
+        <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">{t('ed.video.thenWhat')}</p>
       </div>
-    </div>
-  )
+    )
+  }
 
   const url = item.url
   const trimmed = clamp((trimEnd || duration) - trimStart, 0, duration)
