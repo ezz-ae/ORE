@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import {
-  importHistory, rebuildSignals, refreshLiveTenantSignals, getBaseStats, getBaseQuality, getNetworkBenchmarks, bucketCount,
+  importHistory, rebuildSignals, refreshLiveTenantSignals, getBaseStats, getBaseQuality, getNetworkBenchmarks,
   TENANT_ID, BASE_TENANT, type HistoryRow,
 } from '@/lib/entrestate/targeting-base'
 import { getDataSecurityConfig } from '@/lib/freehold/data-security-config'
@@ -21,12 +21,13 @@ export async function GET() {
     getBaseStats(), getNetworkBenchmarks(15, excludeTenantIds),
     getBaseQuality(BASE_TENANT), getBaseQuality(TENANT_ID),
   ])
-  // Masking happens HERE (server-side) so it's a real control, not a
-  // client-side overlay someone could bypass by reading the network tab.
-  const benchmarks = rawBenchmarks.map((b) => ({
-    ...b,
-    leads: security.maskBenchmarkNumbers ? bucketCount(b.leads) : b.leads,
-  }))
+  // Masking used to happen HERE, behind a setting — which meant it happened
+  // at ONE of four call sites and only when someone had switched it on. The
+  // other three, including the two that feed an LLM prompt, shipped raw
+  // cross-tenant counts. Bucketing now happens inside getNetworkBenchmarks
+  // and cannot be turned off, so every caller gets the same guarantee whether
+  // or not it remembered to ask for one.
+  const benchmarks = rawBenchmarks
   return NextResponse.json({
     tenantId: TENANT_ID, baseTenant: BASE_TENANT, stats, benchmarks,
     quality: { base: baseQuality, this: thisQuality },

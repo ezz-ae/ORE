@@ -261,6 +261,13 @@ export async function refreshLiveTenantSignals(): Promise<void> {
  * Ratings 3–5 stay neutral: a "maybe" teaches nothing and shouldn't pretend to.
  */
 
+/**
+ * How many DISTINCT companies must stand behind a row before it is published
+ * to anyone. Three is the standard k for this kind of aggregate: below it, a
+ * reader who knows the market can often name the company.
+ */
+export const MIN_TENANTS_PER_BENCHMARK = 3
+
 export interface NetworkBenchmark {
   platform: string
   area: string
@@ -269,7 +276,10 @@ export interface NetworkBenchmark {
   ageBand: string
   city: string
   interest: string
-  leads: number
+  /** Bucketed, never exact — see `bucketCount`. A string because that is what
+   *  it is: a range, and typing it as a number invites someone to do
+   *  arithmetic on a figure that is not one. */
+  leads: string
   qualifiedRate: number
   closeRate: number
   tenants: number
@@ -297,15 +307,27 @@ export async function getNetworkBenchmarks(limit = 20, excludeTenantIds: string[
        FROM entrestate_targeting_signals
        WHERE NOT (tenant_id = ANY($2::text[]))
        GROUP BY platform, area, project_type, price_band, age_band, city, interest
-       HAVING SUM(leads) >= 5
+       -- K-ANONYMITY, NOT A VOLUME GATE. A leads-only threshold let a row
+       -- from a SINGLE tenant reach every other tenant: in this market a
+       -- combination like (Palm Jumeirah, villa, 20M+, 45-54) is usually one
+       -- specific brokerage, and publishing its exact lead count, qualified
+       -- rate and close rate hands a competitor its business. The benchmark is
+       -- only a benchmark once several companies stand behind it.
+       HAVING COUNT(DISTINCT tenant_id) >= $3 AND SUM(leads) >= 5
        ORDER BY (SUM(closed)::float / GREATEST(SUM(leads), 1)) DESC, SUM(leads) DESC
        LIMIT $1`,
-      [limit, exclude],
+      [limit, exclude, MIN_TENANTS_PER_BENCHMARK],
     )
     return rows.map((r) => ({
       platform: r.platform, area: r.area, projectType: r.project_type,
       priceBand: r.price_band, ageBand: r.age_band, city: r.city, interest: r.interest,
-      leads: Number(r.leads),
+      // BUCKETED AT THE SOURCE, ALWAYS. `bucketCount` was written for exactly
+      // this and was applied at one of four call sites, behind a setting — so
+      // three callers, including the two that feed an LLM prompt, shipped raw
+      // cross-tenant counts. A privacy guarantee each caller has to remember
+      // is not a guarantee. The exact number is not needed for ranking and is
+      // the only part anyone could reverse into a real business figure.
+      leads: bucketCount(Number(r.leads)),
       qualifiedRate: Math.round((Number(r.qualified) / Math.max(Number(r.leads), 1)) * 100),
       closeRate: Math.round((Number(r.closed) / Math.max(Number(r.leads), 1)) * 100),
       tenants: Number(r.tenants),
