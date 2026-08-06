@@ -24,7 +24,13 @@ export async function POST(req: NextRequest) {
       request: req,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ['video/mp4', 'video/webm', 'video/quicktime', 'video/*'],
-        maximumSizeInBytes: 200 * 1024 * 1024, // 200MB per clip
+        // 2GB. The old 200MB cap turned an ordinary phone clip into a dead end:
+        // the file uploaded for minutes and was then refused, with the only way
+        // forward being another website. Bytes go browser → Blob directly and
+        // the client uploads large files in parallel parts, so a bigger ceiling
+        // costs this function nothing. The client checks the size BEFORE
+        // starting and offers to compress, so nobody waits to be told no.
+        maximumSizeInBytes: 2 * 1024 * 1024 * 1024,
         addRandomSuffix: true,
         tokenPayload: JSON.stringify({ email: auth.user.email }),
       }),
