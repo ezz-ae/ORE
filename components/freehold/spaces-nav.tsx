@@ -38,19 +38,26 @@ export function SpacesNav() {
   const [flashNow, setFlashNow] = useState(false)
 
   useEffect(() => {
+    // Tracked and cleared: an untracked timer holding a setter fires after
+    // unmount (signing out replaces the route inside 1.9s), and a second
+    // signal would otherwise have its flash cut short by the first one's
+    // timer still counting down.
+    let timer: ReturnType<typeof setTimeout> | null = null
     const sync = () => {
       const w = agentWaiting()
       setWaiting(w)
       if (w && shouldFlash(w.signature)) {
         markFlashed(w.signature)
         setFlashNow(true)
+        if (timer) clearTimeout(timer)
         // Two flashes, then stop animating and stay lit. Kept short on
         // purpose: motion that outlasts its message becomes a fidget.
-        window.setTimeout(() => setFlashNow(false), 1900)
+        timer = setTimeout(() => setFlashNow(false), 1900)
       }
     }
     sync()
-    return onAgentWaiting(sync)
+    const off = onAgentWaiting(sync)
+    return () => { if (timer) clearTimeout(timer); off() }
   }, [])
 
   const pathname = usePathname()

@@ -107,6 +107,18 @@ console.log('\n── what leaves the working queue, and why ──')
   // Duplicate is an INFERENCE, not a judgment, and never enough on its own.
   check('a suspected duplicate stays in the queue by itself',
     setAsideReason(lead('a', { duplicateRisk: true })) === null)
+  check('…and still stays when someone rated it well, however duplicated',
+    setAsideReason(lead('a', { duplicateRisk: true, valueRating: 8 })) === null)
+  // The reason was declared, the caller populated the flag, and nothing could
+  // ever return it — a dead branch that read as a working rule.
+  check('a duplicate whose phone also fails is set aside AS a duplicate',
+    setAsideReason(lead('a', { duplicateRisk: true, wrongNumberRisk: true })) === 'duplicate',
+    String(setAsideReason(lead('a', { duplicateRisk: true, wrongNumberRisk: true }))))
+  check('…even when rated well, because the person survives on the other record',
+    setAsideReason(lead('a', { duplicateRisk: true, wrongNumberRisk: true, valueRating: 9 })) === 'duplicate',
+    String(setAsideReason(lead('a', { duplicateRisk: true, wrongNumberRisk: true, valueRating: 9 }))))
+  check('a dead phone with NO duplicate still reads as undialable, not duplicate',
+    setAsideReason(lead('a', { wrongNumberRisk: true })) === 'undialable')
 }
 
 console.log('\n── the order is total and stable ──')

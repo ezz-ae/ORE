@@ -104,9 +104,22 @@ export function raiseAgentWaiting(w: Omit<AgentWaiting, 'at'>): void {
   } catch { /* private mode: the signal is simply not shown */ }
 }
 
-/** It has been read. Clears the light. */
-export function clearAgentWaiting(): void {
+/**
+ * It has been read. Clears the light.
+ *
+ * Pass the signature you believe you are clearing. Without it, one publisher
+ * dismissing its own message would wipe a DIFFERENT publisher's — which on a
+ * shared channel means the machine's alarm summary can silently swallow a
+ * message someone else raised in between. Omit the argument only when the
+ * intent really is "clear whatever is there" (the chat, which has just shown
+ * it, whatever it was).
+ */
+export function clearAgentWaiting(signature?: string): void {
   if (typeof window === 'undefined') return
+  if (signature) {
+    const current = agentWaiting()
+    if (current && current.signature !== signature) return
+  }
   try {
     window.localStorage.removeItem(KEY)
     window.dispatchEvent(new CustomEvent(EVENT))

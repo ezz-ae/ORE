@@ -78,6 +78,48 @@ const dialColor = (v: number) => {
   return `hsl(${198 - 180 * p} ${62 + 28 * p}% ${58 - 6 * p}%)`
 }
 
+/**
+ * Hoisted to module scope on purpose.
+ *
+ * Defined inside the component it was a new function identity on every render,
+ * so React tore down and rebuilt all seven groups on every keystroke. Nothing
+ * visible broke — but the chip you had just activated lost focus, which makes
+ * the whole builder unusable from a keyboard.
+ */
+function Chips({
+  label, values, prefix, selected, onPick, t,
+}: {
+  label: string; values: readonly string[]; prefix: string
+  selected: string[]; onPick: (v: string) => void
+  t: (k: string) => string
+}) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {values.map((v) => {
+          const on = selected.includes(v)
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onPick(v)}
+              aria-pressed={on}
+              className={`rounded-full border px-3 py-1.5 text-[12.5px] transition ${
+                on
+                  ? 'border-gold/50 bg-gold/15 text-gold'
+                  : 'border-line bg-surface-2 text-slate-300 hover:border-slate-600 hover:text-white'
+              }`}
+            >
+              {t(`${prefix}.${v}`)}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
   const t = useT()
   const [p, setP] = useState<Pattern>(EMPTY)
@@ -165,37 +207,6 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
     } finally { setSaving(false) }
   }
 
-  const Chips = ({
-    label, values, prefix, selected, onPick,
-  }: {
-    label: string; values: readonly string[]; prefix: string
-    selected: string[]; onPick: (v: string) => void
-  }) => (
-    <div>
-      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {values.map((v) => {
-          const on = selected.includes(v)
-          return (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onPick(v)}
-              aria-pressed={on}
-              className={`rounded-full border px-3 py-1.5 text-[12.5px] transition ${
-                on
-                  ? 'border-gold/50 bg-gold/15 text-gold'
-                  : 'border-line bg-surface-2 text-slate-300 hover:border-slate-600 hover:text-white'
-              }`}
-            >
-              {t(`${prefix}.${v}`)}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-
   const temp = preview?.temperature ?? 'cold'
 
   return (
@@ -209,19 +220,19 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
         {/* ── Who they are ── */}
         <div className="space-y-5">
           <Chips label={t('lm.aud.pat.h.speakers')} values={SPEAKERS} prefix="lm.aud.pat.speakers"
-            selected={p.speakers} onPick={(v) => toggle('speakers', v)} />
+            selected={p.speakers} onPick={(v) => toggle('speakers', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.res')} values={RESIDENCY} prefix="lm.aud.pat.res"
-            selected={p.residency} onPick={(v) => toggle('residency', v)} />
+            selected={p.residency} onPick={(v) => toggle('residency', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.life')} values={LIFE_STAGE} prefix="lm.aud.pat.life"
-            selected={p.lifeStage} onPick={(v) => toggle('lifeStage', v)} />
+            selected={p.lifeStage} onPick={(v) => toggle('lifeStage', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.motive')} values={MOTIVE} prefix="lm.aud.pat.motive"
-            selected={p.motive} onPick={(v) => toggle('motive', v)} />
+            selected={p.motive} onPick={(v) => toggle('motive', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.money')} values={MONEY} prefix="lm.aud.pat.money"
-            selected={[p.money]} onPick={(v) => setP((prev) => ({ ...prev, money: v }))} />
+            selected={[p.money]} onPick={(v) => setP((prev) => ({ ...prev, money: v }))} t={t} />
           <Chips label={t('lm.aud.pat.h.ready')} values={READINESS} prefix="lm.aud.pat.ready"
-            selected={[p.readiness]} onPick={(v) => setP((prev) => ({ ...prev, readiness: v }))} />
+            selected={[p.readiness]} onPick={(v) => setP((prev) => ({ ...prev, readiness: v }))} t={t} />
           <Chips label={t('lm.aud.pat.h.exclude')} values={EXCLUDE} prefix="lm.aud.pat.exclude"
-            selected={p.exclude} onPick={(v) => toggle('exclude', v)} />
+            selected={p.exclude} onPick={(v) => toggle('exclude', v)} t={t} />
         </div>
 
         {/* ── The dial, the sentence, the number ── */}

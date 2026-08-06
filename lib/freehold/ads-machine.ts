@@ -364,8 +364,16 @@ export async function logActivityOnce(params: {
 export async function listActivity(machineId: string, limit = 100): Promise<MachineActivity[]> {
   await ensure()
   const rows = await query<Record<string, unknown>>(
-    `SELECT * FROM freehold_site_ads_machine_activity
-     WHERE machine_id = $1 ORDER BY created_at DESC LIMIT $2`,
+    // created_at AS TEXT, deliberately. `SELECT *` hands back a JS Date, and
+    // String(Date) is "Thu Aug 06 2026 09:12:33 GMT+0000" — so anything that
+    // sorts these strings sorts by WEEKDAY NAME. The pulse route merges every
+    // machine's activity and re-sorts it, which scrambled the feed, picked an
+    // arbitrary "latest" for "last cycle N hours ago", and made the alarm
+    // dedup keep an arbitrary row. ISO text sorts correctly as a string.
+    `SELECT id, machine_id, kind, detail, campaign_id, data,
+            created_at::text AS created_at
+       FROM freehold_site_ads_machine_activity
+      WHERE machine_id = $1 ORDER BY created_at DESC LIMIT $2`,
     [machineId, Math.min(Math.max(limit, 1), 500)],
   )
   return rows.map((r) => ({

@@ -106,7 +106,12 @@ export async function POST(req: NextRequest) {
         .map((e) => ({ id: e.id, kind: e.kind, level: Number(raw[e.id]) }))
         .filter((e): e is EntityLevel => isLevel(e.level))
 
-  const unassigned = everyEntity.length - assignment.length
+  // Both sides deduped by id: two traits can map to the SAME Meta interest
+  // (first_home and upgrade both buy "Property"), so comparing a raw list
+  // against a deduped one invented segments that had no level.
+  const distinctEntityIds = new Set(everyEntity.map((e) => e.id))
+  const assignedIds = new Set(assignment.map((a) => a.id))
+  const unassigned = [...distinctEntityIds].filter((id) => !assignedIds.has(id)).length
   const levels = Array.from(new Set<PositiveLevel>([1, ...assignment.map((a) => a.level)])).sort()
 
   // ── 1. What the funnel already proved, per segment ──────────────────────
@@ -123,6 +128,7 @@ export async function POST(req: NextRequest) {
   const connected = await isMetaConfigured()
   let narrowing: Partial<Record<PositiveLevel, number>> = {}
   let narrowingMeasured = false
+  let failedProbes = 0
 
   if (connected && assignment.length > 0) {
     const withoutLevel = (level: PositiveLevel): CampaignTargeting => {
@@ -147,13 +153,26 @@ export async function POST(req: NextRequest) {
 
     if (fullSize > 0) {
       narrowingMeasured = true
+      // A FAILED PROBE IS DROPPED, NEVER DEFAULTED TO ZERO.
+      //
+      // `getReachEstimate` swallows its own errors and returns null, so a
+      // rate-limited or transient probe used to become `share: 0` — which the
+      // planner reads as "this level removes almost nobody" and deletes the
+      // arm, stating that as the reason. One flaky call silently rewrote the
+      // budget split and gave a false finding for it. Unmeasured has to stay
+      // unmeasured; the planner already handles a missing narrowing power.
+      const measured = probeLevels
+        .map((l, i) => ({ level: l, without: mid(withouts[i]) }))
+        .filter((x) => x.without > 0)
+      failedProbes = probeLevels.length - measured.length
       narrowing = narrowingByLevel(
-        probeLevels.map((l, i) => {
-          const without = mid(withouts[i])
-          // Removing a level can only widen the audience. The share it removes
-          // is how much smaller the stack is WITH it than without it.
-          return { id: String(l), share: without > 0 ? (without - fullSize) / without : 0 }
-        }),
+        measured.map(({ level, without }) => (
+          // Removing a level can only widen the audience, so the share it
+          // removes is how much smaller the stack is with it than without.
+          // Band noise can still invert that; clamp rather than report a
+          // negative narrowing.
+          { id: String(level), share: Math.max(0, (without - fullSize) / without) }
+        )),
         (id) => (isLevel(Number(id)) ? (Number(id) as PositiveLevel) : null),
       )
     }
@@ -174,9 +193,11 @@ export async function POST(req: NextRequest) {
     caveats.push('Meta is not connected, so no level was measured for how much of the audience it actually removes. Two arms here may end up buying the same people.')
   } else if (!narrowingMeasured) {
     caveats.push('Meta returned no audience size, so how much each level narrows is unknown for this plan.')
+  } else if (failedProbes > 0) {
+    caveats.push(`${failedProbes} level${failedProbes === 1 ? '' : 's'} could not be measured against Meta this time, so ${failedProbes === 1 ? 'it was' : 'they were'} planned without knowing how much ${failedProbes === 1 ? 'it removes' : 'they remove'}.`)
   }
   if (unassigned > 0) {
-    caveats.push(`${unassigned} segment${unassigned === 1 ? '' : 's'} in this audience have no level, so nothing was planned around ${unassigned === 1 ? 'it' : 'them'}.`)
+    caveats.push(`${unassigned} segment${unassigned === 1 ? '' : 's'} in this audience ${unassigned === 1 ? 'has' : 'have'} no level, so nothing was planned around ${unassigned === 1 ? 'it' : 'them'}.`)
   }
   // A segment claimed by two levels cannot make the arms above and below it
   // different, which is the one thing an arm has to do. Said plainly rather

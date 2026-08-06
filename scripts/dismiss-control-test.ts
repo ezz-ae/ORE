@@ -158,10 +158,20 @@ console.log('\n── the signal has a writer, a reader and an eraser ──')
   const NB = readFileSync('app/freehold-intelligence/notebook/page.tsx', 'utf8')
   check('something raises it', /raiseAgentWaiting\(\{/.test(PULSE), 'the signal has no writer')
   check('something shows it', /agentWaiting\(\)/.test(NAV), 'the signal has no reader')
-  check('something clears it', /clearAgentWaiting\(\)/.test(NB) && /clearAgentWaiting\(\)/.test(PULSE),
+  check('something clears it', /clearAgentWaiting\(/.test(NB) && /clearAgentWaiting\(/.test(PULSE),
     'the signal can never be put out')
   check('closing the note counts as reading it',
-    /onExit=\{[^}]*clearAgentWaiting/.test(PULSE), 'the light survives being dismissed')
+    /clearAgentWaiting\(/.test(PULSE.slice(PULSE.indexOf('onExit='), PULSE.indexOf('onExit=') + 400)),
+    'the light survives being dismissed')
+
+  // One publisher must not put out another publisher's message. The chat has
+  // just SHOWN whatever was there, so it clears unconditionally; a panel
+  // dismissing its own news has to say which news it means.
+  const SIG = readFileSync('lib/freehold/agent-signal.ts', 'utf8')
+  check('clearing can be scoped to the message being dismissed',
+    /clearAgentWaiting\(signature\?: string\)/.test(SIG), 'clearing is all-or-nothing')
+  check('…and the panel scopes it, so it cannot swallow someone else\'s message',
+    /clearAgentWaiting\(alarmSignature/.test(PULSE), 'the panel clears indiscriminately')
 }
 
 console.log('\n── it is a channel, not one hardcoded message ──')

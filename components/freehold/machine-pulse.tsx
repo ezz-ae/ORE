@@ -144,6 +144,9 @@ export function MachinePulse() {
     if (!p || p.alarms.length === 0) return
     const sig = alarmSignature(p.alarms)
     if (isPutAway(sig) || alreadySaid(sig)) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- this must run
+    // AFTER the note has rendered; marking it said while deciding whether to
+    // render would silence it unread. One extra pass, then it settles.
     setSaid(sig)
     markSaid(sig)
     // …and let the agent carry it into the chat, wherever the reader goes
@@ -313,8 +316,23 @@ export function MachinePulse() {
                 allowed near one. */}
             <DismissControl
               id="machine-pulse-note"
-              onExit={() => { setPutAway(alarmSignature(p.alarms)); clearAgentWaiting(); setPutAwayTick((n) => n + 1) }}
-              onLater={() => { setPutAway(alarmSignature(p.alarms), TOMORROW_MS); clearAgentWaiting(); setPutAwayTick((n) => n + 1) }}
+              onExit={() => {
+                setPutAway(alarmSignature(p.alarms))
+                clearAgentWaiting(alarmSignature(p.alarms))
+                // Without this the panel stays open forever once it has been
+                // reopened from the side — the storage write lands and the
+                // screen ignores it.
+                setReopened(false)
+                setSaid(null)
+                setPutAwayTick((n) => n + 1)
+              }}
+              onLater={() => {
+                setPutAway(alarmSignature(p.alarms), TOMORROW_MS)
+                clearAgentWaiting(alarmSignature(p.alarms))
+                setReopened(false)
+                setSaid(null)
+                setPutAwayTick((n) => n + 1)
+              }}
             />
           </div>
 

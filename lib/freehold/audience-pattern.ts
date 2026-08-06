@@ -342,8 +342,16 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   let bound = 0, hinted = 0
 
   for (const { m } of traits) {
-    if (m.entities.length === 0) continue
     const isBinding = bindEverything || (bindDefining && m.defining === true)
+    // A trait with no Meta entities still BINDS — it narrows the age band, the
+    // geo or the locales instead. Skipping the count for those reported
+    // "0 traits bound" for a pattern that had narrowed hard on every one of
+    // them, which reads as a dial that does nothing.
+    if (m.entities.length === 0) {
+      if (isBinding) bound++
+      else hinted++
+      continue
+    }
     if (isBinding) { binding.push(m.entities); bound++ }
     else { hinting.push(...m.entities); hinted++ }
   }

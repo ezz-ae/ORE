@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
-import { listAudiences, normalizeSpec, type SavedAudience } from '@/lib/freehold/audiences'
+import { forClient, listAudiences, normalizeSpec, type SavedAudience } from '@/lib/freehold/audiences'
 import {
   isMetaConfigured, searchInterests, searchBehaviors, getReachEstimate,
   type VocabularyEntry, type ReachEstimate,
@@ -17,7 +17,9 @@ interface Suggestion {
   description: string
   kind: 'saved' | 'composed'
   audienceId?: string
-  spec: CampaignTargeting
+  /** Absent for pattern audiences — attach them by `audienceId` and let the
+   *  server read the definition. The reach number beside it is still real. */
+  spec?: CampaignTargeting
   reach: ReachEstimate | null
 }
 
@@ -79,7 +81,12 @@ export async function POST(req: NextRequest) {
         : 'Saved audience definition.'),
       kind: 'saved',
       audienceId: a.id,
-      spec: a.spec,
+      // The REACH is computed here from the full spec and only the number
+      // travels. A pattern audience's targeting stays server-side — this
+      // route was shipping it verbatim, which is the one thing the whole
+      // arrangement exists to prevent, and it is readable by any signed-in
+      // session because this endpoint takes no role list.
+      spec: forClient(a).spec,
       reach: connected ? await getReachEstimate(a.spec) : null,
     })
   }

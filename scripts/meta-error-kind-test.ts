@@ -67,6 +67,11 @@ console.log('\n── a rate limit is not an alarm ──')
     metaErrorKind(new Error('(#4) Application request limit reached')) === 'rate_limit')
   check('a rate limit never reaches a human', !isWorthAlarming('rate_limit'))
   check('nor does an ordinary transient failure', !isWorthAlarming('transient'))
+  // A permission refusal is permanent until a human acts — it must never sit
+  // in 'transient' being retried forever.
+  check('a permission refusal is not transient',
+    metaErrorKind({ error: { code: 200 } }) === 'unreachable',
+    metaErrorKind({ error: { code: 200 } }))
 }
 
 console.log('\n── a dead token is its own problem ──')
@@ -100,8 +105,9 @@ console.log('\n── the engine only alarms on what a person can act on ──'
     .slice(0, 2000)
   check('the insights failure is classified before anything is logged',
     /metaErrorKind\(e\)/.test(insights), 'raw error still logged unclassified')
-  check('…and is gated on being worth alarming',
-    /isWorthAlarming\(kind\)/.test(insights))
+  check('…and only a rate limit is dropped, so nothing permanent goes unrecorded',
+    /kind !== 'rate_limit'/.test(insights),
+    'an unrecognised permanent failure would be retried forever and logged nowhere')
   check('…and is logged at most once per standing condition',
     /logActivityOnce\(/.test(insights), 'still logs every cycle')
   check('…and still keeps the raw error for whoever debugs it',

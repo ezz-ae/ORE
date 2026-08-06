@@ -31,6 +31,12 @@ export interface SavedAudience {
   updatedAt: string
 }
 
+/** Meta accepts `flexible_spec` with a base plus additional narrowing groups.
+ *  Five is comfortably inside what the Graph API takes and well past what any
+ *  pattern produces; the point is that the ceiling is a platform limit rather
+ *  than a number that silently eats a trait someone chose. */
+export const MAX_NARROWING_GROUPS = 5
+
 const KINDS = new Set<AudienceKind>(['behavioral', 'narrow', 'lookalike', 'custom_list', 'pattern'])
 
 const ensure = async () => {
@@ -90,7 +96,12 @@ export function normalizeSpec(raw: unknown): CampaignTargeting {
           .filter((g): g is Record<string, unknown> => !!g && typeof g === 'object')
           .map((g) => ({ interests: entities(g.interests), behaviors: entities(g.behaviors) }))
           .filter((g) => g.interests.length + g.behaviors.length > 0)
-          .slice(0, 3)
+          // Meta's own ceiling, not an arbitrary three. At strictness 100 a
+          // pattern binds every trait, so four traits produced four groups and
+          // the fourth was dropped on the way to storage — quietly breaking
+          // the one promise `updateAudience` makes, that the stored pattern
+          // still produces the stored spec.
+          .slice(0, MAX_NARROWING_GROUPS)
       : []
   const num = (v: unknown, min: number, max: number, dflt: number) => {
     const n = Number(v)
@@ -239,7 +250,12 @@ export async function updateAudience(
     // A posted spec is discarded outright on a pattern audience, whether or
     // not a pattern came with it. Honouring one would let a caller set
     // targeting the pattern never produced — the same drift by another route.
-    const next = parsePattern(patch.pattern !== undefined ? patch.pattern : current.pattern)
+    // `!= null`, not `!== undefined`. A client that serialises its whole state
+    // sends `pattern: null`, and treating that as "here is the new pattern"
+    // reset the audience to the all-defaults person — overwriting its
+    // targeting with generic UAE 18-65 and renaming its description, with no
+    // error anywhere. A null means "unchanged", never "blank it".
+    const next = parsePattern(patch.pattern != null ? patch.pattern : current.pattern)
     patched = {
       ...patch,
       spec: planPattern(next, [...SUPPORTED_LEAD_LANGUAGES]).targeting,
