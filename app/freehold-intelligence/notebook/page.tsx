@@ -301,8 +301,12 @@ export default function NotebookPage() {
     if (!ask) return
     setCenterTab('chat')
     setChatInput(ask.slice(0, 2000))
-    // Drop it from the URL so a refresh does not re-ask a stale question.
-    window.history.replaceState({}, '', window.location.pathname)
+    // Drop ONLY `ask`, never the whole query string. Blanking it took `lead`
+    // with it — and `lead` is read by a later effect, so "Send to CRM" lost
+    // its lead whenever the agent had handed over a question.
+    const url = new URL(window.location.href)
+    url.searchParams.delete('ask')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}`)
   }, [])
   /**
    * The agent's own opening line, delivered where a conversation happens.
@@ -580,14 +584,24 @@ export default function NotebookPage() {
   const resumedRef = useRef(false)
   useEffect(() => {
     if (resumedRef.current || !prefsHydrated || conversations.length === 0) return
-    if (conversationId || chatMessages.length > 0) { resumedRef.current = true; return }
+    // The agent's own opening line does NOT count as a thread in progress.
+    // Counting it made `resumedRef` latch before the saved conversation had
+    // loaded, so anyone arriving here from an agent signal silently lost the
+    // thread they were in the middle of.
+    const typedInto = chatMessages.some((m) => !m.opened)
+    if (conversationId || typedInto) { resumedRef.current = true; return }
     let storedId: string | null = null
     try { storedId = localStorage.getItem('nb.activeConversation') } catch {}
     if (!storedId) { resumedRef.current = true; return }
     const conv = conversations.find((c) => c.id === storedId)
     if (conv) {
       setConversationId(conv.id)
-      setChatMessages(conv.messages.map((m) => ({ role: m.role, content: m.content })))
+      // Keep the agent's line at the top if it arrived first — restoring a
+      // thread must not swallow the thing that brought someone here.
+      setChatMessages((prev) => [
+        ...prev.filter((m) => m.opened),
+        ...conv.messages.map((m) => ({ role: m.role, content: m.content })),
+      ])
     }
     resumedRef.current = true
   }, [prefsHydrated, conversations, conversationId, chatMessages.length])
@@ -1267,7 +1281,11 @@ export default function NotebookPage() {
 
             <div className="space-y-2">
               {filteredConvs.map(conv => {
-                const lastMsg = conv.messages[conv.messages.length - 1]
+                // A stored conversation whose messages failed to parse comes
+                // back empty. One such row used to throw the whole saved tab
+                // away rather than showing a card with no preview.
+                const lastMsg: { role: 'user' | 'assistant'; content: string } | undefined =
+                  conv.messages[conv.messages.length - 1]
                 return (
                   <button
                     key={conv.id}
@@ -1284,7 +1302,7 @@ export default function NotebookPage() {
                         <span className="shrink-0 text-xs text-slate-500">{relativeTime(conv.updatedAt, t)}</span>
                       </div>
                       <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">
-                        {lastMsg.role === 'assistant' ? t('nb.aiPrefix') : t('nb.youPrefix')}{lastMsg.content.slice(0, 100)}
+                        {lastMsg ? <>{lastMsg.role === 'assistant' ? t('nb.aiPrefix') : t('nb.youPrefix')}{lastMsg.content.slice(0, 100)}</> : null}
                       </p>
                       <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
                         <span>{t('nb.msgCount', { count: conv.messages.length })}</span>

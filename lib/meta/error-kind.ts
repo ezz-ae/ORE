@@ -37,6 +37,10 @@ export type MetaErrorKind = 'unreachable' | 'auth' | 'rate_limit' | 'transient'
  *  read against the docs rather than trusted. */
 const AUTH_CODES = new Set([102, 190, 458, 459, 463, 464, 467])
 const RATE_LIMIT_CODES = new Set([4, 17, 32, 613])
+/** Permission refusals that are NOT a dead token — the app or account simply
+ *  is not allowed to do this. Permanent until a human changes something, so
+ *  they must not sit in 'transient' being retried forever. */
+const PERMISSION_CODES = new Set([10, 200, 272, 294])
 /** 100/33 is the "object with ID … does not exist, cannot be loaded due to
  *  missing permissions, or does not support this operation" family. */
 const UNREACHABLE_SUBCODES = new Set([33])
@@ -85,6 +89,7 @@ export function metaErrorKind(err: unknown): MetaErrorKind {
 
   if (code !== null && RATE_LIMIT_CODES.has(code)) return 'rate_limit'
   if (code !== null && AUTH_CODES.has(code)) return 'auth'
+  if (code !== null && PERMISSION_CODES.has(code)) return 'unreachable'
   if (subcode !== null && UNREACHABLE_SUBCODES.has(subcode)) return 'unreachable'
 
   // Text fallback, for clients that drop the numeric fields. Deliberately

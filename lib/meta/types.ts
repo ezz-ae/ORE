@@ -228,6 +228,11 @@ export interface CampaignCreative {
 }
 
 export interface LaunchCampaignPayload {
+  /** Attach a saved audience by id and let the SERVER read its definition.
+   *  Required for pattern audiences, whose targeting deliberately never
+   *  reaches the browser and so cannot be sent back from it. */
+  audienceId?: string
+
   campaignName: string
   objective: MetaCampaignObjective
   listingId: string

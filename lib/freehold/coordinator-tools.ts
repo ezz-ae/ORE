@@ -80,11 +80,19 @@ function audienceSummary(a: SavedAudience) {
     name: a.name,
     kind: a.kind,
     seededFromContacts: a.uploadedCount || undefined,
-    interests: a.spec.interests.map((i) => i.name),
-    behaviors: (a.spec.behaviors ?? []).map((b) => b.name),
-    narrowed: (a.spec.narrowing ?? []).length > 0,
-    excludes: [...(a.spec.exclusions?.interests ?? []), ...(a.spec.exclusions?.behaviors ?? [])].map((e) => e.name),
-    countries: a.spec.countries,
+    // A PATTERN AUDIENCE IS DESCRIBED, NEVER ENUMERATED. Listing its segments
+    // here put the recipe into a chat answer — the same leak as shipping the
+    // spec, only phrased conversationally. Its own description already says
+    // who it reaches, in the words it was created in.
+    ...(a.kind === 'pattern'
+      ? { describes: a.description, countries: a.spec.countries }
+      : {
+          interests: a.spec.interests.map((i) => i.name),
+          behaviors: (a.spec.behaviors ?? []).map((b) => b.name),
+          narrowed: (a.spec.narrowing ?? []).length > 0,
+          excludes: [...(a.spec.exclusions?.interests ?? []), ...(a.spec.exclusions?.behaviors ?? [])].map((e) => e.name),
+          countries: a.spec.countries,
+        }),
     attachUrl: `/freehold-intelligence/lead-machine/campaigns/new?audience=${encodeURIComponent(a.id)}`,
   }
 }

@@ -81,9 +81,19 @@ export function setAsideReason(l: QueueLead): SetAsideReason | null {
   if (l.blocked) return 'blocked'
   if (l.archived) return 'archived'
   if (l.valueRating !== null && l.valueRating <= SET_ASIDE_AT_OR_BELOW) return 'rated_poor'
+  // DUPLICATE IS AN INFERENCE, NOT A JUDGMENT, so it is never enough on its
+  // own — a suspected duplicate someone rated well is still the best version
+  // of that person to call. It sets a lead aside only when the phone ALSO
+  // fails, and then it outranks "undialable" because it is the more useful
+  // sentence: there is nothing to dial here, and the same person exists on
+  // another record that may well have a working number. This holds even for a
+  // strong rating — the person is not being lost, only this copy of them.
+  if (l.duplicateRisk && l.wrongNumberRisk) return 'duplicate'
+
   // Undialable only sets aside when nobody has rated it well. A 9/10 lead with
   // a mistyped number is a data-entry problem, not a bad lead.
   if (l.wrongNumberRisk && (l.valueRating === null || l.valueRating < STRONG_AT_OR_ABOVE)) return 'undialable'
+
   return null
 }
 

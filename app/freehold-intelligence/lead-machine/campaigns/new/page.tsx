@@ -40,7 +40,10 @@ import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCr
 import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTemplateKey } from '@/lib/meta/form-templates'
 
 // A saved audience from the Audiences tab, attachable to this launch.
-interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec: CampaignTargeting }
+// `spec` is ABSENT for pattern audiences — the server never sends the recipe
+// to the browser. Typing it as required let `{ ...undefined }` compile and
+// launch a campaign with no audience at all.
+interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec?: CampaignTargeting }
 import { useT } from '@/lib/i18n/provider'
 
 // ─── UAE interest targets ────────────────────────────────────────────────────
@@ -1187,7 +1190,14 @@ export default function NewCampaignPage() {
       // An attached saved audience IS the audience — its full definition
       // (behaviors, narrowing, exclusions, Meta audiences) replaces the manual
       // fields; only the wizard's placements still apply.
-      targeting: attachedAudience
+      // A pattern audience arrives here WITHOUT its spec, on purpose. Sending
+      // the id lets the server read the definition; spreading an undefined
+      // spec launched a campaign targeting nobody.
+      audienceId: attachedAudience ? attachedAudience.id : undefined,
+      // Only spread a spec we actually have. A pattern audience has none here,
+      // so the form's own targeting travels as the base and the server
+      // replaces it wholesale from `audienceId` — never a half-built object.
+      targeting: attachedAudience?.spec
         ? { ...attachedAudience.spec, publisherPlatforms: form.publisherPlatforms }
         : {
             countries:          form.countries.length ? form.countries : ['AE'],

@@ -172,7 +172,6 @@ export default function FollowUpQueuePage() {
           slaBreachMinutes: breachMinutesOf(l.id),
         } satisfies QueueItem
       })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leads, snoozeOverrides, slaMinutes, clocks])
 
   const allAgents = useMemo(
@@ -192,7 +191,6 @@ export default function FollowUpQueuePage() {
   // is something a human recorded or a phone number that does not work.
   const setAside = useMemo(
     () => triaged.setAside.filter((s) => !done.has(s.lead.leadId)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [triaged, done],
   )
 
@@ -203,12 +201,10 @@ export default function FollowUpQueuePage() {
       if (activeAgent !== 'All' && item.assignedAgent !== activeAgent) return false
       return true
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedQueue, done, activeUrgency, activeAgent])
 
   const snoozedList = useMemo(
     () => sortedQueue.filter((item) => !done.has(item.leadId) && isSnoozed(item.snoozeUntil)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sortedQueue, done],
   )
 
@@ -218,7 +214,6 @@ export default function FollowUpQueuePage() {
     const critical = active.filter((l) => l.urgency === 'critical').length
     const avgOverdue = total > 0 ? Math.round(active.reduce((s, l) => s + l.overdueHours, 0) / total) : 0
     return { total, critical, avgOverdue, snoozedCount: snoozedList.length }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedQueue, done, snoozedList])
 
   const byAgent = useMemo(() => {
@@ -227,18 +222,15 @@ export default function FollowUpQueuePage() {
       acc[l.assignedAgent] = (acc[l.assignedAgent] ?? 0) + 1
       return acc
     }, {})
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedQueue, done])
 
   const slaBreachCount = useMemo(
     () => sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil) && l.slaBreachMinutes !== null).length,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sortedQueue, done],
   )
 
   const riskLeads = useMemo(
     () => sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil) && (l.duplicateRisk || l.wrongNumberRisk)).length,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sortedQueue, done],
   )
 

@@ -88,6 +88,10 @@ export function DismissControl({
 
   // Read after mount: localStorage on the server is undefined, and rendering
   // one verb on the server and two in the browser is a hydration mismatch.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage
+  // does not exist on the server, so this cannot be initial state: rendering
+  // one verb on the server and two in the browser is a hydration mismatch.
+  // The cascade the rule guards against is bounded at exactly one extra pass.
   useEffect(() => { setTally(read(id)); setReady(true) }, [id])
 
   const choose = useCallback((c: Choice) => {

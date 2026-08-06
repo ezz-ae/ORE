@@ -961,7 +961,12 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         // guess — and the guess that pauses a spending campaign is the
         // expensive one.
         const kind = metaErrorKind(e)
-        if (isWorthAlarming(kind)) {
+        // A rate limit clears on the next cycle and is genuinely not news.
+        // EVERYTHING ELSE IS STILL RECORDED — gating the write on
+        // `isWorthAlarming` meant an unrecognised but PERMANENT failure (a
+        // wording we do not match yet) was retried forever and appeared
+        // nowhere at all. Deduped, so recording it cannot flood the feed.
+        if (kind !== 'rate_limit') {
           await logActivityOnce({
             machineId,
             kind: 'error',

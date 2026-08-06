@@ -6,6 +6,7 @@ import { createLocalCampaign } from '@/lib/meta/local-store'
 import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
+import { getAudience } from '@/lib/freehold/audiences'
 import { deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance } from '@/lib/freehold/credits-db'
 import { creditsForDailyBudget } from '@/lib/freehold/credits-shared'
 import { randomUUID } from 'crypto'
@@ -161,6 +162,29 @@ export async function POST(req: NextRequest) {
       // Non-fatal — attribution logging failed.
     }
   }
+
+  // A PATTERN AUDIENCE'S TARGETING NEVER REACHES THE BROWSER, so a client
+  // cannot send it back. The launch resolves it here instead, from the id.
+  //
+  // This is the piece that was missing: `forClient` correctly stripped the
+  // spec on the way out, and the wizard then spread `undefined` into
+  // `targeting` and launched a campaign with no audience at all. The recipe
+  // staying server-side only works if the server can also USE it.
+  if (typeof body.audienceId === 'string' && body.audienceId) {
+    const saved = await getAudience(body.audienceId)
+    if (!saved) {
+      return NextResponse.json({ error: 'That audience no longer exists', type: 'validation' }, { status: 400 })
+    }
+    // The wizard still owns placements; everything else comes from the
+    // audience, whose definition is the whole reason it was attached.
+    body.targeting = {
+      ...saved.spec,
+      ...(Array.isArray(body.targeting?.publisherPlatforms) && body.targeting.publisherPlatforms.length
+        ? { publisherPlatforms: body.targeting.publisherPlatforms }
+        : {}),
+    }
+  }
+
 
   // ── Intent routing ──────────────────────────────────────────────────────────
   // Read the request as intent against what's already running for this project.
