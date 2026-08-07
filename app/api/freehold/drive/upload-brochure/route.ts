@@ -12,13 +12,26 @@ export const dynamic = 'force-dynamic'
 // POST). Auth-gated, same pattern as upload-video. The client then POSTs the
 // returned blob URL to /api/dashboard/projects/parse-brochure as JSON {url}.
 export async function POST(req: NextRequest) {
-  const auth = await requireSession()
-  if ('res' in auth) return auth.res
   if (!cloudConfigured()) {
     return NextResponse.json({ error: 'Large-PDF upload needs Blob storage — set BLOB_READ_WRITE_TOKEN.' }, { status: 503 })
   }
 
   const body = (await req.json()) as HandleUploadBody
+
+  // Two callers, one route: the BROWSER asking for an upload token (cookie,
+  // must be authenticated) and VERCEL BLOB reporting the bytes landed (a
+  // server-to-server call with no cookie). Gating both meant the completion
+  // callback got a 401 forever — the transfer finished but the flow never
+  // closed, so the screen sat at "uploading" with nothing left to upload.
+  // `handleUpload` verifies Blob's signature on that callback, which is a
+  // stronger credential than a cookie and the only one it can carry.
+  const fromBrowser = body.type === 'blob.generate-client-token'
+  let uploader = 'blob-callback'
+  if (fromBrowser) {
+    const auth = await requireSession()
+    if ('res' in auth) return auth.res
+    uploader = auth.user.email
+  }
   try {
     const json = await handleUpload({
       body,
@@ -27,7 +40,7 @@ export async function POST(req: NextRequest) {
         allowedContentTypes: ['application/pdf'],
         maximumSizeInBytes: 30 * 1024 * 1024, // 30MB per brochure
         addRandomSuffix: true,
-        tokenPayload: JSON.stringify({ email: auth.user.email }),
+        tokenPayload: JSON.stringify({ email: uploader }),
       }),
       // The client immediately POSTs the URL to parse-brochure; nothing to do here.
       onUploadCompleted: async () => { /* client drives the parse step */ },

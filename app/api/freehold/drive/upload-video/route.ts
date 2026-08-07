@@ -32,13 +32,35 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireSession()
-  if ('res' in auth) return auth.res
   if (!cloudConfigured()) {
     return NextResponse.json({ error: 'Video upload needs Blob storage — set BLOB_READ_WRITE_TOKEN.' }, { status: 503 })
   }
 
   const body = (await req.json()) as HandleUploadBody
+
+  // THIS ROUTE ANSWERS TWO DIFFERENT CALLERS, and only one of them is a person.
+  //
+  //   'blob.generate-client-token' — the BROWSER asking to start an upload.
+  //                                  Carries the session cookie. Must be
+  //                                  authenticated, or anyone could mint
+  //                                  upload tokens against our storage.
+  //   'blob.upload-completed'      — VERCEL BLOB telling us the bytes landed.
+  //                                  A server-to-server call with no cookie.
+  //
+  // Requiring a session for both meant the completion callback was answered
+  // with a 401 forever. The transfer itself finished — bytes go straight to
+  // Blob — but the flow never closed, so the screen sat at "uploading" with
+  // nothing left to upload. The callback is not unauthenticated: `handleUpload`
+  // verifies Blob's own signature on it, which is a stronger claim than a
+  // cookie, and it is the only credential a server-to-server call can carry.
+  const fromBrowser = body.type === 'blob.generate-client-token'
+  let uploader = 'blob-callback'
+  if (fromBrowser) {
+    const auth = await requireSession()
+    if ('res' in auth) return auth.res
+    uploader = auth.user.email
+  }
+
   try {
     const json = await handleUpload({
       body,
@@ -53,7 +75,7 @@ export async function POST(req: NextRequest) {
         // starting and offers to compress, so nobody waits to be told no.
         maximumSizeInBytes: MAX_BYTES,
         addRandomSuffix: true,
-        tokenPayload: JSON.stringify({ email: auth.user.email }),
+        tokenPayload: JSON.stringify({ email: uploader }),
       }),
       // The client records the library row after upload(); nothing to do here.
       onUploadCompleted: async () => { /* client creates the library item */ },
