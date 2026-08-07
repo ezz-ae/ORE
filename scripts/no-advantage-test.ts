@@ -14,7 +14,7 @@
  */
 import {
   placementSpecFor, findAdvantageInAdSet, findAdvantageInCreative, findAdvantageInCampaign,
-  describeViolations, ALLOWED_PLATFORMS, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
+  describeViolations, ALLOWED_PLATFORMS, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF, CREATIVE_FEATURES,
 } from '../lib/meta/no-advantage'
 import { audienceFingerprintFromTargeting } from '../lib/meta/campaign-structure'
 
@@ -125,14 +125,29 @@ console.log('\n── Advantage+ creative is opted out, not merely unmentioned �
     describeViolations(findAdvantageInCreative(clean)))
 
   // The old behaviour: omit the block and "let the account default apply".
+  // Meta removed the umbrella, so omitting the block now leaves EVERY feature
+  // on the account default — one violation each, not one in total.
   check('OMITTING the block is a violation — the account default usually edits the ad',
-    findAdvantageInCreative({ name: 'creative' }).length === 1,
+    findAdvantageInCreative({ name: 'creative' }).length === CREATIVE_FEATURES.length,
     describeViolations(findAdvantageInCreative({ name: 'creative' })))
   check('…and the reason says so plainly',
     /account default/.test(findAdvantageInCreative({ name: 'creative' })[0].problem))
 
+  // The deprecated umbrella is now itself a defect: Meta rejects the whole
+  // creative on it (subcode 3858504), so an ad carrying it cannot launch.
+  const withUmbrella = { degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } } }
+  check('the DEPRECATED umbrella is caught, even when it says OPT_OUT',
+    findAdvantageInCreative(withUmbrella).some((v) => /deprecated/i.test(v.problem)),
+    describeViolations(findAdvantageInCreative(withUmbrella)))
+  check('…and our own payload no longer sends it',
+    !JSON.stringify(CREATIVE_ENHANCEMENTS_OFF).includes('standard_enhancements'),
+    JSON.stringify(CREATIVE_ENHANCEMENTS_OFF).slice(0, 120))
+  check('every named feature is opted out, none merely listed',
+    CREATIVE_FEATURES.every((f) =>
+      (CREATIVE_ENHANCEMENTS_OFF.creative_features_spec as Record<string, { enroll_status: string }>)[f]?.enroll_status === 'OPT_OUT'))
+
   const optedIn = { degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_IN' } } } }
-  check('an explicit OPT_IN is caught', findAdvantageInCreative(optedIn).length === 1)
+  check('an explicit OPT_IN is caught', findAdvantageInCreative(optedIn).length > 0)
 }
 
 console.log('\n── budget stays on the ad sets ──')

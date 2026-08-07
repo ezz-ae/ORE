@@ -55,21 +55,45 @@ export const INSTAGRAM_POSITIONS = ['stream', 'story', 'reels', 'explore'] as co
 export const ADVANTAGE_AUDIENCE_OFF = { advantage_audience: 0 } as const
 
 /**
- * `degrees_of_freedom_spec` — the opt-out for Advantage+ creative (Meta calls
- * these "standard enhancements"): image touch-ups, text rewording, added
- * music, generated backgrounds, comment overlays.
+ * The individual Advantage+ creative features, opted out one by one.
  *
- * The older bare `standard_enhancements` field is rejected (subcode 3858504);
- * the current shape nests it under `creative_features_spec` with an
- * enrol status, and OPT_OUT is a real, accepted value. Omitting the whole
- * block does NOT mean "off" — it means the ad account's default applies, and
- * on most accounts that default is on. That is precisely the silence this
- * module exists to break.
+ * Meta REMOVED the umbrella. `standard_enhancements` — even nested under
+ * `creative_features_spec`, which was the accepted shape until now — is
+ * rejected outright:
+ *
+ *   "Including standard enhancements field in creative has been deprecated.
+ *    Please choose to set individual features instead." (subcode 3858504)
+ *
+ * So the switch that turned all of this off in one line no longer exists, and
+ * every feature has to be named. That is worse for us in exactly the way that
+ * matters: a feature Meta adds later is ON by default and absent from this
+ * list, so this is a list to revisit rather than a fence that holds forever.
+ *
+ * Omitting the block does NOT mean "off" — it means the ad account's default
+ * applies, and on most accounts that default rewords the headline, recolours
+ * the image and adds music to a creative someone already approved. That is
+ * precisely the silence this module exists to break.
  */
+export const CREATIVE_FEATURES = [
+  'image_touchups',
+  'video_auto_crop',
+  'image_brightness_and_contrast',
+  'enhance_cta',
+  'text_optimizations',
+  'image_templates',
+  'adapt_to_placement',
+  'media_type_automation',
+  'product_extensions',
+  'description_automation',
+  'add_text_overlay',
+  'site_extensions',
+  'inline_comment',
+] as const
+
 export const CREATIVE_ENHANCEMENTS_OFF = {
-  creative_features_spec: {
-    standard_enhancements: { enroll_status: 'OPT_OUT' },
-  },
+  creative_features_spec: Object.fromEntries(
+    CREATIVE_FEATURES.map((f) => [f, { enroll_status: 'OPT_OUT' }]),
+  ) as Record<(typeof CREATIVE_FEATURES)[number], { enroll_status: 'OPT_OUT' }>,
 } as const
 
 /**
@@ -184,15 +208,31 @@ export function findAdvantageInAdSet(body: Record<string, unknown>): AdvantageVi
 export function findAdvantageInCreative(body: Record<string, unknown>): AdvantageViolation[] {
   const dof = get(body, 'degrees_of_freedom_spec')
   const features = get(dof, 'creative_features_spec')
-  const std = get(features, 'standard_enhancements')
-  const status = get(std, 'enroll_status')
-  if (status === 'OPT_OUT') return []
-  return [{
-    path: 'degrees_of_freedom_spec.creative_features_spec.standard_enhancements.enroll_status',
-    problem: status === undefined
-      ? 'not opted out — the account default applies and it usually rewrites copy and edits the image'
-      : `enrol status is "${String(status)}" — Meta would alter the approved creative`,
-  }]
+
+  // The umbrella is gone, so EVERY feature is checked on its own. A single
+  // one left un-opted-out is a real hole: that is the feature that rewrites
+  // the headline someone approved.
+  const missed = CREATIVE_FEATURES.filter(
+    (f) => get(get(features, f), 'enroll_status') !== 'OPT_OUT',
+  )
+  // Sending the deprecated umbrella is now itself a defect — Meta rejects the
+  // whole creative on it, so an ad carrying it cannot launch at all.
+  const deprecated = get(features, 'standard_enhancements') !== undefined
+
+  const out: AdvantageViolation[] = []
+  if (deprecated) {
+    out.push({
+      path: 'degrees_of_freedom_spec.creative_features_spec.standard_enhancements',
+      problem: 'Meta deprecated this field and rejects any creative carrying it (subcode 3858504) — the individual features must be named instead',
+    })
+  }
+  for (const f of missed) {
+    out.push({
+      path: `degrees_of_freedom_spec.creative_features_spec.${f}.enroll_status`,
+      problem: 'not opted out — the account default applies, and it alters the approved creative',
+    })
+  }
+  return out
 }
 
 /** Campaign-level read: budget must stay on the ad sets. */

@@ -1099,8 +1099,9 @@ export async function createAdCreative(params: {
     // Advantage+ creative OFF. Omitting this block does not mean "off" — it
     // means the ad ACCOUNT's default applies, and on most accounts that
     // default rewords the headline, recolours the image and adds music to a
-    // creative someone already approved. The bare `standard_enhancements`
-    // field is rejected (subcode 3858504); this is the current nested shape.
+    // creative someone already approved. Meta deprecated the umbrella switch
+    // entirely — `standard_enhancements` in ANY shape is now rejected with
+    // subcode 3858504 — so every feature is named and opted out on its own.
     degrees_of_freedom_spec: { ...CREATIVE_ENHANCEMENTS_OFF },
   })
 }
