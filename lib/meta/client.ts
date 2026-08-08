@@ -566,7 +566,7 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
   // Explicit high limit so a multi-ad-set (ABO) campaign isn't silently capped
   // at Meta's default page size — the budget rollup must see every ad set.
   const res = await apiFetch<{ data: MetaAdSet[] }>(`/${campaignId}/adsets`, undefined, {
-    fields: 'id,name,status,daily_budget,targeting,optimization_goal,billing_event',
+    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event',
     limit: '200',
   })
   return res.data ?? []
@@ -1669,7 +1669,7 @@ export async function updateAdPlacementCreative(
 
 export async function listAds(adSetId: string): Promise<MetaAd[]> {
   const res = await apiFetch<{ data: MetaAd[] }>(`/${adSetId}/ads`, undefined, {
-    fields: 'id,name,status,creative{id,name}',
+    fields: 'id,name,status,effective_status,creative{id,name}',
   })
   return res.data ?? []
 }
