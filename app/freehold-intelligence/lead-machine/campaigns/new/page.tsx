@@ -38,6 +38,7 @@ interface WizardListing {
 import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel, CreateLeadFormPayload } from '@/lib/meta/types'
 import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTemplateKey } from '@/lib/meta/form-templates'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
+import { explainMetaError, splitLaunchStep } from '@/lib/meta/error-advice'
 
 // A saved audience from the Audiences tab, attachable to this launch.
 // `spec` is ABSENT for pattern audiences — the server never sends the recipe
@@ -2606,12 +2607,28 @@ export default function NewCampaignPage() {
               </div>
             </div>
 
-            {apiError && (
-              <div className="flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] p-4">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                <p className="text-sm text-slate-300">{apiError}</p>
-              </div>
-            )}
+            {apiError && (() => {
+              // Meta's own wording describes its API, not what the operator was
+              // doing. A fault we recognise is said plainly; anything else keeps
+              // Meta's text, because a wrong explanation is worse than a raw one.
+              const { step, rest } = splitLaunchStep(apiError)
+              const plain = explainMetaError({ message: rest })
+              return (
+                <div className="flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] p-4">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-300">{plain ?? rest}</p>
+                    {/* Which ad set failed is half the answer when four of them
+                        launch together — kept, but quiet. */}
+                    {(step || plain) && (
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        {step ? `${step}${plain ? ' · ' : ''}` : ''}{plain ? rest : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>
