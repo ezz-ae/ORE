@@ -2432,6 +2432,27 @@ export async function launchFullCampaign(params: {
   const leadLanguageLocales = languageCodes.length
     ? await resolveLeadLanguageLocaleIds(languageCodes)
     : []
+
+  // ASKED FOR AND NOT APPLIED IS A REFUSAL, NOT A DEGRADATION.
+  //
+  // "An empty resolution narrows nothing rather than mis-targeting" sounds
+  // cautious and is the opposite. Someone chose Arabic-speaking buyers; the
+  // locale lookup failed — Meta unreachable, rate-limited, a token without the
+  // scope — and the ad set went live reaching EVERYONE in the country while
+  // every screen still said Arabic. The money is spent, the audience is wrong,
+  // and nothing in the product ever mentions it.
+  //
+  // Unnarrowed is not a smaller version of what they asked for; it is a
+  // different campaign. So it does not launch. Same principle as the Advantage
+  // guard: refuse loudly rather than deliver something nobody chose.
+  if (languageCodes.length > 0 && leadLanguageLocales.length === 0) {
+    throw new MetaConfigError(
+      `Refusing to launch: this campaign asks to reach ${languageCodes.join(', ')} speakers, and Meta did not return the locale ids for that. ` +
+      `Launching anyway would spend the budget on everyone, while every screen still said ${languageCodes.join(', ')}. ` +
+      `This is usually Meta being briefly unreachable — try again in a minute — or an access token without ads permissions.`,
+    )
+  }
+
   const mergedLocales = Array.from(new Set([...(params.targeting.locales ?? []), ...leadLanguageLocales]))
   const baseTargeting = {
     ...params.targeting,
