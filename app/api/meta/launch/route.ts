@@ -7,6 +7,9 @@ import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { getAudience } from '@/lib/freehold/audiences'
+import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
+import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
+import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
 import { deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance } from '@/lib/freehold/credits-db'
 import { creditsForDailyBudget } from '@/lib/freehold/credits-shared'
 import { randomUUID } from 'crypto'
@@ -179,6 +182,20 @@ export async function POST(req: NextRequest) {
     // audience, whose definition is the whole reason it was attached.
     body.targeting = {
       ...saved.spec,
+      ...(Array.isArray(body.targeting?.publisherPlatforms) && body.targeting.publisherPlatforms.length
+        ? { publisherPlatforms: body.targeting.publisherPlatforms }
+        : {}),
+    }
+  } else if (typeof body.presetId === 'string' && body.presetId) {
+    // A ready-buyer template, launched directly — no save-first detour. The
+    // same kitchen resolves it as any saved pattern audience.
+    const preset = getReadyBuyer(body.presetId)
+    if (!preset) {
+      return NextResponse.json({ error: 'That audience no longer exists', type: 'validation' }, { status: 400 })
+    }
+    const plan = planPattern(parsePattern({ ...preset.pattern, name: preset.id }), [...SUPPORTED_LEAD_LANGUAGES])
+    body.targeting = {
+      ...plan.targeting,
       ...(Array.isArray(body.targeting?.publisherPlatforms) && body.targeting.publisherPlatforms.length
         ? { publisherPlatforms: body.targeting.publisherPlatforms }
         : {}),

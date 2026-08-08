@@ -13,7 +13,9 @@ const WRITE_ROLES: Role[] = [...MANAGEMENT_ROLES, 'marketing']
 
 // GET — saved audiences + the ad account's live Custom/Lookalike audiences
 // (real size bands from Meta; honest `connected:false` when not wired).
-export async function GET() {
+// `?reach=1` also asks Meta for each audience's live reach band — a real
+// number or nothing; the response never carries a placeholder.
+export async function GET(req: NextRequest) {
   const auth = await requireSession()
   if ('res' in auth) return auth.res
 
@@ -22,8 +24,20 @@ export async function GET() {
   if (connected) {
     try { metaAudiences = await listCustomAudiences() } catch { /* token scope may lack ads_read — show none */ }
   }
+
+  const withReach = req.nextUrl.searchParams.get('reach') === '1' && connected
+  const reachById = new Map<string, { lower: number; upper: number } | null>()
+  if (withReach) {
+    await Promise.all(saved.slice(0, 24).map(async (a) => {
+      try {
+        const r = await getReachEstimate(a.spec)
+        if (r && r.lower > 0) reachById.set(a.id, { lower: r.lower, upper: r.upper })
+      } catch { /* no number, no field */ }
+    }))
+  }
+
   return NextResponse.json({
-    audiences: saved.map(forClient),
+    audiences: saved.map((a) => ({ ...forClient(a), ...(reachById.get(a.id) ? { reach: reachById.get(a.id) } : {}) })),
     meta: { connected, customAudiences: metaAudiences },
   })
 }

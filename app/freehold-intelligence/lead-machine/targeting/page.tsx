@@ -96,9 +96,9 @@ export default function TargetingPage() {
           <div className="mt-4 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-gold">{bm.band.label}</span>
-              {bm.estimate
-                ? <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] text-slate-200">{fmtK(bm.estimate.lower)}–{fmtK(bm.estimate.upper)} · {t('bm.liveReach')}</span>
-                : <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] text-slate-400">{bm.metaConnected ? t('bm.reachWarming') : t('bm.connectMeta')}</span>}
+              {bm.estimate && (
+                <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] text-slate-200">{fmtK(bm.estimate.lower)}–{fmtK(bm.estimate.upper)} · {t('bm.liveReach')}</span>
+              )}
             </div>
             {bm.buyers.hasData ? (
               <div className="grid grid-cols-3 gap-2 text-center">
