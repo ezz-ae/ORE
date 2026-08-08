@@ -227,18 +227,7 @@ export const BUNDLE: Record<SpeakerBundle, { creative: string; alsoReach: string
 
 const MOTIVE: Record<Motive, Mapped> = {
   // Investment intent is the one motive Meta models directly and well.
-  //
-  // "Real estate investing" as its own named interest is deliberately absent
-  // here. Two different numeric ids for it have now both come back invalid
-  // from a live launch (6002714398372, then 6003051380892 — the second was
-  // trusted on the strength of a second file using it under the same name,
-  // which was itself never actually verified against Meta and has since been
-  // deleted for exactly that reason). A third guess would be the same
-  // mistake a third time. 'Investment' alone still carries the intent; if
-  // Meta's current live id for the narrower interest is ever needed, it
-  // belongs resolved live via searchInterests() — the way personas already
-  // do it — never hardcoded again.
-  investment:   { entities: [{ id: '6004132891184', name: 'Investment' }], defining: true },
+  investment:   { entities: [{ id: '6003051380892', name: 'Real estate investing' }, { id: '6004132891184', name: 'Investment' }], defining: true },
   first_home:   { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 25, ageMax: 45, mass: true },
   upgrade:      { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 30, mass: true },
   holiday_home: { entities: [{ id: '6003193636887', name: 'Luxury goods' }], ageMin: 35 },
@@ -294,8 +283,21 @@ export const speakerLocales = (speakers: SpeakerBundle[]): string[] =>
  * builds, whatever surface built it, carries this group as an AND requirement:
  * the person must match at least one of these on top of everything else.
  */
+/**
+ * THE NAME IS THE CONTRACT; THE ID IS A SEED.
+ *
+ * Every id in this file is re-resolved by NAME against Meta's live
+ * vocabulary at launch and at reach-estimate time (see
+ * repairTargetingInterests in lib/meta/client.ts). Meta retires and merges
+ * targeting nodes on its own schedule, so a literal id here goes stale on
+ * Meta's timetable, not ours — three consecutive live launches failed that
+ * way, each on a different id, before the repair covered this group. What
+ * survives is the name: whatever id is live today is what ships, and a name
+ * Meta no longer knows drops out quietly rather than failing the launch.
+ */
 export const REAL_ESTATE_MUST: TargetingEntity[] = [
   { id: '6003105898571', name: 'Property' },
+  { id: '6003051380892', name: 'Real estate investing' },
   { id: '6004132891184', name: 'Investment' },
 ]
 const RE_MUST_IDS = new Set(REAL_ESTATE_MUST.map((e) => e.id))
