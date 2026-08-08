@@ -948,12 +948,26 @@ export async function repairTargetingInterests<T extends CampaignTargeting>(
 // instagram_positions targeting vocabulary. Used both by the ad set's
 // placement targeting (elsewhere) and by asset_customization_rules below, so
 // a creative override actually lands on the placement it was made for.
-const PLACEMENT_TARGETING: Record<PlacementKey, { publisher_platforms: string[]; facebook_positions?: string[]; instagram_positions?: string[] }> = {
-  fbFeed:  { publisher_platforms: ['facebook'],               facebook_positions: ['feed'] },
+// THE FOUR SURFACES THIS PRODUCT BUYS, by owner decision: Instagram Feed
+// first, then Instagram Stories, Reels, Facebook Feed.
+//
+// `fbStory` is deliberately ABSENT. Meta refuses Facebook Stories as a
+// placement on its own ("Facebook Stories Placement Not Allowed Alone",
+// subcode 1815891) — it must be accompanied by Facebook Feeds or Instagram
+// Stories. This map used to carry all five while the wizard only offered
+// four, so a lead-form launch that customised every offered placement left
+// exactly one surface for the "everything else" ad set: Facebook Stories,
+// alone, which Meta rejected every time. Keeping the list to what the
+// product actually buys makes that combination unconstructible.
+//
+// The KEY stays in the PlacementKey type: audiences saved before this can
+// still carry an fbStory override, and it now resolves to nothing rather
+// than to an ad set Meta will refuse.
+const PLACEMENT_TARGETING: Partial<Record<PlacementKey, { publisher_platforms: string[]; facebook_positions?: string[]; instagram_positions?: string[] }>> = {
   igFeed:  { publisher_platforms: ['instagram'],               instagram_positions: ['stream'] },
   igStory: { publisher_platforms: ['instagram'],               instagram_positions: ['story'] },
-  fbStory: { publisher_platforms: ['facebook'],                facebook_positions: ['story'] },
   reels:   { publisher_platforms: ['facebook', 'instagram'],   facebook_positions: ['facebook_reels'], instagram_positions: ['reels'] },
+  fbFeed:  { publisher_platforms: ['facebook'],                facebook_positions: ['feed'] },
 }
 
 const PLACEMENT_KEYS = Object.keys(PLACEMENT_TARGETING) as PlacementKey[]
@@ -976,7 +990,10 @@ function unionPlacementTargeting(keys: PlacementKey[]): { publisher_platforms: s
   const fbPositions = new Set<string>()
   const igPositions = new Set<string>()
   for (const key of keys) {
+    // Unsupported/legacy keys (fbStory) resolve to nothing rather than
+    // throwing — see PLACEMENT_TARGETING.
     const t = PLACEMENT_TARGETING[key]
+    if (!t) continue
     t.publisher_platforms.forEach((p) => platforms.add(p))
     t.facebook_positions?.forEach((p) => fbPositions.add(p))
     t.instagram_positions?.forEach((p) => igPositions.add(p))
@@ -1542,7 +1559,8 @@ export async function getAdPlacementCreative(adId: string): Promise<AdPlacementS
     const spec = rule.customization_spec ?? {}
     const key = PLACEMENT_KEYS.find((k) => {
       const t = PLACEMENT_TARGETING[k]
-      return sameStringSet(t.publisher_platforms, spec.publisher_platforms)
+      return !!t
+        && sameStringSet(t.publisher_platforms, spec.publisher_platforms)
         && sameStringSet(t.facebook_positions, spec.facebook_positions)
         && sameStringSet(t.instagram_positions, spec.instagram_positions)
     })
@@ -2679,6 +2697,10 @@ export async function launchFullCampaign(params: {
   }
 
   const overridePairs = (Object.entries(creativeInput.placementOverrides ?? {}) as Array<[PlacementKey, PlacementCreativeOverride]>)
+    // Only placements this product actually buys. An override saved against a
+    // retired surface (fbStory) would otherwise get its own ad set narrowed to
+    // a placement Meta refuses to run alone.
+    .filter(([key]) => PLACEMENT_KEYS.includes(key))
     .filter(([, ov]) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl))
 
   // Mirrors createAdCreative's EXACT `wantsMultiText` eligibility so the

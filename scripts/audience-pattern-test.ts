@@ -488,6 +488,19 @@ console.log('\n── the launch repairs EVERY interest, not just the base ones 
   check('the reach estimate repairs its spec too',
     /repairTargetingInterests\(targeting\)/.test(reach.slice(0, 2000)),
     'getReachEstimate would fail silently on a stale id')
+
+  // Meta refuses Facebook Stories as a placement on its own (subcode
+  // 1815891). The launch splits a lead-form campaign into one ad set per
+  // customised placement plus one for "everything else" — so while this map
+  // carried five surfaces and the wizard offered four, that leftover ad set
+  // was always exactly Facebook Stories, alone, and always rejected. The
+  // surface the product does not buy must not exist here at all.
+  const map = CLIENT.slice(CLIENT.indexOf('const PLACEMENT_TARGETING'), CLIENT.indexOf('const PLACEMENT_KEYS'))
+  check('Facebook Stories is not a placement this product can construct',
+    !/^\s*fbStory:/m.test(map), 'fbStory is back in PLACEMENT_TARGETING — it cannot run alone')
+  check('the four placements the owner buys are all present',
+    ['igFeed', 'igStory', 'reels', 'fbFeed'].every((k) => new RegExp(`^\\s*${k}:`, 'm').test(map)),
+    map)
 }
 
 if (failures > 0) {
