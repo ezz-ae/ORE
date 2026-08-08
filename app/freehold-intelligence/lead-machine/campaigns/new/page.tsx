@@ -1159,10 +1159,33 @@ export default function NewCampaignPage() {
     }
   }
 
+  /**
+   * DOES THIS LAUNCH DESCRIBE A BUYER AT ALL?
+   *
+   * Every entry point in the product — the hub button, a landing page, the
+   * ad designer, inventory — funnels into this wizard, so this is the one
+   * gate that covers them all. With no audience attached, no interests and
+   * no language narrowing, the targeting is "everyone in the UAE in an age
+   * band", and the leads that buys are browsers. That launch is still
+   * allowed — broad on purpose is a real strategy — but it can never again
+   * be the accidental default someone reaches by clicking through.
+   */
+  const buysEveryone =
+    !attachedAudience &&
+    form.interestIds.length === 0 &&
+    (form.leadLanguages.length === 0 || form.leadLanguages.length >= LEAD_LANGUAGE_OPTIONS.length)
+  const [broadOnPurpose, setBroadOnPurpose] = useState(false)
+
   // ── Launch ─────────────────────────────────────────────────────────────────
   async function handleLaunch() {
     setLoading(true)
     setApiError(null)
+
+    // The everyone-launch must be chosen, not stumbled into. The message
+    // points at the fix (attach a buyer) rather than only naming the problem.
+    if (buysEveryone && !broadOnPurpose) {
+      setApiError(t('lm.newCampaign.err.buysEveryone')); setLoading(false); return
+    }
 
     // Destination integrity — the chosen objective must be fully wired before
     // any money moves (a picked instant form MUST reach the launched ad).
@@ -2892,6 +2915,20 @@ export default function NewCampaignPage() {
             {t('lm.newCampaign.nav.continue')} <ArrowRight className="h-3.5 w-3.5" />
           </button>
         ) : (
+          <div className="flex flex-col items-end gap-2">
+          {/* Launching to everyone is a choice, never a default. The line says
+              what this buys and where the fix is; the tick makes it deliberate. */}
+          {buysEveryone && (
+            <label className="flex max-w-md cursor-pointer items-start gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[11.5px] leading-relaxed text-slate-300">
+              <input
+                type="checkbox"
+                checked={broadOnPurpose}
+                onChange={(e) => setBroadOnPurpose(e.target.checked)}
+                className="mt-0.5 accent-[var(--gold,#d4a437)]"
+              />
+              <span>{t('lm.newCampaign.broadOnPurpose')}</span>
+            </label>
+          )}
           <button
             type="button"
             data-coach="wiz-launch"
@@ -2904,6 +2941,7 @@ export default function NewCampaignPage() {
               : <><Rocket className="h-4 w-4" /> {form.launchStatus === 'ACTIVE' ? t('lm.newCampaign.launchMode.active.label') : t('lm.newCampaign.launchMode.paused.label')}</>
             }
           </button>
+          </div>
         )}
       </div>
       </div>
