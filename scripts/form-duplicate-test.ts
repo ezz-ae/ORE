@@ -19,8 +19,8 @@
  *
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
-import { customToMetaQuestion, mapFormToBuilder } from '../lib/meta/form-templates'
-import type { MetaLeadForm } from '../lib/meta/types'
+import { customToMetaQuestion, mapFormToBuilder, questionsForMeta } from '../lib/meta/form-templates'
+import type { MetaFormQuestion, MetaLeadForm } from '../lib/meta/types'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -81,6 +81,28 @@ console.log('\n── reading a real Meta form back is never assumed-complete �
     empty.contact.length === 3, JSON.stringify(empty.contact))
   check('…and reports the missing pieces rather than inventing them',
     empty.intro === null && empty.thankYou === null && empty.higherIntent === null)
+}
+
+console.log('\n── Meta writes its own wording for name / email / phone ──')
+{
+  // Reading a form back gives EVERY question a label, prefill ones included.
+  // Sending that shape back is what Meta rejects with
+  // "Parameter label cannot be specified for non-custom questions" (1892063) —
+  // and it rejects the WHOLE form, so one stray label loses the duplicate.
+  const readBack: MetaFormQuestion[] = [
+    { type: 'FULL_NAME', label: 'Full name' } as MetaFormQuestion,
+    { type: 'PHONE', label: 'Phone number', key: 'phone' } as MetaFormQuestion,
+    { type: 'CUSTOM', key: 'budget_range', label: 'Your budget?', options: [{ value: 'a', label: 'Under 1M' }] },
+  ]
+  const out = questionsForMeta(readBack)
+  check('a prefill question is sent as its type alone',
+    Object.keys(out[0]).length === 1 && out[0].type === 'FULL_NAME', JSON.stringify(out[0]))
+  check('…no label, no key, on any of them',
+    out.slice(0, 2).every((q) => q.label === undefined && q.key === undefined), JSON.stringify(out))
+  check('the custom question keeps its label, key and options',
+    out[2].label === 'Your budget?' && out[2].key === 'budget_range' && (out[2].options ?? []).length === 1,
+    JSON.stringify(out[2]))
+  check('nothing is dropped from the form', out.length === 3)
 }
 
 if (failures > 0) {

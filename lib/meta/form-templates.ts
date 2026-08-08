@@ -223,6 +223,28 @@ export function customToMetaQuestion(q: QuestionDraft, index: number): MetaFormQ
   return { type: 'CUSTOM', key, label: q.label, options }
 }
 
+/**
+ * The exact shape Meta accepts for a form's questions.
+ *
+ * A PREFILL question (FULL_NAME, EMAIL, PHONE, …) carries its type and nothing
+ * else — Meta writes its wording itself and rejects the whole form if we send
+ * our own: "Parameter label cannot be specified for non-custom questions"
+ * (subcode 1892063). Duplicating a form walked straight into it, because
+ * reading a form back gives EVERY question a label, prefill ones included.
+ *
+ * Only a CUSTOM question may carry a label, a key and options.
+ */
+export function questionsForMeta(questions: MetaFormQuestion[]): MetaFormQuestion[] {
+  return questions.map((q) => (q.type === 'CUSTOM'
+    ? {
+        type: q.type,
+        ...(q.label   ? { label:   q.label   } : {}),
+        ...(q.key     ? { key:     q.key     } : {}),
+        ...(q.options ? { options: q.options } : {}),
+      }
+    : { type: q.type }))
+}
+
 // ─── Intro card from the listing ─────────────────────────────────────────────
 
 /** Bullets built ONLY from fields the listing really has — each drops if absent. */
