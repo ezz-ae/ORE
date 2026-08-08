@@ -15,6 +15,7 @@ import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { LeadValueBadge } from '@/components/freehold/lead-value-chips'
 import { useT } from '@/lib/i18n/provider'
 import { loadCrmView, saveCrmView } from './_lib/view-prefs'
+import { Monogram } from '@/components/freehold/monogram'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -376,9 +377,7 @@ export default function FreeholdCrmPage() {
                 >
                   {/* Avatar + name (+ the value judgment at a glance) */}
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-surface-2 text-[10px] font-bold text-slate-400">
-                      {initials(lead.name)}
-                    </div>
+                    <Monogram name={lead.name} size={32} round="lg" />
                     <LeadValueBadge value={lead.valueRating ?? null} />
                     <div className="min-w-0">
                       <Link

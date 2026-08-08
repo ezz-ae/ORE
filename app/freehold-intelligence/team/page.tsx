@@ -18,6 +18,7 @@ import {
   ROLE_CHIP, TEAM_ROLES, ASSIGNABLE_ROLES,
   type Member, type AgentMetric, type BrokerBalance, type TeamDeal,
 } from './_lib'
+import { Monogram } from '@/components/freehold/monogram'
 
 // ─── Sorting ─────────────────────────────────────────────────────────────────
 
@@ -340,9 +341,7 @@ export default function TeamRosterPage() {
                   <div className={`hidden md:grid ${COLS} items-center gap-3`}>
                     {/* Agent */}
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-slate-300">
-                        {m.initials}
-                      </span>
+                      <Monogram name={m.name} size={36} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="truncate text-sm font-medium text-slate-100">{m.name}</span>
@@ -397,9 +396,7 @@ export default function TeamRosterPage() {
                   {/* Mobile card */}
                   <div className="md:hidden">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-slate-300">
-                        {m.initials}
-                      </span>
+                      <Monogram name={m.name} size={36} />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium text-slate-100">{m.name}</div>
                         <div className="mt-0.5 flex items-center gap-2">

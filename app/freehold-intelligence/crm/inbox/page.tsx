@@ -7,6 +7,7 @@ import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useSession } from '@/lib/freehold/use-session'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { Monogram } from '@/components/freehold/monogram'
 
 // Assigning leads to other agents (and seeing the team roster) is a management
 // action — brokers only work their own inbox.
@@ -339,9 +340,7 @@ export default function CrmInboxPage() {
                       return (
                         <div key={agent.id} className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
-                              {initials}
-                            </div>
+                            <Monogram name={agent.name} size={28} round="lg" />
                             <div className="text-sm font-medium text-white">{agent.name}</div>
                           </div>
                           <span className="text-xs text-slate-400">{t('crm.agentLeadsCount', { count })}</span>
