@@ -496,6 +496,12 @@ export async function getReachEstimate(
 ): Promise<ReachEstimate | null> {
   try {
     const { adAccountId } = await creds()
+    // Same interest repair the launch does — a dead id fails an estimate
+    // exactly as it fails an ad set, and this call swallows its errors
+    // (callers `.catch(() => null)`), so the symptom was silent: every reach
+    // number on the buyer cards and in the persona studio simply never
+    // appeared. Repairing here is what makes them show up at all.
+    ;({ targeting } = await repairTargetingInterests(targeting))
     // A minimal, valid targeting_spec for the estimate — geo + age + gender +
     // interests. Kept independent of createAdSet so the proven launch path is
     // untouched.
@@ -815,19 +821,40 @@ export async function createAdSet(params: {
  * with no valid interests left, the ad set runs on its remaining definition
  * (geo, age, gender, language) — NOT on Advantage expansion, which is off.
  */
+/**
+ * Ask Meta, by NAME, what the current live id for each interest is.
+ *
+ * The name is the durable thing; the numeric id is not. Meta retires and
+ * merges targeting nodes on its own schedule, and a hardcoded id simply
+ * stops resolving — the launch then fails on whichever ad set Meta
+ * validates first. Resolving by name returns whatever id is live TODAY, so
+ * a stale id is repaired rather than sent.
+ *
+ * Returns a lowercased-name → live-id map. Names Meta doesn't recognise are
+ * absent from the map (the caller drops them).
+ */
+async function resolveInterestNames(names: string[]): Promise<Map<string, string>> {
+  if (!names.length) return new Map()
+  const { token } = await creds()
+  const url = new URL(`${API_BASE}/search`)
+  url.searchParams.set('type', 'adinterestvalid')
+  url.searchParams.set('interest_list', JSON.stringify(names))
+  url.searchParams.set('access_token', token)
+  const res = await fetch(url.toString())
+  const json = (await res.json()) as { data?: Array<{ name: string; valid: boolean; id?: string }> }
+  return new Map(
+    (json.data ?? [])
+      .filter((d) => d.valid && d.id)
+      .map((d) => [String(d.name).toLowerCase(), String(d.id)]),
+  )
+}
+
 export async function validateInterests(
   interests: { id: string; name: string }[],
 ): Promise<{ id: string; name: string }[]> {
   if (!interests.length) return []
   try {
-    const { token } = await creds()
-    const url = new URL(`${API_BASE}/search`)
-    url.searchParams.set('type', 'adinterestvalid')
-    url.searchParams.set('interest_list', JSON.stringify(interests.map((i) => i.name)))
-    url.searchParams.set('access_token', token)
-    const res = await fetch(url.toString())
-    const json = (await res.json()) as { data?: Array<{ name: string; valid: boolean; id?: string }> }
-    const valid = new Map((json.data ?? []).filter((d) => d.valid && d.id).map((d) => [d.name.toLowerCase(), String(d.id)]))
+    const valid = await resolveInterestNames(interests.map((i) => i.name))
     return interests
       .map((i) => {
         const id = valid.get(i.name.toLowerCase())
@@ -837,6 +864,81 @@ export async function validateInterests(
   } catch {
     // Validation unavailable → run broad rather than risk a stale-id failure.
     return []
+  }
+}
+
+/**
+ * REPAIR EVERY INTEREST IN A SPEC, NOT JUST THE BASE ONES.
+ *
+ * This is the fix for three consecutive live launch failures, each on a
+ * different hardcoded interest id, each reported as "Interests with ID X is
+ * invalid". `validateInterests` above already existed and already did the
+ * right thing — but it was only ever applied to `targeting.interests`. Every
+ * id that actually failed lived somewhere else in the same spec:
+ *
+ *   · `narrowing[]` — where the real-estate MUST group goes, so the one
+ *     rule applied to EVERY audience this product builds was also the one
+ *     path that never got validated. That is why replacing a dead id just
+ *     surfaced the next dead id: the repair shop existed, the car never
+ *     went in.
+ *   · `exclusions.interests` — the agent/job-seeker/bargain-hunter
+ *     exclusions, equally hardcoded and equally able to fail a launch.
+ *
+ * Every interest name in the whole spec is resolved in ONE call, ids are
+ * rewritten to whatever is live now, unrecognised names are dropped, and
+ * any group left empty is removed (an empty flexible_spec group is itself
+ * a rejection). Behaviours are left alone: the only ones this system sends
+ * come from live search already.
+ *
+ * Fail-open on a network error — a transient Meta outage should not block a
+ * launch, and the ids may well be fine.
+ */
+export async function repairTargetingInterests<T extends CampaignTargeting>(
+  targeting: T,
+): Promise<{ targeting: T; dropped: string[] }> {
+  const names = new Set<string>()
+  const collect = (xs?: { id: string; name: string }[]) => {
+    for (const x of xs ?? []) if (x?.name) names.add(x.name)
+  }
+  collect(targeting.interests)
+  for (const g of targeting.narrowing ?? []) collect(g.interests)
+  collect(targeting.exclusions?.interests)
+  if (names.size === 0) return { targeting, dropped: [] }
+
+  let live: Map<string, string>
+  try {
+    live = await resolveInterestNames([...names])
+  } catch {
+    return { targeting, dropped: [] } // fail-open; see doc above
+  }
+
+  const dropped: string[] = []
+  const fix = (xs?: { id: string; name: string }[]) =>
+    (xs ?? []).flatMap((x) => {
+      const id = live.get(String(x.name).toLowerCase())
+      if (!id) { dropped.push(x.name); return [] }
+      return [{ id, name: x.name }]
+    })
+
+  const narrowing = (targeting.narrowing ?? [])
+    .map((g) => ({ ...g, interests: fix(g.interests) }))
+    // A group whose every interest died is not a narrower audience — it is
+    // an invalid payload. Drop it and let the rest of the spec stand.
+    .filter((g) => (g.interests?.length ?? 0) + (g.behaviors?.length ?? 0) > 0)
+
+  const exInterests = fix(targeting.exclusions?.interests)
+  const exBehaviors = targeting.exclusions?.behaviors ?? []
+
+  return {
+    targeting: {
+      ...targeting,
+      interests: fix(targeting.interests),
+      narrowing,
+      exclusions: exInterests.length + exBehaviors.length > 0
+        ? { interests: exInterests, behaviors: exBehaviors }
+        : undefined,
+    },
+    dropped: [...new Set(dropped)],
   }
 }
 
@@ -2504,9 +2606,16 @@ export async function launchFullCampaign(params: {
     }
   }
 
-  // 2 — Interests are re-validated by NAME against Meta's live vocabulary;
-  // stale ids drop instead of failing the launch.
-  const validatedInterests = await validateInterests(params.targeting.interests)
+  // 2 — EVERY interest in the spec is re-resolved by NAME against Meta's live
+  // vocabulary — base, narrowing groups and exclusions alike. Stale ids are
+  // rewritten to whatever is live now; names Meta no longer knows are dropped
+  // along with any group they leave empty. See repairTargetingInterests: for
+  // three launches this ran on the base interests only, while the ids that
+  // actually failed sat in the narrowing group the whole time.
+  const repaired = await repairTargetingInterests(params.targeting)
+  if (repaired.dropped.length > 0) {
+    console.warn('[meta/launch] dropped interests Meta no longer recognises:', repaired.dropped.join(', '))
+  }
   // Lead-language narrowing: resolve the wizard's language codes to Meta's
   // real numeric locale IDs (live search — Meta publishes no static table)
   // and merge with any locales the targeting spec already carries. An empty
@@ -2543,8 +2652,7 @@ export async function launchFullCampaign(params: {
 
   const mergedLocales = Array.from(new Set([...(params.targeting.locales ?? []), ...leadLanguageLocales]))
   const baseTargeting = {
-    ...params.targeting,
-    interests: validatedInterests,
+    ...repaired.targeting,
     ...(mergedLocales.length > 0 ? { locales: mergedLocales } : {}),
   }
 

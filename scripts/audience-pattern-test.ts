@@ -452,6 +452,44 @@ console.log('\n── the catalog agrees with itself, even if Meta can\'t be ask
   check('every entry has both an id and a name', catalog.every((e) => e.id && e.name))
 }
 
+console.log('\n── the launch repairs EVERY interest, not just the base ones ──')
+{
+  // THE BUG THIS EXISTS TO PREVENT. A validator that re-resolves interests by
+  // name against Meta's live vocabulary was in this codebase all along — and
+  // was applied only to `targeting.interests`. Every id that actually failed
+  // a live launch sat in `narrowing` (where the real-estate MUST group goes,
+  // i.e. on EVERY audience this product builds) or in `exclusions`, both of
+  // which went to Meta unchecked. Three launches failed on three different
+  // ids before anyone noticed the repair shop existed and the car never went
+  // in. These assertions fail if the repair is ever narrowed back.
+  const CLIENT = readFileSync('lib/meta/client.ts', 'utf8')
+  const repair = CLIENT.slice(CLIENT.indexOf('export async function repairTargetingInterests'))
+  check('the repair reads the narrowing groups',
+    /for \(const g of targeting\.narrowing/.test(repair.slice(0, 3000)),
+    'repairTargetingInterests does not walk narrowing')
+  check('the repair reads the exclusions',
+    /collect\(targeting\.exclusions\?\.interests\)/.test(repair.slice(0, 3000)),
+    'repairTargetingInterests does not walk exclusions')
+  check('a group left empty by the repair is dropped, never sent empty',
+    /\.filter\(\(g\) => \(g\.interests\?\.length \?\? 0\) \+ \(g\.behaviors\?\.length \?\? 0\) > 0\)/.test(repair.slice(0, 4000)),
+    'an emptied narrowing group would ship as an invalid payload')
+
+  const launch = CLIENT.slice(CLIENT.indexOf('export async function launchFullCampaign'))
+  check('the launch path runs the whole-spec repair',
+    /await repairTargetingInterests\(params\.targeting\)/.test(launch.slice(0, 6000)),
+    'launchFullCampaign no longer repairs the spec')
+  check('…and builds its ad sets from the repaired spec',
+    /const baseTargeting = \{\s*\.\.\.repaired\.targeting/.test(launch.slice(0, 8000)),
+    'baseTargeting is not built from the repaired spec')
+
+  // The reach estimate swallows its own errors, so a dead id there is silent:
+  // the number simply never appears. Same repair, same reason.
+  const reach = CLIENT.slice(CLIENT.indexOf('export async function getReachEstimate'))
+  check('the reach estimate repairs its spec too',
+    /repairTargetingInterests\(targeting\)/.test(reach.slice(0, 2000)),
+    'getReachEstimate would fail silently on a stale id')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} pattern rule(s) broken.`)
   process.exit(1)
