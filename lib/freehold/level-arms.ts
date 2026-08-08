@@ -203,11 +203,11 @@ export function selectColdArms(levels: PositiveLevel[], evidence: LevelEvidence[
     const e = byLevel.get(l)
     if (e?.verdict === 'counter') {
       excludeCandidates.push(l)
-      skipped.push({ level: l, reason: `${LEVEL_LABEL[l]} predicts a WORSE lead. Buying more of it would be the most expensive way to confirm that — it belongs in the exclusions.` })
+      skipped.push({ level: l, reason: `${LEVEL_LABEL[l]} brings worse leads in your own history, so it is excluded instead of paid for.` })
       continue
     }
     if (typeof e?.narrowingPower === 'number' && e.narrowingPower < MIN_ARM_DISTINCTION) {
-      skipped.push({ level: l, reason: `${LEVEL_LABEL[l]} removes almost nobody, so its arm would buy the same people as the arm above it — two ad sets bidding against each other in one auction.` })
+      skipped.push({ level: l, reason: `${LEVEL_LABEL[l]} barely changes who sees the ad, so a separate ad set for it would just buy the same people twice.` })
       continue
     }
     if (e?.verdict === 'relevant') proven.push(l)
@@ -221,7 +221,7 @@ export function selectColdArms(levels: PositiveLevel[], evidence: LevelEvidence[
   const arms: ColdArm[] = [{
     kind: 'cold', id: 'L1', label: LEVEL_LABEL[1], levels: [1],
     weight: LEVEL_WEIGHT[1],
-    rationale: 'The persona alone — the buy, and the only arm that can reach someone Meta never labelled with the deeper levels.',
+    rationale: 'Your main audience on its own — the widest net, and where most of the budget starts.',
   }]
 
   const carried: PositiveLevel[] = [1]
@@ -239,17 +239,17 @@ export function selectColdArms(levels: PositiveLevel[], evidence: LevelEvidence[
       // budget than an unproven one of the same nominal weight.
       weight: LEVEL_WEIGHT[l] * (isProven ? 1.5 : 1),
       rationale: isProven
-        ? `Adds ${LEVEL_LABEL[l].toLowerCase()}, which the funnel has already shown converts better${typeof e?.lift === 'number' ? ` (${e.lift.toFixed(1)}x)` : ''}. Compared with the arm above it, the difference is what that level is worth on live delivery.`
-        : `Adds ${LEVEL_LABEL[l].toLowerCase()} as a MUST. Unproven — this arm exists to find out, and is funded accordingly.`,
+        ? `Adds ${LEVEL_LABEL[l].toLowerCase()} — your own leads already showed this brings better leads${typeof e?.lift === 'number' ? ` (${e.lift.toFixed(1)}x)` : ''}, so it earns its own ad set.`
+        : `Adds ${LEVEL_LABEL[l].toLowerCase()}. Your leads have not shown yet whether this helps, so it gets a smaller test budget.`,
     })
   }
 
   const usedEvidence = evidence.length > 0
   const headline = !usedEvidence
-    ? `${arms.length} arms in schema order — no prior evidence, so this is the default rather than a finding.`
+    ? `The budget is split across ${arms.length} ad sets. There is no lead history yet, so it starts on the safe default split and sharpens as your leads come in.`
     : proven.length > 0
-    ? `${arms.length} arms, led by ${proven.map((l) => LEVEL_LABEL[l].toLowerCase()).join(' then ')} — ordered by what the funnel has proven, not by level number.`
-    : `${arms.length} arms. Nothing has proven out yet, so every level above the persona is exploration and is funded as such.`
+    ? `The budget is split across ${arms.length} ad sets, led by ${proven.map((l) => LEVEL_LABEL[l].toLowerCase()).join(' then ')} — the parts your own leads already proved come first.`
+    : `The budget is split across ${arms.length} ad sets. Your leads have not picked a winner yet, so most of the money stays on the main audience and the rest runs small tests.`
 
   return { arms, skipped, excludeCandidates, headline }
 }

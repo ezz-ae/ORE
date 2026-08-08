@@ -19,12 +19,13 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Users, Rocket, Trash2, ArrowUpRight } from 'lucide-react'
+import { Users, Rocket, Trash2, ArrowUpRight, Sparkles, PenLine, Database, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting } from '@/lib/meta/types'
 import PatternBuilder from './PatternBuilder'
 import PersonaStudio from './PersonaStudio'
 import LookalikeStudio from './LookalikeStudio'
+import CrmAudiences from './CrmAudiences'
 import ArmPlanner from './ArmPlanner'
 
 // ─── Types mirrored from the API ──────────────────────────────────────────────
@@ -55,6 +56,10 @@ export default function AudiencesPage() {
   const [metaAudiences, setMetaAudiences] = useState<MetaAudienceRow[]>([])
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Cards choose the tool; the page never opens as a wall of forms.
+  const [tool, setTool] = useState<'personas' | 'pattern' | null>(null)
+  const [crmOpen, setCrmOpen] = useState(false)
+  const [dataOpen, setDataOpen] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -115,14 +120,46 @@ export default function AudiencesPage() {
         )}
       </header>
 
-      {/* Our list of people — stack up to three, one language, one market. */}
-      <PersonaStudio onSaved={load} />
+      {/* Four ways to make an audience, as cards — the page never opens as a
+          wall of forms. Personas and the pattern builder expand below;
+          CRM and Data open as popups. */}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {([
+          { id: 'personas', icon: Sparkles, onClick: () => setTool(tool === 'personas' ? null : 'personas'), active: tool === 'personas' },
+          { id: 'pattern', icon: PenLine, onClick: () => setTool(tool === 'pattern' ? null : 'pattern'), active: tool === 'pattern' },
+          { id: 'crm', icon: Users, onClick: () => setCrmOpen(true), active: false },
+          { id: 'data', icon: Database, onClick: () => setDataOpen(true), active: false },
+        ] as const).map(({ id, icon: Icon, onClick, active }) => (
+          <button key={id} type="button" onClick={onClick}
+            className={`flex flex-col items-start rounded-2xl border p-4 text-start transition ${
+              active ? 'border-gold/50 bg-gold/10' : 'border-line bg-surface hover:border-slate-600'
+            }`}>
+            <Icon className={`h-4 w-4 ${active ? 'text-gold' : 'text-gold/70'}`} />
+            <span className={`mt-2 text-[13px] font-semibold ${active ? 'text-gold' : 'text-white'}`}>{t(`lm.aud.create.${id}.name`)}</span>
+            <span className="mt-1 text-[11.5px] leading-relaxed text-slate-400">{t(`lm.aud.create.${id}.desc`)}</span>
+          </button>
+        ))}
+      </section>
 
-      {/* Describe the person in your own words — the order counter. */}
-      <PatternBuilder onSaved={load} />
+      {tool === 'personas' && <PersonaStudio onSaved={load} />}
+      {tool === 'pattern' && <PatternBuilder onSaved={load} />}
 
-      {/* Similar people to our own records, at up to three levels. */}
-      <LookalikeStudio onSaved={load} />
+      <CrmAudiences open={crmOpen} onClose={() => setCrmOpen(false)} onSaved={load} />
+
+      {/* Data custom audiences — upload a list, get similar people. */}
+      {dataOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setDataOpen(false)}>
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="relative">
+              <button type="button" onClick={() => setDataOpen(false)}
+                className="absolute end-3 top-3 z-10 rounded-full p-1 text-slate-500 transition hover:text-white" aria-label={t('lm.aud.crm.close')}>
+                <X className="h-4 w-4" />
+              </button>
+              <LookalikeStudio onSaved={() => { void load() }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* How the budget would be split across ad sets, and why. A read, never
           a launch — creating ad sets stays a separate, deliberate act. */}

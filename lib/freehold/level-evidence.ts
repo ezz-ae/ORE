@@ -124,20 +124,20 @@ export function levelEvidenceFrom(
       // planner should fall back to schema order rather than treat the level
       // as explored and inconclusive.
       verdict = undefined
-      sentence = `Nothing at this level has enough leads yet to say anything — ${members.length} segment${members.length === 1 ? '' : 's'}, all too rare to read.`
+      sentence = `Not enough leads yet to learn from here — this fills in by itself as leads come in.`
     } else if (decided === 0) {
       verdict = 'undecided'
-      sentence = `Enough leads to look at, not enough to decide. ${seen.length} segment${seen.length === 1 ? '' : 's'} read, none decisive.`
+      sentence = `Some leads came in, but not enough to call it either way yet. Keep running.`
     } else if (relevant.length / decided >= LEVEL_AGREEMENT) {
       verdict = 'relevant'
-      sentence = `${relevant.length} of ${decided} segments here convert better. The level holds, not just one segment inside it.`
+      sentence = `${relevant.length} of ${decided} signals here bring better leads. This part works.`
     } else if (counter.length / decided >= LEVEL_AGREEMENT) {
       verdict = 'counter'
-      sentence = `${counter.length} of ${decided} segments here convert WORSE. This belongs in the exclusions, not in an ad set.`
+      sentence = `${counter.length} of ${decided} signals here bring worse leads. Better excluded than paid for.`
     } else {
       // The case worth naming: the level is not the explanation, a segment is.
       verdict = 'undecided'
-      sentence = `Segments here disagree — ${relevant.length} better, ${counter.length} worse. That is one segment doing the work, not the level, so it is funded as exploration.`
+      sentence = `Mixed results here — part works, part does not — so it gets a small test budget until it is clear.`
     }
 
     const narrowing = narrowingByLevel[level]

@@ -149,7 +149,6 @@ const PRODUCT_OBJECTIVES: {
 
 // Countries the ad can be delivered in. AE is the home market; the rest cover
 // the GCC + the key expat/investor source markets for Dubai real estate.
-const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE'] as const
 
 // The three lead languages the product actually serves end-to-end — matches
 // LpLang in lib/landing-i18n.ts exactly. Option labels are the language's own
@@ -256,15 +255,19 @@ export default function NewCampaignPage() {
     strategy:     'broad_manual',
     dailyBudgetAED: 200,
     lifetimeCapAED: 0,
-    // Default-all, deselectable — bounded to the curated list above, never
-    // "every country Meta supports".
-    countries:    [...COUNTRY_CODES],
+    // THE DEFAULT IS THE UAE, ALONE. Every extra country is a choice the
+    // operator makes on purpose. A default that pre-selects ten countries is
+    // how a Dubai campaign quietly buys leads on another continent — it
+    // happened, and it nearly cost the contract.
+    countries:    ['AE'],
     cityKeys:     ['297928'], // Dubai
-    ageMin:       28,
+    ageMin:       30,
     ageMax:       65,
     genders:      [],
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
-    leadLanguages: ['en', 'ar', 'ru'],
+    // One language, chosen, not all three pre-ticked — all-selected means the
+    // ad's language and the audience's language can silently disagree.
+    leadLanguages: ['ar'],
     publisherPlatforms: ['facebook', 'instagram'],
     placementMode: 'automatic',
     manualPlacements: [],
@@ -341,43 +344,6 @@ export default function NewCampaignPage() {
     setSrcLink('')
   }
   const [uploadingImg, setUploadingImg] = useState(false)
-  const [audienceOpen, setAudienceOpen] = useState(false)
-
-  // Live Meta reach estimate for the manual "Edit Audience" popup — reuses the
-  // SAME /api/freehold/ads/audiences/reach endpoint (and request/response
-  // shape) as the standalone Audiences builder's checkBuilderReach. Debounced
-  // so it fires once the operator pauses, never on every keystroke/click, and
-  // never shows a fabricated number — only a real Meta estimate or an honest
-  // connect/warming state.
-  const [audienceReach, setAudienceReach] = useState<{ lower: number; upper: number; ready: boolean } | null>(null)
-  const [audienceReachLoading, setAudienceReachLoading] = useState(false)
-  const [audienceReachConnected, setAudienceReachConnected] = useState(true)
-  useEffect(() => {
-    if (!audienceOpen) return
-    setAudienceReachLoading(true)
-    const timer = setTimeout(() => {
-      const spec: Partial<CampaignTargeting> = {
-        countries: form.countries,
-        cityKeys: form.cityKeys,
-        ageMin: form.ageMin,
-        ageMax: form.ageMax,
-        genders: form.genders.length ? form.genders : undefined,
-        interests: UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id)),
-      }
-      fetch('/api/freehold/ads/audiences/reach', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ spec }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => {
-          setAudienceReachConnected(d?.connected !== false)
-          setAudienceReach(d?.reach ?? null)
-        })
-        .catch(() => setAudienceReach(null))
-        .finally(() => setAudienceReachLoading(false))
-    }, 650)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audienceOpen, form.countries, form.cityKeys, form.ageMin, form.ageMax, form.genders, form.interestIds])
 
   // Saved audiences (Audiences tab). Attaching one overrides the audience
   // fields of the launch — countries, age, gender, language, interests,
@@ -413,37 +379,6 @@ export default function NewCampaignPage() {
     return () => window.removeEventListener('focus', onFocus)
   }, [refreshAudiences])
 
-  // Inline "create new audience": save the current manual targeting fields as a
-  // reusable audience without leaving the wizard, then auto-attach it.
-  const [audCreateOpen, setAudCreateOpen] = useState(false)
-  const [audNewName, setAudNewName] = useState('')
-  const [audCreating, setAudCreating] = useState(false)
-  const [audCreateErr, setAudCreateErr] = useState('')
-  async function createAudienceInline() {
-    const name = audNewName.trim()
-    if (!name || audCreating) return
-    setAudCreating(true); setAudCreateErr('')
-    try {
-      const spec = {
-        countries: form.countries.length ? form.countries : ['AE'],
-        cityKeys:  form.cityKeys,
-        ageMin:    form.ageMin,
-        ageMax:    form.ageMax,
-        genders:   form.genders,
-        interests: UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id)),
-      }
-      const res = await fetch('/api/freehold/ads/audiences', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, kind: 'narrow', spec }),
-      })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok || !d?.audience?.id) throw new Error(d?.error || t('lm.aud.create.failed'))
-      await refreshAudiences(d.audience.id)
-      setAudCreateOpen(false); setAudNewName('')
-    } catch (e) {
-      setAudCreateErr(e instanceof Error ? e.message : t('lm.aud.create.failed'))
-    } finally { setAudCreating(false) }
-  }
 
   // Data Quality Test — verify the listing's info before it becomes an ad/landing.
   type DataQuality = {
@@ -490,46 +425,7 @@ export default function NewCampaignPage() {
   const dqUnacknowledged = dqFailingChecks.filter((c) => !form.dqVerifiedChecks.includes(c.key))
   const dqAcknowledgedCount = dqFailingChecks.length - dqUnacknowledged.length
 
-  const GENDER_OPTIONS: { key: string; val: number[] }[] = [
-    { key: 'all', val: [] }, { key: 'men', val: [1] }, { key: 'women', val: [2] },
-  ]
-  const genderKey = form.genders.length === 0 ? 'all' : form.genders[0] === 1 ? 'men' : 'women'
 
-  // ── Buyer Match: the audience that actually buys THIS listing, from our own
-  // closed deals + leads, anchored to the price band, with a live Meta estimate.
-  type BuyerMatch = {
-    band: { key: string; label: string; min: number; max: number | null }
-    listing: { price: number; area: string }
-    buyers: { deals: number; avgValue: number; totalValue: number; topDevelopers: { name: string; count: number }[]; leads: number; qualified: number; closed: number; closeRate: number | null; topSources: { source: string; count: number }[]; hasData: boolean }
-    recommendation: { ageMin: number; ageMax: number; interestIds: string[]; interestNames: string[] }
-    estimate: { lower: number; upper: number; ready: boolean } | null
-    metaConnected: boolean
-  }
-  const [buyerMatch, setBuyerMatch] = useState<BuyerMatch | null>(null)
-  const [bmLoading, setBmLoading] = useState(false)
-  const [bmError, setBmError] = useState(false)
-  const countriesKey = form.countries.join(',')
-  function loadBuyerMatch() {
-    if (!form.listingId) return
-    const listing = listings.find((l) => l.id === form.listingId)
-    setBuyerMatch(null); setBmError(false); setBmLoading(true)
-    fetch('/api/freehold/ads/buyer-match', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listingSlug: form.listingId, price: listing?.startingPrice || 0, countries: form.countries }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d && !d.error) setBuyerMatch(d as BuyerMatch); else setBmError(true) })
-      .catch(() => setBmError(true))
-      .finally(() => setBmLoading(false))
-  }
-  useEffect(() => {
-    if (step === 2 && form.listingId) loadBuyerMatch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, form.listingId, countriesKey])
-  function applyBuyerMatch() {
-    if (!buyerMatch) return
-    setForm((prev) => ({ ...prev, strategy: 'interest_refined', ageMin: buyerMatch.recommendation.ageMin, ageMax: buyerMatch.recommendation.ageMax, interestIds: buyerMatch.recommendation.interestIds }))
-  }
 
   // ── Creative: real ad preview + AI copy generation (existing generator) ──
   const [previewPlacement, setPreviewPlacement] = useState<'feed' | 'story'>('feed')
@@ -581,48 +477,6 @@ export default function NewCampaignPage() {
     setForm((prev) => ({ ...prev, primaryText: v.primaryText, headlines, descriptions, cta: v.cta }))
   }
 
-  // The learning loop: fetch AI targeting learned from ACTUAL lead outcomes.
-  const [aiTargeting, setAiTargeting] = useState<TargetingRecommendation | null>(null)
-  const [aiTargetingLoading, setAiTargetingLoading] = useState(false)
-  const [aiTargetingApplied, setAiTargetingApplied] = useState(false)
-  async function fetchAiTargeting() {
-    setAiTargetingLoading(true)
-    try {
-      // Send the SELECTED listing so the recommendation is tailored to this
-      // asset and its price band — not a one-size-fits-the-account answer.
-      const listing = listings.find((l) => l.id === form.listingId)
-      const res = await fetch('/api/freehold/ai/targeting', {
-        method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listing: listing
-            ? { name: listing.projectName, area: listing.area, price: listing.startingPrice ?? 0 }
-            : undefined,
-        }),
-      })
-      const d = await res.json()
-      if (res.ok && d?.recommendation) setAiTargeting(d.recommendation)
-    } catch { /* panel simply stays collapsed */ }
-    finally { setAiTargetingLoading(false) }
-  }
-  // The learning loop loads ITSELF when targeting opens — the intelligence is
-  // the default view of step 2, not a hidden button.
-  useEffect(() => {
-    if (step === 2 && !aiTargeting && !aiTargetingLoading) fetchAiTargeting()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
-  function applyAiTargeting() {
-    if (!aiTargeting) return
-    setForm((prev) => ({
-      ...prev,
-      strategy: aiTargeting.strategy,
-      interestIds: aiTargeting.interestIds,
-      ageMin: aiTargeting.ageMin,
-      ageMax: aiTargeting.ageMax,
-      cityKeys: aiTargeting.cityKeys,
-      dailyBudgetAED: aiTargeting.dailyBudgetAED,
-    }))
-    setAiTargetingApplied(true)
-  }
 
   // Real projects for the picker — loaded from the live inventory API.
   const [listings, setListings] = useState<WizardListing[]>([])
@@ -1164,27 +1018,25 @@ export default function NewCampaignPage() {
    *
    * Every entry point in the product — the hub button, a landing page, the
    * ad designer, inventory — funnels into this wizard, so this is the one
-   * gate that covers them all. With no audience attached, no interests and
-   * no language narrowing, the targeting is "everyone in the UAE in an age
-   * band", and the leads that buys are browsers. That launch is still
+   * gate that covers them all. With no audience attached and no language
+   * narrowing, the targeting is "everyone in the chosen countries in an age
+   * band" — interests do NOT count as a described buyer, because the default
+   * property interests are the anchor of every audience, not a choice — and
+   * the leads that buys are browsers. That launch is still
    * allowed — broad on purpose is a real strategy — but it can never again
    * be the accidental default someone reaches by clicking through.
    */
-  const buysEveryone =
-    !attachedAudience &&
-    form.interestIds.length === 0 &&
-    (form.leadLanguages.length === 0 || form.leadLanguages.length >= LEAD_LANGUAGE_OPTIONS.length)
-  const [broadOnPurpose, setBroadOnPurpose] = useState(false)
+  const needsAudience = !attachedAudience
 
   // ── Launch ─────────────────────────────────────────────────────────────────
   async function handleLaunch() {
     setLoading(true)
     setApiError(null)
 
-    // The everyone-launch must be chosen, not stumbled into. The message
-    // points at the fix (attach a buyer) rather than only naming the problem.
-    if (buysEveryone && !broadOnPurpose) {
-      setApiError(t('lm.newCampaign.err.buysEveryone')); setLoading(false); return
+    // No audience, no launch. Audiences are made on the Audiences page;
+    // this wizard only picks one — that is the whole design.
+    if (needsAudience) {
+      setApiError(t('lm.newCampaign.err.pickAudience')); setLoading(false); return
     }
 
     // Destination integrity — the chosen objective must be fully wired before
@@ -1663,8 +1515,8 @@ export default function NewCampaignPage() {
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
 
-            {/* Saved audiences — attach a definition, refresh the list, or
-                create a new one inline (all three without leaving the wizard). */}
+            {/* One job: pick the audience. Audiences are MADE on the
+                Audiences page — this wizard only chooses one. */}
             <div className="rounded-2xl border border-line bg-surface p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><Users className="h-3.5 w-3.5" /> {t('lm.aud.attach.title')}</span>
@@ -1673,30 +1525,9 @@ export default function NewCampaignPage() {
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 transition hover:text-white disabled:opacity-50">
                     <RefreshCw className={`h-3 w-3 ${audRefreshing ? 'animate-spin' : ''}`} /> {t('lm.aud.attach.refresh')}
                   </button>
-                  <button type="button" onClick={() => { setAudCreateOpen((v) => !v); setAudCreateErr('') }}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-gold transition hover:opacity-80">
-                    <Plus className="h-3 w-3" /> {t('lm.aud.create.new')}
-                  </button>
-                  <Link href="/freehold-intelligence/lead-machine/audiences" target="_blank" className="text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-white hover:underline">{t('lm.aud.attach.open')}</Link>
+                  <Link href="/freehold-intelligence/lead-machine/audiences" target="_blank" className="inline-flex items-center gap-1 text-[11px] font-semibold text-gold transition hover:opacity-80"><Plus className="h-3 w-3" /> {t('lm.aud.attach.open')}</Link>
                 </div>
               </div>
-
-              {/* Inline quick-create — saves the manual targeting below as a reusable audience */}
-              {audCreateOpen && (
-                <div className="mt-3 rounded-xl border border-gold/25 bg-gold/[0.04] p-3">
-                  <p className="text-[11px] text-slate-400">{t('lm.aud.create.hint')}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <input value={audNewName} onChange={(e) => setAudNewName(e.target.value)}
-                      placeholder={t('lm.aud.create.namePlaceholder')}
-                      className="min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-gold/40" />
-                    <button type="button" onClick={createAudienceInline} disabled={audCreating || !audNewName.trim()}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
-                      {audCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('lm.aud.create.save')}
-                    </button>
-                  </div>
-                  {audCreateErr && <p className="mt-1.5 text-[11px] text-red-300">{audCreateErr}</p>}
-                </div>
-              )}
 
               {savedAudiences.length === 0 ? (
                 <p className="mt-2 text-xs text-slate-500">{t('lm.aud.attach.none')}</p>
@@ -1724,126 +1555,6 @@ export default function NewCampaignPage() {
               )}
             </div>
 
-            {/* Buyer Match — the audience that actually buys THIS listing, from
-                our own deals + leads, with a live Meta reach estimate. */}
-            <div className="rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><Crosshair className="h-3.5 w-3.5" /> {t('bm.title')}</span>
-                {buyerMatch && <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-gold">{buyerMatch.band.label} · {buyerMatch.band.min >= 1e6 ? `${buyerMatch.band.min / 1e6}M` : `${Math.round(buyerMatch.band.min / 1000)}K`}{buyerMatch.band.max ? `–${buyerMatch.band.max / 1e6}M` : '+'}</span>}
-              </div>
-
-              {bmLoading && !buyerMatch ? (
-                <div className="flex items-center gap-2 py-4 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('bm.loading')}</div>
-              ) : !form.listingId ? (
-                <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('bm.pickListing')}</p>
-              ) : buyerMatch ? (
-                <div className="mt-3 space-y-3">
-                  {/* Live reach estimate */}
-                  <div className="flex items-center gap-2 rounded-xl border border-line bg-surface p-3">
-                    <Gauge className="h-4 w-4 text-gold" />
-                    {buyerMatch.estimate ? (
-                      <div className="text-sm">
-                        <span className="font-semibold text-white">{fmtReach(buyerMatch.estimate.lower)}–{fmtReach(buyerMatch.estimate.upper)}</span>
-                        <span className="ms-2 text-xs text-slate-500">{t('bm.liveReach')}</span>
-                      </div>
-                    ) : buyerMatch.metaConnected ? (
-                      <span className="text-xs text-slate-400">{t('bm.reachWarming')}</span>
-                    ) : (
-                      <span className="text-xs text-slate-400">{t('bm.connectMeta')}</span>
-                    )}
-                  </div>
-
-                  {/* Real buyer profile from our own data */}
-                  {buyerMatch.buyers.hasData ? (
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="rounded-xl border border-line bg-surface p-2.5">
-                        <div className="text-[17px] font-semibold text-gold">{buyerMatch.buyers.deals}</div>
-                        <div className="text-[10px] text-slate-500">{t('bm.closedDeals')}</div>
-                      </div>
-                      <div className="rounded-xl border border-line bg-surface p-2.5">
-                        <div className="text-[17px] font-semibold text-white">{buyerMatch.buyers.avgValue >= 1e6 ? `${(buyerMatch.buyers.avgValue / 1e6).toFixed(1)}M` : buyerMatch.buyers.avgValue ? `${Math.round(buyerMatch.buyers.avgValue / 1000)}K` : '—'}</div>
-                        <div className="text-[10px] text-slate-500">{t('bm.avgValue')}</div>
-                      </div>
-                      <div className="rounded-xl border border-line bg-surface p-2.5">
-                        <div className="text-[17px] font-semibold text-emerald-400">{buyerMatch.buyers.closeRate != null ? `${buyerMatch.buyers.closeRate}%` : '—'}</div>
-                        <div className="text-[10px] text-slate-500">{t('bm.closeRate')}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-xs leading-relaxed text-slate-400">{t('bm.noData')}</p>
-                  )}
-
-                  {buyerMatch.buyers.topSources.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                      <span className="text-slate-500">{t('bm.topSources')}:</span>
-                      {buyerMatch.buyers.topSources.map((s) => (
-                        <span key={s.source} className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-slate-300">{s.source} · {s.count}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Recommended audience + apply */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gold/20 bg-gold/[0.04] p-3">
-                    <div className="min-w-0 text-[11px]">
-                      <span className="text-slate-400">{t('bm.recommended')}: </span>
-                      <span className="text-slate-200">{buyerMatch.recommendation.ageMin}–{buyerMatch.recommendation.ageMax}</span>
-                      {buyerMatch.recommendation.interestNames.map((n) => (
-                        <span key={n} className="ms-1 rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-gold">{n}</span>
-                      ))}
-                    </div>
-                    <button type="button" onClick={applyBuyerMatch} className="shrink-0 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright">{t('bm.apply')}</button>
-                  </div>
-
-                  <p className="text-[10px] leading-relaxed text-slate-600">{t('bm.provenance')}</p>
-
-                  {/* Secondary: the network learning-loop read (real Meta + CRM outcomes) */}
-                  {!aiTargeting ? (
-                    <button type="button" onClick={fetchAiTargeting} disabled={aiTargetingLoading} className="text-[11px] text-gold/70 transition hover:text-gold disabled:opacity-60">
-                      {aiTargetingLoading ? '…' : `+ ${t('lm.newCampaign.ai.title')}`}
-                    </button>
-                  ) : (
-                    <div className="space-y-1 border-t border-line pt-2 text-[11px] leading-relaxed text-slate-400">
-                      <p className="text-slate-300">{aiTargeting.analysis}</p>
-                      {aiTargeting.rationale && <p>{aiTargeting.rationale}</p>}
-                      <button type="button" onClick={applyAiTargeting} disabled={aiTargetingApplied} className="text-gold/70 transition hover:text-gold disabled:opacity-60">
-                        {aiTargetingApplied ? t('lm.newCampaign.ai.applied') : t('lm.newCampaign.ai.apply')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : bmError ? (
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <p className="text-xs text-slate-400">{t('bm.failed')}</p>
-                  <button type="button" onClick={loadBuyerMatch} className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold transition hover:bg-gold/20">{t('bm.retry')}</button>
-                </div>
-              ) : (
-                <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('bm.pickListing')}</p>
-              )}
-            </div>
-
-            {/* Audience summary — the full builder opens as a popup (nested tab) */}
-            <div className="rounded-[16px] border border-line bg-surface-2 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s2.audience')}</div>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
-                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-slate-300">{form.countries.map((c) => t(`lm.country.${c}`)).join(', ') || t('lm.country.AE')}</span>
-                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-slate-300">{form.ageMin}–{form.ageMax}</span>
-                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-slate-300">{t(`lm.newCampaign.s2.gender.${genderKey}`)}</span>
-                    {form.interestIds.length > 0
-                      ? <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-gold">{t('lm.newCampaign.s2.nInterests', { n: String(form.interestIds.length) })}</span>
-                      : <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-emerald-300">{t('lm.newCampaign.ai.broad')}</span>}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAudienceOpen(true)}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20"
-                >
-                  <Sliders className="h-3.5 w-3.5" /> {t('lm.newCampaign.s2.editAudience')}
-                </button>
-              </div>
-            </div>
 
             {/* Budget + Smart Spender */}
             <div data-coach="wiz-budget" className="rounded-[16px] border border-line bg-surface-2 p-4 space-y-4">
@@ -1873,184 +1584,6 @@ export default function NewCampaignPage() {
           </div>
         )}
 
-        {/* Audience builder — a tab shown as a popup because we're nested in the wizard */}
-        <TabPopup
-          open={audienceOpen}
-          onClose={() => setAudienceOpen(false)}
-          title={t('lm.newCampaign.s2.audienceBuilder')}
-          subtitle={t('lm.newCampaign.s2.audienceBuilderSub')}
-          footer={<button type="button" onClick={() => setAudienceOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-gold-bright">{t('lm.newCampaign.s2.useAudience')}</button>}
-        >
-          <div className="space-y-5">
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.countries')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {COUNTRY_CODES.map((code) => {
-                  const selected = form.countries.includes(code)
-                  return (
-                    <button key={code} type="button"
-                      onClick={() => update('countries', selected ? form.countries.filter((c) => c !== code) : [...form.countries, code])}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                      {t(`lm.country.${code}`)}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.countriesHint')}</p>
-            </div>
-
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.gender')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {GENDER_OPTIONS.map((g) => (
-                  <button key={g.key} type="button" onClick={() => update('genders', g.val)}
-                    className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${genderKey === g.key ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                    {t(`lm.newCampaign.s2.gender.${g.key}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.cities')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {UAE_CITIES.map((city) => {
-                  const selected = form.cityKeys.includes(city.key)
-                  return (
-                    <button key={city.key} type="button"
-                      onClick={() => update('cityKeys', selected ? form.cityKeys.filter((k) => k !== city.key) : [...form.cityKeys, city.key])}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                      {city.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>{t('lm.newCampaign.s2.label.ageMin')}</Label>
-                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMin} onChange={(e) => update('ageMin', Math.min(65, Math.max(18, parseInt(e.target.value) || 18)))} />
-              </div>
-              <div>
-                <Label>{t('lm.newCampaign.s2.label.ageMax')}</Label>
-                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMax} onChange={(e) => update('ageMax', Math.min(65, Math.max(form.ageMin || 18, parseInt(e.target.value) || 65)))} />
-              </div>
-            </div>
-
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.interests')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {UAE_INTERESTS.map((int) => {
-                  const selected = form.interestIds.includes(int.id)
-                  return (
-                    <button key={int.id} type="button"
-                      onClick={() => update('interestIds', selected ? form.interestIds.filter((i) => i !== int.id) : [...form.interestIds, int.id])}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                      {int.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.leadLanguage')}</Label>
-              <div className="flex flex-wrap gap-2">
-                {LEAD_LANGUAGE_OPTIONS.map((lang) => {
-                  const selected = form.leadLanguages.includes(lang.code)
-                  return (
-                    <button key={lang.code} type="button"
-                      onClick={() => update('leadLanguages', selected ? form.leadLanguages.filter((c) => c !== lang.code) : [...form.leadLanguages, lang.code])}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                      {t(lang.labelKey)}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.leadLanguageHint')}</p>
-            </div>
-
-            {/* Live Meta reach estimate — same badge/pill pattern as the Buyer
-                Match panel's live reach (Gauge icon, range, honest empty
-                state), debounced to the popup's current selections above. */}
-            <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 p-3">
-              <Gauge className="h-4 w-4 text-gold" />
-              {audienceReachLoading ? (
-                <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.newCampaign.s2.reach.loading')}
-                </span>
-              ) : !audienceReachConnected ? (
-                <span className="text-xs text-slate-400">{t('lm.newCampaign.s2.reach.connect')}</span>
-              ) : audienceReach ? (
-                <div className="text-sm">
-                  <span className="font-semibold text-white">{fmtReach(audienceReach.lower)}–{fmtReach(audienceReach.upper)}</span>
-                  <span className="ms-2 text-xs text-slate-500">{t('lm.newCampaign.s2.reach.label')}</span>
-                </div>
-              ) : (
-                <span className="text-xs text-slate-400">{t('lm.newCampaign.s2.reach.warming')}</span>
-              )}
-            </div>
-
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.placementMode')}</Label>
-              <div className="flex gap-3">
-                {PLACEMENT_MODE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => update('placementMode', opt.value)}
-                    className={`flex-1 rounded-[14px] border p-3 text-left transition ${
-                      form.placementMode === opt.value ? 'border-gold/40 bg-gold/[0.06]' : 'border-line hover:border-white/10'
-                    }`}
-                  >
-                    <div className="text-sm font-semibold text-white">{t(opt.labelKey)}</div>
-                    <p className="mt-1 text-xs text-slate-500">{t(opt.descKey)}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {form.placementMode === 'automatic' ? (
-              <div>
-                <Label>{t('lm.newCampaign.s2.label.platforms')}</Label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: 'facebook',  label: 'Facebook' },
-                    { value: 'instagram', label: 'Instagram' },
-                    { value: 'audience_network', label: 'Audience Network' },
-                  ].map((p) => {
-                    const selected = form.publisherPlatforms.includes(p.value)
-                    return (
-                      <button key={p.value} type="button"
-                        onClick={() => update('publisherPlatforms', selected ? form.publisherPlatforms.filter((v) => v !== p.value) : [...form.publisherPlatforms, p.value])}
-                        className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                        {p.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div>
-                <Label>{t('lm.newCampaign.s2.label.manualPlacements')}</Label>
-                <div className="flex flex-wrap gap-2">
-                  {PLACEMENT_KEYS.map((key) => {
-                    const selected = form.manualPlacements.includes(key)
-                    return (
-                      <button key={key} type="button"
-                        onClick={() => update('manualPlacements', selected ? form.manualPlacements.filter((v) => v !== key) : [...form.manualPlacements, key])}
-                        className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                        {t(`lm.newCampaign.s3.pl.${key}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-                <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.manualPlacementsHint')}</p>
-              </div>
-            )}
-          </div>
-        </TabPopup>
 
         {/* Data Quality Test — verify the listing before it becomes an ad/landing */}
         <TabPopup
@@ -2907,7 +2440,7 @@ export default function NewCampaignPage() {
             onClick={() => setStep((s) => (s + 1) as WizardStep)}
             disabled={
               (step === 1 && (!form.listingId || !form.campaignName)) ||
-              (step === 2 && form.dailyBudgetAED < 50) ||
+              (step === 2 && (form.dailyBudgetAED < 50 || needsAudience)) ||
               (step === 3 && (!form.primaryText || !form.headlines[0] || (!form.landingUrl && !form.listingId)))
             }
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-40 disabled:cursor-not-allowed"
@@ -2916,19 +2449,6 @@ export default function NewCampaignPage() {
           </button>
         ) : (
           <div className="flex flex-col items-end gap-2">
-          {/* Launching to everyone is a choice, never a default. The line says
-              what this buys and where the fix is; the tick makes it deliberate. */}
-          {buysEveryone && (
-            <label className="flex max-w-md cursor-pointer items-start gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[11.5px] leading-relaxed text-slate-300">
-              <input
-                type="checkbox"
-                checked={broadOnPurpose}
-                onChange={(e) => setBroadOnPurpose(e.target.checked)}
-                className="mt-0.5 accent-[var(--gold,#d4a437)]"
-              />
-              <span>{t('lm.newCampaign.broadOnPurpose')}</span>
-            </label>
-          )}
           <button
             type="button"
             data-coach="wiz-launch"

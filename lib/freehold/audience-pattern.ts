@@ -323,7 +323,9 @@ export const RESIDENCY_COUNTRIES: Record<Residency, string[]> = {
   egypt:    ['EG'],
   france:   ['FR'],
   europe:   ['GB', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'SE', 'DK', 'NO', 'IE', 'PT', 'GR', 'PL', 'CZ', 'RO', 'HU', 'FI'],
-  overseas: ['GB', 'DE', 'FR', 'IN', 'PK', 'RU', 'CN', 'EG', 'ZA'],
+  // The buyer markets the client actually flies people in from — their list,
+  // not a list of big countries. Every market here has its own way of buying.
+  overseas: ['GB', 'DE', 'FR', 'IT', 'ES', 'CH', 'RU', 'CN', 'EG', 'TR'],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
