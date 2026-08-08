@@ -176,7 +176,7 @@ const ACTION_ICON: Record<ExpertAction['kind'], React.ElementType> = {
   prompt: ArrowRight, review: Eye, launch: Rocket, edit: Pencil, approve: ThumbsUp, navigate: ArrowRight,
 }
 function actionClass(style?: string) {
-  if (style === 'primary') return 'bg-gold text-[#06080A] hover:bg-[#E8C657] border-transparent'
+  if (style === 'primary') return 'bg-gold text-ink hover:bg-gold-bright border-transparent'
   if (style === 'danger') return 'border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/20'
   return 'border-line-strong bg-surface-2 text-slate-300 hover:border-gold/40 hover:text-white'
 }
@@ -893,7 +893,7 @@ export function ExpertChat() {
             />
             <div className="mt-2 flex items-center gap-2">
               <button onClick={attachScreenshot} disabled={shotBusy}
-                className="flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-50">
+                className="flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
                 {shotBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />} {t('expert.shotAttach')}
               </button>
               <button onClick={() => setShot(null)} className="rounded-full border border-line px-3.5 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
@@ -927,7 +927,7 @@ export function ExpertChat() {
                 className="flex-1 cursor-text resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
               />
               <button onClick={() => send()} disabled={!value.trim() || pending} aria-label={t('expert.sendAria')}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-gold-bright disabled:opacity-30">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
               </button>
             </div>
@@ -1130,7 +1130,7 @@ function BlockView({
             <h3 className="mt-2 text-lg font-semibold leading-tight text-white">{block.title}</h3>
             {block.subhead && <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{block.subhead}</p>}
             {block.cta && (
-              <span className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold text-[#06080A]" style={{ backgroundColor: accent }}>
+              <span className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold text-ink" style={{ backgroundColor: accent }}>
                 {block.cta} <ArrowRight className="h-3.5 w-3.5" />
               </span>
             )}
@@ -1151,7 +1151,7 @@ function BlockView({
               <Pencil className="h-3.5 w-3.5" /> {t('expert.edit')}
             </button>
             <button onClick={() => onAction(t('expert.launchLandingPrompt'))}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90">
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-ink transition-opacity hover:opacity-90">
               <Rocket className="h-3.5 w-3.5" /> {t('expert.launch')}
             </button>
             <button onClick={() => onCopy(full, `landing-${idx}`)}

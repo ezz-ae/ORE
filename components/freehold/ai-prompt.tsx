@@ -70,7 +70,7 @@ export function AiPrompt({
             onClick={() => send()}
             disabled={!value.trim()}
             aria-label={`Send to ${BRAND.company} Expert`}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-30"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-gold-bright disabled:opacity-30"
           >
             <ArrowUp className="h-4 w-4" />
           </button>

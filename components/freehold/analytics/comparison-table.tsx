@@ -103,7 +103,7 @@ export function ComparisonTable({
         <button
           onClick={save}
           disabled={saving || cols.length === 0 || effectiveItems.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3.5 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3.5 py-1.5 text-sm font-semibold text-ink transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
           {saving ? t('analytics.cmp.saving') : saved ? t('analytics.cmp.saved') : t('analytics.cmp.save')}

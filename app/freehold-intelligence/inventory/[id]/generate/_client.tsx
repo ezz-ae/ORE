@@ -310,7 +310,7 @@ export function GenerateClient({ prop, fromLandings = false }: { prop: Inventory
               className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
                 publishedUrl
                   ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                  : 'bg-gold text-ink hover:bg-[#F0CB67]'
+                  : 'bg-gold text-ink hover:bg-gold-bright'
               }`}
             >
               {publishing ? (
@@ -343,7 +343,7 @@ export function GenerateClient({ prop, fromLandings = false }: { prop: Inventory
               where deep editing lives. */}
           <Link
             href={`/freehold-intelligence/inventory/landings/${publishedSlug}/edit`}
-            className="shrink-0 flex items-center gap-1 rounded-full bg-gold px-3 py-1 text-xs font-medium text-ink transition hover:bg-[#F0CB67]"
+            className="shrink-0 flex items-center gap-1 rounded-full bg-gold px-3 py-1 text-xs font-medium text-ink transition hover:bg-gold-bright"
           >
             <PenLine className="h-3 w-3" /> {t('inv.gen.openFullEditor')}
           </Link>
@@ -402,7 +402,7 @@ export function GenerateClient({ prop, fromLandings = false }: { prop: Inventory
                   className="flex-1 rounded-[10px] border border-white/[0.10] bg-surface-2 px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-gold/30"
                 />
                 <button onClick={handleCustomAi} disabled={redesigning || !aiPrompt.trim()}
-                  className="rounded-[10px] bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-50">
+                  className="rounded-[10px] bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-gold-bright disabled:opacity-50">
                   {redesigning ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                 </button>
               </div>
