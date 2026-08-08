@@ -266,7 +266,10 @@ export default function NewCampaignPage() {
     ageMin:       30,
     ageMax:       65,
     genders:      [],
-    interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
+    // Named, not indexed — a numeric position into a catalog that shrinks
+    // whenever Meta rejects one of its ids points at a different interest
+    // the next time that happens (it already did once, silently, elsewhere).
+    interestIds:  UAE_INTERESTS.filter((i) => i.name === 'Property' || i.name === 'Investment').map((i) => i.id),
     // One language, chosen, not all three pre-ticked — all-selected means the
     // ad's language and the audience's language can silently disagree.
     leadLanguages: ['ar'],

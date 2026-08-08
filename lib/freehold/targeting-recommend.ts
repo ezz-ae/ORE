@@ -251,7 +251,9 @@ If there is no history at all, choose interest_refined honestly, say so, and put
     const jsonStart = raw.indexOf('{')
     rec = clampRecommendation(JSON.parse(jsonStart >= 0 ? raw.slice(jsonStart, raw.lastIndexOf('}') + 1) : raw))
   } catch {
-    rec = clampRecommendation({ strategy: 'interest_refined', interestIds: [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id] })
+    // Named, not indexed — see buyer-match.ts's PriceBand comment for why.
+    const fallbackIds = UAE_INTERESTS.filter((i) => i.name === 'Property' || i.name === 'Investment').map((i) => i.id)
+    rec = clampRecommendation({ strategy: 'interest_refined', interestIds: fallbackIds })
     rec.analysis = 'AI is offline — this is the proven cold-start setup for Dubai real-estate investors.'
     rec.signalPlan = 'Connect the pixel/CAPI and feed qualified-lead outcomes back weekly so the algorithm optimizes for quality.'
     rec.creativeAngle = 'ROI-first investor creative: real yield numbers and payment plan up front — the creative does the selecting.'
