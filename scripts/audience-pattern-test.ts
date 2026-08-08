@@ -19,7 +19,8 @@
 import { readFileSync } from 'node:fs'
 import {
   planPattern, describePattern, emptyPattern, parsePattern, BUNDLE,
-  STRICT_ALL, STRICT_DEFINING, type AudiencePattern,
+  STRICT_ALL, STRICT_DEFINING, REAL_ESTATE_MUST, hardenRealEstate,
+  type AudiencePattern,
 } from '../lib/freehold/audience-pattern'
 import { forClient } from '../lib/freehold/audiences'
 
@@ -56,8 +57,13 @@ console.log('\n── language, not nationality ──')
 
   // The point of choosing language: it buys LOCALES, not a guess-stack of
   // interests standing in for a nationality.
-  check('a bundle adds no interests at all — it is exact, not inferred',
-    both.targeting.interests.length === 0 && (both.targeting.narrowing ?? []).length === 0,
+  // The only group present is the real-estate MUST — the one hard rule, not
+  // an inference from the language.
+  const reIds = new Set(REAL_ESTATE_MUST.map((e) => e.id))
+  check('a bundle adds no interests of its own — it is exact, not inferred',
+    both.targeting.interests.length === 0 &&
+    (both.targeting.narrowing ?? []).length === 1 &&
+    (both.targeting.narrowing ?? [])[0].interests!.every((e) => reIds.has(e.id)),
     JSON.stringify({ i: both.targeting.interests.length, n: both.targeting.narrowing?.length }))
   check('every bundle names the language its creative is written in',
     Object.values(BUNDLE).every((b) => typeof b.creative === 'string' && b.creative.length === 2))
@@ -82,8 +88,8 @@ console.log('\n── the strictness dial actually moves something ──')
     `${tight.boundTraits}/${tight.hintedTraits}`)
   check('binding produces AND-narrowing groups, hinting produces base interests',
     (tight.targeting.narrowing ?? []).length > 0 && tight.targeting.interests.length === 0)
-  check('…and the loose end is the mirror image',
-    (loose.targeting.narrowing ?? []).length === 0 && loose.targeting.interests.length > 0)
+  check('…and the loose end is the mirror image — hints plus only the RE must',
+    (loose.targeting.narrowing ?? []).length === 1 && loose.targeting.interests.length > 0)
   check('the dial is monotonic — more strictness never binds fewer traits',
     loose.boundTraits <= mid.boundTraits && mid.boundTraits <= tight.boundTraits,
     `${loose.boundTraits} ${mid.boundTraits} ${tight.boundTraits}`)
@@ -351,6 +357,39 @@ console.log('\n── the pattern and the spec beside it cannot drift ──')
     /current\.kind === 'pattern'/.test(fn.slice(0, 2000)))
   check('a posted spec cannot override a pattern audience\'s targeting',
     /spec: planPattern\(/.test(fn.slice(0, 2000)), 'a caller-supplied spec may still win')
+}
+
+console.log('\n── the one hard rule: real estate is a MUST in every audience ──')
+{
+  const reIds = new Set(REAL_ESTATE_MUST.map((e) => e.id))
+  const hasAnchor = (narrowing?: { interests?: { id: string }[]; behaviors?: { id: string }[] }[]) =>
+    (narrowing ?? []).some((g) => {
+      const ids = [...(g.interests ?? []), ...(g.behaviors ?? [])].map((e) => e.id)
+      return ids.length > 0 && ids.every((id) => reIds.has(id))
+    })
+
+  // Every kind of pattern — loose, tight, empty of traits, language-only —
+  // carries a group made purely of real-estate signals.
+  const shapes: AudiencePattern[] = [
+    pat({}),
+    pat({ speakers: ['arabic'], strictness: 0 }),
+    pat({ motive: ['investment'], money: 'cash', strictness: 100 }),
+    pat({ lifeStage: ['single'], strictness: 50 }),
+  ]
+  check('every pattern plan carries the real-estate MUST group',
+    shapes.every((s) => hasAnchor(planPattern(s).targeting.narrowing)))
+
+  // hardenRealEstate does not stack a second anchor when one is already there.
+  const once = hardenRealEstate(planPattern(pat({})).targeting)
+  check('hardening twice adds nothing — the rule is idempotent',
+    (once.narrowing ?? []).length === (planPattern(pat({})).targeting.narrowing ?? []).length)
+
+  // A binding group that is itself pure real-estate satisfies the rule
+  // without a duplicate group appearing beside it.
+  const endUser = planPattern(pat({ motive: ['first_home'], strictness: 100 }))
+  check('a bound property group is not doubled by the anchor',
+    (endUser.targeting.narrowing ?? []).filter((g) =>
+      [...(g.interests ?? [])].every((e) => reIds.has(e.id))).length >= 1)
 }
 
 if (failures > 0) {

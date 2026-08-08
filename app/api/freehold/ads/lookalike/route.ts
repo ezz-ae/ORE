@@ -7,6 +7,7 @@ import {
   type BuyerContact,
 } from '@/lib/meta/client'
 import { createAudience } from '@/lib/freehold/audiences'
+import { hardenRealEstate } from '@/lib/freehold/audience-pattern'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { BRAND } from '@/lib/freehold/brand'
 
@@ -81,7 +82,14 @@ export async function POST(req: NextRequest) {
       name: `${label} — Closed Buyers Lookalike ${Math.round(ratio * 100)}% ${country}`,
       description: `Lookalike of ${result.uploaded.toLocaleString()} closed-deal contacts (top ${Math.round(ratio * 100)}% most similar in ${country}).`,
       kind: 'lookalike',
-      spec: { countries: [country], customAudienceIds: [result.lookalikeAudienceId] },
+      // The one hard rule applies to lookalikes too: similar to our buyers
+      // AND carrying a real-estate signal, not similar alone.
+      spec: hardenRealEstate({
+        countries: [country], cityKeys: [], ageMin: 30, ageMax: 65,
+        publisherPlatforms: ['facebook', 'instagram'],
+        interests: [], behaviors: [], narrowing: [],
+        customAudienceIds: [result.lookalikeAudienceId],
+      }),
       metaSourceAudienceId: result.sourceAudienceId,
       metaLookalikeId: result.lookalikeAudienceId,
       uploadedCount: result.uploaded,
