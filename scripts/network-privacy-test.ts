@@ -86,6 +86,32 @@ console.log('\n── the raw side never crosses the line ──')
     /FROM entrestate_targeting_signals/.test(agg.slice(0, 1200)))
 }
 
+console.log('\n── a file cannot teach the shared brain ──')
+{
+  // k-anonymity protects PRIVACY. It says nothing about TRUTH. An import is a
+  // CLAIM about a past this system never watched — stale, guessed, or a
+  // competitor's scraped list — and before this it reached every other
+  // tenant's benchmarks the moment it landed. A benchmark is the one number
+  // nobody goes back and re-checks.
+  check('signals record where they came from',
+    /origin text NOT NULL DEFAULT 'imported'/.test(SRC), 'origin is not stored')
+  check('an import is recorded as a claim, not as evidence',
+    /'imported'\n\s*FROM entrestate_lead_history/.test(SRC) || /-- IMPORTED/.test(SRC),
+    'rebuildSignals does not mark its rows imported')
+  check('the live fold is recorded as observed',
+    (SRC.match(/'observed'/g) ?? []).length >= 2, 'the live folds are not marked observed')
+  check('CROSS-TENANT BENCHMARKS READ ONLY WHAT WAS OBSERVED',
+    /WHERE origin = 'observed'/.test(SRC),
+    'an uploaded file still reaches other companies\' benchmarks')
+  check('…and the k-anonymity gate is still there beside it, not replaced',
+    /HAVING\s+COUNT\(DISTINCT tenant_id\)\s*>=/.test(SRC))
+
+  // The tenant who uploaded still gets the benefit immediately — the quarantine
+  // is about what crosses to OTHERS, not about withholding their own data.
+  check('the imported rows are still written, so they serve their own tenant',
+    /INSERT INTO entrestate_targeting_signals/.test(SRC))
+}
+
 console.log('\n── the type says what the number is ──')
 {
   // Typing a bucketed range as `number` invites arithmetic on a figure that is

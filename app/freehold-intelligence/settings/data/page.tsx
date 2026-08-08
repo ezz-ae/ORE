@@ -42,16 +42,36 @@ const FIELD_ALIASES: Record<string, string> = {
   city: 'city', interest: 'interest', interests: 'interest',
   outcome: 'outcome', status: 'outcome',
   lead_date: 'leadDate', leaddate: 'leadDate', date: 'leadDate', created: 'leadDate',
+  // The contact columns every real CRM export actually has.
+  name: 'name', full_name: 'name', fullname: 'name', client: 'name',
+  client_name: 'name', lead_name: 'name', customer: 'name', contact: 'name',
+  phone: 'phone', mobile: 'phone', phone_number: 'phone', mobile_number: 'phone',
+  tel: 'phone', telephone: 'phone', whatsapp: 'phone', contact_number: 'phone',
+  email: 'email', e_mail: 'email', email_address: 'email', mail: 'email',
+  budget_aed: 'budgetAed', budgetaed: 'budgetAed', amount: 'budgetAed', value: 'budgetAed',
+  message: 'message', notes: 'message', note: 'message', comment: 'message', remarks: 'message',
+  agent: 'assignedTo', broker: 'assignedTo', assigned_to: 'assignedTo',
+  assignedto: 'assignedTo', owner: 'assignedTo', salesperson: 'assignedTo',
 }
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 const ACCEPTED_EXT = ['.csv', '.txt', '.xlsx', '.xls']
 
 /** The fields a row can actually carry. Anything else is not storage — it is
  *  a column the pool has no place to put. */
-const TARGET_FIELDS = [
+/** WHO the lead is. These never enter the anonymised pool — they go to the
+ *  CRM, which is this tenant's own private table. Their absence from the
+ *  mapper was the reason a real lead list could be imported and then could
+ *  not ring anybody. */
+const CONTACT_FIELDS = ['name', 'phone', 'email', 'budgetAed', 'message', 'assignedTo'] as const
+
+/** WHAT the lead was after. These feed the shared brain, with no contact
+ *  attached — that is the whole promise the pool makes. */
+const POOL_FIELDS = [
   'source', 'platform', 'campaign', 'area', 'projectType', 'priceBandAED',
   'ageBand', 'city', 'interest', 'outcome', 'leadDate',
 ] as const
+
+const TARGET_FIELDS = [...CONTACT_FIELDS, ...POOL_FIELDS] as const
 export type TargetField = (typeof TARGET_FIELDS)[number]
 
 function aliasHeader(h: string): string {
@@ -241,13 +261,67 @@ export default function DataBasePage() {
     }
   }
 
-  /** Import what the mapping says, and nothing else. */
+  /**
+   * ONE FILE, TWO DESTINATIONS, EACH TAKING WHAT IT IS FOR.
+   *
+   * The pool is anonymised on purpose and cannot hold a contact. So a file
+   * with names and numbers in it is split: the PEOPLE go to the CRM, where
+   * they are workable and private to this tenant, and the SHAPE goes to the
+   * pool with no contact attached. Before this, the contacts were simply
+   * dropped and a real lead list imported as statistics nobody could call.
+   */
   async function confirmMapping() {
     if (!pending) return
     const rows = applyMapping(pending.headers, pending.cells, mapping)
     if (!rows.length) { toast.error(t('sd.mapNothing')); return }
-    await importRows(rows)
-    setPending(null); setMapping({})
+
+    const mapped = new Set(Object.values(mapping).filter(Boolean))
+    const hasContacts = CONTACT_FIELDS.some((f) => mapped.has(f))
+    const hasPoolFields = POOL_FIELDS.some((f) => mapped.has(f))
+
+    setImporting(true)
+    try {
+      // 1 — the people, if there are any.
+      if (hasContacts) {
+        let inserted = 0, existing = 0, unreachable = 0
+        for (let i = 0; i < rows.length; i += 1000) {
+          const res = await fetch('/api/freehold/crm/leads/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: rows.slice(i, i + 1000) }),
+          })
+          const d = await res.json()
+          if (!res.ok) throw new Error(d?.error || t('sd.importFailed'))
+          inserted += d.inserted ?? 0
+          existing += d.skippedExisting ?? 0
+          unreachable += d.unreachable ?? 0
+        }
+        toast.success(t('sd.leadsImported', { n: inserted }))
+        // Said out loud rather than folded into the success number: a list
+        // that is largely unreachable, or largely already here, is a fact
+        // about the list and the person importing should learn it now.
+        if (existing > 0) toast.info(t('sd.leadsExisting', { n: existing }))
+        if (unreachable > 0) toast.info(t('sd.leadsUnreachable', { n: unreachable }))
+      }
+
+      // 2 — the shape, with no contact attached.
+      if (hasPoolFields) {
+        const stripped = rows.map((r) => {
+          const out: Record<string, string> = {}
+          for (const [k, v] of Object.entries(r)) {
+            if ((POOL_FIELDS as readonly string[]).includes(k)) out[k] = v
+          }
+          return out
+        }).filter((r) => Object.keys(r).length > 0)
+        if (stripped.length) await importRows(stripped)
+      }
+
+      if (!hasContacts && !hasPoolFields) { toast.error(t('sd.mapNothing')); return }
+      setPending(null); setMapping({}); setFileName('')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      load()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('sd.importFailed'))
+    } finally { setImporting(false) }
   }
 
   return (
@@ -272,6 +346,10 @@ export default function DataBasePage() {
             <p className="text-[12.5px] leading-relaxed text-slate-400">
               {t('sd.map.sub', { rows: pending.cells.length, cols: pending.headers.length })}
             </p>
+            {/* Where each kind of column ends up, said before they choose —
+                the pool cannot hold a contact, and someone importing a real
+                lead list deserves to know that before, not after. */}
+            <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">{t('sd.map.split')}</p>
 
             <div className="mt-4 space-y-1.5">
               {pending.plan.map((h) => {

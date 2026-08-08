@@ -93,6 +93,11 @@ const ensure = async () => {
       PRIMARY KEY (tenant_id, platform, area, project_type, price_band, age_band, city, interest)
     )
   `)
+  // WHERE THIS SIGNAL CAME FROM. The difference decides whether it may cross
+  // into another company's benchmarks, so it is a column and not a convention
+  // buried in the tenant id — a naming rule holds only until someone adds a
+  // tenant without knowing about it.
+  await query(`ALTER TABLE entrestate_targeting_signals ADD COLUMN IF NOT EXISTS origin text NOT NULL DEFAULT 'imported'`)
 }
 const ensureOnce = () => dbEnsureOnce('entrestate_lead_history', ensure)
 
@@ -142,7 +147,7 @@ export async function rebuildSignals(tenantId: string): Promise<void> {
   await query(`DELETE FROM entrestate_targeting_signals WHERE tenant_id = $1`, [tenantId])
   await query(
     `INSERT INTO entrestate_targeting_signals
-       (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
+       (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at, origin)
      SELECT tenant_id,
             COALESCE(platform, ''), COALESCE(area, ''), COALESCE(project_type, ''),
             COALESCE(price_band, ''), COALESCE(age_band, ''), COALESCE(city, ''), COALESCE(interest, ''),
@@ -150,7 +155,12 @@ export async function rebuildSignals(tenantId: string): Promise<void> {
             COUNT(*) FILTER (WHERE outcome IN ('qualified','closed')),
             COUNT(*) FILTER (WHERE outcome = 'closed'),
             COUNT(*) FILTER (WHERE outcome = 'lost'),
-            now()
+            now(),
+            -- IMPORTED: a file is a CLAIM about the past that this system
+            -- never watched happen. It serves the tenant who uploaded it
+            -- straight away and is barred from every other tenant's
+            -- benchmarks until the same segment produces real outcomes here.
+            'imported'
      FROM entrestate_lead_history
      WHERE tenant_id = $1
      GROUP BY tenant_id, COALESCE(platform, ''), COALESCE(area, ''), COALESCE(project_type, ''),
@@ -193,7 +203,7 @@ export async function refreshLiveTenantSignals(): Promise<void> {
       await q(`DELETE FROM entrestate_targeting_signals WHERE tenant_id = $1`, [liveTenant])
       await q(
         `INSERT INTO entrestate_targeting_signals
-           (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
+           (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at, origin)
          SELECT $1,
                 CASE WHEN source ILIKE '%google%' THEN 'google'
                      WHEN source ILIKE '%meta%' OR source ILIKE '%face%' OR source ILIKE '%insta%' THEN 'meta'
@@ -206,7 +216,12 @@ export async function refreshLiveTenantSignals(): Promise<void> {
                                     OR value_rating >= 6),
                 COUNT(*) FILTER (WHERE status IN ('closed','converted')),
                 COUNT(*) FILTER (WHERE status = 'lost' OR value_rating <= 2),
-                now()
+                now(),
+                -- OBSERVED: this system watched these outcomes happen in this
+                -- account. Only observed signal is allowed to cross tenants,
+                -- which is how imported history earns its way into the shared
+                -- brain — by being used and producing results, not by arriving.
+                'observed'
          FROM freehold_site_leads
          GROUP BY 2, 8`,
         [liveTenant],
@@ -220,7 +235,7 @@ export async function refreshLiveTenantSignals(): Promise<void> {
       if (hasFactTable) {
         await q(
           `INSERT INTO entrestate_targeting_signals
-             (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at)
+             (tenant_id, platform, area, project_type, price_band, age_band, city, interest, leads, qualified, closed, lost, updated_at, origin)
            SELECT $1, '', '', '', '',
                   CASE WHEN f.fact_key = 'age_range' THEN left(lower(trim(f.fact_value)), 20) ELSE '' END,
                   CASE WHEN f.fact_key = 'location_city' THEN left(lower(trim(f.fact_value)), 60) ELSE '' END,
@@ -235,7 +250,12 @@ export async function refreshLiveTenantSignals(): Promise<void> {
                                       OR l.value_rating >= 6),
                   COUNT(*) FILTER (WHERE l.status IN ('closed','converted')),
                   COUNT(*) FILTER (WHERE l.status = 'lost' OR l.value_rating <= 2),
-                  now()
+                  now(),
+                  -- OBSERVED: this system watched these outcomes happen in this
+                  -- account. Only observed signal is allowed to cross tenants,
+                  -- which is how imported history earns its way into the shared
+                  -- brain — by being used and producing results, not by arriving.
+                  'observed'
            FROM freehold_lead_profile_facts f
            JOIN freehold_site_leads l ON l.id = f.lead_id
            WHERE f.fact_key IN ('age_range','location_city','company_industry','job_title','business_interests')
@@ -305,7 +325,13 @@ export async function getNetworkBenchmarks(limit = 20, excludeTenantIds: string[
               SUM(closed)::int AS closed,
               COUNT(DISTINCT tenant_id)::int AS tenants
        FROM entrestate_targeting_signals
-       WHERE NOT (tenant_id = ANY($2::text[]))
+       -- ONLY WHAT THIS SYSTEM WATCHED HAPPEN. The k-anonymity gate below
+       -- protects PRIVACY and does nothing about TRUTH. Without this line any
+       -- file anyone uploaded — stale, guessed, a competitor's scraped list —
+       -- reached every other tenant's benchmarks the moment it landed, and a
+       -- benchmark is the one number nobody goes back and re-checks.
+       WHERE origin = 'observed'
+         AND NOT (tenant_id = ANY($2::text[]))
        GROUP BY platform, area, project_type, price_band, age_band, city, interest
        -- K-ANONYMITY, NOT A VOLUME GATE. A leads-only threshold let a row
        -- from a SINGLE tenant reach every other tenant: in this market a
