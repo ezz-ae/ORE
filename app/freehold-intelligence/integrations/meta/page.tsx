@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, Loader2, CheckCircle, XCircle, RefreshCw,
   LogOut, TrendingUp, TrendingDown, Users, DollarSign,
   Megaphone, MousePointer, Zap, ChevronDown, ChevronUp,
-  AlertTriangle, ExternalLink, Copy, Check,
+  AlertTriangle, ExternalLink, Copy, Check, ShieldCheck,
 } from 'lucide-react'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 
@@ -190,6 +190,28 @@ export default function MetaIntegrationPage() {
   const [syncing, setSyncing]   = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [copied, setCopied]     = useState(false)
+
+  // ── Targeting health: is what the system launches with still real? ─────────
+  // Checked against the SERVER's live Meta connection (the one launches
+  // actually use), on demand — not on every page load.
+  type EntityCheck = { id: string; claimedName: string; valid: boolean; liveName: string | null; error: string | null }
+  const [targetingChecking, setTargetingChecking] = useState(false)
+  const [targetingResult, setTargetingResult] = useState<{ checked: number; dead: number; renamed: number; results: EntityCheck[] } | null>(null)
+  const [targetingErr, setTargetingErr] = useState('')
+
+  async function checkTargeting() {
+    setTargetingChecking(true); setTargetingErr(''); setTargetingResult(null)
+    try {
+      const res = await fetch('/api/freehold/ads/audiences/verify-targeting')
+      const d = await res.json()
+      if (!res.ok) throw new Error(d?.error ?? t('pintmeta.targeting.failed'))
+      setTargetingResult(d)
+    } catch (err: any) {
+      setTargetingErr(err.message ?? t('pintmeta.targeting.failed'))
+    } finally {
+      setTargetingChecking(false)
+    }
+  }
 
   // ── Server-side launch activation ────────────────────────────────────────
   // The browser connection above only READS data. Campaign launches run on the
@@ -610,6 +632,69 @@ export default function MetaIntegrationPage() {
             <div className="mt-0.5 text-[10px] text-slate-500 leading-relaxed">{label}</div>
           </div>
         ))}
+      </section>
+
+      {/* Targeting health — is what launches still real, checked against Meta itself */}
+      <section className="mb-8 rounded-[18px] border border-line bg-surface p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="h-4 w-4 text-gold" />
+            <div>
+              <div className="text-sm font-semibold text-white">{t('pintmeta.targeting.title')}</div>
+              <p className="mt-0.5 text-xs text-slate-500">{t('pintmeta.targeting.sub')}</p>
+            </div>
+          </div>
+          <button
+            onClick={checkTargeting}
+            disabled={targetingChecking}
+            className="flex items-center gap-2 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {targetingChecking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+            {targetingChecking ? t('pintmeta.targeting.checking') : t('pintmeta.targeting.cta')}
+          </button>
+        </div>
+
+        {targetingErr && (
+          <p className="mt-3 text-xs text-red-400">{targetingErr}</p>
+        )}
+
+        {targetingResult && (
+          <div className="mt-4">
+            {targetingResult.dead === 0 && targetingResult.renamed === 0 ? (
+              <div className="flex items-center gap-2 rounded-[12px] border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3">
+                <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span className="text-sm text-emerald-300">{t('pintmeta.targeting.allGood', { n: String(targetingResult.checked) })}</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {targetingResult.dead > 0 && (
+                  <p className="text-xs font-medium text-red-300">{t('pintmeta.targeting.deadCount', { n: String(targetingResult.dead) })}</p>
+                )}
+                {targetingResult.results.filter((r) => !r.valid).map((r) => (
+                  <div key={r.id} className="flex items-start gap-2.5 rounded-[12px] border border-red-400/20 bg-red-400/[0.05] px-4 py-3">
+                    <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-red-200">{r.claimedName}</div>
+                      <div className="mt-0.5 text-xs text-red-300/70">{t('pintmeta.targeting.deadHint')}</div>
+                    </div>
+                  </div>
+                ))}
+                {targetingResult.renamed > 0 && targetingResult.results.filter((r) => r.valid && r.liveName && r.liveName !== r.claimedName).map((r) => (
+                  <div key={r.id} className="flex items-start gap-2.5 rounded-[12px] border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-amber-200">{r.claimedName}</div>
+                      <div className="mt-0.5 text-xs text-amber-300/70">{t('pintmeta.targeting.renamedHint', { name: r.liveName ?? '' })}</div>
+                    </div>
+                  </div>
+                ))}
+                {targetingResult.dead === 0 && (
+                  <p className="text-xs text-slate-500">{t('pintmeta.targeting.restGood', { n: String(targetingResult.checked - targetingResult.renamed) })}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Error banner if partial refresh error */}

@@ -20,9 +20,10 @@ import { readFileSync } from 'node:fs'
 import {
   planPattern, describePattern, emptyPattern, parsePattern, BUNDLE,
   STRICT_ALL, STRICT_DEFINING, REAL_ESTATE_MUST, hardenRealEstate,
-  type AudiencePattern,
+  allCatalogEntities, type AudiencePattern,
 } from '../lib/freehold/audience-pattern'
 import { forClient, combineSpecs } from '../lib/freehold/audiences'
+import { UAE_INTERESTS } from '../lib/meta/targeting-catalog'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -419,6 +420,36 @@ console.log('\n── combining audiences is a union, not an intersection ──
   check('an audience with no language keeps the union unnarrowed',
     combineSpecs([a, lka]).leadLanguages === undefined)
   check('one spec combines to itself', combineSpecs([a]) === a)
+}
+
+console.log('\n── the catalog agrees with itself, even if Meta can\'t be asked ──')
+{
+  // Live validity needs a real Meta call (see verifyEntityIds in
+  // lib/meta/client.ts) and can't run here — but this much never needed
+  // Meta to check: a hardcoded id that means two different things in this
+  // codebase's OWN words is wrong before anyone asks Meta anything. This is
+  // exactly the bug class a full audit found in the now-deleted decorative
+  // template file (one id claiming to be "Home improvement" in one card and
+  // "UAE residency" in another) — catching it here means it can't come back
+  // quietly in the files that are still live.
+  // The same combined set the live verification route checks against Meta
+  // (see app/api/freehold/ads/audiences/verify-targeting/route.ts) — the
+  // pattern kitchen's own catalog plus the AI targeting catalog the wizard's
+  // recommendations pick from.
+  const catalog = [...allCatalogEntities(), ...UAE_INTERESTS]
+  check('the catalog has entries', catalog.length > 0)
+  check('no id in the catalog is claimed by two different names',
+    (() => {
+      const byId = new Map<string, string>()
+      for (const e of catalog) {
+        const prior = byId.get(e.id)
+        if (prior && prior !== e.name) return false
+        byId.set(e.id, e.name)
+      }
+      return true
+    })(),
+    JSON.stringify(catalog))
+  check('every entry has both an id and a name', catalog.every((e) => e.id && e.name))
 }
 
 if (failures > 0) {
