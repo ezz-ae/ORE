@@ -2117,6 +2117,49 @@ export async function getAdSet(adSetId: string): Promise<MetaAdSet> {
   })
 }
 
+/** One design's results inside a campaign — the row of the designs report. */
+export interface AdResult {
+  id: string
+  name: string
+  status: string
+  thumbnailUrl: string | null
+  spend: number
+  leads: number
+  cpl: number | null
+}
+
+/**
+ * Every ad (design) in a campaign with its own spend and leads, rolling 30
+ * days — the answer to "which design brings the leads". Numbers come from
+ * Meta or the row shows zeros; nothing is invented.
+ */
+export async function getAdResults(campaignId: string): Promise<AdResult[]> {
+  const res = await apiFetch<{ data?: Array<{
+    id?: string; name?: string; status?: string
+    creative?: { thumbnail_url?: string }
+    insights?: { data?: Array<{ spend?: string; actions?: Array<{ action_type: string; value: string }> }> }
+  }> }>(`/${campaignId}/ads`, undefined, {
+    fields: 'id,name,status,creative{thumbnail_url},insights.date_preset(last_30d){spend,actions}',
+    limit: '50',
+  })
+  return (res.data ?? [])
+    .filter((a) => a.id)
+    .map((a) => {
+      const ins = a.insights?.data?.[0]
+      const spend = Number(ins?.spend ?? 0)
+      const leads = metaLeadCount(ins?.actions)
+      return {
+        id: String(a.id),
+        name: String(a.name ?? ''),
+        status: String(a.status ?? ''),
+        thumbnailUrl: a.creative?.thumbnail_url ?? null,
+        spend,
+        leads,
+        cpl: leads > 0 ? Math.round((spend / leads) * 10) / 10 : null,
+      }
+    })
+}
+
 // ─── Creative Library ─────────────────────────────────────────────────────────
 
 export async function listAdCreatives(): Promise<MetaAdCreativeDetail[]> {
@@ -2618,6 +2661,30 @@ export async function launchFullCampaign(params: {
     creativeId: creative.id,
     status:     params.launchStatus,
   }))
+
+  // 7 — Extra designs: one ad per variant image, same copy, same ad set.
+  // Meta's delivery routes spend to whichever design converts; the per-design
+  // report reads the result back. Cap keeps an ad set reviewable.
+  const variants = (creativeInput.variants ?? [])
+    .filter((v) => v.imageHash || v.imageUrl)
+    .slice(0, 3)
+  for (let i = 0; i < variants.length; i++) {
+    const letter = String.fromCharCode(66 + i) // B, C, D
+    const v = variants[i]
+    const vCreative = await step(`creative (design ${letter})`, () => createAdCreative({
+      name:             `${params.listingName} — Creative ${letter}`,
+      creative:         { ...creativeInput, imageUrl: v.imageUrl, imageHash: v.imageHash, variants: undefined, placementOverrides: undefined },
+      destination:      params.destination,
+      leadFormId:       params.leadFormId,
+      destinationPhone: params.destinationPhone,
+    }))
+    await step(`ad (design ${letter})`, () => createAd({
+      adSetId:    adSet.id,
+      name:       `${params.listingName} — Ad ${letter}`,
+      creativeId: vCreative.id,
+      status:     params.launchStatus,
+    }))
+  }
 
   return {
     campaignId: campaign.id,

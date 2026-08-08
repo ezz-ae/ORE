@@ -105,6 +105,8 @@ interface WizardState {
   cta:           MetaCta
   imageUrl:      string
   imageHash:     string
+  /** Extra image designs — each becomes its own ad, same copy. */
+  variants:      { imageUrl: string; imageHash: string }[]
   // Per-placement creative overrides (landing-click ads only) — blank fields
   // inherit the default creative above.
   placementOverrides: Partial<Record<PlacementKey, PlacementCreativeOverride>>
@@ -167,7 +169,7 @@ const CTA_OPTIONS: MetaCta[] = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_U
 // The 5 placements the wizard previews AND — for landing-click ads — lets an
 // operator give a different image/headline/primary text. Labels reuse the
 // SAME lm.newCampaign.s3.pl.<key> keys the placements wall already has.
-const PLACEMENT_KEYS: PlacementKey[] = ['fbFeed', 'igFeed', 'igStory', 'fbStory', 'reels']
+const PLACEMENT_KEYS: PlacementKey[] = ['igFeed', 'igStory', 'reels', 'fbFeed']
 
 const STEPS: { n: number; labelKey: string; icon: typeof Megaphone }[] = [
   { n: 1, labelKey: 'lm.newCampaign.step.campaign',  icon: Megaphone },
@@ -280,6 +282,7 @@ export default function NewCampaignPage() {
     cta:          'LEARN_MORE',
     imageUrl:     '',
     imageHash:    '',
+    variants:     [],
     placementOverrides: {},
     launchStatus: 'PAUSED',
     cplCapAED:    150,
@@ -879,6 +882,31 @@ export default function NewCampaignPage() {
     }
   }
 
+  // Upload an EXTRA design → its own ad with the same copy. Cap 3.
+  const [uploadingVariant, setUploadingVariant] = useState(false)
+  async function onUploadVariant(file: File | null) {
+    if (!file || form.variants.length >= 3) return
+    setUploadingVariant(true); setApiError(null)
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return }
+      setForm((prev) => ({ ...prev, variants: [...prev.variants, { imageHash: d.hash, imageUrl: d.url || '' }] }))
+    } catch {
+      setApiError('Could not read the image file')
+    } finally {
+      setUploadingVariant(false)
+    }
+  }
+
   // ── Library / Drive media picker ────────────────────────────────────────────
   // Use anything you made in Drive (QR-stamped permits, edited renders) as the
   // ad image. Drive exports are data: URLs — ingest them natively into the Meta
@@ -1106,6 +1134,9 @@ export default function NewCampaignPage() {
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
+        // Extra designs — one ad each, same copy. Meta moves the money to
+        // whichever one converts.
+        variants:    form.variants.length > 0 ? form.variants : undefined,
         // Per-placement creative is only offered (and only meaningful) for
         // landing-click and lead-form ads — strip it for WhatsApp/call so a
         // stale draft never silently applies per-placement customization to
@@ -1902,6 +1933,29 @@ export default function NewCampaignPage() {
                   <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
                 )}
               </div>
+
+              {/* Extra designs — each runs as its own ad with the same text. */}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] text-slate-500">{t('lm.newCampaign.s3.designs')}</span>
+                {form.variants.map((v, i) => (
+                  <span key={i} className="relative inline-block">
+                    {v.imageUrl
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={v.imageUrl} alt={`design ${i + 2}`} className="h-10 w-16 rounded border border-line object-cover" />
+                      : <span className="inline-flex h-10 w-16 items-center justify-center rounded border border-line bg-surface-2 text-[10px] text-slate-400">#{i + 2}</span>}
+                    <button type="button" aria-label={t('lm.newCampaign.s3.removeDesign')}
+                      onClick={() => setForm((prev) => ({ ...prev, variants: prev.variants.filter((_, j) => j !== i) }))}
+                      className="absolute -end-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-[10px] text-white">×</button>
+                  </span>
+                ))}
+                {form.variants.length < 3 && (
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-gold/40">
+                    {uploadingVariant ? t('lm.newCampaign.s3.upload.uploading') : `+ ${t('lm.newCampaign.s3.addDesign')}`}
+                    <input type="file" accept="image/*" className="hidden" disabled={uploadingVariant}
+                      onChange={(e) => { void onUploadVariant(e.target.files?.[0] ?? null); e.target.value = '' }} />
+                  </label>
+                )}
+              </div>
               {libOpen && (
                 <div className="mt-3 rounded-[14px] border border-line bg-surface-2 p-3">
                   <p className="mb-2 text-[11px] text-slate-500">{t('lm.newCampaign.s3.libHint')}</p>
@@ -2230,11 +2284,10 @@ export default function NewCampaignPage() {
               </div>
               <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {([
-                  { key: 'fbFeed' as PlacementKey, kind: 'square' as const },
                   { key: 'igFeed' as PlacementKey, kind: 'square' as const },
                   { key: 'igStory' as PlacementKey, kind: 'vertical' as const },
-                  { key: 'fbStory' as PlacementKey, kind: 'vertical' as const },
                   { key: 'reels' as PlacementKey, kind: 'vertical' as const },
+                  { key: 'fbFeed' as PlacementKey, kind: 'square' as const },
                 ]).map(({ key, kind }) => {
                   // Merge this placement's override over the default creative —
                   // an honest preview of what actually ships, not the same
