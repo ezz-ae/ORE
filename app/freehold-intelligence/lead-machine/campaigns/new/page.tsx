@@ -43,8 +43,9 @@ import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTem
 // `spec` is ABSENT for pattern audiences — the server never sends the recipe
 // to the browser. Typing it as required let `{ ...undefined }` compile and
 // launch a campaign with no audience at all.
-interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec?: CampaignTargeting }
+interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec?: CampaignTargeting; reach?: { lower: number; upper: number } }
 import { useT } from '@/lib/i18n/provider'
+import { READY_BUYERS } from '@/lib/freehold/ready-buyers'
 
 // ─── UAE interest targets ────────────────────────────────────────────────────
 // Interests/cities come from the shared proven catalog — the same list the
@@ -351,6 +352,9 @@ export default function NewCampaignPage() {
   // wizard's placements still apply. ?audience=<id> pre-attaches.
   const [savedAudiences, setSavedAudiences] = useState<SavedAudienceOption[]>([])
   const [attachedAudience, setAttachedAudience] = useState<SavedAudienceOption | null>(null)
+  // A ready-buyer template picked directly — no save-first detour. One pick
+  // total: choosing a template clears the saved pick and vice versa.
+  const [attachedPreset, setAttachedPreset] = useState<string | null>(null)
   const [audRefreshing, setAudRefreshing] = useState(false)
 
   // Refreshable + focus-refetching: an audience the user just built in the
@@ -359,7 +363,7 @@ export default function NewCampaignPage() {
   const refreshAudiences = useCallback(async (selectId?: string) => {
     setAudRefreshing(true)
     try {
-      const d = await fetch('/api/freehold/ads/audiences', { cache: 'no-store' }).then((r) => r.json())
+      const d = await fetch('/api/freehold/ads/audiences?reach=1', { cache: 'no-store' }).then((r) => r.json())
       const list: SavedAudienceOption[] = Array.isArray(d?.audiences) ? d.audiences : []
       setSavedAudiences(list)
       const wanted = selectId ?? new URLSearchParams(window.location.search).get('audience')
@@ -1026,7 +1030,7 @@ export default function NewCampaignPage() {
    * allowed — broad on purpose is a real strategy — but it can never again
    * be the accidental default someone reaches by clicking through.
    */
-  const needsAudience = !attachedAudience
+  const needsAudience = !attachedAudience && !attachedPreset
 
   // ── Launch ─────────────────────────────────────────────────────────────────
   async function handleLaunch() {
@@ -1069,6 +1073,7 @@ export default function NewCampaignPage() {
       // the id lets the server read the definition; spreading an undefined
       // spec launched a campaign targeting nobody.
       audienceId: attachedAudience ? attachedAudience.id : undefined,
+      presetId: !attachedAudience && attachedPreset ? attachedPreset : undefined,
       // Only spread a spec we actually have. A pattern audience has none here,
       // so the form's own targeting travels as the base and the server
       // replaces it wholesale from `audienceId` — never a half-built object.
@@ -1129,7 +1134,7 @@ export default function NewCampaignPage() {
       // its own complete definition (see the targeting comment above), so
       // this field never overrides it. All three selected = no narrowing
       // worth sending — omit rather than restrict to the full set.
-      leadLanguages:    attachedAudience || form.leadLanguages.length >= LEAD_LANGUAGE_OPTIONS.length
+      leadLanguages:    attachedAudience || attachedPreset || form.leadLanguages.length >= LEAD_LANGUAGE_OPTIONS.length
         ? undefined
         : form.leadLanguages,
       // Real per-surface placement control — 'automatic' (default) keeps the
@@ -1529,29 +1534,46 @@ export default function NewCampaignPage() {
                 </div>
               </div>
 
-              {savedAudiences.length === 0 ? (
-                <p className="mt-2 text-xs text-slate-500">{t('lm.aud.attach.none')}</p>
-              ) : (
-                <>
-                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.aud.attach.sub')}</p>
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {savedAudiences.map((a) => {
-                      const on = attachedAudience?.id === a.id
-                      return (
-                        <button key={a.id} type="button" onClick={() => setAttachedAudience(on ? null : a)}
-                          className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
-                          {a.name}{on ? ` — ${t('lm.aud.attach.attached')}` : ''}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {attachedAudience && (
-                    <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-gold/25 bg-gold/[0.06] px-3 py-2">
-                      <span className="text-[11px] text-slate-300">{t('lm.aud.attach.overrides')}</span>
-                      <button type="button" onClick={() => setAttachedAudience(null)} className="text-[11px] font-semibold text-slate-400 hover:text-white">{t('lm.aud.attach.detach')}</button>
-                    </div>
-                  )}
-                </>
+              <p className="mt-1 text-[11px] text-slate-500">{t('lm.aud.attach.sub')}</p>
+
+              {savedAudiences.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {savedAudiences.map((a) => {
+                    const on = attachedAudience?.id === a.id
+                    return (
+                      <button key={a.id} type="button"
+                        onClick={() => { setAttachedAudience(on ? null : a); if (!on) setAttachedPreset(null) }}
+                        className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
+                        {a.name}
+                        {a.reach ? <span className="ms-1.5 text-[11px] text-slate-500">{fmtReach(a.reach.lower)}–{fmtReach(a.reach.upper)}</span> : null}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* The ready-buyer templates, usable directly — no save first. */}
+              <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{t('lm.aud.ready.title')}</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {READY_BUYERS.map(({ id }) => {
+                  const on = attachedPreset === id
+                  return (
+                    <button key={id} type="button"
+                      onClick={() => { setAttachedPreset(on ? null : id); if (!on) setAttachedAudience(null) }}
+                      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
+                      {t(`lm.aud.ready.${id}.name`)}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {(attachedAudience || attachedPreset) && (
+                <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-gold/25 bg-gold/[0.06] px-3 py-2">
+                  <span className="text-[11px] text-slate-300">
+                    {attachedAudience ? attachedAudience.name : t(`lm.aud.ready.${attachedPreset}.name`)} — {t('lm.aud.attach.overrides')}
+                  </span>
+                  <button type="button" onClick={() => { setAttachedAudience(null); setAttachedPreset(null) }} className="text-[11px] font-semibold text-slate-400 hover:text-white">{t('lm.aud.attach.detach')}</button>
+                </div>
               )}
             </div>
 

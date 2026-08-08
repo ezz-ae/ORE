@@ -364,6 +364,11 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.meta.size': 'size',
 
     // Wizard attach strip
+    'lm.aud.combine.start': 'Combine audiences',
+    'lm.aud.combine.cancel': 'Cancel',
+    'lm.aud.combine.hint': 'Tap 2 or more audiences, name it, save.',
+    'lm.aud.combine.namePh': 'Name the combined audience',
+    'lm.aud.combine.cta': 'Save combined',
     'lm.aud.attach.title': 'Choose your audience',
     'lm.aud.attach.sub': 'Pick the audience for this campaign. New audiences are made on the Audiences page.',
     'lm.aud.attach.none': 'No saved audiences yet — build them in the Audiences tab.',
@@ -732,6 +737,11 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.meta.empty': 'لا جماهير مخصصة على الحساب الإعلاني بعد.',
     'lm.aud.meta.size': 'الحجم',
 
+    'lm.aud.combine.start': 'ادمج جماهير',
+    'lm.aud.combine.cancel': 'إلغاء',
+    'lm.aud.combine.hint': 'اختر جمهورين أو أكثر، سمِّه، واحفظ.',
+    'lm.aud.combine.namePh': 'اسم الجمهور المدموج',
+    'lm.aud.combine.cta': 'احفظ المدموج',
     'lm.aud.attach.title': 'اختر جمهورك',
     'lm.aud.attach.sub': 'اختر جمهور هذه الحملة. الجماهير الجديدة تُنشأ في صفحة الجماهير.',
     'lm.aud.attach.none': 'لا جماهير محفوظة بعد — أنشئها من تبويب الجماهير.',
@@ -1099,6 +1109,11 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.meta.empty': 'На рекламном аккаунте пока нет custom-аудиторий.',
     'lm.aud.meta.size': 'размер',
 
+    'lm.aud.combine.start': 'Объединить аудитории',
+    'lm.aud.combine.cancel': 'Отмена',
+    'lm.aud.combine.hint': 'Выберите 2 и более аудитории, назовите и сохраните.',
+    'lm.aud.combine.namePh': 'Название объединённой аудитории',
+    'lm.aud.combine.cta': 'Сохранить',
     'lm.aud.attach.title': 'Выберите аудиторию',
     'lm.aud.attach.sub': 'Выберите аудиторию для этой кампании. Новые аудитории создаются на странице «Аудитории».',
     'lm.aud.attach.none': 'Сохранённых аудиторий пока нет — соберите их во вкладке Аудитории.',

@@ -76,6 +76,86 @@ const DEFAULT_SPEC: CampaignTargeting = {
   interests: [],
 }
 
+/**
+ * COMBINE several audiences into one campaign audience.
+ *
+ * The operator picks more than one saved audience and the machine merges them
+ * silently — no split screen, no explanation. Union semantics: someone who
+ * fits ANY of the picked audiences is in.
+ *
+ *  · countries, languages, base signals, Meta custom lists — union
+ *  · age — the widest envelope any audience asked for
+ *  · exclusions — union (excluded by one audience = excluded, full stop)
+ *  · must-groups (narrowing) — only the groups EVERY audience carries stay
+ *    hard (in practice, the property-interest group they all share). Each
+ *    audience's own hard layers become base signals in the union: keeping
+ *    them all hard would target the INTERSECTION, the opposite of combining.
+ */
+export function combineSpecs(specs: CampaignTargeting[]): CampaignTargeting {
+  if (specs.length <= 1) return specs[0] ?? DEFAULT_SPEC
+  type Ent = { id: string; name: string }
+  const uniq = (xs: Ent[]): Ent[] => {
+    const seen = new Map<string, Ent>()
+    for (const x of xs) if (x?.id && !seen.has(x.id)) seen.set(x.id, x)
+    return [...seen.values()]
+  }
+  const groupSig = (g: { interests?: Ent[]; behaviors?: Ent[] }) =>
+    [...(g.interests ?? []), ...(g.behaviors ?? [])].map((e) => e.id).sort().join(',')
+
+  // Must-groups present in every spec (matched by their exact member set).
+  const sigCounts = new Map<string, number>()
+  for (const s of specs) {
+    for (const sig of new Set((s.narrowing ?? []).map(groupSig))) {
+      sigCounts.set(sig, (sigCounts.get(sig) ?? 0) + 1)
+    }
+  }
+  const sharedSigs = new Set([...sigCounts].filter(([, n]) => n === specs.length).map(([sig]) => sig))
+  const sharedGroups: NonNullable<CampaignTargeting['narrowing']> = []
+  const pooled: { interests: Ent[]; behaviors: Ent[] } = { interests: [], behaviors: [] }
+  const seenShared = new Set<string>()
+  for (const s of specs) {
+    for (const g of s.narrowing ?? []) {
+      const sig = groupSig(g)
+      if (sharedSigs.has(sig)) {
+        if (!seenShared.has(sig)) { seenShared.add(sig); sharedGroups.push(g) }
+      } else {
+        pooled.interests.push(...(g.interests ?? []))
+        pooled.behaviors.push(...(g.behaviors ?? []))
+      }
+    }
+  }
+
+  // Language/locale narrowing survives only when EVERY audience narrows —
+  // an audience with no language reaches everyone, and the union must too.
+  const allLangs = specs.every((s) => (s.leadLanguages?.length ?? 0) > 0)
+    ? [...new Set(specs.flatMap((s) => s.leadLanguages ?? []))]
+    : undefined
+  const allLocales = specs.every((s) => (s.locales?.length ?? 0) > 0)
+    ? [...new Set(specs.flatMap((s) => s.locales ?? []))]
+    : undefined
+  const genderSet = new Set(specs.map((s) => (s.genders ?? []).join(',')))
+
+  return {
+    countries: [...new Set(specs.flatMap((s) => s.countries))],
+    cityKeys: [...new Set(specs.flatMap((s) => s.cityKeys ?? []))],
+    ageMin: Math.min(...specs.map((s) => s.ageMin)),
+    ageMax: Math.max(...specs.map((s) => s.ageMax)),
+    publisherPlatforms: [...new Set(specs.flatMap((s) => s.publisherPlatforms ?? []))],
+    interests: uniq([...specs.flatMap((s) => s.interests ?? []), ...pooled.interests]),
+    behaviors: uniq([...specs.flatMap((s) => s.behaviors ?? []), ...pooled.behaviors]),
+    narrowing: sharedGroups,
+    ...(genderSet.size === 1 && specs[0].genders?.length ? { genders: specs[0].genders } : {}),
+    ...(allLangs ? { leadLanguages: allLangs as CampaignTargeting['leadLanguages'] } : {}),
+    ...(allLocales ? { locales: allLocales } : {}),
+    exclusions: (() => {
+      const i = uniq(specs.flatMap((s) => s.exclusions?.interests ?? []))
+      const b = uniq(specs.flatMap((s) => s.exclusions?.behaviors ?? []))
+      return i.length + b.length > 0 ? { interests: i, behaviors: b } : undefined
+    })(),
+    customAudienceIds: [...new Set(specs.flatMap((s) => s.customAudienceIds ?? []))],
+  }
+}
+
 // Sanitize a stored/user-provided spec into a valid CampaignTargeting — bad
 // entries are dropped, never guessed.
 export function normalizeSpec(raw: unknown): CampaignTargeting {

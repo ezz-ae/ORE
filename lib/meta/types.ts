@@ -232,6 +232,8 @@ export interface LaunchCampaignPayload {
    *  Required for pattern audiences, whose targeting deliberately never
    *  reaches the browser and so cannot be sent back from it. */
   audienceId?: string
+  /** A ready-buyer template id, launched directly — resolved server-side. */
+  presetId?: string
 
   campaignName: string
   objective: MetaCampaignObjective

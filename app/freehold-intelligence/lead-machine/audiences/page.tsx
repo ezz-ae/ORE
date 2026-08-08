@@ -19,7 +19,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Users, Rocket, Trash2, ArrowUpRight, Sparkles, PenLine, Database, X } from 'lucide-react'
+import { Users, Rocket, Trash2, ArrowUpRight, Sparkles, PenLine, Database, X, Loader2 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting } from '@/lib/meta/types'
 import PatternBuilder from './PatternBuilder'
@@ -38,6 +38,8 @@ interface SavedAudience {
   // recipe to the browser. The card describes the person instead.
   spec?: CampaignTargeting
   uploadedCount: number
+  /** Meta's live estimate. Present only when Meta answered — never a placeholder. */
+  reach?: { lower: number; upper: number }
 }
 interface MetaAudienceRow {
   id: string
@@ -59,10 +61,31 @@ export default function AudiencesPage() {
   const [tool, setTool] = useState<'personas' | 'pattern' | null>(null)
   const [crmOpen, setCrmOpen] = useState(false)
   const [dataOpen, setDataOpen] = useState(false)
+  // Combine: pick 2+ saved audiences, name the union, save it as one.
+  const [combining, setCombining] = useState(false)
+  const [combinePicked, setCombinePicked] = useState<string[]>([])
+  const [combineName, setCombineName] = useState('')
+  const [combineWorking, setCombineWorking] = useState(false)
+  const [combineMsg, setCombineMsg] = useState<string | null>(null)
+
+  async function saveCombined() {
+    setCombineMsg(null)
+    setCombineWorking(true)
+    try {
+      const res = await fetch('/api/freehold/ads/audiences/combine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: combinePicked, name: combineName.trim() }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d?.error || 'Failed')
+      setCombining(false); setCombinePicked([]); setCombineName('')
+      await load()
+    } catch (e) { setCombineMsg(e instanceof Error ? e.message : 'Failed') } finally { setCombineWorking(false) }
+  }
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/freehold/ads/audiences')
+      const res = await fetch('/api/freehold/ads/audiences?reach=1')
       const data = await res.json()
       setAudiences(Array.isArray(data.audiences) ? data.audiences : [])
       setMetaAudiences(Array.isArray(data.meta?.customAudiences) ? data.meta.customAudiences : [])
@@ -168,15 +191,45 @@ export default function AudiencesPage() {
 
       {/* My audiences */}
       <section>
-        <h2 className="text-[15px] font-semibold text-white">{t('lm.aud.mine.title')}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-[15px] font-semibold text-white">{t('lm.aud.mine.title')}</h2>
+          {audiences.length >= 2 && (
+            <button type="button"
+              onClick={() => { setCombining((v) => !v); setCombinePicked([]); setCombineMsg(null) }}
+              className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${combining ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-white'}`}>
+              {combining ? t('lm.aud.combine.cancel') : t('lm.aud.combine.start')}
+            </button>
+          )}
+        </div>
+        {combining && (
+          <div className="mt-3 flex flex-wrap items-center gap-2.5 rounded-xl border border-gold/25 bg-gold/[0.05] p-3">
+            <span className="text-[12px] text-slate-300">{t('lm.aud.combine.hint')}</span>
+            <input value={combineName} onChange={(e) => setCombineName(e.target.value)} placeholder={t('lm.aud.combine.namePh')}
+              className="min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-[13px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
+            <button type="button" onClick={() => void saveCombined()} disabled={combineWorking || combinePicked.length < 2 || !combineName.trim()}
+              className="flex items-center gap-1.5 rounded-lg bg-gold px-4 py-1.5 text-[12px] font-bold text-black transition hover:brightness-110 disabled:opacity-50">
+              {combineWorking && <Loader2 className="h-3 w-3 animate-spin" />} {t('lm.aud.combine.cta')}
+            </button>
+            {combineMsg && <span className="text-[12px] text-slate-300">{combineMsg}</span>}
+          </div>
+        )}
         {!loading && audiences.length === 0 && <p className="mt-2 text-[13px] text-slate-500">{t('lm.aud.mine.empty')}</p>}
         <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {audiences.map((a) => (
-            <div key={a.id} className="flex flex-col rounded-xl border border-line bg-surface p-4">
+            <div key={a.id}
+              onClick={combining ? () => setCombinePicked((p) => p.includes(a.id) ? p.filter((x) => x !== a.id) : [...p, a.id]) : undefined}
+              className={`flex flex-col rounded-xl border bg-surface p-4 ${
+                combining
+                  ? `cursor-pointer ${combinePicked.includes(a.id) ? 'border-gold/60 bg-gold/[0.06]' : 'border-line hover:border-slate-600'}`
+                  : 'border-line'
+              }`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="text-[13px] font-semibold text-white">{a.name}</div>
                 <span className="shrink-0 rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold">{KIND_LABEL[a.kind]}</span>
               </div>
+              {a.reach && (
+                <p className="mt-1 text-[12px] font-semibold text-white">{t('lm.aud.ready.reach')}: {fmt(a.reach.lower)}–{fmt(a.reach.upper)}</p>
+              )}
               {a.description && <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{a.description}</p>}
               {a.kind === 'lookalike' && a.uploadedCount > 0 && (
                 <p className="mt-1 text-[11px] text-slate-500">{t('lm.aud.mine.seeded').replace('{n}', a.uploadedCount.toLocaleString())}</p>

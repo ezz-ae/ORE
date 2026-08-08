@@ -22,7 +22,7 @@ import {
   STRICT_ALL, STRICT_DEFINING, REAL_ESTATE_MUST, hardenRealEstate,
   type AudiencePattern,
 } from '../lib/freehold/audience-pattern'
-import { forClient } from '../lib/freehold/audiences'
+import { forClient, combineSpecs } from '../lib/freehold/audiences'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -390,6 +390,35 @@ console.log('\n── the one hard rule: real estate is a MUST in every audience
   check('a bound property group is not doubled by the anchor',
     (endUser.targeting.narrowing ?? []).filter((g) =>
       [...(g.interests ?? [])].every((e) => reIds.has(e.id))).length >= 1)
+}
+
+console.log('\n── combining audiences is a union, not an intersection ──')
+{
+  const a = planPattern(pat({ speakers: ['arabic'], residency: ['saudi'], motive: ['investment'], money: 'cash', strictness: 75 })).targeting
+  const b = planPattern(pat({ speakers: ['russian'], residency: ['resident'], motive: ['investment'], money: 'cash', strictness: 75 })).targeting
+  const c = combineSpecs([a, b])
+  check('countries union', c.countries.sort().join(',') === 'AE,SA', c.countries.join(','))
+  check('languages union — both markets stay reachable',
+    (c.leadLanguages ?? []).slice().sort().join(',') === 'ar,ru', String(c.leadLanguages))
+  check('the age envelope is the widest asked for',
+    c.ageMin === Math.min(a.ageMin, b.ageMin) && c.ageMax === Math.max(a.ageMax, b.ageMax),
+    `${c.ageMin}-${c.ageMax}`)
+  check('exclusions union — excluded by one is excluded',
+    (c.exclusions?.interests?.length ?? 0) >= (a.exclusions?.interests?.length ?? 0))
+  // Both audiences carry identical hard groups here, so they survive; the test
+  // that matters is the asymmetric one below.
+  const reIds = new Set(REAL_ESTATE_MUST.map((e) => e.id))
+  const lka: typeof a = { countries: ['AE'], cityKeys: [], ageMin: 30, ageMax: 65, publisherPlatforms: ['facebook'], interests: [], behaviors: [], narrowing: [{ interests: REAL_ESTATE_MUST, behaviors: [] }], customAudienceIds: ['123'] }
+  const mixed = combineSpecs([a, lka])
+  check('custom audiences union', (mixed.customAudienceIds ?? []).includes('123'))
+  check('a hard group carried by only ONE audience does not gate the union',
+    (mixed.narrowing ?? []).every((g) => {
+      const ids = [...(g.interests ?? []), ...(g.behaviors ?? [])].map((e) => e.id)
+      return ids.every((id) => reIds.has(id))
+    }), JSON.stringify(mixed.narrowing))
+  check('an audience with no language keeps the union unnarrowed',
+    combineSpecs([a, lka]).leadLanguages === undefined)
+  check('one spec combines to itself', combineSpecs([a]) === a)
 }
 
 if (failures > 0) {

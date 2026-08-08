@@ -30,93 +30,11 @@ import Link from 'next/link'
 import { Users, Loader2, Rocket } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { dailyBudgetToLearn } from '@/lib/freehold/learning-phase'
+import { READY_BUYERS, BUYER_GROUPS } from '@/lib/freehold/ready-buyers'
 
 interface Reach { lower: number; upper: number; ready: boolean }
 
 const fmt = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}K` : String(n))
-const reachLabel = (r: Reach | null, t: (k: string) => string, connected: boolean) =>
-  !connected ? t('lm.aud.reach.connect') : !r ? t('lm.aud.reach.warming') : `${fmt(r.lower)}–${fmt(r.upper)}`
-
-type BuyerGroup = 'uae' | 'gulf' | 'world'
-const EXCLUDES = ['agents_and_brokers', 'job_seekers', 'bargain_hunters']
-
-const READY_BUYERS: { id: string; group: BuyerGroup; cplAed: [number, number]; pattern: Record<string, unknown> }[] = [
-  // ── The UAE: buyers already here. The property is always in the UAE; these
-  //    are the people who can view it this weekend. ──
-  { id: 'arabicCashUAE', group: 'uae', cplAed: [250, 450], pattern: {
-      speakers: ['arabic'], residency: ['resident'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'arabicPlanUAE', group: 'uae', cplAed: [120, 250], pattern: {
-      speakers: ['arabic'], residency: ['resident'], motive: ['investment'], money: 'payment_plan',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 70 } },
-  { id: 'allArabicUAE', group: 'uae', cplAed: [80, 180], pattern: {
-      speakers: ['arabic'], residency: ['resident'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 60 } },
-  // End-user motives are whole-market interests on Meta, so this card runs at
-  // full strictness: property interest becomes a hard requirement and the
-  // mortgage band narrows the age — anything looser quietly buys the whole UAE.
-  { id: 'arabicEndUserUAE', group: 'uae', cplAed: [100, 220], pattern: {
-      speakers: ['arabic'], residency: ['resident'], motive: ['first_home', 'upgrade'], money: 'mortgage',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'arabicGoldenVisa', group: 'uae', cplAed: [300, 550], pattern: {
-      speakers: ['arabic'], residency: ['resident'], motive: ['golden_visa', 'investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'englishMortgage', group: 'uae', cplAed: [150, 300], pattern: {
-      speakers: ['english'], residency: ['resident', 'expat'], motive: ['investment'], money: 'mortgage',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 70 } },
-  { id: 'englishCash', group: 'uae', cplAed: [280, 500], pattern: {
-      speakers: ['english'], residency: ['resident'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'europeanUAE', group: 'uae', cplAed: [140, 280], pattern: {
-      speakers: ['english'], residency: ['expat'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 65 } },
-  { id: 'russianCash', group: 'uae', cplAed: [200, 400], pattern: {
-      speakers: ['russian'], residency: ['resident'], motive: ['investment', 'holiday_home'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 70 } },
-
-  // ── The Gulf: every country its own campaign, its own creative, its own
-  //    price talk. The whole-GCC card is a deliberate choice, never a default. ──
-  { id: 'saudiCash', group: 'gulf', cplAed: [90, 200], pattern: {
-      speakers: ['arabic'], residency: ['saudi'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'saudiGoldenVisa', group: 'gulf', cplAed: [120, 260], pattern: {
-      speakers: ['arabic'], residency: ['saudi'], motive: ['golden_visa', 'investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'qatarInvestor', group: 'gulf', cplAed: [100, 220], pattern: {
-      speakers: ['arabic'], residency: ['qatar'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'kuwaitInvestor', group: 'gulf', cplAed: [100, 220], pattern: {
-      speakers: ['arabic'], residency: ['kuwait'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'bahrainInvestor', group: 'gulf', cplAed: [90, 190], pattern: {
-      speakers: ['arabic'], residency: ['bahrain'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'omanInvestor', group: 'gulf', cplAed: [80, 170], pattern: {
-      speakers: ['arabic'], residency: ['oman'], motive: ['investment'], money: 'cash',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 75 } },
-  { id: 'gccArabic', group: 'gulf', cplAed: [70, 160], pattern: {
-      speakers: ['arabic'], residency: ['gcc'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 60 } },
-
-  // ── The world: buyers who fly in. The property never moves; the money does. ──
-  { id: 'internationalEnglish', group: 'world', cplAed: [60, 150], pattern: {
-      speakers: ['english'], residency: ['overseas'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 60 } },
-  { id: 'arabicFrance', group: 'world', cplAed: [60, 140], pattern: {
-      speakers: ['arabic'], residency: ['france'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 65 } },
-  { id: 'russianEgypt', group: 'world', cplAed: [50, 120], pattern: {
-      speakers: ['russian'], residency: ['egypt'], motive: ['investment', 'holiday_home'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 65 } },
-  { id: 'englishEurope', group: 'world', cplAed: [70, 160], pattern: {
-      speakers: ['english'], residency: ['europe'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 65 } },
-  { id: 'arabicEurope', group: 'world', cplAed: [60, 140], pattern: {
-      speakers: ['arabic'], residency: ['europe'], motive: ['investment'], money: 'unknown',
-      readiness: 'browsing', lifeStage: [], exclude: EXCLUDES, strictness: 65 } },
-]
-
-const BUYER_GROUPS: BuyerGroup[] = ['uae', 'gulf', 'world']
 
 /** Meta's learning arithmetic at the mid CPL — 50 events in 7 days. Real
  *  numbers, not comfortable ones: a budget below this learns slowly or never,
@@ -127,7 +45,6 @@ const suggestedDailyAed = ([lo, hi]: [number, number]) =>
 export default function ReadyBuyers() {
   const t = useT()
   const [audiences, setAudiences] = useState<{ id: string; name: string }[]>([])
-  const [connected, setConnected] = useState(false)
   const [readySaving, setReadySaving] = useState<string | null>(null)
   const [readyReach, setReadyReach] = useState<Record<string, Reach | null>>({})
 
@@ -136,7 +53,6 @@ export default function ReadyBuyers() {
       const res = await fetch('/api/freehold/ads/audiences')
       const data = await res.json()
       setAudiences(Array.isArray(data.audiences) ? data.audiences : [])
-      setConnected(data.meta?.connected === true)
     } catch { /* section still renders; reach shows connect-hint */ }
   }, [])
   useEffect(() => { void load() }, [load])
@@ -196,10 +112,12 @@ export default function ReadyBuyers() {
                   <div className="text-[13px] font-semibold text-white">{name}</div>
                   <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{t(`lm.aud.ready.${id}.desc`)}</p>
                   <div className="mt-3 flex-1 space-y-1.5 border-t border-line pt-3">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] text-slate-500">{t('lm.aud.ready.reach')}</span>
-                      <span className="text-[12px] font-semibold text-white">{reachLabel(readyReach[id] ?? null, t, connected)}</span>
-                    </div>
+                    {readyReach[id] ? (
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[11px] text-slate-500">{t('lm.aud.ready.reach')}</span>
+                        <span className="text-[12px] font-semibold text-white">{fmt(readyReach[id]!.lower)}–{fmt(readyReach[id]!.upper)}</span>
+                      </div>
+                    ) : null}
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-[11px] text-slate-500">{t('lm.aud.ready.cpl')}</span>
                       <span className="text-[12px] font-semibold text-white">AED {cplAed[0]}–{cplAed[1]}</span>
