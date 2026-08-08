@@ -6,6 +6,18 @@ type Dict = Record<string, string>
 export const lm_audiences: Record<Locale, Dict> = {
   en: {
     'lm.aud.title': 'Audiences',
+    // Ready buyers — real patterns, one click from launchable.
+    'lm.aud.ready.title': 'Ready buyers',
+    'lm.aud.ready.sub': 'Four buyers this market actually has, already described. Save one and launch — or describe your own below.',
+    'lm.aud.ready.save': 'Save this buyer',
+    'lm.aud.ready.arabicCash.name': 'Arabic cash investor',
+    'lm.aud.ready.arabicCash.desc': 'Arabic speakers in the UAE and the Gulf, investing, paying cash. Small, expensive per lead, and worth it.',
+    'lm.aud.ready.goldenVisa.name': 'Golden-visa investor',
+    'lm.aud.ready.goldenVisa.desc': 'Arabic speakers in the Gulf and abroad buying for residency — investment intent, cash.',
+    'lm.aud.ready.europeanInvestor.name': 'European overseas investor',
+    'lm.aud.ready.europeanInvestor.desc': 'Russian, German, French and Italian speakers buying from abroad — investment or a holiday home, cash.',
+    'lm.aud.ready.expatInvestor.name': 'English-speaking expat investor',
+    'lm.aud.ready.expatInvestor.desc': 'English speakers living here, investing on a mortgage. The steady end-of-month buyer.',
     // Arm planner
     'lm.aud.arms.title': 'How the budget would be split',
     'lm.aud.arms.sub': 'One ad set per layer of the audience, funded by what your own leads have proven rather than by which layer comes first. Nothing here launches.',
@@ -256,6 +268,17 @@ export const lm_audiences: Record<Locale, Dict> = {
 
   ar: {
     'lm.aud.title': 'الجماهير',
+    'lm.aud.ready.title': 'مشترون جاهزون',
+    'lm.aud.ready.sub': 'أربعة مشترين موجودون فعلًا في هذا السوق، موصوفون مسبقًا. احفظ أحدهم وأطلق — أو صِف مشتريك الخاص أدناه.',
+    'lm.aud.ready.save': 'احفظ هذا المشتري',
+    'lm.aud.ready.arabicCash.name': 'مستثمر عربي كاش',
+    'lm.aud.ready.arabicCash.desc': 'ناطقون بالعربية في الإمارات والخليج، يستثمرون ويدفعون كاش. جمهور صغير ومكلف للعميل الواحد — ويستحق.',
+    'lm.aud.ready.goldenVisa.name': 'مستثمر الإقامة الذهبية',
+    'lm.aud.ready.goldenVisa.desc': 'ناطقون بالعربية في الخليج والخارج يشترون للإقامة — نية استثمار، كاش.',
+    'lm.aud.ready.europeanInvestor.name': 'مستثمر أوروبي من الخارج',
+    'lm.aud.ready.europeanInvestor.desc': 'ناطقون بالروسية والألمانية والفرنسية والإيطالية يشترون من الخارج — استثمار أو منزل عطلات، كاش.',
+    'lm.aud.ready.expatInvestor.name': 'مستثمر وافد بالإنجليزية',
+    'lm.aud.ready.expatInvestor.desc': 'ناطقون بالإنجليزية مقيمون هنا، يستثمرون بتمويل عقاري. مشتري نهاية الشهر الثابت.',
     'lm.aud.arms.title': 'كيف ستُقسَّم الميزانية',
     'lm.aud.arms.sub': 'مجموعة إعلانية لكل طبقة من الجمهور، تُموَّل بما أثبته عملاؤك فعليًا لا بترتيب الطبقات. لا شيء هنا يُطلق.',
     'lm.aud.arms.pick': 'اختر جمهورًا',
@@ -494,6 +517,17 @@ export const lm_audiences: Record<Locale, Dict> = {
 
   ru: {
     'lm.aud.title': 'Аудитории',
+    'lm.aud.ready.title': 'Готовые покупатели',
+    'lm.aud.ready.sub': 'Четыре покупателя, которые реально есть на этом рынке, уже описаны. Сохраните одного и запускайте — или опишите своего ниже.',
+    'lm.aud.ready.save': 'Сохранить покупателя',
+    'lm.aud.ready.arabicCash.name': 'Арабоязычный инвестор за наличные',
+    'lm.aud.ready.arabicCash.desc': 'Арабоязычные в ОАЭ и Заливе, инвестируют, платят наличными. Маленькая и дорогая за лид аудитория — и оправданная.',
+    'lm.aud.ready.goldenVisa.name': 'Инвестор за золотой визой',
+    'lm.aud.ready.goldenVisa.desc': 'Арабоязычные в Заливе и за рубежом, покупают ради резидентства — инвестиционное намерение, наличные.',
+    'lm.aud.ready.europeanInvestor.name': 'Европейский зарубежный инвестор',
+    'lm.aud.ready.europeanInvestor.desc': 'Русско-, немецко-, франко- и италоязычные, покупают из-за рубежа — инвестиция или дом для отдыха, наличные.',
+    'lm.aud.ready.expatInvestor.name': 'Англоязычный экспат-инвестор',
+    'lm.aud.ready.expatInvestor.desc': 'Англоязычные, живущие здесь, инвестируют в ипотеку. Стабильный покупатель конца месяца.',
     'lm.aud.arms.title': 'Как разделится бюджет',
     'lm.aud.arms.sub': 'По одной группе объявлений на слой аудитории, с финансированием по тому, что доказали ваши лиды, а не по порядку слоёв. Здесь ничего не запускается.',
     'lm.aud.arms.pick': 'Выберите аудиторию',
