@@ -38,8 +38,8 @@ const MIN_CONTACTS = 100
 const MAX_CONTACTS = 50_000
 const MAX_LEVELS = 3
 
-type Source = 'closed' | 'crm' | 'imported'
-const SOURCES = new Set<Source>(['closed', 'crm', 'imported'])
+type Source = 'closed' | 'crm' | 'imported' | 'rated'
+const SOURCES = new Set<Source>(['closed', 'crm', 'imported', 'rated'])
 
 interface LeadRow {
   id: string
@@ -54,10 +54,11 @@ interface LeadRow {
  *  source, hand-entered and synced leads carry channel names. */
 const IMPORTED_SQL = `source ILIKE 'import%'`
 
-async function loadRows(source: Source): Promise<LeadRow[]> {
+async function loadRows(source: Source, minRating = 7): Promise<LeadRow[]> {
   const where =
     source === 'closed' ? `status = 'closed'` :
     source === 'imported' ? IMPORTED_SQL :
+    source === 'rated' ? `value_rating >= ${Math.min(10, Math.max(5, Math.round(minRating)))}` :
     `TRUE`
   return query<LeadRow>(
     `SELECT id, email, phone, status, source, value_rating
@@ -87,7 +88,7 @@ export async function GET() {
 
   const metaConnected = await isMetaConfigured()
   const sources: Record<string, { total: number; tiers: Record<string, number> }> = {}
-  for (const s of ['closed', 'crm', 'imported'] as Source[]) {
+  for (const s of ['closed', 'crm', 'imported', 'rated'] as Source[]) {
     try {
       const rows = await loadRows(s)
       const tiers: Record<string, number> = { closed: 0, qualified: 0, wellRated: 0, other: 0 }
@@ -125,8 +126,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Pick at least one similarity level (1–20%).' }, { status: 400 })
   }
 
+  const minRating = Math.min(10, Math.max(5, Math.round(Number(body.minRating)) || 7))
   let rows: LeadRow[]
-  try { rows = await loadRows(source) } catch {
+  try { rows = await loadRows(source, minRating) } catch {
     return NextResponse.json({ error: 'Could not read the lead records.' }, { status: 500 })
   }
 

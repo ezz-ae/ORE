@@ -66,7 +66,7 @@ export const TARGETING_TEMPLATES: TargetingTemplate[] = [
     audience:       'GCC + Europe + Asia, 32–65, luxury property interests',
     useCase:        'international',
     targeting: {
-      countries:          ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'DE', 'IN'],
+      countries:          ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'DE'],
       cityKeys:           [],
       ageMin:             32,
       ageMax:             65,

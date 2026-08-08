@@ -366,17 +366,19 @@ export function auditGroupBalance(
  */
 export type AudienceLevel = 1 | 2 | 3 | 4 | 5 | -1 | -2 | -3 | -4 | -5
 
+// Written for the person selling property, not for the planner: these words
+// appear on screens as "Main audience + How they pay + What they want".
 export const LEVEL_LABEL: Record<AudienceLevel, string> = {
-  1: 'Targeted persona',
-  2: 'Money',
-  3: 'Product interest',
-  4: 'Decision',
-  5: 'Experimental',
+  1: 'Main audience',
+  2: 'How they pay',
+  3: 'What they want',
+  4: 'Ready to act',
+  5: 'Test idea',
   [-1]: 'Out of target',
-  [-2]: 'Poor',
+  [-2]: 'Weak leads',
   [-3]: 'Not interested',
-  [-4]: 'Not serious or scared',
-  [-5]: 'Experimental (negative)',
+  [-4]: 'Not serious',
+  [-5]: 'Test (avoid)',
 }
 
 /** What each level is FOR. The verb is the whole doctrine in one word. */

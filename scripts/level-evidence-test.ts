@@ -62,8 +62,8 @@ console.log('\n── a level is proven only when its segments agree ──')
     at(3, 'behavior:a', 'behavior:b'))
   check('an even split is undecided, never a coin toss in favour',
     split[0].verdict === 'undecided', String(split[0].verdict))
-  check('…and the sentence names the disagreement rather than saying "undecided"',
-    /disagree/.test(split[0].sentence), split[0].sentence)
+  check('…and the sentence says the results are mixed rather than saying "undecided"',
+    /[Mm]ixed results/.test(split[0].sentence), split[0].sentence)
 
   // A bare majority is not agreement: 3 of 5 is 60%, under the bar, so the
   // level stays exploration rather than being funded as a finding.
@@ -86,7 +86,7 @@ console.log('\n── silence is not agreement ──')
   check('…and reports how many it could not read', ev[0].tooRare === 2 && ev[0].judged === 0,
     `${ev[0].judged}/${ev[0].tooRare}`)
   check('…and says so plainly rather than looking unproven',
-    /too rare/.test(ev[0].sentence), ev[0].sentence)
+    /Not enough leads yet/.test(ev[0].sentence), ev[0].sentence)
 
   // No verdict must degrade to schema order, NOT to "explored and unproven".
   const arms = selectColdArms([1, 2, 3], ev).arms

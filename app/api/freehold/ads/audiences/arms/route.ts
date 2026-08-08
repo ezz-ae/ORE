@@ -187,26 +187,26 @@ export async function POST(req: NextRequest) {
   // what it did not know reads as confidence and is a guess.
   const caveats: string[] = []
   if (rows.length === 0) {
-    caveats.push('No registration history yet, so no level has been proven — this is schema order, not a finding.')
+    caveats.push('No lead history yet — the split starts from the safe default and improves as your leads come in.')
   }
   if (!connected) {
-    caveats.push('Meta is not connected, so no level was measured for how much of the audience it actually removes. Two arms here may end up buying the same people.')
+    caveats.push('Meta is not connected, so audience sizes could not be checked. Connect Meta and this split gets sharper.')
   } else if (!narrowingMeasured) {
-    caveats.push('Meta returned no audience size, so how much each level narrows is unknown for this plan.')
+    caveats.push('Meta did not return audience sizes this time, so the split uses the safe default shares.')
   } else if (failedProbes > 0) {
-    caveats.push(`${failedProbes} level${failedProbes === 1 ? '' : 's'} could not be measured against Meta this time, so ${failedProbes === 1 ? 'it was' : 'they were'} planned without knowing how much ${failedProbes === 1 ? 'it removes' : 'they remove'}.`)
+    caveats.push(`${failedProbes} part${failedProbes === 1 ? '' : 's'} of this audience could not be checked with Meta this time — the split still works, just a little less precisely.`)
   }
   if (unassigned > 0) {
-    caveats.push(`${unassigned} segment${unassigned === 1 ? '' : 's'} in this audience ${unassigned === 1 ? 'has' : 'have'} no level, so nothing was planned around ${unassigned === 1 ? 'it' : 'them'}.`)
+    caveats.push(`Part of this audience is new to the system, so the split does not count it yet.`)
   }
   // A segment claimed by two levels cannot make the arms above and below it
   // different, which is the one thing an arm has to do. Said plainly rather
   // than left to make the plan look more precise than the mapping is.
   if (fromPattern && fromPattern.sharedSegments.length > 0) {
-    caveats.push(`${fromPattern.sharedSegments.join(' and ')} stand${fromPattern.sharedSegments.length === 1 ? 's' : ''} for more than one thing in this audience, so the arms either side of it will overlap more than the split suggests.`)
+    caveats.push(`Some signals in this audience overlap, so two ad sets may reach some of the same people.`)
   }
   if (plan.unallocatedAed > 0) {
-    caveats.push(`AED ${plan.unallocatedAed} could not be allocated — an ad set under AED ${MIN_ARM_DAILY_AED}/day cannot leave the learning phase, so it was not created rather than being funded to fail.`)
+    caveats.push(`AED ${plan.unallocatedAed} was left out — an ad set under AED ${MIN_ARM_DAILY_AED}/day never learns, so it is better not created than set up to fail.`)
   }
 
   return NextResponse.json({

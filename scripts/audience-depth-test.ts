@@ -309,7 +309,7 @@ console.log('\n── touch depth: more levels, closer touch ──')
   check('money and intent without the persona scores zero', outside.score === 0, String(outside.score))
   check('…and says why', /different person/.test(outside.description), outside.description)
 
-  check('the description is legible', deep.description === 'targeted persona + money + decision',
+  check('the description is legible', deep.description === 'main audience + how they pay + ready to act',
     deep.description)
   check('duplicates do not inflate the score',
     touchDepth([1, 2, 2, 2]).score === touchDepth([1, 2]).score)
@@ -353,8 +353,8 @@ console.log('\n── a proven-bad fact earns a rule; a hoped-for positive earns
   check('an unplaced layer is skipped, not guessed at',
     /could be placed/.test(unknown.headline), unknown.headline)
   check('the schema labels are the operator\'s own',
-    LEVEL_LABEL[1] === 'Targeted persona' && LEVEL_LABEL[2] === 'Money' &&
-    LEVEL_LABEL[4] === 'Decision' && LEVEL_LABEL[-4] === 'Not serious or scared')
+    LEVEL_LABEL[1] === 'Main audience' && LEVEL_LABEL[2] === 'How they pay' &&
+    LEVEL_LABEL[4] === 'Ready to act' && LEVEL_LABEL[-4] === 'Not serious')
   check('there are five inclusion levels and five exclusions',
     INCLUSION_ORDER.length === 5 && EXCLUSION_ORDER.length === 5)
 }
@@ -421,8 +421,8 @@ console.log('\n── every level is an ad set, because Meta only knows MUST ─
   check('the deepest arm carries every level', arms[3].levels.length === 4)
   check('an arm is weighted by the level it ADDS, not by its length',
     arms[3].weight === 2.5, String(arms[3].weight))
-  check('the persona arm explains why it must exist',
-    /never labelled/.test(arms[0].rationale), arms[0].rationale)
+  check('the persona arm explains itself in plain words',
+    /widest net/.test(arms[0].rationale), arms[0].rationale)
   check('a schema with only a persona produces exactly one arm',
     coldArms([1]).length === 1)
 }
@@ -442,13 +442,13 @@ console.log('\n── evidence picks the arms, not the level number ──')
     sel.arms[1].levels.join('+') === '1+4', sel.arms.map((a) => a.levels.join('+')).join(' | '))
   check('the unproven levels still get arms, after it',
     sel.arms.length === 4 && sel.arms[2].levels.includes(2))
-  check('the headline says it is ordered by evidence',
-    /ordered by what the funnel has proven/.test(sel.headline), sel.headline)
+  check('the headline says the proven parts come first',
+    /already proved come first/.test(sel.headline), sel.headline)
   check('a proven level earns more weight than an unproven one',
     sel.arms[1].weight > sel.arms[2].weight, `${sel.arms[1].weight} vs ${sel.arms[2].weight}`)
   check('the proven arm cites the lift', /3.2x/.test(sel.arms[1].rationale), sel.arms[1].rationale)
-  check('an unproven arm says it exists to find out',
-    /exists to find out/.test(sel.arms[2].rationale), sel.arms[2].rationale)
+  check('an unproven arm says it runs on a smaller test budget',
+    /smaller test budget/.test(sel.arms[2].rationale), sel.arms[2].rationale)
 
   // Two proven levels order by lift, strongest first.
   const twoProven = selectColdArms([1, 2, 4], [
@@ -466,16 +466,16 @@ console.log('\n── evidence picks the arms, not the level number ──')
     counter.arms.map((a) => a.levels.join('+')).join(' | '))
   check('…and is named as an exclusion candidate',
     counter.excludeCandidates.includes(3), JSON.stringify(counter.excludeCandidates))
-  check('…with the reason spelled out',
-    /most expensive way to confirm/.test(counter.skipped.find((s) => s.level === 3)!.reason),
+  check('…with the reason spelled out in plain words',
+    /excluded instead of paid for/.test(counter.skipped.find((s) => s.level === 3)!.reason),
     counter.skipped.find((s) => s.level === 3)!.reason)
 
   // A level that narrows nothing would be a duplicate ad set.
   const flat = selectColdArms([1, 2], [{ level: 2, verdict: 'relevant', lift: 9, narrowingPower: 0.01 }])
   check('a level that removes almost nobody gets no arm, however good it looks',
     flat.arms.length === 1, flat.arms.map((a) => a.levels.join('+')).join(' | '))
-  check('…because two arms would bid against each other',
-    /bidding against each other/.test(flat.skipped[0].reason), flat.skipped[0].reason)
+  check('…because it would buy the same people twice',
+    /same people twice/.test(flat.skipped[0].reason), flat.skipped[0].reason)
   check('a level that DOES narrow still gets its arm',
     selectColdArms([1, 2], [{ level: 2, verdict: 'relevant', narrowingPower: MIN_ARM_DISTINCTION + 0.01 }]).arms.length === 2)
 
@@ -484,8 +484,8 @@ console.log('\n── evidence picks the arms, not the level number ──')
   check('with no evidence the arms fall back to schema order',
     blind.arms.map((a) => a.levels.join('+')).join('|') === '1|1+2|1+2+3|1+2+3+4',
     blind.arms.map((a) => a.levels.join('+')).join('|'))
-  check('…and the headline calls it a default, not a finding',
-    /default rather than a finding/.test(blind.headline), blind.headline)
+  check('…and the headline says it starts from the safe default',
+    /safe default split/.test(blind.headline), blind.headline)
   check('coldArms still returns just the arms', coldArms([1, 2]).length === 2)
 }
 
