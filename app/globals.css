@@ -321,96 +321,67 @@ html {
 /* Keep the gold brand + status colors as-is (they read fine on white). */
 
 /* ───────────────────────────────────────────────────────────────────────────
- * MINT (third theme; candidate default) — mint/teal accent, deep-navy ink,
- * warm cream ground with a sea-glass gradient at the top. Modeled on the
- * owner's reference app shot (teal→sky header, mint CTAs on navy cards,
- * cream page, violet secondary labels).
- *
- * Applied as `theme-light theme-mint` on <html>: it INHERITS every light-mode
- * surface/text remap above and only overrides the palette, so all the
- * dark-hex fixes keep working. Every rule here must sit AFTER the
- * .theme-light rules — equal specificity, later wins.
+ * MINT (third theme; candidate default) — the MIDDLE theme: not black, not
+ * white. A two-colour contrast the owner asked for: deep navy surfaces with
+ * a mint accent doing all the work (the reference app's dark report cards
+ * with mint CTAs). Built on the DARK base, so every light-text utility stays
+ * readable — this block only re-tints surfaces navy and swaps gold for mint.
  * ─────────────────────────────────────────────────────────────────────────── */
 .theme-mint {
-  /* Accent: the brand token IS the theme. Deep enough to read as text on
-   * white; buttons keep their dark text (mint CTA + ink text, as the
-   * reference). */
-  --color-gold:        #0EA893;
-  --color-gold-bright: #37D3B8;
+  /* The second colour of the duotone: mint, bright against navy. Buttons
+   * keep their dark ink text (mint CTA + ink, as the reference). */
+  --color-gold:        #45D6C0;
+  --color-gold-bright: #93F1E0;
 
-  --color-app:          #f2f4ef;   /* cream ground (behind the body gradient) */
-  --color-chrome:       #ffffff;
-  --color-surface:      #ffffff;
-  --color-ink:          #16153a;   /* deep navy — headings, on-accent text */
-  --color-surface-2:    #ecf3f0;   /* inputs / raised, mint-tinted */
-  --color-surface-3:    #dcebe5;   /* chips / tracks */
-  --color-line:         #d9e4de;
-  --color-line-strong:  #b6cdc4;
+  --color-app:          #131228;   /* violet-navy canvas — the reference card */
+  --color-chrome:       #0D0C20;   /* nav / headers                            */
+  --color-surface:      #1B1A38;   /* the avatar-circle navy, as cards         */
+  --color-ink:          #0B0A1E;   /* deepest / on-mint text                   */
+  --color-surface-2:    rgba(255,255,255,0.07);
+  --color-surface-3:    rgba(255,255,255,0.11);
+  --color-line:         rgba(171,166,255,0.13);  /* violet hairlines           */
+  --color-line-strong:  rgba(171,166,255,0.22);
 }
-/* Sea-glass wash: teal into sky into cream, fixed like the light gradient. */
+/* A quiet teal-into-navy wash so the ground reads as a colour, not a void. */
 .theme-mint body {
-  background: linear-gradient(180deg, #cdeae3 0%, #ddeef0 34%, #eef2ee 68%, #f4f3ee 100%);
+  background:
+    radial-gradient(120% 70% at 85% -10%, rgba(69, 214, 192, 0.12) 0%, transparent 55%),
+    radial-gradient(90% 60% at 0% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #17162f 0%, #131228 55%, #0f0e23 100%);
   background-attachment: fixed;
-  color: #16153a;
+  color: #EAF2F0;
 }
 
-/* Ink scale: navy-tinted instead of slate-gray. */
-.theme-mint .text-white     { color: #16153a; }
-.theme-mint .text-slate-100 { color: #232250; }
-.theme-mint .text-slate-200 { color: #232250; }
-.theme-mint .text-slate-300 { color: #37365f; }
-.theme-mint .text-slate-400 { color: #55547c; }
-.theme-mint .text-slate-500 { color: #63628a; }
-.theme-mint .text-slate-600 { color: #8d8cab; }
-
-/* Token utilities (compiled to static hex — override like .theme-light does). */
+/* Token utilities compiled to static dark hex — re-tint them navy. */
 .theme-mint .bg-app          { background-color: transparent; }
-.theme-mint .bg-chrome       { background-color: #ffffff; }
-.theme-mint .bg-surface      { background-color: #ffffff; }
-.theme-mint .bg-surface-2    { background-color: #ecf3f0; }
-.theme-mint .bg-surface-3    { background-color: #dcebe5; }
-.theme-mint .hover\:bg-surface-3:hover { background-color: #dcebe5; }
-.theme-mint .hover\:bg-surface-2:hover { background-color: #ecf3f0; }
-.theme-mint .border-line     { border-color: #d9e4de; }
-.theme-mint .border-line-strong { border-color: #b6cdc4; }
-.theme-mint .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: #d9e4de; }
-.theme-mint .bg-surface-2\/30,
-.theme-mint .bg-surface-2\/40,
-.theme-mint .bg-surface-2\/50,
-.theme-mint .bg-surface-2\/60 { background-color: rgba(236, 243, 240, 0.7); }
-.theme-mint .bg-surface-3\/80 { background-color: rgba(220, 235, 229, 0.85); }
-.theme-mint .border-white\/\[0\.05\],
-.theme-mint .border-white\/\[0\.06\],
-.theme-mint .border-white\/\[0\.07\],
-.theme-mint .border-white\/\[0\.08\],
-.theme-mint .border-white\/\[0\.1\],
-.theme-mint .border-white\/\[0\.10\],
-.theme-mint .border-white\/\[0\.12\],
-.theme-mint .border-white\/5,
-.theme-mint .border-white\/10 { border-color: #d9e4de; }
+.theme-mint .bg-chrome       { background-color: #0D0C20; }
+.theme-mint .bg-surface      { background-color: #1B1A38; }
+.theme-mint .bg-ink          { background-color: #0B0A1E; }
+.theme-mint .border-line     { border-color: rgba(171,166,255,0.13); }
+.theme-mint .border-line-strong { border-color: rgba(171,166,255,0.22); }
+.theme-mint .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: rgba(171,166,255,0.13); }
+.theme-mint .bg-chrome\/60,
+.theme-mint .bg-chrome\/95,
+.theme-mint .bg-chrome\/97   { background-color: rgba(13, 12, 32, 0.94); }
+.theme-mint .bg-app\/80,
+.theme-mint .bg-app\/90      { background-color: rgba(19, 18, 40, 0.88); }
+.theme-mint .bg-surface\/40,
+.theme-mint .bg-surface\/50,
+.theme-mint .bg-surface\/60  { background-color: rgba(27, 26, 56, 0.6); }
+.theme-mint .bg-surface\/70,
+.theme-mint .bg-surface\/80,
+.theme-mint .bg-surface\/95  { background-color: rgba(27, 26, 56, 0.92); }
 
-/* GOLD utilities compiled with the gold hex baked into alpha variants — remap
- * the ones the product uses so accents follow the mint token. */
-.theme-mint .bg-gold\/10 { background-color: rgba(14, 168, 147, 0.10); }
-.theme-mint .bg-gold\/15 { background-color: rgba(14, 168, 147, 0.15); }
-.theme-mint .bg-gold\/20 { background-color: rgba(14, 168, 147, 0.20); }
-.theme-mint .hover\:bg-gold\/20:hover { background-color: rgba(14, 168, 147, 0.20); }
-.theme-mint .border-gold\/25 { border-color: rgba(14, 168, 147, 0.25); }
-.theme-mint .border-gold\/30 { border-color: rgba(14, 168, 147, 0.30); }
-.theme-mint .border-gold\/40 { border-color: rgba(14, 168, 147, 0.40); }
-.theme-mint .border-gold\/50 { border-color: rgba(14, 168, 147, 0.50); }
-.theme-mint .border-gold\/60 { border-color: rgba(14, 168, 147, 0.60); }
-
-/* Branded gradients follow the theme: sea-glass, not gold. */
+/* Branded gradients follow the duotone: mint into teal into navy-blue. */
 .theme-mint .gold-gradient,
 .theme-mint .freehold-gradient,
 .theme-mint .ore-gradient {
-  background: linear-gradient(135deg, #35c9b2 0%, #5fd6c4 45%, #6db3e8 100%);
+  background: linear-gradient(135deg, #45d6c0 0%, #57c8dc 55%, #8b7cf0 100%);
 }
 .theme-mint .gold-text-gradient,
 .theme-mint .freehold-text-gradient,
 .theme-mint .ore-text-gradient {
-  background: linear-gradient(135deg, #0ea893 0%, #2cc0a9 50%, #4a8fd6 100%);
+  background: linear-gradient(135deg, #93f1e0 0%, #45d6c0 50%, #9a8bf5 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

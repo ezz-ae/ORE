@@ -7,10 +7,9 @@ const KEY = 'fh-theme'
 
 function apply(mode: ThemeMode) {
   const el = document.documentElement
-  // Mint is BUILT ON the light remap layer: it keeps every light-mode surface
-  // and text fix and swaps the palette on top. So mint = theme-light +
-  // theme-mint, and the mint block only overrides colors.
-  el.classList.toggle('theme-light', mode === 'light' || mode === 'mint')
+  // Mint is a DARK-base duotone (navy surfaces + mint accent), so it never
+  // stacks with the light remap layer — light text stays light on navy.
+  el.classList.toggle('theme-light', mode === 'light')
   el.classList.toggle('theme-mint', mode === 'mint')
 }
 
