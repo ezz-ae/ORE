@@ -6,7 +6,8 @@ import {
   isMetaConfigured, createCustomAudience, addHashedBuyers, createLookalikeAudience,
   MetaApiError, MetaConfigError, type BuyerContact,
 } from '@/lib/meta/client'
-import { createAudience } from '@/lib/freehold/audiences'
+import { createAudience, forClient } from '@/lib/freehold/audiences'
+import { hardenRealEstate } from '@/lib/freehold/audience-pattern'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,8 +41,13 @@ export async function POST(req: NextRequest) {
 
   const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim().slice(0, 100) : 'Lead list'
   const country = typeof body.country === 'string' && /^[A-Z]{2}$/.test(String(body.country)) ? String(body.country) : 'AE'
-  const rawRatio = Number(body.ratio)
-  const ratio = Number.isFinite(rawRatio) ? Math.min(0.2, Math.max(0.01, rawRatio)) : 0.03
+  // One seed can feed several similarity levels — `ratios` is the studio's
+  // multi-level ask; the single `ratio` stays for old callers.
+  const rawRatios = Array.isArray(body.ratios) ? body.ratios.map(Number) : [Number(body.ratio)]
+  const ratios = [...new Set(
+    rawRatios.filter((r) => Number.isFinite(r)).map((r) => Math.min(0.2, Math.max(0.01, r))),
+  )].sort((a, b) => a - b).slice(0, 3)
+  if (ratios.length === 0) ratios.push(0.03)
 
   const contacts: BuyerContact[] = Array.isArray(body.contacts)
     ? (body.contacts as Array<Record<string, unknown>>)
@@ -66,26 +72,45 @@ export async function POST(req: NextRequest) {
       'Seed audience uploaded from a lead list (hashed identifiers only).',
     )
     const uploaded = await addHashedBuyers(source.id, contacts)
-    const lookalike = await createLookalikeAudience({
-      name: `${name} — Lookalike (${country}, ${Math.round(ratio * 100)}%)`,
-      sourceAudienceId: source.id,
-      country,
-      ratio,
-    })
 
-    // Persist as a saved audience so the wizard can attach it in one click.
-    const audience = await createAudience({
-      name: `${name} — Lookalike ${Math.round(ratio * 100)}% ${country}`,
-      description: `Lookalike of ${uploaded.toLocaleString()} uploaded lead contacts (top ${Math.round(ratio * 100)}% most similar in ${country}).`,
-      kind: 'lookalike',
-      spec: { countries: [country], customAudienceIds: [lookalike.id] },
-      metaSourceAudienceId: source.id,
-      metaLookalikeId: lookalike.id,
-      uploadedCount: uploaded,
-      createdBy: auth.user.email,
-    })
+    // One upload, every requested level — Meta builds each lookalike from the
+    // same hashed seed, and each level becomes its own saved audience.
+    const audiences = []
+    let firstLookalikeId = ''
+    for (const ratio of ratios) {
+      const pct = Math.round(ratio * 100)
+      const lookalike = await createLookalikeAudience({
+        name: `${name} — Lookalike (${country}, ${pct}%)`,
+        sourceAudienceId: source.id,
+        country,
+        ratio,
+      })
+      if (!firstLookalikeId) firstLookalikeId = lookalike.id
+      // Persist as a saved audience so the wizard can attach it in one click.
+      // The one hard rule applies to lookalikes too: similar to our people
+      // AND carrying a real-estate signal, not similar alone.
+      const audience = await createAudience({
+        name: `${name} — Lookalike ${pct}% ${country}`,
+        description: `Lookalike of ${uploaded.toLocaleString()} uploaded lead contacts (top ${pct}% most similar in ${country}). Real-estate interest required on top.`,
+        kind: 'lookalike',
+        spec: hardenRealEstate({
+          countries: [country], cityKeys: [], ageMin: 30, ageMax: 65,
+          publisherPlatforms: ['facebook', 'instagram'],
+          interests: [], behaviors: [], narrowing: [],
+          customAudienceIds: [lookalike.id],
+        }),
+        metaSourceAudienceId: source.id,
+        metaLookalikeId: lookalike.id,
+        uploadedCount: uploaded,
+        createdBy: auth.user.email,
+      })
+      audiences.push(forClient(audience))
+    }
 
-    return NextResponse.json({ audience, uploaded, sourceAudienceId: source.id, lookalikeAudienceId: lookalike.id }, { status: 201 })
+    return NextResponse.json(
+      { audience: audiences[0], audiences, uploaded, sourceAudienceId: source.id, lookalikeAudienceId: firstLookalikeId },
+      { status: 201 },
+    )
   } catch (error) {
     if (error instanceof MetaConfigError) return NextResponse.json({ error: error.message }, { status: 409 })
     if (error instanceof MetaApiError) return NextResponse.json({ error: `Meta rejected the audience: ${error.message}` }, { status: 502 })

@@ -264,11 +264,54 @@ const EXCLUDE: Record<Disqualifier, TargetingEntity[]> = {
   bargain_hunters:    [{ id: '6002867432172', name: 'Discount shoppers' }],
 }
 
+/** The standard time-waster exclusions, for builders outside the pattern path
+ *  (personas, lookalikes) that carry the same hygiene. */
+export const standardExclusions = (): TargetingEntity[] =>
+  [...EXCLUDE.agents_and_brokers, ...EXCLUDE.job_seekers, ...EXCLUDE.bargain_hunters]
+
+/** The creative locale for speaker bundles — one language per audience is a
+ *  promise every builder keeps, not just this one. */
+export const speakerLocales = (speakers: SpeakerBundle[]): string[] =>
+  [...new Set(speakers.map((s) => BUNDLE[s].creative))]
+
+/**
+ * THE ONE HARD RULE: real-estate interest is a MUST in every audience.
+ *
+ * This company sells property. An audience member who has never shown Meta a
+ * property signal is a browser whatever else is true of them — a doctor, a
+ * cash buyer, a lookalike of our best client. So every audience this system
+ * builds, whatever surface built it, carries this group as an AND requirement:
+ * the person must match at least one of these on top of everything else.
+ */
+export const REAL_ESTATE_MUST: TargetingEntity[] = [
+  { id: '6003105898571', name: 'Property' },
+  { id: '6002714398372', name: 'Real estate investing' },
+  { id: '6004132891184', name: 'Investment' },
+]
+const RE_MUST_IDS = new Set(REAL_ESTATE_MUST.map((e) => e.id))
+
+/** Add the real-estate MUST group to a targeting spec — unless a narrowing
+ *  group made purely of real-estate signals is already there (that group is
+ *  the same requirement or a stricter one, and doubling it is noise).
+ *
+ *  PREPENDED, deliberately: storage caps narrowing at MAX_NARROWING_GROUPS,
+ *  and a rule that sits last in the list is a rule that quietly falls off a
+ *  five-group pattern. First in can never be the one the cap eats. */
+export function hardenRealEstate(t: CampaignTargeting): CampaignTargeting {
+  const groups = t.narrowing ?? []
+  const alreadyHard = groups.some((g) => {
+    const ids = [...(g.interests ?? []), ...(g.behaviors ?? [])].map((e) => e.id)
+    return ids.length > 0 && ids.every((id) => RE_MUST_IDS.has(id))
+  })
+  if (alreadyHard) return t
+  return { ...t, narrowing: [{ interests: REAL_ESTATE_MUST, behaviors: [] }, ...groups] }
+}
+
 /** Residency decides geography, and geography is never a preference.
  *  Every Gulf country stands alone — its own way of buying, its own creative,
  *  its own campaign. 'gcc' exists for the operator who deliberately wants the
  *  whole Gulf in one audience, and for old saved patterns. */
-const RESIDENCY_COUNTRIES: Record<Residency, string[]> = {
+export const RESIDENCY_COUNTRIES: Record<Residency, string[]> = {
   resident: ['AE'],
   expat:    ['AE'],
   saudi:    ['SA'],
@@ -438,7 +481,9 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
 
   const excludeEntities = uniqEntities(p.exclude.flatMap((d) => EXCLUDE[d]))
 
-  const targeting: CampaignTargeting = {
+  // The one hard rule, applied at the end where nothing can undo it: whatever
+  // else this pattern asked for, the person must carry a real-estate signal.
+  const targeting: CampaignTargeting = hardenRealEstate({
     countries: uniqStrings(p.residency.flatMap((r) => RESIDENCY_COUNTRIES[r])) ,
     cityKeys: [],
     ageMin, ageMax,
@@ -449,7 +494,7 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
     exclusions: excludeEntities.length > 0 ? { interests: excludeEntities, behaviors: [] } : undefined,
     customAudienceIds: [],
     ...(leadLanguages.length > 0 ? { leadLanguages } : {}),
-  }
+  })
   if (targeting.countries.length === 0) targeting.countries = ['AE']
 
   // ── Which level each segment ended up at ────────────────────────────────
