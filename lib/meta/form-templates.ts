@@ -196,14 +196,25 @@ function optionValue(label: string, i: number): string {
   return slug || `opt_${i + 1}`
 }
 
-export function customToMetaQuestion(q: BuilderCustomQuestion, index: number): MetaFormQuestion {
+/**
+ * A question on its way to Meta. `kind` and `options` are optional because
+ * callers that already know the question is free text (form duplication, the
+ * quick in-ad popup) legitimately have neither — reading `q.options.filter`
+ * off one of those is what threw "Cannot read properties of undefined
+ * (reading 'filter')" the moment a duplicated form carried a custom question.
+ */
+export type QuestionDraft = Pick<BuilderCustomQuestion, 'label'> &
+  Partial<Pick<BuilderCustomQuestion, 'key' | 'kind' | 'options'>>
+
+export function customToMetaQuestion(q: QuestionDraft, index: number): MetaFormQuestion {
   const key = q.key || `custom_${optionValue(q.label, index) }`
-  if (q.kind === 'text' || q.options.filter((o) => o.trim()).length === 0) {
+  const choices = (q.options ?? []).filter((o) => o.trim())
+  if (q.kind === 'text' || choices.length === 0) {
     // Open text — a CUSTOM question without options renders as a free-text field.
     return { type: 'CUSTOM', key, label: q.label }
   }
   const seen = new Set<string>()
-  const options = q.options.filter((o) => o.trim()).map((label, i) => {
+  const options = choices.map((label, i) => {
     let value = optionValue(label, i)
     while (seen.has(value)) value = `${value}_${i + 1}`
     seen.add(value)
