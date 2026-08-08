@@ -7,9 +7,10 @@ const KEY = 'fh-theme'
 
 function apply(mode: ThemeMode) {
   const el = document.documentElement
-  // Mint is a DARK-base duotone (navy surfaces + mint accent), so it never
-  // stacks with the light remap layer — light text stays light on navy.
-  el.classList.toggle('theme-light', mode === 'light')
+  // Mint is the MIDDLE theme: cream paper ground with navy ink and mint
+  // accents, built ON the light remap layer (dark text everywhere) with a
+  // navy chrome whose own text is re-lightened inside the mint block.
+  el.classList.toggle('theme-light', mode === 'light' || mode === 'mint')
   el.classList.toggle('theme-mint', mode === 'mint')
 }
 
