@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     name,
     description: typeof body.description === 'string' && body.description.trim()
       ? body.description.trim().slice(0, 300)
-      : `Persona audience (${ids.join(' + ')}) — one language, one market, real-estate interest required.`,
+      : ids.join(' + '),
     kind: 'behavioral',
     spec: targeting,
     createdBy: auth.user.email,

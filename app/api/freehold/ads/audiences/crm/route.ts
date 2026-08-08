@@ -142,8 +142,8 @@ export async function POST(req: NextRequest) {
     const audience = await createAudience({
       name,
       description: type === 'rated'
-        ? `Your own leads rated ${minRating}+ (${uploaded.toLocaleString()} people, matched on Meta).`
-        : `Your own leads who showed interest but never bought (${uploaded.toLocaleString()} people). Anyone still in follow-up is left out.`,
+        ? `Your leads rated ${minRating}+ (${uploaded.toLocaleString()} people).`
+        : `Your leads who never bought (${uploaded.toLocaleString()} people).`,
       kind: 'custom_list',
       spec: {
         countries: ['AE'], cityKeys: [], ageMin: 18, ageMax: 65,

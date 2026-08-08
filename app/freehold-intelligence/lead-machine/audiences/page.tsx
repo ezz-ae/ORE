@@ -26,7 +26,6 @@ import PatternBuilder from './PatternBuilder'
 import PersonaStudio from './PersonaStudio'
 import LookalikeStudio from './LookalikeStudio'
 import CrmAudiences from './CrmAudiences'
-import ArmPlanner from './ArmPlanner'
 
 // ─── Types mirrored from the API ──────────────────────────────────────────────
 
@@ -161,11 +160,11 @@ export default function AudiencesPage() {
         </div>
       )}
 
-      {/* How the budget would be split across ad sets, and why. A read, never
-          a launch — creating ad sets stays a separate, deliberate act. */}
-      {audiences.length > 0 && (
-        <ArmPlanner audiences={audiences.map((a) => ({ id: a.id, name: a.name, kind: a.kind }))} />
-      )}
+      {/* The budget-split planner used to render here and is deliberately
+          GONE from the product. How the machine splits budget between ad
+          sets is our kitchen, not client information — they choose an
+          audience and the system does the rest. The engine and its API stay
+          for the machine itself. */}
 
       {/* My audiences */}
       <section>

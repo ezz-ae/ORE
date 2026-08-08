@@ -63,7 +63,10 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personaIds: picked, speaker, residency: market, save,
-          ...(save ? { name: name.trim() } : {}),
+          ...(save ? {
+            name: name.trim(),
+            description: `${picked.map((id) => t(`lm.aud.persona.${id}.name`)).join(' + ')} · ${t(`lm.aud.pat.speakers.${speaker}`)} · ${t(`lm.aud.pat.res.${market}`)}`,
+          } : {}),
         }),
       })
       const d = await res.json()
@@ -98,7 +101,6 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
               return (
                 <button
                   key={id} type="button" onClick={() => toggle(id)}
-                  title={t(`lm.aud.persona.${id}.desc`)}
                   className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition ${
                     on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:text-white'
                   }`}
@@ -110,8 +112,6 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
           </div>
         </div>
       ))}
-      <p className="mt-2 text-[11px] text-slate-500">{t('lm.aud.persona.stackHint')}</p>
-
       {picked.length > 0 && (
         <div className="mt-4 space-y-3.5 border-t border-line pt-4">
           {/* Selected personas, restated as one sentence of intent. */}
@@ -146,7 +146,6 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
             {reach && (
               <span className="text-[12px] text-slate-200">
                 {t('lm.aud.ready.reach')}: <span className="font-semibold text-white">{fmt(reach.lower)}–{fmt(reach.upper)}</span>
-                {layers != null && <span className="text-slate-500"> · {t('lm.aud.persona.layers').replace('{n}', String(layers))}</span>}
               </span>
             )}
           </div>
@@ -160,8 +159,6 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
             </button>
           </div>
           {msg && <p className="text-[12px] text-slate-300">{msg}</p>}
-          {/* The one hard rule, said where the audience is made. */}
-          <p className="text-[10.5px] leading-relaxed text-slate-600">{t('lm.aud.persona.mustNote')}</p>
         </div>
       )}
     </section>
