@@ -320,6 +320,108 @@ html {
 .theme-light [class*="shadow-"] { --tw-shadow-color: rgba(15, 23, 42, 0.12); }
 /* Keep the gold brand + status colors as-is (they read fine on white). */
 
+/* ───────────────────────────────────────────────────────────────────────────
+ * FRESH (third theme) — two colours doing all the work: a deep TEAL ground
+ * and a VIOLET structural layer, both built from the owner's own hexes
+ * (#47CCC7 / #9E7DF0). No white, no black, no navy, no yellow.
+ *
+ * Contrast comes from real lightness distance between ground and ink (the
+ * same gap a black-on-white theme uses), never from desaturating toward
+ * grey — the darkest tone here is still visibly teal, the lightest still
+ * visibly mint. Nav and the assistant rail switch to violet specifically so
+ * the eye reads two structural zones by HUE, not just a lighter step of one
+ * colour — the same move the reference app makes with its coloured header
+ * against coloured content.
+ *
+ * Dark-base mechanics (never stacked with the light remap): every existing
+ * light-on-dark text utility already works unchanged, including on the
+ * violet chrome, since chrome is dark here too.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.theme-mint {
+  --color-gold:        #47CCC7;
+  --color-gold-bright: #7FE3DE;
+
+  --color-app:          #1E4441;   /* deep teal ground                      */
+  --color-chrome:       #362F68;   /* violet — nav, headers, the rail       */
+  --color-surface:      #2C5652;   /* teal cards                            */
+  --color-ink:          #16332F;   /* deepest teal / on-accent text         */
+  --color-surface-2:    #35635D;
+  --color-surface-3:    #3E7069;
+  --color-line:         rgba(180,232,220,0.16);
+  --color-line-strong:  rgba(180,232,220,0.26);
+}
+.theme-mint body {
+  background:
+    radial-gradient(90% 60% at 100% 0%, rgba(158,125,240,.16) 0%, transparent 55%),
+    linear-gradient(180deg, #204A46 0%, #1E4441 55%, #193A37 100%);
+  background-attachment: fixed;
+  color: #EAF8F1;
+}
+
+/* Token utilities compiled to static hex — re-tint them. */
+.theme-mint .bg-app          { background-color: transparent; }
+.theme-mint .bg-chrome       { background-color: #362F68; }
+.theme-mint .bg-surface      { background-color: #2C5652; }
+.theme-mint .bg-ink          { background-color: #16332F; }
+.theme-mint .border-line     { border-color: rgba(180,232,220,0.16); }
+.theme-mint .border-line-strong { border-color: rgba(180,232,220,0.26); }
+.theme-mint .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: rgba(180,232,220,0.16); }
+.theme-mint .bg-chrome\/60,
+.theme-mint .bg-chrome\/95,
+.theme-mint .bg-chrome\/97   { background-color: rgba(54, 47, 104, 0.95); }
+.theme-mint .bg-app\/80,
+.theme-mint .bg-app\/90      { background-color: rgba(30, 68, 65, 0.88); }
+.theme-mint .bg-surface\/40,
+.theme-mint .bg-surface\/50,
+.theme-mint .bg-surface\/60  { background-color: rgba(44, 86, 82, 0.6); }
+.theme-mint .bg-surface\/70,
+.theme-mint .bg-surface\/80,
+.theme-mint .bg-surface\/95  { background-color: rgba(44, 86, 82, 0.92); }
+.theme-mint .bg-surface-2\/30,
+.theme-mint .bg-surface-2\/40,
+.theme-mint .bg-surface-2\/50,
+.theme-mint .bg-surface-2\/60 { background-color: rgba(53, 99, 93, 0.7); }
+.theme-mint .border-white\/\[0\.05\],
+.theme-mint .border-white\/\[0\.06\],
+.theme-mint .border-white\/\[0\.07\],
+.theme-mint .border-white\/\[0\.08\],
+.theme-mint .border-white\/\[0\.1\],
+.theme-mint .border-white\/\[0\.10\],
+.theme-mint .border-white\/\[0\.12\],
+.theme-mint .border-white\/5,
+.theme-mint .border-white\/10 { border-color: rgba(180,232,220,0.16); }
+
+/* NO YELLOW: every amber accent lives in the teal accent here. */
+.theme-mint .text-amber-200,
+.theme-mint .text-amber-300,
+.theme-mint .text-amber-400,
+.theme-mint .text-amber-400\/80,
+.theme-mint .text-amber-500   { color: #7FE3DE; }
+.theme-mint .bg-amber-400     { background-color: #47CCC7; }
+.theme-mint .bg-amber-400\/10,
+.theme-mint .bg-amber-400\/\[0\.05\],
+.theme-mint .bg-amber-400\/\[0\.06\] { background-color: rgba(71, 204, 199, 0.14); }
+.theme-mint .border-amber-400\/20,
+.theme-mint .border-amber-400\/25,
+.theme-mint .border-amber-400\/30,
+.theme-mint .border-amber-400\/40 { border-color: rgba(71, 204, 199, 0.35); }
+
+/* Branded gradients: the two given colours, teal into violet — used only on
+ * small marks (logo, gradient text), never as the page ground. */
+.theme-mint .gold-gradient,
+.theme-mint .freehold-gradient,
+.theme-mint .ore-gradient {
+  background: linear-gradient(135deg, #47CCC7 0%, #3BB6B0 45%, #9E7DF0 130%);
+}
+.theme-mint .gold-text-gradient,
+.theme-mint .freehold-text-gradient,
+.theme-mint .ore-text-gradient {
+  background: linear-gradient(135deg, #7FE3DE 0%, #47CCC7 45%, #BBA4F5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Custom utilities for Freehold */
 @layer utilities {
   .gold-gradient {
