@@ -328,45 +328,43 @@ html {
  * Built on the dark base: light text stays light; this block only re-tints.
  * ─────────────────────────────────────────────────────────────────────────── */
 .theme-mint {
-  --color-gold:        #3FE0C5;   /* bright mint — the accent colour       */
+  --color-gold:        #47CCC7;   /* the owner's teal — the accent         */
   --color-gold-bright: #8FF4E2;
 
-  --color-app:          #0E312D;   /* deep teal-green canvas                */
-  --color-chrome:       #0A2623;   /* nav / headers — deeper teal           */
-  --color-surface:      #143D38;   /* teal cards                            */
-  --color-ink:          #082220;   /* deepest teal / on-mint text           */
+  --color-app:          #143A43;   /* deep of the owner's teal              */
+  --color-chrome:       #2E2664;   /* deep of the owner's violet            */
+  --color-surface:      #17454A;   /* teal cards                            */
+  --color-ink:          #102F36;   /* deepest teal / on-accent text         */
   --color-surface-2:    rgba(255,255,255,0.07);
   --color-surface-3:    rgba(255,255,255,0.11);
   --color-line:         rgba(143,244,226,0.14);  /* mint hairlines          */
   --color-line-strong:  rgba(143,244,226,0.24);
 }
 .theme-mint body {
-  background:
-    radial-gradient(120% 70% at 85% -10%, rgba(63, 224, 197, 0.14) 0%, transparent 55%),
-    linear-gradient(180deg, #114039 0%, #0E312D 55%, #0B2926 100%);
+  background: linear-gradient(165deg, #9E7DF0 0%, #9488ED 20%, #50C5CE 55%, #47CCC7 75%, #2B9C9C 100%);
   background-attachment: fixed;
-  color: #E8F5F0;
+  color: #F2FBF9;
 }
 
 /* Token utilities compiled to static hex — re-tint them teal. */
 .theme-mint .bg-app          { background-color: transparent; }
-.theme-mint .bg-chrome       { background-color: #0A2623; }
-.theme-mint .bg-surface      { background-color: #143D38; }
-.theme-mint .bg-ink          { background-color: #082220; }
+.theme-mint .bg-chrome       { background-color: #2E2664; }
+.theme-mint .bg-surface      { background-color: #17454A; }
+.theme-mint .bg-ink          { background-color: #102F36; }
 .theme-mint .border-line     { border-color: rgba(143,244,226,0.14); }
 .theme-mint .border-line-strong { border-color: rgba(143,244,226,0.24); }
 .theme-mint .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: rgba(143,244,226,0.14); }
 .theme-mint .bg-chrome\/60,
 .theme-mint .bg-chrome\/95,
-.theme-mint .bg-chrome\/97   { background-color: rgba(10, 38, 35, 0.95); }
+.theme-mint .bg-chrome\/97   { background-color: rgba(46, 38, 100, 0.95); }
 .theme-mint .bg-app\/80,
-.theme-mint .bg-app\/90      { background-color: rgba(14, 49, 45, 0.88); }
+.theme-mint .bg-app\/90      { background-color: rgba(20, 58, 67, 0.88); }
 .theme-mint .bg-surface\/40,
 .theme-mint .bg-surface\/50,
-.theme-mint .bg-surface\/60  { background-color: rgba(20, 61, 56, 0.6); }
+.theme-mint .bg-surface\/60  { background-color: rgba(23, 69, 74, 0.6); }
 .theme-mint .bg-surface\/70,
 .theme-mint .bg-surface\/80,
-.theme-mint .bg-surface\/95  { background-color: rgba(20, 61, 56, 0.92); }
+.theme-mint .bg-surface\/95  { background-color: rgba(23, 69, 74, 0.92); }
 
 /* NO YELLOW: every amber accent lives in the mint family here. */
 .theme-mint .text-amber-200,
@@ -374,25 +372,25 @@ html {
 .theme-mint .text-amber-400,
 .theme-mint .text-amber-400\/80,
 .theme-mint .text-amber-500   { color: #8FF4E2; }
-.theme-mint .bg-amber-400     { background-color: #3FE0C5; }
+.theme-mint .bg-amber-400     { background-color: #47CCC7; }
 .theme-mint .bg-amber-400\/10,
 .theme-mint .bg-amber-400\/\[0\.05\],
-.theme-mint .bg-amber-400\/\[0\.06\] { background-color: rgba(63, 224, 197, 0.12); }
+.theme-mint .bg-amber-400\/\[0\.06\] { background-color: rgba(71, 204, 199, 0.12); }
 .theme-mint .border-amber-400\/20,
 .theme-mint .border-amber-400\/25,
 .theme-mint .border-amber-400\/30,
-.theme-mint .border-amber-400\/40 { border-color: rgba(63, 224, 197, 0.35); }
+.theme-mint .border-amber-400\/40 { border-color: rgba(71, 204, 199, 0.35); }
 
 /* Branded gradients: mint into teal — the two colours only. */
 .theme-mint .gold-gradient,
 .theme-mint .freehold-gradient,
 .theme-mint .ore-gradient {
-  background: linear-gradient(135deg, #3FE0C5 0%, #2AB9A4 55%, #143D38 130%);
+  background: linear-gradient(135deg, #9E7DF0 0%, #9488ED 30%, #50C5CE 70%, #47CCC7 100%);
 }
 .theme-mint .gold-text-gradient,
 .theme-mint .freehold-text-gradient,
 .theme-mint .ore-text-gradient {
-  background: linear-gradient(135deg, #8FF4E2 0%, #3FE0C5 55%, #2AB9A4 100%);
+  background: linear-gradient(135deg, #9E7DF0 0%, #50C5CE 60%, #47CCC7 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
