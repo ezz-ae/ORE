@@ -227,7 +227,7 @@ export const BUNDLE: Record<SpeakerBundle, { creative: string; alsoReach: string
 
 const MOTIVE: Record<Motive, Mapped> = {
   // Investment intent is the one motive Meta models directly and well.
-  investment:   { entities: [{ id: '6002714398372', name: 'Real estate investing' }, { id: '6004132891184', name: 'Investment' }], defining: true },
+  investment:   { entities: [{ id: '6003051380892', name: 'Real estate investing' }, { id: '6004132891184', name: 'Investment' }], defining: true },
   first_home:   { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 25, ageMax: 45, mass: true },
   upgrade:      { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 30, mass: true },
   holiday_home: { entities: [{ id: '6003193636887', name: 'Luxury goods' }], ageMin: 35 },
@@ -285,7 +285,7 @@ export const speakerLocales = (speakers: SpeakerBundle[]): string[] =>
  */
 export const REAL_ESTATE_MUST: TargetingEntity[] = [
   { id: '6003105898571', name: 'Property' },
-  { id: '6002714398372', name: 'Real estate investing' },
+  { id: '6003051380892', name: 'Real estate investing' },
   { id: '6004132891184', name: 'Investment' },
 ]
 const RE_MUST_IDS = new Set(REAL_ESTATE_MUST.map((e) => e.id))

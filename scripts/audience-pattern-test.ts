@@ -292,7 +292,7 @@ console.log('\n── every segment carries the level it came from ──')
   check('a money segment lands at the money level',
     byId.get('6003193636887') === 2, String(byId.get('6003193636887')))
   check('a why-they-buy segment lands at the product level',
-    byId.get('6002714398372') === 3, String(byId.get('6002714398372')))
+    byId.get('6003051380892') === 3, String(byId.get('6003051380892')))
   check('every segment in the spec has a level',
     p.entityLevels.length > 0 && p.entityLevels.every((e) => e.level >= 1 && e.level <= 5),
     JSON.stringify(p.entityLevels))
