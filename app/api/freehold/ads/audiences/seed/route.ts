@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       // AND carrying a real-estate signal, not similar alone.
       const audience = await createAudience({
         name: `${name} — Lookalike ${pct}% ${country}`,
-        description: `Lookalike of ${uploaded.toLocaleString()} uploaded lead contacts (top ${pct}% most similar in ${country}). Real-estate interest required on top.`,
+        description: `People in ${country} similar to your uploaded list of ${uploaded.toLocaleString()} (top ${pct}%).`,
         kind: 'lookalike',
         spec: hardenRealEstate({
           countries: [country], cityKeys: [], ageMin: 30, ageMax: 65,

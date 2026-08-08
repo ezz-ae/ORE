@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
       })
       const audience = await createAudience({
         name: `${name} — Lookalike ${pct}% ${country}`,
-        description: `Top ${pct}% most similar in ${country} to ${uploaded.toLocaleString()} of our own ${source} contacts (tiered best-first). Real-estate interest required on top.`,
+        description: `People in ${country} similar to ${uploaded.toLocaleString()} of your own contacts (top ${pct}%).`,
         kind: 'lookalike',
         // The one hard rule applies to lookalikes too: similar-to-our-buyers
         // AND showing a property signal, not similar alone.

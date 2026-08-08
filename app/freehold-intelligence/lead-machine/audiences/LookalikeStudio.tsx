@@ -213,7 +213,6 @@ export default function LookalikeStudio({ onSaved }: { onSaved: () => void }) {
             </>
           )}
           {msg && <p className="text-[12px] text-slate-300">{msg}</p>}
-          <p className="text-[10.5px] leading-relaxed text-slate-600">{t('lm.aud.la.mustNote')}</p>
         </div>
       )}
     </section>
