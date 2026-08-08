@@ -321,120 +321,78 @@ html {
 /* Keep the gold brand + status colors as-is (they read fine on white). */
 
 /* ───────────────────────────────────────────────────────────────────────────
- * MINT (third theme; candidate default) — the MIDDLE theme, in the exact two
- * colours of the owner's reference and nothing invented: warm cream paper
- * (#F4F2EC family) and mint (#45D6C0 family), with the reference's deep navy
- * (#1B1A38) as ink and as the chrome bar. Not all white, not all black, and
- * NO YELLOW: every amber/gold accent maps into the mint/navy family here.
- *
- * Applied as `theme-light theme-mint`: inherits every light-mode remap, then
- * re-tints paper/mint/navy on top. Chrome is the one dark block, so its text
- * is re-lightened inside a scoped rule below.
+ * MINT (third theme; DEFAULT) — the owner's two colours and nothing else:
+ * the reference's TEAL and MINT, at full contrast with each other.
+ * No yellow, no white, no navy, no black — deep teal-green surfaces
+ * (a colour, not a void) carrying bright mint for every accent.
+ * Built on the dark base: light text stays light; this block only re-tints.
  * ─────────────────────────────────────────────────────────────────────────── */
 .theme-mint {
-  --color-gold:        #0E9C86;   /* mint, deep enough to read on paper */
-  --color-gold-bright: #35D3B7;
+  --color-gold:        #3FE0C5;   /* bright mint — the accent colour       */
+  --color-gold-bright: #8FF4E2;
 
-  --color-app:          #e3dfd0;   /* deeper cream ground — never white    */
-  --color-chrome:       #232250;   /* softer navy — an edge, not a void    */
-  --color-surface:      #f1eee3;   /* cream cards                          */
-  --color-ink:          #232250;   /* navy ink                             */
-  --color-surface-2:    #e5e1d1;   /* inputs / raised                      */
-  --color-surface-3:    #d8d3c0;   /* chips / tracks                       */
-  --color-line:         #c9c3ae;
-  --color-line-strong:  #a8a28c;
+  --color-app:          #0E312D;   /* deep teal-green canvas                */
+  --color-chrome:       #0A2623;   /* nav / headers — deeper teal           */
+  --color-surface:      #143D38;   /* teal cards                            */
+  --color-ink:          #082220;   /* deepest teal / on-mint text           */
+  --color-surface-2:    rgba(255,255,255,0.07);
+  --color-surface-3:    rgba(255,255,255,0.11);
+  --color-line:         rgba(143,244,226,0.14);  /* mint hairlines          */
+  --color-line-strong:  rgba(143,244,226,0.24);
 }
 .theme-mint body {
-  background: linear-gradient(180deg, #dad5c3 0%, #e1ddcc 45%, #e7e3d4 100%);
+  background:
+    radial-gradient(120% 70% at 85% -10%, rgba(63, 224, 197, 0.14) 0%, transparent 55%),
+    linear-gradient(180deg, #114039 0%, #0E312D 55%, #0B2926 100%);
   background-attachment: fixed;
-  color: #232250;
+  color: #E8F5F0;
 }
 
-/* Ink scale: navy-tinted. */
-.theme-mint .text-white     { color: #1B1A38; }
-.theme-mint .text-slate-100 { color: #232250; }
-.theme-mint .text-slate-200 { color: #232250; }
-.theme-mint .text-slate-300 { color: #3b3a63; }
-.theme-mint .text-slate-400 { color: #55547c; }
-.theme-mint .text-slate-500 { color: #6b6a90; }
-.theme-mint .text-slate-600 { color: #9997b3; }
-
-/* Token utilities (compiled static) re-tinted to paper. */
+/* Token utilities compiled to static hex — re-tint them teal. */
 .theme-mint .bg-app          { background-color: transparent; }
-.theme-mint .bg-surface      { background-color: #f1eee3; }
-.theme-mint .bg-surface-2    { background-color: #e5e1d1; }
-.theme-mint .bg-surface-3    { background-color: #d8d3c0; }
-.theme-mint .hover\:bg-surface-3:hover { background-color: #d8d3c0; }
-.theme-mint .hover\:bg-surface-2:hover { background-color: #e5e1d1; }
-.theme-mint .border-line     { border-color: #c9c3ae; }
-.theme-mint .border-line-strong { border-color: #a8a28c; }
-.theme-mint .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: #c9c3ae; }
-.theme-mint .bg-white\/\[0\.02\],
-.theme-mint .bg-white\/\[0\.03\],
-.theme-mint .bg-white\/\[0\.04\],
-.theme-mint .bg-white\/\[0\.05\],
-.theme-mint .bg-white\/\[0\.06\],
-.theme-mint .bg-white\/\[0\.08\],
-.theme-mint .bg-white\/5,
-.theme-mint .bg-white\/10    { background-color: #f1eee3; }
-.theme-mint .bg-surface\/40,
-.theme-mint .bg-surface\/50,
-.theme-mint .bg-surface\/60  { background-color: rgba(241, 238, 227, 0.65); }
-.theme-mint .bg-surface\/70,
-.theme-mint .bg-surface\/80,
-.theme-mint .bg-surface\/95  { background-color: rgba(241, 238, 227, 0.92); }
-.theme-mint .bg-surface-2\/30,
-.theme-mint .bg-surface-2\/40,
-.theme-mint .bg-surface-2\/50,
-.theme-mint .bg-surface-2\/60 { background-color: rgba(229, 225, 209, 0.7); }
-.theme-mint .border-white\/\[0\.05\],
-.theme-mint .border-white\/\[0\.06\],
-.theme-mint .border-white\/\[0\.07\],
-.theme-mint .border-white\/\[0\.08\],
-.theme-mint .border-white\/\[0\.1\],
-.theme-mint .border-white\/\[0\.10\],
-.theme-mint .border-white\/\[0\.12\],
-.theme-mint .border-white\/5,
-.theme-mint .border-white\/10 { border-color: #c9c3ae; }
-
-/* THE NAVY BLOCK. Chrome (nav, headers) is the reference's dark bar — and
- * its text must stay LIGHT, undoing the global light-mode ink flip inside it. */
-.theme-mint .bg-chrome       { background-color: #232250; }
+.theme-mint .bg-chrome       { background-color: #0A2623; }
+.theme-mint .bg-surface      { background-color: #143D38; }
+.theme-mint .bg-ink          { background-color: #082220; }
+.theme-mint .border-line     { border-color: rgba(143,244,226,0.14); }
+.theme-mint .border-line-strong { border-color: rgba(143,244,226,0.24); }
+.theme-mint .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: rgba(143,244,226,0.14); }
 .theme-mint .bg-chrome\/60,
 .theme-mint .bg-chrome\/95,
-.theme-mint .bg-chrome\/97   { background-color: rgba(35, 34, 80, 0.96); }
-.theme-mint :is(.bg-chrome, .bg-chrome\/60, .bg-chrome\/95, .bg-chrome\/97) :is(.text-white) { color: #f5f4ef; }
-.theme-mint :is(.bg-chrome, .bg-chrome\/60, .bg-chrome\/95, .bg-chrome\/97) :is(.text-slate-100, .text-slate-200) { color: #dddbe8; }
-.theme-mint :is(.bg-chrome, .bg-chrome\/60, .bg-chrome\/95, .bg-chrome\/97) :is(.text-slate-300, .text-slate-400) { color: #b3b1ce; }
-.theme-mint :is(.bg-chrome, .bg-chrome\/60, .bg-chrome\/95, .bg-chrome\/97) :is(.text-slate-500, .text-slate-600) { color: #8f8db2; }
-.theme-mint :is(.bg-chrome, .bg-chrome\/60, .bg-chrome\/95, .bg-chrome\/97) :is(.bg-white\/\[0\.04\], .bg-white\/\[0\.06\], .bg-white\/\[0\.08\], .bg-white\/5, .bg-white\/10) { background-color: rgba(255, 255, 255, 0.10); }
-.theme-mint :is(.bg-chrome, .bg-chrome\/60, .bg-chrome\/95, .bg-chrome\/97) :is(.border-white\/\[0\.07\], .border-white\/\[0\.08\], .border-white\/10) { border-color: rgba(255, 255, 255, 0.12); }
+.theme-mint .bg-chrome\/97   { background-color: rgba(10, 38, 35, 0.95); }
+.theme-mint .bg-app\/80,
+.theme-mint .bg-app\/90      { background-color: rgba(14, 49, 45, 0.88); }
+.theme-mint .bg-surface\/40,
+.theme-mint .bg-surface\/50,
+.theme-mint .bg-surface\/60  { background-color: rgba(20, 61, 56, 0.6); }
+.theme-mint .bg-surface\/70,
+.theme-mint .bg-surface\/80,
+.theme-mint .bg-surface\/95  { background-color: rgba(20, 61, 56, 0.92); }
 
-/* NO YELLOW in this palette — every amber accent maps to the mint family. */
+/* NO YELLOW: every amber accent lives in the mint family here. */
 .theme-mint .text-amber-200,
 .theme-mint .text-amber-300,
 .theme-mint .text-amber-400,
 .theme-mint .text-amber-400\/80,
-.theme-mint .text-amber-500   { color: #0E9C86; }
-.theme-mint .bg-amber-400     { background-color: #35D3B7; }
+.theme-mint .text-amber-500   { color: #8FF4E2; }
+.theme-mint .bg-amber-400     { background-color: #3FE0C5; }
 .theme-mint .bg-amber-400\/10,
 .theme-mint .bg-amber-400\/\[0\.05\],
-.theme-mint .bg-amber-400\/\[0\.06\] { background-color: rgba(53, 211, 183, 0.12); }
+.theme-mint .bg-amber-400\/\[0\.06\] { background-color: rgba(63, 224, 197, 0.12); }
 .theme-mint .border-amber-400\/20,
 .theme-mint .border-amber-400\/25,
 .theme-mint .border-amber-400\/30,
-.theme-mint .border-amber-400\/40 { border-color: rgba(14, 156, 134, 0.35); }
+.theme-mint .border-amber-400\/40 { border-color: rgba(63, 224, 197, 0.35); }
 
-/* Branded gradients: mint into navy — the two colours, nothing else. */
+/* Branded gradients: mint into teal — the two colours only. */
 .theme-mint .gold-gradient,
 .theme-mint .freehold-gradient,
 .theme-mint .ore-gradient {
-  background: linear-gradient(135deg, #35d3b7 0%, #2bb3a0 60%, #1B1A38 140%);
+  background: linear-gradient(135deg, #3FE0C5 0%, #2AB9A4 55%, #143D38 130%);
 }
 .theme-mint .gold-text-gradient,
 .theme-mint .freehold-text-gradient,
 .theme-mint .ore-text-gradient {
-  background: linear-gradient(135deg, #0E9C86 0%, #2bb3a0 50%, #1B1A38 100%);
+  background: linear-gradient(135deg, #8FF4E2 0%, #3FE0C5 55%, #2AB9A4 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
