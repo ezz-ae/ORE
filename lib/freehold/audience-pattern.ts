@@ -172,6 +172,19 @@ export const LEVEL_DECISION: PositiveLevel = 4
 interface Mapped {
   /** Meta behaviour/interest entities this trait implies. */
   entities: TargetingEntity[]
+  /**
+   * TRUE WHEN THESE ENTITIES ARE A POND, NOT A BUYER.
+   *
+   * "Property" in this market is close to everyone — Meta counts anyone who
+   * ever looked at a listing, a home tour, a mortgage ad. It is a fine place
+   * to FISH, and a disastrous thing to buy on its own: a group is an OR, so
+   * one mass interest sitting beside a narrow one IS the mass interest, and
+   * the campaign quietly becomes "anyone who likes houses".
+   *
+   * Marked so a plan can refuse to hand someone that audience while calling
+   * it a described buyer.
+   */
+  mass?: boolean
   /** Language codes the trait implies, if any. */
   languages?: string[]
   /** Age floor/ceiling the trait implies, if any. */
@@ -199,12 +212,12 @@ export const BUNDLE: Record<SpeakerBundle, { creative: string; alsoReach: string
 const MOTIVE: Record<Motive, Mapped> = {
   // Investment intent is the one motive Meta models directly and well.
   investment:   { entities: [{ id: '6002714398372', name: 'Real estate investing' }, { id: '6004132891184', name: 'Investment' }], defining: true },
-  first_home:   { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 25, ageMax: 45 },
-  upgrade:      { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 30 },
+  first_home:   { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 25, ageMax: 45, mass: true },
+  upgrade:      { entities: [{ id: '6003105898571', name: 'Property' }], ageMin: 30, mass: true },
   holiday_home: { entities: [{ id: '6003193636887', name: 'Luxury goods' }], ageMin: 35 },
   // A visa motive is a residency question, not a property one — it binds.
   golden_visa:  { entities: [{ id: '6004132891184', name: 'Investment' }], ageMin: 30, defining: true },
-  relocation:   { entities: [{ id: '6003105898571', name: 'Property' }] },
+  relocation:   { entities: [{ id: '6003105898571', name: 'Property' }], mass: true },
 }
 
 const LIFE_STAGE: Record<LifeStage, Mapped> = {
@@ -296,6 +309,16 @@ export interface PatternPlan {
    *  asked for and nothing could produce. Derived from the trait that put the
    *  segment there, never inferred from the segment itself. */
   entityLevels: Array<{ id: string; kind: 'interest'; level: PositiveLevel }>
+  /**
+   * TRUE WHEN THIS AUDIENCE IS EVERYONE.
+   *
+   * The described buyer produced only mass interests and nothing narrowing
+   * them, so the ad set would reach anyone who has ever looked at property.
+   * The words still describe a person; the buy does not. Reported rather than
+   * silently corrected — changing someone's targeting on their behalf is the
+   * same sin as dropping it.
+   */
+  reachesEveryone: boolean
   /** Segments claimed by more than one level, by name. Each one is a place the
    *  translation is using a single Meta interest to stand for two different
    *  things, which weakens any arm built on the boundary between them. */
@@ -433,6 +456,28 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
     .filter((c) => c.levels.size > 1)
     .map((c) => c.entity.name)
 
+  // ── IS THIS AUDIENCE ACTUALLY ANYONE? ────────────────────────────────────
+  //
+  // A group is an OR. Put "Property" — which in this market Meta counts as
+  // close to everybody who ever looked at a listing — beside a narrow intent
+  // segment and the group IS "Property". The narrow one is still listed, still
+  // visible in Ads Manager, still discussed in the meeting, and contributing
+  // nothing.
+  //
+  // That is the difference between fishing in a pond and buying the pond. It
+  // is the single most expensive mistake this product can make on someone's
+  // behalf, because the campaign looks precise and delivers to everyone, and
+  // the leads that come back are browsers.
+  //
+  // So it is measured and reported: a mass interest with nothing narrowing it
+  // means the described buyer was not bought.
+  const massEntityIds = new Set(
+    traits.filter((x) => x.m.mass).flatMap((x) => x.m.entities.map((e) => e.id)),
+  )
+  const baseIsAllMass =
+    hinting.length > 0 && hinting.every((e) => massEntityIds.has(e.id))
+  const reachesEveryone = baseIsAllMass && binding.length === 0
+
   const temperature = TEMPERATURE[p.readiness] ?? 'cold'
 
   return {
@@ -445,6 +490,7 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
     unreachable: droppedBundles,
     entityLevels,
     sharedSegments,
+    reachesEveryone,
   }
 }
 

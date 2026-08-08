@@ -62,6 +62,7 @@ interface Preview {
   temperature: 'cold' | 'warm' | 'hot'
   needsRetargetingSource: boolean
   unreachable: string[]
+  reachesEveryone: boolean
 }
 interface Reach { lower: number; upper: number; ready: boolean }
 
@@ -287,6 +288,15 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
             )}
             {/* A chosen group that did not survive is named. Never dropped in
                 silence — they picked it and would otherwise never know. */}
+            {/* THE AUDIENCE IS EVERYONE — the most expensive thing this screen
+                can fail to say. A mass interest with nothing narrowing it
+                reads as a described buyer and delivers to anyone who ever
+                looked at a listing, so the leads come back as browsers. */}
+            {preview?.reachesEveryone && (
+              <p className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-[11.5px] leading-relaxed text-slate-300">
+                {t('lm.aud.pat.everyone')}
+              </p>
+            )}
             {preview && preview.unreachable.length > 0 && (
               <p className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-[11.5px] leading-relaxed text-slate-400">
                 {t('lm.aud.pat.unreachable').replace('{list}', preview.unreachable.join(', '))}
