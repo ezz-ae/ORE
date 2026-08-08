@@ -503,7 +503,7 @@ function CoachOverlay({
             )}
             <button
               onClick={() => (isLast ? onComplete() : onIndex(index + 1))}
-              className="inline-flex items-center gap-1 rounded-lg bg-gold px-3.5 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-1 rounded-lg bg-gold px-3.5 py-1.5 text-sm font-semibold text-ink transition-opacity hover:opacity-90"
             >
               {isLast ? t('coach.ui.done') : t('coach.ui.next')}
               {!isLast && (dir === 'rtl' ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />)}

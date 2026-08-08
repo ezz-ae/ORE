@@ -254,6 +254,11 @@ html {
 .theme-light .bg-\[\#0c0d12\],
 .theme-light .bg-\[\#0D1321\]  { background-color: #ffffff; color: #0f172a; }
 .theme-light .bg-slate-700     { background-color: #e2e8f0; color: #0f172a; }
+/* Alpha-suffixed neutrals the bare-color net above doesn't match — skeleton
+ * placeholders, status badges, an inactive toggle knob. */
+.theme-light .bg-slate-700\/70,
+.theme-light .bg-slate-700\/85 { background-color: #cbd5e1; }
+.theme-light .bg-white\/30     { background-color: #cbd5e1; }
 
 /* ── Design-token utilities ────────────────────────────────────────────── *
  * These compiled to STATIC dark hex at build time (e.g. .bg-surface:#181613),
@@ -421,6 +426,20 @@ html {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* WhatsApp lead conversation — the one page still wearing the old dark-only
+ * palette by literal hex (it already has a light remap; extend the same
+ * courtesy to Fresh). Wallpaper and their bubbles stay teal, matching every
+ * other surface; the sent bubble goes violet — the same "this one is mine"
+ * signal the chrome and the assistant rail use everywhere else. The WhatsApp
+ * green send button is untouched on purpose: that is WhatsApp's own colour,
+ * not ours, in every theme. */
+.theme-mint .bg-\[\#111B21\] { background-color: #193A37; }
+.theme-mint .bg-\[\#202C33\] { background-color: #2C5652; color: #EAF8F1; }
+.theme-mint .bg-\[\#2A3942\],
+.theme-mint .bg-\[\#1D2B38\],
+.theme-mint .bg-\[\#182229\] { background-color: #35635D; }
+.theme-mint .bg-\[\#005C4B\]  { background-color: #443A82; color: #EAF8F1; }
 
 /* Custom utilities for Freehold */
 @layer utilities {
