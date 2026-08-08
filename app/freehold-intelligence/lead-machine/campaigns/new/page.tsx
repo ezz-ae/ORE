@@ -898,6 +898,21 @@ export default function NewCampaignPage() {
     }
   }
 
+  // THE SHAPE OF THE PICTURE DECIDES WHERE IT CAN RUN.
+  //
+  // A tall 9:16 design made for Stories/Reels gets centre-cropped when Meta
+  // puts it in a Feed slot — the top and bottom of the artwork, which on a
+  // property ad is usually the headline and the price, are simply cut off.
+  // The launcher already supports a different image per placement; nothing
+  // ever said it was needed. Measured from the rendered preview so it works
+  // for every source (upload, library, listing photo, pasted URL) without a
+  // second network read.
+  const [imageAspect, setImageAspect] = useState<number | null>(null)
+  /** Taller than 4:5 — Feed will crop it. */
+  const tallCreativeWillCrop = imageAspect !== null && imageAspect < 0.8
+  const feedPlacementsInPlay =
+    form.placementMode !== 'manual' || form.manualPlacements.some((k) => k === 'igFeed' || k === 'fbFeed')
+
   // Upload an EXTRA design → its own ad with the same copy. Cap 3. Same
   // local-preview reasoning as onUploadImage above.
   const [uploadingVariant, setUploadingVariant] = useState(false)
@@ -1963,9 +1978,26 @@ export default function NewCampaignPage() {
                   : <span className="text-xs text-slate-500">{t('lm.newCampaign.s3.upload.orPaste')}</span>}
                 {form.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
+                  <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover"
+                    onLoad={(e) => {
+                      const el = e.currentTarget
+                      if (el.naturalWidth && el.naturalHeight) setImageAspect(el.naturalWidth / el.naturalHeight)
+                    }}
+                    onError={() => setImageAspect(null)} />
                 )}
               </div>
+
+              {/* A tall design cropped in Feed loses the headline and the
+                  price. Say it once, plainly, with the button that fixes it. */}
+              {tallCreativeWillCrop && feedPlacementsInPlay && supportsPlacementCreative && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2">
+                  <span className="text-[12px] text-slate-300">{t('lm.newCampaign.s3.tallCrop')}</span>
+                  <button type="button" onClick={() => setPlacementsOpen(true)}
+                    className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
+                    {t('lm.newCampaign.s3.tallCropCta')}
+                  </button>
+                </div>
+              )}
 
               {/* Extra designs — each runs as its own ad with the same text. */}
               <div className="mt-3 flex flex-wrap items-center gap-2">
