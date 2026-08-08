@@ -516,25 +516,6 @@ export interface MetaAdCreativeDetail {
   }
 }
 
-// ─── Targeting Templates ──────────────────────────────────────────────────────
-
-export type TargetingUseCase =
-  | 'investor'
-  | 'end_user'
-  | 'golden_visa'
-  | 'secondary'
-  | 'international'
-  | 'custom'
-
-export interface TargetingTemplate {
-  id: string
-  name: string
-  description: string
-  audience: string
-  useCase: TargetingUseCase
-  targeting: CampaignTargeting
-}
-
 // ─── Creative Generation ──────────────────────────────────────────────────────
 
 export type CreativeAngle = 'investor' | 'end_user' | 'golden_visa' | 'urgency' | 'yield' | 'lifestyle'

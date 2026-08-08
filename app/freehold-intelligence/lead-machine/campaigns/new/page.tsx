@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { BUYER_INTENTS, withIntent, type BuyerIntent } from '@/lib/meta/intent'
-import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
 import { useSession } from '@/lib/freehold/use-session'
@@ -796,27 +795,12 @@ export default function NewCampaignPage() {
   }, [])
 
   // Prefill from a real inventory project when arriving via the Inventory
-  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>),
-  // and/or from a targeting template (?template=<id> — the "Use this
-  // template" buttons in the targeting gallery).
+  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>).
+  // The old ?template=<id> path is gone with the decorative template catalog
+  // it read from — its own ids didn't even agree with each other on what
+  // they targeted (see the commit that removed lib/meta/targeting-templates.ts).
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
-    const templateId = p.get('template')
-    if (templateId) {
-      const tmpl = TARGETING_TEMPLATES.find((x) => x.id === templateId)
-      if (tmpl) {
-        setForm((prev) => ({
-          ...prev,
-          countries: tmpl.targeting.countries.length ? tmpl.targeting.countries : prev.countries,
-          cityKeys: tmpl.targeting.cityKeys.length ? tmpl.targeting.cityKeys : prev.cityKeys,
-          ageMin: tmpl.targeting.ageMin,
-          ageMax: tmpl.targeting.ageMax,
-          genders: tmpl.targeting.genders ?? prev.genders,
-          interestIds: tmpl.targeting.interests.map((i) => i.id),
-          publisherPlatforms: tmpl.targeting.publisherPlatforms.length ? tmpl.targeting.publisherPlatforms : prev.publisherPlatforms,
-        }))
-      }
-    }
     const project = p.get('project')
     const name = p.get('name')
     const price = p.get('price')

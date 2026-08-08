@@ -290,6 +290,25 @@ export const REAL_ESTATE_MUST: TargetingEntity[] = [
 ]
 const RE_MUST_IDS = new Set(REAL_ESTATE_MUST.map((e) => e.id))
 
+/**
+ * Every hardcoded Meta entity id this kitchen ships with, flattened and
+ * deduplicated — the id someone copied down once for MOTIVE, MONEY, EXCLUDE
+ * and the real-estate anchor. This is what "is our targeting still valid"
+ * has to check: nothing here is resolved live, so nothing here notices on
+ * its own when Meta deprecates or merges a node.
+ */
+export function allCatalogEntities(): TargetingEntity[] {
+  const all: TargetingEntity[] = [
+    ...REAL_ESTATE_MUST,
+    ...Object.values(MOTIVE).flatMap((m) => m.entities),
+    ...Object.values(MONEY).flatMap((m) => m.entities),
+    ...Object.values(EXCLUDE).flat(),
+  ]
+  const seen = new Map<string, TargetingEntity>()
+  for (const e of all) if (e?.id && !seen.has(e.id)) seen.set(e.id, e)
+  return [...seen.values()]
+}
+
 /** Add the real-estate MUST group to a targeting spec — unless a narrowing
  *  group made purely of real-estate signals is already there (that group is
  *  the same requirement or a stricter one, and doubling it is noise).

@@ -2258,6 +2258,51 @@ export async function searchBehaviors(
   return hits.slice(0, Math.min(limit, 50))
 }
 
+/**
+ * VERIFY OUR OWN HARDCODED CATALOG AGAINST LIVE META.
+ *
+ * Every interest/behaviour id this system ships with (the real-estate
+ * anchor, the motive/money mappings, the AI's targeting catalog) is a
+ * literal id someone copied down once. Meta deprecates and merges targeting
+ * nodes on its own schedule, silently — the id just stops resolving, and
+ * the first anyone hears of it is a launch failing at whichever ad set
+ * Meta happens to validate first (which is exactly what happened: the
+ * real-estate anchor rides on every audience, one entry in it went dead,
+ * and every launch failed until someone read the error).
+ *
+ * This checks each id directly against the node it names — `GET /{id}` on
+ * a live interest/behaviour node returns the node; on a dead one Meta
+ * answers with an error, same shape as every other Graph error this file
+ * already parses. Run individually, not batched: Meta's batch `?ids=`
+ * lookup silently DROPS dead ids from the response instead of reporting
+ * them, which would hide exactly the failure this exists to catch.
+ */
+export interface EntityCheck {
+  id: string
+  /** The name our own catalog claims for this id. */
+  claimedName: string
+  valid: boolean
+  /** Meta's own current name for the id, when valid — catches the id
+   *  drifting to mean something other than what we call it, not just
+   *  going dead outright. */
+  liveName: string | null
+  error: string | null
+}
+
+export async function verifyEntityIds(
+  entities: Array<{ id: string; name: string }>,
+): Promise<EntityCheck[]> {
+  return Promise.all(entities.map(async ({ id, name }) => {
+    try {
+      const node = await apiFetch<{ id?: string; name?: string }>(`/${id}`, undefined, { fields: 'id,name' })
+      return { id, claimedName: name, valid: true, liveName: node.name ?? null, error: null }
+    } catch (err) {
+      const message = err instanceof MetaApiError ? err.message : 'Meta did not answer'
+      return { id, claimedName: name, valid: false, liveName: null, error: message }
+    }
+  }))
+}
+
 /** The ad account's Custom + Lookalike audiences with real size bands. */
 export interface CustomAudienceSummary {
   id: string
