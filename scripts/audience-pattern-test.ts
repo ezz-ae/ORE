@@ -302,6 +302,33 @@ console.log('\n── every segment carries the level it came from ──')
     planPattern(pat({ motive: ['investment', 'golden_visa'] })).sharedSegments.length === 0)
 }
 
+console.log('\n── a mass interest is a pond, not a buyer ──')
+{
+  // A group is an OR. "Property" in this market is close to everybody who has
+  // ever looked at a listing, so putting it beside a narrow segment makes the
+  // group "Property" — the narrow one is still listed, still visible in Ads
+  // Manager, still discussed in the meeting, and contributing nothing. The
+  // campaign looks precise, delivers to everyone, and the leads come back as
+  // browsers. This is the most expensive mistake the product can make FOR
+  // someone, so it is measured and said out loud.
+  const browsers = planPattern(pat({ motive: ['upgrade'], strictness: 0 }))
+  check('an upgrade buyer at the loose end is everyone, and says so',
+    browsers.reachesEveryone === true, String(browsers.reachesEveryone))
+  check('…and first-home and relocation are the same pond',
+    planPattern(pat({ motive: ['first_home'], strictness: 0 })).reachesEveryone &&
+    planPattern(pat({ motive: ['relocation'], strictness: 0 })).reachesEveryone)
+
+  // Real intent segments are not mass, and neither is a bound audience.
+  check('investing is a real intent segment, not a pond',
+    planPattern(pat({ motive: ['investment'], strictness: 0 })).reachesEveryone === false)
+  check('binding the trait stops it being everyone',
+    planPattern(pat({ motive: ['upgrade'], strictness: 100 })).reachesEveryone === false)
+  check('adding a real buying signal alongside stops it too',
+    planPattern(pat({ motive: ['upgrade', 'investment'], strictness: 100 })).reachesEveryone === false)
+  check('a pattern with no interests at all is not flagged as everyone',
+    planPattern(pat({ lifeStage: ['single'] })).reachesEveryone === false)
+}
+
 console.log('\n── the pattern and the spec beside it cannot drift ──')
 {
   // A stored pattern that no longer produces its stored spec shows one person

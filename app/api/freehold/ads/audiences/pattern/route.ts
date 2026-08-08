@@ -88,4 +88,6 @@ const publicPlan = (p: ReturnType<typeof planPattern>) => ({
   temperature: p.temperature,
   needsRetargetingSource: p.needsRetargetingSource,
   unreachable: p.unreachable,
+  /** The audience is everyone. Said before anyone spends on it. */
+  reachesEveryone: p.reachesEveryone,
 })
