@@ -4,17 +4,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy, Lightbulb, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy, Lightbulb, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { computeOverlaps } from '@/lib/meta/audience-overlap'
-import type { MetaCampaign, MetaAdSet, MetaInsights, PlacementKey, PlacementCreativeOverride } from '@/lib/meta/types'
+import type { MetaCampaign, MetaCampaignStatus, MetaAdSet, MetaInsights, PlacementKey, PlacementCreativeOverride } from '@/lib/meta/types'
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/freehold/campaign-rules'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
+import { checkCampaignSetup, setupProblemCount, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
 
-type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }[] }
+// The campaign read attaches each ad set's ads; MetaAdSet carries them now,
+// so there is one definition of an ad's status instead of two that drift.
+type AdSetRow = MetaAdSet
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
 type Analysis = { working: string[]; blocking: string[]; actions: string[] }
 type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number; pointValue: number | null }
@@ -180,6 +183,11 @@ export default function CampaignCommandPage() {
   }, [data])
 
   const overlaps = useMemo(() => (data ? computeOverlaps(data.adSets) : []), [data])
+  const setup = useMemo(
+    () => (data ? checkCampaignSetup(data.campaign, data.adSets as AdSetForCheck[]) : []),
+    [data],
+  )
+  const setupProblems = setupProblemCount(setup)
   const active = data?.campaign.status === 'ACTIVE'
 
   // ── AI Advisor ──────────────────────────────────────────────────────────────
@@ -418,7 +426,7 @@ export default function CampaignCommandPage() {
   }
 
   /** Turn a single AD on or off, without touching its ad set's learning. */
-  async function setAdStatus(adSetId: string, adId: string, current: string, next: 'ACTIVE' | 'PAUSED') {
+  async function setAdStatus(adSetId: string, adId: string, current: MetaCampaignStatus, next: 'ACTIVE' | 'PAUSED') {
     if (statusBusyId) return
     setStatusBusyId(adId)
     setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id !== adSetId ? x
@@ -778,6 +786,37 @@ export default function CampaignCommandPage() {
           </div>
         </section>
       )}
+
+      {/* SETUP CHECK — is the money pointed where somebody meant to point it.
+          Read from what Meta holds right now, not from what we meant to send:
+          an ad set can be edited in Ads Manager, and a campaign can sit ACTIVE
+          all week with no live ad inside it. */}
+      <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+        <div className="flex items-center gap-2.5">
+          <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><ShieldCheck className="h-4 w-4 text-gold" /></div>
+          <div>
+            <div className="text-sm font-semibold text-white">{t('lm.setupCheck.title')}</div>
+            <div className="text-xs text-slate-400">
+              {setupProblems > 0 ? t('lm.setupCheck.problems', { n: setupProblems }) : t('lm.setupCheck.allGood')}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 space-y-1.5">
+          {setup.map((f, i) => (
+            <div key={`${f.key}-${f.adSet ?? ''}-${i}`}
+              className={`flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-3.5 py-2.5 text-xs ${
+                f.level === 'wrong' ? 'border-rose-400/25 bg-rose-400/[0.07] text-rose-100'
+                : f.level === 'watch' ? 'border-amber-400/25 bg-amber-400/[0.06] text-amber-100'
+                : 'border-line bg-surface text-slate-300'}`}>
+              {f.level === 'wrong' ? <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                : f.level === 'watch' ? <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                : <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
+              <span>{t(`lm.setupCheck.${f.key}`, f.vars)}</span>
+              {f.adSet && <span className="ms-auto shrink-0 rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">{f.adSet}</span>}
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Audience overlap — which ad sets may be competing (estimated from targeting) */}
       {data.adSets.length >= 2 && (

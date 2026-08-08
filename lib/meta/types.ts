@@ -84,10 +84,15 @@ export interface MetaAdSet {
   id: string
   name: string
   status: MetaCampaignStatus
+  /** What Meta says is happening, not what was asked for — an ad set can be
+   *  ACTIVE inside a paused campaign, and only this field says so. */
+  effective_status?: string
   daily_budget: string
   optimization_goal: MetaOptimizationGoal
   billing_event: string
   targeting?: Record<string, unknown>
+  /** Present when the campaign detail read attaches them. */
+  ads?: MetaAd[]
 }
 
 export interface MetaAdCreative {
@@ -99,6 +104,8 @@ export interface MetaAd {
   id: string
   name: string
   status: MetaCampaignStatus
+  /** The status that decides whether this ad can actually be served. */
+  effective_status?: string
   creative?: MetaAdCreative
 }
 
