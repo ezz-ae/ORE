@@ -33,8 +33,11 @@ const pat = (o: Partial<AudiencePattern>): AudiencePattern => ({ ...emptyPattern
 console.log('\n── language, not nationality ──')
 {
   const p = planPattern(pat({ speakers: ['arabic'] }))
-  check('an Arabic bundle reaches Arabic AND Urdu speakers',
-    p.targeting.leadLanguages?.sort().join(',') === 'ar,ur',
+  // Arabic means ARABIC — nothing rides along behind the label. The Urdu
+  // coupling was removed after a live campaign showed the label and the buy
+  // disagreeing, which is the one lie this module must never tell.
+  check('an Arabic bundle reaches exactly Arabic',
+    p.targeting.leadLanguages?.join(',') === 'ar',
     String(p.targeting.leadLanguages))
   check('English reaches English and Spanish',
     planPattern(pat({ speakers: ['english'] })).targeting.leadLanguages?.sort().join(',') === 'en,es')
@@ -44,7 +47,7 @@ console.log('\n── language, not nationality ──')
 
   const both = planPattern(pat({ speakers: ['arabic', 'english'] }))
   check('two bundles union without duplicating',
-    both.targeting.leadLanguages?.sort().join(',') === 'ar,en,es,ur',
+    both.targeting.leadLanguages?.sort().join(',') === 'ar,en,es',
     String(both.targeting.leadLanguages))
 
   // The point of choosing language: it buys LOCALES, not a guess-stack of

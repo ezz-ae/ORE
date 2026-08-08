@@ -204,7 +204,12 @@ interface Mapped {
  * point: it is exact where an interest stack would be a guess.
  */
 export const BUNDLE: Record<SpeakerBundle, { creative: string; alsoReach: string[]; label: string }> = {
-  arabic:   { creative: 'ar', alsoReach: ['ur'],               label: 'Arabic speakers' },
+  // Arabic means ARABIC. Urdu used to ride along here on a market theory —
+  // "Urdu speakers in Dubai read Arabic ads" — that the person choosing the
+  // audience never asked for and could not see. An audience named for a
+  // language must reach exactly that language; anything wider is the machine
+  // quietly widening someone's buy behind the label.
+  arabic:   { creative: 'ar', alsoReach: [],                    label: 'Arabic speakers' },
   english:  { creative: 'en', alsoReach: ['es'],               label: 'English speakers' },
   european: { creative: 'ru', alsoReach: ['de', 'fr', 'it'],   label: 'European languages' },
 }
