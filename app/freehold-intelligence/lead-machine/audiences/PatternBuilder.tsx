@@ -31,8 +31,11 @@ import { useT } from '@/lib/i18n/provider'
 // Values only. The server owns what each one means; this file owns nothing but
 // how it looks and what it is called in three languages.
 
-const RESIDENCY = ['resident', 'expat', 'gcc', 'overseas'] as const
-const SPEAKERS = ['arabic', 'english', 'european'] as const
+// Every buyer country is its own chip — its own campaign, its own creative,
+// its own price talk. 'gcc' is the deliberate whole-Gulf choice, never a
+// default. No 'european languages' blob — one language per audience.
+const RESIDENCY = ['resident', 'expat', 'saudi', 'qatar', 'kuwait', 'bahrain', 'oman', 'gcc', 'egypt', 'france', 'europe', 'overseas'] as const
+const SPEAKERS = ['arabic', 'english', 'russian'] as const
 const LIFE_STAGE = ['single', 'couple', 'young_family', 'established_family', 'downsizing'] as const
 const MOTIVE = ['first_home', 'upgrade', 'investment', 'holiday_home', 'golden_visa', 'relocation'] as const
 const MONEY = ['unknown', 'mortgage', 'payment_plan', 'cash'] as const

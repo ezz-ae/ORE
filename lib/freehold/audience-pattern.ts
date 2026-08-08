@@ -44,9 +44,15 @@ import type { PositiveLevel } from '@/lib/freehold/level-arms'
 // THE VOCABULARY. Real-estate words, not platform words.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Where they live relative to the property. The single most important trait:
- *  it decides the geo, the language and whether they can view in person. */
-export type Residency = 'resident' | 'expat' | 'gcc' | 'overseas'
+/** Where the BUYER lives — the property is always in the UAE, the buyer is
+ *  anywhere. The single most important trait: it decides the geo, the
+ *  language and whether they can view in person. Each named market is its own
+ *  campaign with its own creative and its own price talk; 'gcc' is the
+ *  deliberate whole-Gulf choice, never a default. */
+export type Residency =
+  | 'resident' | 'expat'
+  | 'saudi' | 'qatar' | 'kuwait' | 'bahrain' | 'oman' | 'gcc'
+  | 'egypt' | 'france' | 'europe' | 'overseas'
 
 /**
  * WHO THE AD CAN SPEAK TO — a language bundle, not a nationality.
@@ -59,19 +65,16 @@ export type Residency = 'resident' | 'expat' | 'gcc' | 'overseas'
  * honest reason to narrow reach: an ad written in Arabic cannot sell to
  * someone who does not read Arabic, whoever they are.
  *
- * Each bundle carries a CREATIVE language — what the ad is actually written
- * in — and the additional speaker groups that live in the same market and
- * will read it. Those pairings are market facts about Dubai, not linguistics:
- *
- *   arabic   — Arabic creative, also reaching Urdu speakers
- *   english  — English creative, also reaching Spanish speakers
- *   european — Russian creative, also reaching German, French and Italian
+ * Each bundle is ONE language: the language the ad is written in and the
+ * accounts it is shown to, nothing more. Wider pairings used to live here and
+ * were removed — a bundle that reaches more than its label says is the
+ * machine widening someone's buy behind their back.
  *
  * They are INCLUSION only. Nothing here excludes anyone by origin or language:
  * the exclusion axis is behavioural (see `Disqualifier`), which is both the
  * honest way to exclude and the only one that predicts anything.
  */
-export type SpeakerBundle = 'arabic' | 'english' | 'european'
+export type SpeakerBundle = 'arabic' | 'english' | 'russian'
 
 /** Life stage — drives the product fit more than income does. */
 export type LifeStage = 'single' | 'couple' | 'young_family' | 'established_family' | 'downsizing'
@@ -110,8 +113,12 @@ export const emptyPattern = (name = ''): AudiencePattern => ({
   money: 'unknown', readiness: 'browsing', exclude: [], strictness: 50,
 })
 
-const RESIDENCIES: Residency[] = ['resident', 'expat', 'gcc', 'overseas']
-const SPEAKERS: SpeakerBundle[] = ['arabic', 'english', 'european']
+const RESIDENCIES: Residency[] = [
+  'resident', 'expat',
+  'saudi', 'qatar', 'kuwait', 'bahrain', 'oman', 'gcc',
+  'egypt', 'france', 'europe', 'overseas',
+]
+const SPEAKERS: SpeakerBundle[] = ['arabic', 'english', 'russian']
 const LIFE_STAGES: LifeStage[] = ['single', 'couple', 'young_family', 'established_family', 'downsizing']
 const MOTIVES: Motive[] = ['first_home', 'upgrade', 'investment', 'holiday_home', 'golden_visa', 'relocation']
 const MONEYS: Money[] = ['cash', 'mortgage', 'payment_plan', 'unknown']
@@ -137,7 +144,10 @@ export function parsePattern(raw: unknown): AudiencePattern {
   return {
     name: typeof r.name === 'string' ? r.name.trim().slice(0, 120) : '',
     residency: pick(r.residency, RESIDENCIES),
-    speakers: pick(r.speakers, SPEAKERS),
+    speakers: pick(
+      Array.isArray(r.speakers) ? r.speakers.map((x) => (x === 'european' ? 'russian' : x)) : r.speakers,
+      SPEAKERS,
+    ),
     lifeStage: pick(r.lifeStage, LIFE_STAGES),
     motive: pick(r.motive, MOTIVES),
     money: one(r.money, MONEYS, 'unknown'),
@@ -204,14 +214,15 @@ interface Mapped {
  * point: it is exact where an interest stack would be a guess.
  */
 export const BUNDLE: Record<SpeakerBundle, { creative: string; alsoReach: string[]; label: string }> = {
-  // Arabic means ARABIC. Urdu used to ride along here on a market theory —
-  // "Urdu speakers in Dubai read Arabic ads" — that the person choosing the
-  // audience never asked for and could not see. An audience named for a
-  // language must reach exactly that language; anything wider is the machine
-  // quietly widening someone's buy behind the label.
-  arabic:   { creative: 'ar', alsoReach: [],                    label: 'Arabic speakers' },
-  english:  { creative: 'en', alsoReach: ['es'],               label: 'English speakers' },
-  european: { creative: 'ru', alsoReach: ['de', 'fr', 'it'],   label: 'European languages' },
+  // A BUNDLE REACHES EXACTLY ITS LANGUAGE — nothing rides along behind the
+  // label. Urdu used to ride with Arabic, Spanish with English, and German,
+  // French and Italian with Russian, all on market theories the person
+  // choosing the audience never asked for and could not see. A live campaign
+  // showed where that ends. No professional here runs Russians and Italians
+  // as one audience; each language is its own market with its own creative.
+  arabic:   { creative: 'ar', alsoReach: [], label: 'Arabic speakers' },
+  english:  { creative: 'en', alsoReach: [], label: 'English speakers' },
+  russian:  { creative: 'ru', alsoReach: [], label: 'Russian speakers' },
 }
 
 const MOTIVE: Record<Motive, Mapped> = {
@@ -253,11 +264,22 @@ const EXCLUDE: Record<Disqualifier, TargetingEntity[]> = {
   bargain_hunters:    [{ id: '6002867432172', name: 'Discount shoppers' }],
 }
 
-/** Residency decides geography, and geography is never a preference. */
+/** Residency decides geography, and geography is never a preference.
+ *  Every Gulf country stands alone — its own way of buying, its own creative,
+ *  its own campaign. 'gcc' exists for the operator who deliberately wants the
+ *  whole Gulf in one audience, and for old saved patterns. */
 const RESIDENCY_COUNTRIES: Record<Residency, string[]> = {
   resident: ['AE'],
   expat:    ['AE'],
+  saudi:    ['SA'],
+  qatar:    ['QA'],
+  kuwait:   ['KW'],
+  bahrain:  ['BH'],
+  oman:     ['OM'],
   gcc:      ['AE', 'SA', 'KW', 'QA', 'BH', 'OM'],
+  egypt:    ['EG'],
+  france:   ['FR'],
+  europe:   ['GB', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'SE', 'DK', 'NO', 'IE', 'PT', 'GR', 'PL', 'CZ', 'RO', 'HU', 'FI'],
   overseas: ['GB', 'DE', 'FR', 'IN', 'PK', 'RU', 'CN', 'EG', 'ZA'],
 }
 
@@ -385,7 +407,7 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   }
 
   // Age: intersect. Every trait narrows, none widens.
-  let ageMin = 18, ageMax = 65
+  let ageMin = 30, ageMax = 65
   for (const { m } of traits) {
     if (typeof m.ageMin === 'number') ageMin = Math.max(ageMin, m.ageMin)
     if (typeof m.ageMax === 'number') ageMax = Math.min(ageMax, m.ageMax)
@@ -503,7 +525,10 @@ const uniqStrings = (xs: string[]) => [...new Set(xs.filter(Boolean))]
 
 const WORD: Record<string, string> = {
   resident: 'living in the UAE', expat: 'an expat in the UAE',
-  gcc: 'in the Gulf', overseas: 'buying from abroad',
+  saudi: 'in Saudi Arabia', qatar: 'in Qatar', kuwait: 'in Kuwait',
+  bahrain: 'in Bahrain', oman: 'in Oman', gcc: 'across the Gulf',
+  egypt: 'in Egypt', france: 'in France', europe: 'in Europe',
+  overseas: 'buying from abroad',
   single: 'single', couple: 'a couple', young_family: 'a young family',
   established_family: 'an established family', downsizing: 'downsizing',
   first_home: 'buying a first home', upgrade: 'upgrading', investment: 'investing',

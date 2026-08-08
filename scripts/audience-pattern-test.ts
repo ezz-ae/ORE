@@ -39,15 +39,19 @@ console.log('\n── language, not nationality ──')
   check('an Arabic bundle reaches exactly Arabic',
     p.targeting.leadLanguages?.join(',') === 'ar',
     String(p.targeting.leadLanguages))
-  check('English reaches English and Spanish',
-    planPattern(pat({ speakers: ['english'] })).targeting.leadLanguages?.sort().join(',') === 'en,es')
-  check('European reaches Russian, German, French and Italian',
-    planPattern(pat({ speakers: ['european'] })).targeting.leadLanguages?.sort().join(',') === 'de,fr,it,ru',
-    String(planPattern(pat({ speakers: ['european'] })).targeting.leadLanguages))
+  check('English reaches exactly English',
+    planPattern(pat({ speakers: ['english'] })).targeting.leadLanguages?.join(',') === 'en')
+  // No professional here runs Russians and Italians as one audience — each
+  // language is its own market. The old European blob is gone.
+  check('Russian reaches exactly Russian',
+    planPattern(pat({ speakers: ['russian'] })).targeting.leadLanguages?.join(',') === 'ru',
+    String(planPattern(pat({ speakers: ['russian'] })).targeting.leadLanguages))
+  check('a legacy european pattern is read as Russian — its creative always was',
+    planPattern(parsePattern({ speakers: ['european'] })).targeting.leadLanguages?.join(',') === 'ru')
 
   const both = planPattern(pat({ speakers: ['arabic', 'english'] }))
   check('two bundles union without duplicating',
-    both.targeting.leadLanguages?.sort().join(',') === 'ar,en,es',
+    both.targeting.leadLanguages?.sort().join(',') === 'ar,en',
     String(both.targeting.leadLanguages))
 
   // The point of choosing language: it buys LOCALES, not a guess-stack of
@@ -159,7 +163,7 @@ console.log('\n── the plan is always launchable ──')
 {
   for (const s of [0, 25, 50, 75, 100]) {
     const p = planPattern(pat({
-      speakers: ['arabic', 'european'], residency: ['gcc'], motive: ['investment', 'golden_visa'],
+      speakers: ['arabic', 'russian'], residency: ['saudi'], motive: ['investment', 'golden_visa'],
       lifeStage: ['established_family'], money: 'cash', exclude: ['agents_and_brokers'], strictness: s,
     }))
     const t = p.targeting
@@ -206,12 +210,12 @@ console.log('\n── a bundle with no landing page is named, not dropped in sil
   check('…and the operator is told which one went',
     noArabicPage.unreachable.join(',') === 'Arabic speakers', noArabicPage.unreachable.join(','))
   check('the bundle that does have a page survives intact',
-    (noArabicPage.targeting.leadLanguages ?? []).sort().join(',') === 'en,es',
+    (noArabicPage.targeting.leadLanguages ?? []).join(',') === 'en',
     String(noArabicPage.targeting.leadLanguages))
   check('naming no pages at all constrains nothing — the caller simply did not say',
     planPattern(pat({ speakers: ['arabic'] })).unreachable.length === 0)
   check('every bundle is writable against the languages this system actually serves',
-    planPattern(pat({ speakers: ['arabic', 'english', 'european'] }), ['en', 'ar', 'ru']).unreachable.length === 0)
+    planPattern(pat({ speakers: ['arabic', 'english', 'russian'] }), ['en', 'ar', 'ru']).unreachable.length === 0)
 }
 
 console.log('\n── an untrusted pattern cannot smuggle anything in ──')
