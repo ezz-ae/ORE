@@ -31,15 +31,6 @@ interface MetaAudienceRow {
   approxUpper: number | null
 }
 interface Reach { lower: number; upper: number; ready: boolean }
-interface Suggestion {
-  name: string
-  description: string
-  kind: 'saved' | 'composed'
-  audienceId?: string
-  spec: CampaignTargeting
-  reach: Reach | null
-}
-interface VocabEntry { id: string; name: string; audienceLower?: number; audienceUpper?: number; path?: string }
 
 const fmt = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}K` : String(n))
 const reachLabel = (r: Reach | null, t: (k: string) => string, connected: boolean) =>
@@ -82,90 +73,55 @@ function parseCsvContacts(text: string): { email: string; phone: string }[] {
   return rows
 }
 
-// ─── Vocabulary picker (live Meta search) ─────────────────────────────────────
 
-function EntityPicker({
-  kind, placeholder, selected, onChange, connected,
-}: {
-  kind: 'interest' | 'behavior'
-  placeholder: string
-  selected: TargetingEntity[]
-  onChange: (next: TargetingEntity[]) => void
-  connected: boolean
-}) {
-  const t = useT()
-  const [q, setQ] = useState('')
-  const [results, setResults] = useState<VocabEntry[]>([])
-  const [searching, setSearching] = useState(false)
-  const [touched, setTouched] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const runSearch = useCallback((term: string) => {
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(async () => {
-      if (!term.trim()) { setResults([]); return }
-      setSearching(true)
-      try {
-        const res = await fetch(`/api/freehold/ads/audiences/vocab?kind=${kind}&q=${encodeURIComponent(term)}`)
-        const data = await res.json()
-        setResults(Array.isArray(data.entries) ? data.entries : [])
-        setTouched(true)
-      } catch { setResults([]) } finally { setSearching(false) }
-    }, 350)
-  }, [kind])
-
-  return (
-    <div>
-      <div className="flex flex-wrap gap-1.5">
-        {selected.map((e) => (
-          <span key={e.id} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold">
-            {e.name}
-            <button type="button" onClick={() => onChange(selected.filter((s) => s.id !== e.id))} aria-label={`Remove ${e.name}`}>
-              <X className="h-3 w-3" />
-            </button>
-          </span>
-        ))}
-      </div>
-      <div className="relative mt-1.5">
-        <Search className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-        <input
-          value={q}
-          onChange={(e) => { setQ(e.target.value); runSearch(e.target.value) }}
-          placeholder={placeholder}
-          disabled={!connected}
-          className="w-full rounded-lg border border-line bg-surface-2 py-2 ps-9 pe-3 text-[13px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40 disabled:opacity-50"
-        />
-        {searching && <Loader2 className="absolute end-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-slate-500" />}
-      </div>
-      {q.trim() && !searching && (
-        <div className="mt-1.5 max-h-44 space-y-1 overflow-y-auto rounded-lg border border-line bg-surface p-1.5">
-          {results.length === 0 && (
-            <div className="px-2 py-1.5 text-[12px] text-slate-500">{touched ? t('lm.aud.build.noResults') : t('lm.aud.build.searchFirst')}</div>
-          )}
-          {results.filter((r) => !selected.some((s) => s.id === r.id)).map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => { onChange([...selected, { id: r.id, name: r.name }]); setQ(''); setResults([]) }}
-              className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-start text-[12px] text-slate-300 transition hover:bg-surface-2"
-            >
-              <span>{r.name}{r.path ? <span className="ms-1.5 text-[10px] text-slate-500">{r.path}</span> : null}</span>
-              {typeof r.audienceLower === 'number' && r.audienceLower > 0 && (
-                <span className="shrink-0 text-[10px] text-slate-500">{fmt(r.audienceLower)}+ · {t('lm.aud.build.size')}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+// ─── Ready buyers ─────────────────────────────────────────────────────────────
+// Four buyers this market actually has, pre-described. Each is a PATTERN — the
+// same thing the builder below produces — so saving one gives a real, launchable
+// audience with real narrowing, not a template that exists to fill the page.
+// Every one carries a genuine buying signal (investing / cash / golden visa);
+// none is built on the "Property" pond that buys the whole market.
+const READY_BUYERS: { id: string; pattern: Record<string, unknown> }[] = [
+  {
+    id: 'arabicCash',
+    pattern: {
+      speakers: ['arabic'], residency: ['resident', 'gcc'], motive: ['investment'],
+      money: 'cash', readiness: 'browsing', lifeStage: [],
+      exclude: ['agents_and_brokers', 'job_seekers', 'bargain_hunters'], strictness: 75,
+    },
+  },
+  {
+    id: 'goldenVisa',
+    pattern: {
+      speakers: ['arabic'], residency: ['gcc', 'overseas'], motive: ['golden_visa', 'investment'],
+      money: 'cash', readiness: 'browsing', lifeStage: [],
+      exclude: ['agents_and_brokers', 'job_seekers', 'bargain_hunters'], strictness: 75,
+    },
+  },
+  {
+    id: 'europeanInvestor',
+    pattern: {
+      speakers: ['european'], residency: ['overseas'], motive: ['investment', 'holiday_home'],
+      money: 'cash', readiness: 'browsing', lifeStage: [],
+      exclude: ['agents_and_brokers', 'job_seekers', 'bargain_hunters'], strictness: 70,
+    },
+  },
+  {
+    id: 'expatInvestor',
+    pattern: {
+      speakers: ['english'], residency: ['expat', 'resident'], motive: ['investment'],
+      money: 'mortgage', readiness: 'browsing', lifeStage: [],
+      exclude: ['agents_and_brokers', 'job_seekers', 'bargain_hunters'], strictness: 70,
+    },
+  },
+]
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AudiencesPage() {
   const t = useT()
   const [audiences, setAudiences] = useState<SavedAudience[]>([])
+  /** Which ready buyer is being saved right now. */
+  const [readySaving, setReadySaving] = useState<string | null>(null)
   const [metaAudiences, setMetaAudiences] = useState<MetaAudienceRow[]>([])
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -215,117 +171,22 @@ export default function AudiencesPage() {
     } catch (e) { setBuyersMsg(e instanceof Error ? e.message : 'Failed') } finally { setBuyersWorking(false) }
   }
 
-  // ── AI match ──
-  const [match, setMatch] = useState({ name: '', area: '', price: '', type: '' })
-  const [matching, setMatching] = useState(false)
-  const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null)
-  const [matchNote, setMatchNote] = useState<string | null>(null)
-  const [strategyLine, setStrategyLine] = useState<string | null>(null)
-
-  async function runMatch() {
-    setMatching(true)
-    setSuggestions(null)
+  /** Save a ready buyer as a real audience. Once saved it lives in "Your
+   *  audiences" like anything else — same kitchen, same launch path. Guarded
+   *  by name so a second click cannot create a twin. */
+  async function saveReadyBuyer(id: string, pattern: Record<string, unknown>) {
+    const name = t(`lm.aud.ready.${id}.name`)
+    if (audiences.some((a) => a.name === name)) return
+    setReadySaving(id)
     try {
-      const res = await fetch('/api/freehold/ads/audiences/suggest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listing: match.name || match.area || match.price
-            ? { name: match.name, area: match.area, price: Number(match.price) || 0, type: match.type }
-            : null,
-        }),
+      const res = await fetch('/api/freehold/ads/audiences/pattern', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ save: true, name, pattern: { ...pattern, name } }),
       })
-      const data = await res.json()
-      setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : [])
-      setMatchNote(typeof data.note === 'string' ? data.note : null)
-      const rec = data.recommendation
-      setStrategyLine(rec && typeof rec.rationale === 'string' && rec.rationale ? rec.rationale : null)
-    } catch {
-      setSuggestions([])
-      setMatchNote('Request failed — try again.')
-    } finally { setMatching(false) }
-  }
-
-  async function saveSuggestion(s: Suggestion) {
-    const res = await fetch('/api/freehold/ads/audiences', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: s.name, description: s.description, kind: (s.spec.narrowing?.length ? 'narrow' : 'behavioral'), spec: s.spec }),
-    })
-    if (res.ok) {
-      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || 'Failed')
       await load()
-      // Carry the new id back onto the card so "Use in campaign" appears.
-      setSuggestions((prev) => prev?.map((x) => (x === s ? { ...x, kind: 'saved', audienceId: data?.audience?.id } : x)) ?? null)
-    }
-  }
-
-  // ── Builder ──
-  const emptySpec = useMemo(() => ({
-    countries: ['AE'], ageMin: 25, ageMax: 55, genders: [] as number[],
-    interests: [] as TargetingEntity[], behaviors: [] as TargetingEntity[],
-    narrowInterests: [] as TargetingEntity[], narrowBehaviors: [] as TargetingEntity[],
-    excludeInterests: [] as TargetingEntity[],
-    // Language of the CREATIVE this audience is built for. Empty = no
-    // narrowing, which stays the default: narrowing language is a choice an
-    // operator makes because the ad is written in that language, never
-    // something that should happen by accident.
-    leadLanguages: [] as string[],
-  }), [])
-  const [b, setB] = useState(emptySpec)
-  const [bName, setBName] = useState('')
-  const [bDesc, setBDesc] = useState('')
-  const [bSaving, setBSaving] = useState(false)
-  const [bMsg, setBMsg] = useState<string | null>(null)
-  const [bReach, setBReach] = useState<Reach | null>(null)
-  const [bReachLoading, setBReachLoading] = useState(false)
-
-  const builderSpec = useCallback((): Partial<CampaignTargeting> => ({
-    countries: b.countries,
-    ageMin: b.ageMin,
-    ageMax: b.ageMax,
-    genders: b.genders.length ? b.genders : undefined,
-    interests: b.interests,
-    behaviors: b.behaviors,
-    narrowing: b.narrowInterests.length + b.narrowBehaviors.length > 0
-      ? [{ interests: b.narrowInterests, behaviors: b.narrowBehaviors }]
-      : [],
-    exclusions: b.excludeInterests.length ? { interests: b.excludeInterests } : undefined,
-    leadLanguages: b.leadLanguages.length ? b.leadLanguages : undefined,
-  }), [b])
-
-  async function checkBuilderReach() {
-    setBReachLoading(true)
-    try {
-      const res = await fetch('/api/freehold/ads/audiences/reach', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ spec: builderSpec() }),
-      })
-      const data = await res.json()
-      setBReach(data.reach ?? null)
-    } finally { setBReachLoading(false) }
-  }
-
-  async function saveBuilder() {
-    setBMsg(null)
-    if (!bName.trim()) { setBMsg(t('lm.aud.build.needName')); return }
-    if (b.interests.length + b.behaviors.length === 0) { setBMsg(t('lm.aud.build.needBase')); return }
-    setBSaving(true)
-    try {
-      const res = await fetch('/api/freehold/ads/audiences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: bName, description: bDesc,
-          kind: b.narrowInterests.length + b.narrowBehaviors.length > 0 ? 'narrow' : 'behavioral',
-          spec: builderSpec(),
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Save failed')
-      setBMsg(t('lm.aud.build.saved'))
-      setB(emptySpec); setBName(''); setBDesc(''); setBReach(null)
-      await load()
-    } catch (e) { setBMsg(e instanceof Error ? e.message : 'Save failed') } finally { setBSaving(false) }
+    } catch { /* the card simply stays unsaved */ }
+    finally { setReadySaving(null) }
   }
 
   // ── Lookalike seed upload ──
@@ -406,6 +267,45 @@ export default function AudiencesPage() {
         )}
       </header>
 
+      {/* Ready buyers first: most people should never need to build anything.
+          Pick a buyer, it saves, it launches. The builder below is for the
+          buyer we have not pre-described. */}
+      <section className="rounded-2xl border border-line bg-surface p-5">
+        <div className="flex items-center gap-2 text-[14px] font-semibold text-white">
+          <Users className="h-4 w-4 text-gold" /> {t('lm.aud.ready.title')}
+        </div>
+        <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-slate-400">{t('lm.aud.ready.sub')}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {READY_BUYERS.map(({ id, pattern }) => {
+            const name = t(`lm.aud.ready.${id}.name`)
+            const saved = audiences.find((a) => a.name === name)
+            return (
+              <div key={id} className="flex flex-col rounded-xl border border-line bg-surface-2 p-4">
+                <div className="text-[13px] font-semibold text-white">{name}</div>
+                <p className="mt-1 flex-1 text-[12px] leading-relaxed text-slate-400">{t(`lm.aud.ready.${id}.desc`)}</p>
+                <div className="mt-3">
+                  {saved ? (
+                    <Link href={useHref(saved.id)} className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-black">
+                      <Rocket className="h-3 w-3" /> {t('lm.aud.mine.use')}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void saveReadyBuyer(id, pattern)}
+                      disabled={readySaving !== null}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50"
+                    >
+                      {readySaving === id && <Loader2 className="h-3 w-3 animate-spin" />}
+                      {t('lm.aud.ready.save')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
       {/* The order counter, first on the page. Describing a person is how an
           audience should be made here; the interest-by-interest builder below
           stays for the cases that genuinely need it. */}
@@ -416,66 +316,6 @@ export default function AudiencesPage() {
       {audiences.length > 0 && (
         <ArmPlanner audiences={audiences.map((a) => ({ id: a.id, name: a.name, kind: a.kind }))} />
       )}
-
-      {/* AI best-match */}
-      <section className="rounded-2xl border border-line bg-surface p-5">
-        <div className="flex items-center gap-2 text-[14px] font-semibold text-white"><Sparkles className="h-4 w-4 text-gold" /> {t('lm.aud.match.title')}</div>
-        <p className="mt-1 text-[12px] text-slate-400">{t('lm.aud.match.sub')}</p>
-        <div className="mt-3.5 grid grid-cols-2 gap-2.5 md:grid-cols-5">
-          {([
-            ['name', t('lm.aud.match.name')], ['area', t('lm.aud.match.area')],
-            ['price', t('lm.aud.match.price')], ['type', t('lm.aud.match.type')],
-          ] as const).map(([key, label]) => (
-            <input
-              key={key}
-              value={match[key]}
-              onChange={(e) => setMatch((p) => ({ ...p, [key]: e.target.value }))}
-              placeholder={label}
-              className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40"
-            />
-          ))}
-          <button
-            type="button"
-            onClick={runMatch}
-            disabled={matching}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-gold px-4 py-2 text-[13px] font-bold text-black transition hover:brightness-110 disabled:opacity-60"
-          >
-            {matching ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.aud.match.working')}</> : <>{t('lm.aud.match.cta')}</>}
-          </button>
-        </div>
-        {strategyLine && (
-          <p className="mt-3 rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-[12px] text-slate-300">
-            <span className="me-1.5 font-semibold uppercase tracking-wider text-gold">{t('lm.aud.match.strategyNote')}</span>{strategyLine}
-          </p>
-        )}
-        {matchNote && <p className="mt-3 text-[12px] text-slate-400">{matchNote}</p>}
-        {suggestions && suggestions.length > 0 && (
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {suggestions.map((s, i) => (
-              <div key={`${s.name}-${i}`} className="rounded-xl border border-line bg-surface-2 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-[13px] font-semibold text-white">{s.name}</div>
-                  <span className="shrink-0 rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-400">
-                    {s.kind === 'saved' ? t('lm.aud.match.saved') : t('lm.aud.match.composed')}
-                  </span>
-                </div>
-                <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{s.description}</p>
-                <div className="mt-2 space-y-0.5">
-                  {specSummary(s.spec).map((line) => <div key={line} className="text-[11px] text-slate-500">{line}</div>)}
-                </div>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-slate-400">{t('lm.aud.reach')}: <span className="font-semibold text-gold">{reachLabel(s.reach, t, connected)}</span></span>
-                  {s.audienceId ? (
-                    <Link href={useHref(s.audienceId)} className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-black"><Rocket className="h-3 w-3" /> {t('lm.aud.match.use')}</Link>
-                  ) : s.kind === 'composed' ? (
-                    <button type="button" onClick={() => void saveSuggestion(s)} className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20">{t('lm.aud.match.save')}</button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       {/* My audiences */}
       <section>
@@ -505,121 +345,6 @@ export default function AudiencesPage() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Builder */}
-      <section className="rounded-2xl border border-line bg-surface p-5">
-        <h2 className="text-[15px] font-semibold text-white">{t('lm.aud.build.title')}</h2>
-        <p className="mt-1 text-[12px] text-slate-400">{t('lm.aud.build.sub')}</p>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="space-y-3.5">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.name')}</label>
-              <input value={bName} onChange={(e) => setBName(e.target.value)} placeholder={t('lm.aud.build.namePh')} className="w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.desc')}</label>
-              <input value={bDesc} onChange={(e) => setBDesc(e.target.value)} placeholder={t('lm.aud.build.descPh')} className="w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400"><Globe className="me-1 inline h-3 w-3" />{t('lm.aud.build.countries')}</label>
-              <div className="flex flex-wrap gap-1.5">
-                {COUNTRY_OPTIONS.map((c) => {
-                  const on = b.countries.includes(c)
-                  return (
-                    <button key={c} type="button"
-                      onClick={() => setB((p) => ({ ...p, countries: on ? p.countries.filter((x) => x !== c) : [...p.countries, c] }))}
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                      {c}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-end gap-4">
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.age')}</label>
-                <div className="flex items-center gap-2">
-                  <input type="number" min={18} max={65} value={b.ageMin} onChange={(e) => setB((p) => ({ ...p, ageMin: Number(e.target.value) || 18 }))} className="w-16 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-center text-[13px] text-slate-200 outline-none focus:border-gold/40" />
-                  <span className="text-slate-500">–</span>
-                  <input type="number" min={18} max={65} value={b.ageMax} onChange={(e) => setB((p) => ({ ...p, ageMax: Number(e.target.value) || 65 }))} className="w-16 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-center text-[13px] text-slate-200 outline-none focus:border-gold/40" />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.gender')}</label>
-                <div className="flex gap-1.5">
-                  {([['all', []], ['men', [1]], ['women', [2]]] as const).map(([key, val]) => {
-                    const on = JSON.stringify(b.genders) === JSON.stringify(val)
-                    return (
-                      <button key={key} type="button" onClick={() => setB((p) => ({ ...p, genders: [...val] }))}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                        {t(`lm.aud.build.gender.${key}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              {/* LANGUAGE. Multi-select, because a buyer who reads Arabic often
-                  reads English too — forcing one language is usually narrower
-                  than the truth. Empty = no narrowing, which stays the default. */}
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.language')}</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {(['ar', 'en', 'ru'] as const).map((code) => {
-                    const on = b.leadLanguages.includes(code)
-                    return (
-                      <button key={code} type="button"
-                        onClick={() => setB((p) => ({
-                          ...p,
-                          leadLanguages: on ? p.leadLanguages.filter((c) => c !== code) : [...p.leadLanguages, code],
-                        }))}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${on ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
-                        {t(`lm.aud.build.language.${code}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
-                  {b.leadLanguages.length ? t('lm.aud.build.language.on') : t('lm.aud.build.language.off')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3.5">
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.base')}</label>
-              <div className="space-y-2">
-                <EntityPicker kind="interest" placeholder={t('lm.aud.build.searchInterests')} selected={b.interests} onChange={(v) => setB((p) => ({ ...p, interests: v }))} connected={connected} />
-                <EntityPicker kind="behavior" placeholder={t('lm.aud.build.searchBehaviors')} selected={b.behaviors} onChange={(v) => setB((p) => ({ ...p, behaviors: v }))} connected={connected} />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.narrow')}</label>
-              <div className="space-y-2">
-                <EntityPicker kind="interest" placeholder={t('lm.aud.build.searchInterests')} selected={b.narrowInterests} onChange={(v) => setB((p) => ({ ...p, narrowInterests: v }))} connected={connected} />
-                <EntityPicker kind="behavior" placeholder={t('lm.aud.build.searchBehaviors')} selected={b.narrowBehaviors} onChange={(v) => setB((p) => ({ ...p, narrowBehaviors: v }))} connected={connected} />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('lm.aud.build.exclude')}</label>
-              <EntityPicker kind="interest" placeholder={t('lm.aud.build.searchInterests')} selected={b.excludeInterests} onChange={(v) => setB((p) => ({ ...p, excludeInterests: v }))} connected={connected} />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={saveBuilder} disabled={bSaving} className="flex items-center gap-1.5 rounded-lg bg-gold px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110 disabled:opacity-60">
-            {bSaving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.aud.build.saving')}</> : t('lm.aud.build.save')}
-          </button>
-          <button type="button" onClick={checkBuilderReach} disabled={bReachLoading || !connected} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-[13px] font-semibold text-slate-300 transition hover:text-white disabled:opacity-50">
-            {bReachLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {t('lm.aud.reach.check')}
-          </button>
-          {(bReach || !connected) && (
-            <span className="text-[12px] text-slate-400">{t('lm.aud.reach')}: <span className="font-semibold text-gold">{reachLabel(bReach, t, connected)}</span></span>
-          )}
-          {bMsg && <span className="text-[12px] text-slate-300">{bMsg}</span>}
         </div>
       </section>
 
