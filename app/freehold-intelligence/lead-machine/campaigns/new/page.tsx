@@ -859,9 +859,26 @@ export default function NewCampaignPage() {
   }
 
   // Upload a chosen file to the connected Meta ad account → image_hash.
+  //
+  // The PREVIEW never waits on Meta and never trusts Meta's own returned url:
+  // Meta's adimages CDN url is not reliably loadable in a plain <img> tag from
+  // this origin (hotlink/session restrictions on their side), so the wizard
+  // showed a blank frame even after a successful upload. A local object URL
+  // for the exact file the operator just picked is instant and always
+  // renders — and it changes nothing about what launches, because the real
+  // ad creative sends `imageHash`, never `imageUrl`, whenever a hash exists
+  // (see launchFullCampaign / createAdCreative). imageUrl is display-only.
+  function localPreviewUrl(file: File): string {
+    return URL.createObjectURL(file)
+  }
   async function onUploadImage(file: File | null) {
     if (!file) return
     setUploadingImg(true); setApiError(null)
+    const preview = localPreviewUrl(file)
+    setForm((prev) => {
+      if (prev.imageUrl?.startsWith('blob:')) URL.revokeObjectURL(prev.imageUrl)
+      return { ...prev, imageUrl: preview }
+    })
     try {
       const dataUrl: string = await new Promise((resolve, reject) => {
         const r = new FileReader()
@@ -874,7 +891,7 @@ export default function NewCampaignPage() {
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return }
-      setForm((prev) => ({ ...prev, imageHash: d.hash, imageUrl: d.url || prev.imageUrl }))
+      setForm((prev) => ({ ...prev, imageHash: d.hash }))
     } catch {
       setApiError('Could not read the image file')
     } finally {
@@ -882,11 +899,13 @@ export default function NewCampaignPage() {
     }
   }
 
-  // Upload an EXTRA design → its own ad with the same copy. Cap 3.
+  // Upload an EXTRA design → its own ad with the same copy. Cap 3. Same
+  // local-preview reasoning as onUploadImage above.
   const [uploadingVariant, setUploadingVariant] = useState(false)
   async function onUploadVariant(file: File | null) {
     if (!file || form.variants.length >= 3) return
     setUploadingVariant(true); setApiError(null)
+    const preview = localPreviewUrl(file)
     try {
       const dataUrl: string = await new Promise((resolve, reject) => {
         const r = new FileReader()
@@ -898,9 +917,10 @@ export default function NewCampaignPage() {
         body: JSON.stringify({ image: dataUrl }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return }
-      setForm((prev) => ({ ...prev, variants: [...prev.variants, { imageHash: d.hash, imageUrl: d.url || '' }] }))
+      if (!res.ok) { URL.revokeObjectURL(preview); setApiError(d?.error || 'Image upload failed'); return }
+      setForm((prev) => ({ ...prev, variants: [...prev.variants, { imageHash: d.hash, imageUrl: preview }] }))
     } catch {
+      URL.revokeObjectURL(preview)
       setApiError('Could not read the image file')
     } finally {
       setUploadingVariant(false)
@@ -992,6 +1012,10 @@ export default function NewCampaignPage() {
   async function onUploadOverrideImage(key: PlacementKey, file: File | null) {
     if (!file) return
     setOverrideUploading(key); setApiError(null)
+    // Local preview, same reasoning as onUploadImage — Meta's own returned
+    // url is not reliably loadable in this browser; imageHash still carries
+    // the launch, imageUrl here is display-only.
+    const preview = localPreviewUrl(file)
     try {
       const dataUrl: string = await new Promise((resolve, reject) => {
         const r = new FileReader()
@@ -1003,9 +1027,10 @@ export default function NewCampaignPage() {
         body: JSON.stringify({ image: dataUrl }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return }
-      setOverrideImage(key, d.hash, d.url)
+      if (!res.ok) { URL.revokeObjectURL(preview); setApiError(d?.error || 'Image upload failed'); return }
+      setOverrideImage(key, d.hash, preview)
     } catch {
+      URL.revokeObjectURL(preview)
       setApiError('Could not read the image file')
     } finally {
       setOverrideUploading('')

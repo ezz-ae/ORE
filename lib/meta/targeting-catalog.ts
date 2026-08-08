@@ -7,7 +7,7 @@ export interface CatalogInterest { id: string; name: string }
 export interface CatalogCity { key: string; name: string }
 
 export const UAE_INTERESTS: CatalogInterest[] = [
-  { id: '6002714398372', name: 'Real estate investing' },
+  { id: '6003051380892', name: 'Real estate investing' },
   { id: '6003105898571', name: 'Property' },
   { id: '6003193636887', name: 'Luxury goods' },
   { id: '6004132891184', name: 'Investment' },
