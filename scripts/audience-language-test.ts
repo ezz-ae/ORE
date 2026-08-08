@@ -113,6 +113,31 @@ console.log('\n── a saved spec round-trips its language ──')
     eq(mergeLeadLanguages(undefined, none.leadLanguages), []))
 }
 
+console.log('\n── asked for and not applied is a refusal ──')
+{
+  // THE FAILURE THAT COST A CLIENT'S TRUST. Someone chose Arabic-speaking
+  // buyers, the locale lookup came back empty — Meta unreachable, rate
+  // limited, a token without ads scope — and the ad set launched reaching
+  // EVERYONE while every screen still said Arabic. Unnarrowed is not a
+  // smaller version of what was asked for; it is a different campaign, so it
+  // must not launch at all.
+  const CLIENT = readFileSync('lib/meta/client.ts', 'utf8')
+  const launch = CLIENT.slice(CLIENT.indexOf('const languageCodes = mergeLeadLanguages'))
+    .slice(0, 2200)
+  check('a launch that cannot apply the requested languages is refused',
+    /languageCodes\.length > 0 && leadLanguageLocales\.length === 0/.test(launch),
+    'an unresolved language still launches unnarrowed')
+  check('…by throwing, not by logging and carrying on',
+    /throw new MetaConfigError/.test(launch), 'the failure is not fatal')
+  check('…and the message names the languages that were asked for',
+    /languageCodes\.join/.test(launch), 'the operator cannot tell what was lost')
+  check('…and says what it would otherwise have spent the budget on',
+    /everyone/i.test(launch), 'the consequence is not stated')
+  check('no language selected still launches — this only guards a REQUEST',
+    /languageCodes\.length > 0 &&/.test(launch),
+    'a campaign with no language narrowing would be blocked too')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} audience-language rule(s) broken.`)
   process.exit(1)
