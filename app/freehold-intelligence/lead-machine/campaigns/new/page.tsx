@@ -543,7 +543,7 @@ export default function NewCampaignPage() {
   // published forms can't be edited, and offers duplicate-as-new instead.
   const [viewFormOpen, setViewFormOpen] = useState(false)
   const [viewFormLoading, setViewFormLoading] = useState(false)
-  const [viewFormData, setViewFormData] = useState<{ name?: string; status?: string; locale?: string; leads_count?: number; questions?: Array<{ type: string; label?: string }> } | null>(null)
+  const [viewFormData, setViewFormData] = useState<{ name?: string; status?: string; locale?: string; leads_count?: number; questions?: Array<{ type: string; label?: string; key?: string; options?: Array<{ value?: string; label?: string }> }> } | null>(null)
   const [viewFormErr, setViewFormErr] = useState('')
   async function openViewForm() {
     if (!leadFormId) return
@@ -576,7 +576,12 @@ export default function NewCampaignPage() {
   // A real duplicate carries the ORIGINAL questions and lets you edit them.
   // Copying only the name (as this used to) silently produced a different
   // form — the "duplicated form should be editable" report.
-  const [dupQuestions, setDupQuestions] = useState<Array<{ type: string; label: string }> | null>(null)
+  //
+  // `options` and `key` ride along too: a multiple-choice question copied
+  // without its choices comes out the other side as a free-text box, which is
+  // not the form that was duplicated, and a regenerated key breaks the CRM
+  // column the original question already feeds.
+  const [dupQuestions, setDupQuestions] = useState<Array<{ type: string; label: string; key?: string; options?: string[] }> | null>(null)
   const [formBusy, setFormBusy] = useState(false)
   const [dupBusyId, setDupBusyId] = useState<string | null>(null)
 
@@ -628,7 +633,10 @@ export default function NewCampaignPage() {
         questions = dq.map((q, i) =>
           q.type && q.type !== 'CUSTOM'
             ? { type: q.type }
-            : customToMetaQuestion({ label: q.label.trim() || `Question ${i + 1}` } as never, i),
+            : customToMetaQuestion(
+                { label: q.label.trim() || `Question ${i + 1}`, key: q.key, options: q.options },
+                i,
+              ),
         )
       } else if (tpl) {
         // Materialize the shared template from THIS ad's real listing facts —
@@ -2216,9 +2224,17 @@ export default function NewCampaignPage() {
                   onClick={() => {
                     setViewFormOpen(false)
                     setNewFormName(viewFormData?.name ? `${viewFormData.name} — copy` : '')
-                    // Carry the real questions across so this is a true copy.
+                    // Carry the real questions across so this is a true copy —
+                    // including the choices of a multiple-choice question.
                     setDupQuestions(
-                      (viewFormData?.questions ?? []).map((q) => ({ type: String(q.type || 'CUSTOM'), label: String(q.label || '') })),
+                      (viewFormData?.questions ?? []).map((q) => ({
+                        type: String(q.type || 'CUSTOM'),
+                        label: String(q.label || ''),
+                        ...(q.key ? { key: String(q.key) } : {}),
+                        ...(Array.isArray(q.options) && q.options.length
+                          ? { options: q.options.map((o) => String(o?.label ?? o?.value ?? '')).filter(Boolean) }
+                          : {}),
+                      })),
                     )
                     setNewFormTemplate('')
                     setFormPopupOpen(true)
@@ -2258,20 +2274,37 @@ export default function NewCampaignPage() {
                   <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.leadForm.dupQuestionsHint')}</p>
                   <div className="mt-2 space-y-2">
                     {dupQuestions.map((q, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <input
-                          value={q.label}
-                          onChange={(e) => setDupQuestions((prev) => prev ? prev.map((x, xi) => xi === i ? { ...x, label: e.target.value } : x) : prev)}
-                          placeholder={q.type}
-                          className={`${inputCls()} flex-1`}
-                        />
-                        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] text-slate-500">{q.type}</span>
-                        <button
-                          type="button"
-                          onClick={() => setDupQuestions((prev) => prev ? prev.filter((_, xi) => xi !== i) : prev)}
-                          aria-label={t('lm.pdf.cancel')}
-                          className="shrink-0 rounded-full border border-line px-2 py-1 text-[11px] text-slate-400 transition hover:text-white"
-                        >×</button>
+                      <div key={i} className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={q.label}
+                            onChange={(e) => setDupQuestions((prev) => prev ? prev.map((x, xi) => xi === i ? { ...x, label: e.target.value } : x) : prev)}
+                            placeholder={q.type}
+                            className={`${inputCls()} flex-1`}
+                          />
+                          <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] text-slate-500">{q.type}</span>
+                          <button
+                            type="button"
+                            onClick={() => setDupQuestions((prev) => prev ? prev.filter((_, xi) => xi !== i) : prev)}
+                            aria-label={t('lm.pdf.cancel')}
+                            className="shrink-0 rounded-full border border-line px-2 py-1 text-[11px] text-slate-400 transition hover:text-white"
+                          >×</button>
+                        </div>
+                        {/* The answers this question offers. Shown only when the
+                            copied question actually has some — an empty line
+                            here would just be noise on a name/phone field. */}
+                        {q.options && q.options.length > 0 && (
+                          <input
+                            value={q.options.join(', ')}
+                            onChange={(e) => setDupQuestions((prev) => prev
+                              ? prev.map((x, xi) => xi === i
+                                  ? { ...x, options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) }
+                                  : x)
+                              : prev)}
+                            aria-label={t('lm.newCampaign.leadForm.dupChoices')}
+                            className={`${inputCls()} w-full text-[11px]`}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
