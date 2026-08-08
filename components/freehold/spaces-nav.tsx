@@ -13,7 +13,7 @@ import { agentWaiting, onAgentWaiting, shouldFlash, markFlashed, type AgentWaiti
 import { useT } from '@/lib/i18n/provider'
 import { LanguageSwitcher } from '@/components/freehold/language-switcher'
 import { useCoach } from '@/components/freehold/coach/coach-marks'
-import { Compass, Sun, Moon } from 'lucide-react'
+import { Compass, Sun, Moon, Leaf } from 'lucide-react'
 import { useThemeMode } from '@/lib/freehold/use-theme-mode'
 import { WhatsNew, WhatsNewMenuButton } from '@/components/freehold/whats-new'
 import { PrefsSync, saveUserPref } from '@/components/freehold/prefs-sync'
@@ -256,6 +256,12 @@ export function SpacesNav() {
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${theme.mode === 'light' ? 'bg-white/[0.10] text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <Sun className="h-3.5 w-3.5" /> {t('theme.light')}
+                </button>
+                <button
+                  onClick={() => { theme.setMode('mint'); saveUserPref({ theme: 'mint' }) }}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${theme.mode === 'mint' ? 'bg-white/[0.10] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <Leaf className="h-3.5 w-3.5" /> {t('theme.mint')}
                 </button>
               </div>
             </div>
