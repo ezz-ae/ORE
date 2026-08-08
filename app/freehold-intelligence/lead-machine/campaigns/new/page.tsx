@@ -757,7 +757,19 @@ export default function NewCampaignPage() {
     // The attached lead form travels WITH the draft — leaving to edit the form
     // (opens in a new tab) and coming back must never lose the wiring, and
     // "Edit form" must always be able to find the form it just created.
-    const draft = { ...form, __leadFormId: leadFormId }
+    //
+    // A blob: preview URL must NEVER be persisted. It points at an in-memory
+    // object owned by the page that made it, so a restored draft carries a
+    // URL the browser can no longer resolve — the preview then renders an
+    // empty frame for an image that uploaded perfectly well. `imageHash` is
+    // the durable half and is what actually launches, so dropping the dead
+    // preview URL loses nothing.
+    const draft = {
+      ...form,
+      imageUrl: form.imageUrl.startsWith('blob:') ? '' : form.imageUrl,
+      variants: form.variants.map((v) => (v.imageUrl.startsWith('blob:') ? { ...v, imageUrl: '' } : v)),
+      __leadFormId: leadFormId,
+    }
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) } catch { /* full/blocked storage */ }
     // Account save waits for restore so a pristine form never clobbers a
     // draft the account already holds.
@@ -947,7 +959,13 @@ export default function NewCampaignPage() {
         })
         const d = await res.json().catch(() => ({}))
         if (!res.ok || !d.hash) { setApiError(d?.error || t('lm.newCampaign.s3.libFailed')); return }
-        setForm((prev) => ({ ...prev, imageHash: d.hash, imageUrl: d.url || prev.imageUrl }))
+        // Preview from the picture we already have, not from Meta's returned
+        // CDN url (not reliably loadable from this origin). A blob keeps the
+        // form state small — a data: URL here would be megabytes inside every
+        // draft save. imageHash is what launches either way.
+        let preview = ''
+        try { preview = URL.createObjectURL(await (await fetch(item.url as string)).blob()) } catch { /* preview only */ }
+        setForm((prev) => ({ ...prev, imageHash: d.hash, imageUrl: preview || prev.imageUrl }))
         setLibOpen(false)
       } finally { setLibApplying('') }
     } else {
@@ -1047,7 +1065,10 @@ export default function NewCampaignPage() {
         })
         const d = await res.json().catch(() => ({}))
         if (!res.ok || !d.hash) { setApiError(d?.error || t('lm.newCampaign.s3.libFailed')); return }
-        setOverrideImage(key, d.hash, d.url)
+        // Preview from the picture we already have — see useLibraryImage.
+        let preview = ''
+        try { preview = URL.createObjectURL(await (await fetch(item.url as string)).blob()) } catch { /* preview only */ }
+        setOverrideImage(key, d.hash, preview || undefined)
         setOverrideLibFor('')
       } finally { setOverrideUploading('') }
     } else {
