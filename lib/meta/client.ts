@@ -33,6 +33,7 @@ import type {
 } from './types'
 import { mergeLeadLanguages } from './lead-language'
 import { questionsForMeta } from './form-templates'
+import { explainMetaError } from './error-advice'
 import { metaLeadCount } from './lead-count'
 import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
@@ -126,32 +127,19 @@ interface GraphError {
 }
 
 // Keyed by Graph error_subcode — the most specific signal when present.
-const ACTIONABLE_SUBCODE: Record<number, string> = {
-  1885183:
-    'Your Meta developer app is in Development Mode, so Meta blocks live ad creation. In developers.facebook.com open the app that issued your access token, complete Settings → Basic (privacy policy URL), switch the app to Live, then launch again. — subcode 1885183',
-  1341012:
-    'The connected access token cannot use this Facebook Page. Fix it in Meta Business Settings: (1) add the Page to the same Business that owns the ad account, (2) give the token owner (the person or system user who connected Meta) an Admin or Advertiser role on that Page, and (3) confirm META_PAGE_ID is that Page’s ID. Then reconnect and launch again. — subcode 1341012',
-}
-
-// Keyed by top-level Graph error code, for the blockers that stop READS.
-const ACTIONABLE_CODE: Record<number, string> = {
-  200:
-    'Meta is refusing to share this ad account’s data: the account has not granted the connected login permission to read or manage its ads. Fix it in business.facebook.com → Business Settings → Users → pick the person (or system user) who connected Meta → Assigned assets → Ad accounts → add this ad account and tick "Manage campaigns" (or at least "View performance"). If the connection uses a system-user token, regenerate that token afterwards with the ads_read and ads_management scopes. Then reconnect under Integrations → Meta Ads. Nothing is wrong with this app or your campaigns — Meta simply will not return them until that access is granted. — code 200',
-  190:
-    'The connected Meta access token is no longer valid — it has expired, or the password/permissions behind it changed. Reconnect under Integrations → Meta Ads to issue a fresh one. — code 190',
-  10:
-    'Meta denied this action for the connected login. The app or the token is missing a permission this call requires. Check the token owner’s asset access in business.facebook.com → Business Settings, then reconnect under Integrations → Meta Ads. — code 10',
-  4:
-    'Meta is rate-limiting this ad account right now (too many API calls in a short window). Nothing is broken — wait a few minutes and reload. — code 4',
-  17:
-    'Meta is rate-limiting the connected user right now (too many API calls in a short window). Nothing is broken — wait a few minutes and reload. — code 17',
-}
-
+/**
+ * Meta's failure, said in words the person reading it can act on.
+ *
+ * A fault we know gets one plain sentence (see error-advice). Anything else
+ * keeps Meta's own text, subcode included — the subcode is what makes a new
+ * fault identifiable, and inventing an explanation for an error nobody has
+ * seen would be confidently wrong.
+ */
 function metaErrorDetail(e: GraphError): string {
-  return (e.error_subcode && ACTIONABLE_SUBCODE[e.error_subcode])
-    || ACTIONABLE_CODE[e.code]
-    || [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
-        .filter(Boolean).join(' — ')
+  const advice = explainMetaError({ message: e.message, code: e.code, subcode: e.error_subcode })
+  if (advice) return advice
+  return [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
+    .filter(Boolean).join(' — ')
 }
 
 async function apiFetch<T>(
