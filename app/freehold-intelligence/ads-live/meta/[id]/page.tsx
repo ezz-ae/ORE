@@ -12,6 +12,7 @@ import type { MetaCampaign, MetaAdSet, MetaInsights, PlacementKey, PlacementCrea
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/freehold/campaign-rules'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { adImageSrc } from '@/lib/meta/ad-image-src'
 
 type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }[] }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
@@ -1317,9 +1318,9 @@ function AdPreviewCard({ ad }: { ad: { id: string; name: string; status: string 
                     className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${libOpen ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface text-slate-200 hover:border-gold/40'}`}>
                     <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s3.pickLibrary')}
                   </button>
-                  {form.imageUrl && (
+                  {adImageSrc(form.imageUrl, form.imageHash) && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={form.imageUrl} alt="" className="h-9 w-14 rounded object-cover" />
+                    <img src={adImageSrc(form.imageUrl, form.imageHash)} alt="" className="h-9 w-14 rounded object-cover" />
                   )}
                 </div>
                 {libOpen && (
@@ -1518,7 +1519,10 @@ function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => voi
     } catch { setError(t('lm.cmd.edit.saveFailed')) } finally { setSaving(false) }
   }
 
-  function imageRow(slot: PlacementSlot, imageUrl: string, placeholder?: string) {
+  function imageRow(slot: PlacementSlot, imageUrl: string, placeholder?: string, imageHash?: string) {
+    // The url a running ad reports is Meta's own CDN link, which does not load
+    // in an <img> from this origin — the hash does, through our own route.
+    const src = adImageSrc(imageUrl, imageHash)
     return (
       <div>
         <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.imageUrl')}</label>
@@ -1531,9 +1535,9 @@ function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => voi
             className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${libTarget === slot ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface text-slate-200 hover:border-gold/40'}`}>
             <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s3.pickLibrary')}
           </button>
-          {imageUrl ? (
+          {src ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="h-9 w-14 rounded object-cover" />
+            <img src={src} alt="" className="h-9 w-14 rounded object-cover" />
           ) : placeholder ? (
             <span className="text-[11px] text-slate-500">{placeholder}</span>
           ) : null}
@@ -1589,7 +1593,7 @@ function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => voi
             {EDIT_CTA_OPTIONS.map((c) => <option key={c} value={c}>{t(`lm.creatives.generate.cta.${c}`)}</option>)}
           </select>
         </div>
-        {imageRow('default', defaultForm.imageUrl)}
+        {imageRow('default', defaultForm.imageUrl, undefined, defaultForm.imageHash)}
       </div>
 
       <div className="rounded-xl border border-line bg-surface p-3">
@@ -1633,7 +1637,7 @@ function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => voi
                 <textarea rows={2} value={overrideOf(openKey).primaryText ?? ''} onChange={(e) => setOverrideField(openKey, 'primaryText', e.target.value)}
                   placeholder={defaultForm.primaryText} className="w-full resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
               </div>
-              {imageRow(openKey, overrideOf(openKey).imageUrl ?? '', t('lm.newCampaign.s3.perPlacement.useDefault'))}
+              {imageRow(openKey, overrideOf(openKey).imageUrl ?? '', t('lm.newCampaign.s3.perPlacement.useDefault'), overrideOf(openKey).imageHash)}
             </div>
           </div>
         )}

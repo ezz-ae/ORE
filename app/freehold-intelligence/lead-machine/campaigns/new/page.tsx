@@ -37,6 +37,7 @@ interface WizardListing {
 }
 import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel, CreateLeadFormPayload } from '@/lib/meta/types'
 import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTemplateKey } from '@/lib/meta/form-templates'
+import { adImageSrc } from '@/lib/meta/ad-image-src'
 
 // A saved audience from the Audiences tab, attachable to this launch.
 // `spec` is ABSENT for pattern audiences — the server never sends the recipe
@@ -740,6 +741,10 @@ export default function NewCampaignPage() {
   // Cleared everywhere after a successful launch.
   const DRAFT_KEY = 'fh-campaign-draft'
   const draftRestored = useRef(false)
+  // The form exactly as it starts, so a late-arriving account draft can tell
+  // "nobody has touched this yet" from "the operator is already working".
+  const pristineForm = useRef('')
+  if (!pristineForm.current) pristineForm.current = JSON.stringify(form)
   useEffect(() => {
     let restoredLocally = false
     try {
@@ -754,9 +759,18 @@ export default function NewCampaignPage() {
     loadAccountMemory().then((m) => {
       const acctDraft = m.campaignDraft
       if (!restoredLocally && acctDraft && typeof acctDraft === 'object') {
-        setForm((prev) => ({ ...prev, ...(acctDraft as Partial<WizardState>) }))
+        // The account read is a network round trip; the operator can have
+        // uploaded a design and typed a headline before it lands. Applying an
+        // older draft over that wipes work in front of them — the image just
+        // disappears. A draft only fills a form nobody has touched yet.
+        let applied = false
+        setForm((prev) => {
+          if (JSON.stringify(prev) !== pristineForm.current) return prev
+          applied = true
+          return { ...prev, ...(acctDraft as Partial<WizardState>) }
+        })
         const savedFormId = (acctDraft as { __leadFormId?: string }).__leadFormId
-        if (typeof savedFormId === 'string' && savedFormId) setLeadFormId(savedFormId)
+        if (applied && typeof savedFormId === 'string' && savedFormId) setLeadFormId(savedFormId)
       }
       draftRestored.current = true
     })
@@ -878,6 +892,9 @@ export default function NewCampaignPage() {
   function localPreviewUrl(file: File): string {
     return URL.createObjectURL(file)
   }
+
+  /** Local preview while you work, the uploaded hash everywhere else. */
+  const mediaSrc = adImageSrc
   async function onUploadImage(file: File | null) {
     if (!file) return
     setUploadingImg(true); setApiError(null)
@@ -1341,7 +1358,15 @@ export default function NewCampaignPage() {
   // single preview even though the launched ad may carry more of each (Meta's
   // real multi-text feature auto-tests the rest; a mock can't show every
   // combination Meta might serve).
-  const previewCreative = { ...form, headline: form.headlines[0] || '', description: form.descriptions[0] || '' }
+  const previewCreative = {
+    ...form,
+    headline: form.headlines[0] || '',
+    description: form.descriptions[0] || '',
+    // The mock shows the picture that will run, from whichever handle is
+    // still alive — the local blob while you work, the uploaded hash after a
+    // reload or on a second device.
+    imageUrl: mediaSrc(form.imageUrl, form.imageHash),
+  }
 
   // Landing preview target — the /lp/ path inside whatever URL is set, so the
   // rail iframes the same deployment (works in preview and production alike).
@@ -1984,9 +2009,9 @@ export default function NewCampaignPage() {
                 {form.imageHash
                   ? <span className="text-xs text-emerald-400">{t('lm.newCampaign.s3.upload.uploaded')}</span>
                   : <span className="text-xs text-slate-500">{t('lm.newCampaign.s3.upload.orPaste')}</span>}
-                {form.imageUrl && (
+                {mediaSrc(form.imageUrl, form.imageHash) && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover"
+                  <img src={mediaSrc(form.imageUrl, form.imageHash)} alt="ad preview" className="h-10 w-16 rounded object-cover"
                     onLoad={(e) => {
                       const el = e.currentTarget
                       if (el.naturalWidth && el.naturalHeight) setImageAspect(el.naturalWidth / el.naturalHeight)
@@ -2012,9 +2037,9 @@ export default function NewCampaignPage() {
                 <span className="text-[11px] text-slate-500">{t('lm.newCampaign.s3.designs')}</span>
                 {form.variants.map((v, i) => (
                   <span key={i} className="relative inline-block">
-                    {v.imageUrl
+                    {mediaSrc(v.imageUrl, v.imageHash)
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={v.imageUrl} alt={`design ${i + 2}`} className="h-10 w-16 rounded border border-line object-cover" />
+                      ? <img src={mediaSrc(v.imageUrl, v.imageHash)} alt={`design ${i + 2}`} className="h-10 w-16 rounded border border-line object-cover" />
                       : <span className="inline-flex h-10 w-16 items-center justify-center rounded border border-line bg-surface-2 text-[10px] text-slate-400">#{i + 2}</span>}
                     <button type="button" aria-label={t('lm.newCampaign.s3.removeDesign')}
                       onClick={() => setForm((prev) => ({ ...prev, variants: prev.variants.filter((_, j) => j !== i) }))}
@@ -2132,9 +2157,9 @@ export default function NewCampaignPage() {
                             className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${overrideLibFor === overrideOpenKey ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface-2 text-slate-200 hover:border-gold/40'}`}>
                             {t('lm.newCampaign.s3.pickLibrary')}
                           </button>
-                          {overrideOf(overrideOpenKey).imageUrl ? (
+                          {mediaSrc(overrideOf(overrideOpenKey).imageUrl, overrideOf(overrideOpenKey).imageHash) ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={overrideOf(overrideOpenKey).imageUrl} alt="" className="h-9 w-14 rounded object-cover" />
+                            <img src={mediaSrc(overrideOf(overrideOpenKey).imageUrl, overrideOf(overrideOpenKey).imageHash)} alt="" className="h-9 w-14 rounded object-cover" />
                           ) : (
                             <span className="text-[11px] text-slate-500">{t('lm.newCampaign.s3.perPlacement.useDefault')}</span>
                           )}
@@ -2393,7 +2418,7 @@ export default function NewCampaignPage() {
                   const ov = supportsPlacementCreative ? overrideOf(key) : {}
                   const tileHeadline = ov.headline?.trim() || form.headlines[0] || ''
                   const tilePrimaryText = ov.primaryText?.trim() || form.primaryText
-                  const tileImageUrl = ov.imageUrl || form.imageUrl
+                  const tileImageUrl = mediaSrc(ov.imageUrl, ov.imageHash) || mediaSrc(form.imageUrl, form.imageHash)
                   const customized = isCustomized(key) && supportsPlacementCreative
                   return (
                   <div key={key}>

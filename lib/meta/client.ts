@@ -32,6 +32,7 @@ import type {
   PlacementCreativeOverride,
 } from './types'
 import { mergeLeadLanguages } from './lead-language'
+import { questionsForMeta } from './form-templates'
 import { metaLeadCount } from './lead-count'
 import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
@@ -1296,6 +1297,43 @@ export async function uploadAdImage(base64: string): Promise<{ hash: string; url
   return { hash: first.hash, url: first.url }
 }
 
+/**
+ * The bytes of an image already uploaded to the ad account, by hash.
+ *
+ * The hash is the only durable handle the wizard keeps for a picture — it is
+ * what actually launches, and it survives a reload, a different device and a
+ * resumed draft. The CDN url Meta hands back does not: it is not reliably
+ * loadable in an <img> from our origin, so a preview built on it renders an
+ * empty frame for an image that uploaded perfectly well.
+ *
+ * Fetching server-side sidesteps that entirely — no browser, no referrer, no
+ * session. Returns the raw bytes so the caller can serve them from our own
+ * origin, where an <img> always works.
+ */
+export async function getAdImageBytes(
+  hash: string,
+): Promise<{ body: ArrayBuffer; contentType: string } | null> {
+  const { adAccountId, token } = await creds()
+  const url = new URL(`${API_BASE}/${adAccountId}/adimages`)
+  url.searchParams.set('hashes', JSON.stringify([hash]))
+  url.searchParams.set('fields', 'hash,url')
+  url.searchParams.set('access_token', token)
+  const meta = await fetch(url.toString())
+  const json = (await meta.json()) as {
+    data?: Array<{ hash?: string; url?: string }>
+    error?: { message: string; code: number; type: string; fbtrace_id?: string }
+  }
+  if (json.error) throw new MetaApiError(json.error.message, json.error.code, json.error.type, json.error.fbtrace_id)
+  const src = json.data?.find((d) => d?.url)?.url
+  if (!src) return null
+  const img = await fetch(src)
+  if (!img.ok) return null
+  return {
+    body: await img.arrayBuffer(),
+    contentType: img.headers.get('content-type') || 'image/jpeg',
+  }
+}
+
 export async function createAd(params: {
   adSetId:    string
   name:       string
@@ -2059,12 +2097,15 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
   // read-only aggregation edge) is what Meta answers with its opaque
   // "An unknown error has occurred."
   const { pageId } = await creds()
-  const questions = payload.questions.map((q) => ({
-    type:    q.type,
-    ...(q.label   ? { label:   q.label   } : {}),
-    ...(q.key     ? { key:     q.key     } : {}),
-    ...(q.options ? { options: q.options } : {}),
-  }))
+  // A PREFILL question (FULL_NAME, EMAIL, PHONE, …) carries its type and
+  // nothing else. Meta writes its wording itself and rejects the whole form if
+  // we send our own:
+  //   "Parameter label cannot be specified for non-custom questions" (1892063)
+  // Duplicating a form walked straight into this — reading a form back gives
+  // every question a label, including the prefill ones, and sending that shape
+  // back is not a form Meta will accept. Enforced here rather than in each
+  // caller: this is the single door every form goes through.
+  const questions = questionsForMeta(payload.questions)
 
   // Attribution that rides on every lead this form ever collects
   // (tracking_parameters is echoed back with each lead's field data).
