@@ -14,16 +14,18 @@ function apply(mode: ThemeMode) {
   el.classList.toggle('theme-mint', mode === 'mint')
 }
 
-/** Read the persisted mode (dark default). Safe on the server (returns 'dark'). */
+/** Read the persisted mode. FRESH (mint) is the default by owner decision —
+ *  an account that explicitly chose Night or Day keeps its choice. Safe on
+ *  the server (returns the default). */
 export function getStoredThemeMode(): ThemeMode {
-  if (typeof window === 'undefined') return 'dark'
+  if (typeof window === 'undefined') return 'mint'
   const v = window.localStorage.getItem(KEY)
-  return v === 'light' || v === 'mint' ? v : 'dark'
+  return v === 'light' || v === 'dark' ? v : 'mint'
 }
 
 /** Account-menu theme toggle. Persists per browser + reflects on <html>. */
 export function useThemeMode(): { mode: ThemeMode; setMode: (m: ThemeMode) => void; toggle: () => void } {
-  const [mode, setModeState] = useState<ThemeMode>('dark')
+  const [mode, setModeState] = useState<ThemeMode>('mint')
 
   useEffect(() => {
     const initial = getStoredThemeMode()
