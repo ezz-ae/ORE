@@ -22,17 +22,24 @@ export type PriceBand = {
   label: string
   ageMin: number
   ageMax: number
-  interestKeys: number[]
+  /** Names into UAE_INTERESTS — NOT positions. A numeric index into a catalog
+   *  that changes size (an id gets pulled the moment Meta rejects it — see
+   *  targeting-catalog.ts) silently points at a different interest the next
+   *  time an entry is added or removed. This is exactly what happened here
+   *  once already: removing one dead id from the catalog shifted every band
+   *  below it onto the wrong signal with no error anywhere. Names don't
+   *  shift when the catalog does. */
+  interestNames: string[]
 }
 
-// Price bands for Dubai freehold. interestKeys index into the proven UAE_INTERESTS
+// Price bands for Dubai freehold. interestNames name into the UAE_INTERESTS
 // catalog (real Meta interest ids) — higher bands skew to investment/luxury.
 export const PRICE_BANDS: PriceBand[] = [
-  { key: 'entry',   min: 0,          max: 1_000_000,  label: 'Entry',       ageMin: 27, ageMax: 45, interestKeys: [1] },
-  { key: 'mid',     min: 1_000_000,  max: 2_000_000,  label: 'Mid-market',  ageMin: 30, ageMax: 50, interestKeys: [0, 1] },
-  { key: 'premium', min: 2_000_000,  max: 5_000_000,  label: 'Premium',     ageMin: 33, ageMax: 55, interestKeys: [0, 3] },
-  { key: 'luxury',  min: 5_000_000,  max: 15_000_000, label: 'Luxury',      ageMin: 35, ageMax: 60, interestKeys: [0, 2, 3] },
-  { key: 'ultra',   min: 15_000_000, max: Infinity,   label: 'Ultra-prime', ageMin: 38, ageMax: 62, interestKeys: [2, 3] },
+  { key: 'entry',   min: 0,          max: 1_000_000,  label: 'Entry',       ageMin: 27, ageMax: 45, interestNames: ['Property'] },
+  { key: 'mid',     min: 1_000_000,  max: 2_000_000,  label: 'Mid-market',  ageMin: 30, ageMax: 50, interestNames: ['Property', 'Investment'] },
+  { key: 'premium', min: 2_000_000,  max: 5_000_000,  label: 'Premium',     ageMin: 33, ageMax: 55, interestNames: ['Investment'] },
+  { key: 'luxury',  min: 5_000_000,  max: 15_000_000, label: 'Luxury',      ageMin: 35, ageMax: 60, interestNames: ['Luxury goods', 'Investment'] },
+  { key: 'ultra',   min: 15_000_000, max: Infinity,   label: 'Ultra-prime', ageMin: 38, ageMax: 62, interestNames: ['Luxury goods', 'Investment'] },
 ]
 
 export function bandForPrice(price: number): PriceBand {
@@ -133,7 +140,9 @@ export async function getBuyerMatchProfile(input: {
   } catch { /* fail-soft */ }
 
   // ── Recommended Meta spec for this band (real catalog interest ids) ──
-  const interests = band.interestKeys.map((i) => UAE_INTERESTS[i]).filter(Boolean)
+  const interests = band.interestNames
+    .map((name) => UAE_INTERESTS.find((i) => i.name === name))
+    .filter((i): i is (typeof UAE_INTERESTS)[number] => !!i)
   const recommendation = {
     ageMin: band.ageMin,
     ageMax: band.ageMax,

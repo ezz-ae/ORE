@@ -1,13 +1,18 @@
 // The shared Meta targeting vocabulary — the ONLY interests/cities the AI is
-// allowed to recommend. Every id here is a real Meta targeting id already
-// proven by launched campaigns; the AI picks FROM this list (never invents
-// ids, which would fail at launch time).
+// allowed to recommend. The AI picks FROM this list (never invents ids,
+// which would fail at launch time) — but a hardcoded id in this list is
+// still a guess Meta hasn't been asked about since the day it was typed in,
+// and this list has been wrong before: "Real estate investing" carried a
+// dead id here, was "fixed" to a second id borrowed from a file that turned
+// out to be equally unverified, and that id came back dead too. Two
+// live launch failures on the same interest is why it is gone from this
+// list rather than replaced with a third guess — use Integrations → Meta
+// Ads → "Check now" to ask Meta directly about every id still here.
 
 export interface CatalogInterest { id: string; name: string }
 export interface CatalogCity { key: string; name: string }
 
 export const UAE_INTERESTS: CatalogInterest[] = [
-  { id: '6003051380892', name: 'Real estate investing' },
   { id: '6003105898571', name: 'Property' },
   { id: '6003193636887', name: 'Luxury goods' },
   { id: '6004132891184', name: 'Investment' },
