@@ -43,8 +43,12 @@ export const ALLOWED_PLATFORMS = ['facebook', 'instagram'] as const
 /** Placement positions we run when a platform is included. Named in full so
  *  the request is a complete instruction and never a partial one Meta gets to
  *  finish. */
-export const FACEBOOK_POSITIONS = ['feed', 'story', 'facebook_reels', 'marketplace', 'search'] as const
-export const INSTAGRAM_POSITIONS = ['stream', 'story', 'reels', 'explore'] as const
+// THE FOUR SURFACES THIS PRODUCT BUYS, by owner decision: Instagram Feed
+// first, then Stories and Reels, then Facebook Feed. Nothing else — no
+// marketplace, no search, no explore, no Facebook stories. "Automatic"
+// placement mode means THIS set, never Meta's everything.
+export const FACEBOOK_POSITIONS = ['feed', 'facebook_reels'] as const
+export const INSTAGRAM_POSITIONS = ['stream', 'story', 'reels'] as const
 
 /**
  * `targeting_automation.advantage_audience` — 0 means "deliver to the audience

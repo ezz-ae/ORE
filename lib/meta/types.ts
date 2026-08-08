@@ -225,6 +225,14 @@ export interface CampaignCreative {
    * creative above. Blank/absent = every placement uses the default creative.
    */
   placementOverrides?: Partial<Record<PlacementKey, PlacementCreativeOverride>>
+  /**
+   * Extra image DESIGNS for the same campaign — each becomes its own ad in
+   * the same ad set with identical copy. Meta's delivery moves spend toward
+   * whichever design converts; the per-design report shows it. Applied on
+   * the single-ad-set launch path (per-placement split launches ignore
+   * variants — the matrix of both would explode ad count).
+   */
+  variants?: Array<{ imageUrl?: string; imageHash?: string }>
 }
 
 export interface LaunchCampaignPayload {

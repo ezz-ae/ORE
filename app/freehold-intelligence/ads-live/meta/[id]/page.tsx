@@ -65,7 +65,7 @@ const selCls = 'rounded-lg border border-line bg-surface-2 px-2 py-1 text-xs tex
 // updateAdCreativeContent); these are what a plain landing-click ad can pick.
 const EDIT_CTA_OPTIONS = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW']
 type LibImage = { id: string; title: string; url: string | null }
-const PLACEMENT_KEYS: PlacementKey[] = ['fbFeed', 'igFeed', 'igStory', 'fbStory', 'reels']
+const PLACEMENT_KEYS: PlacementKey[] = ['igFeed', 'igStory', 'reels', 'fbFeed']
 
 function leadsFrom(insights: MetaInsights | null): number {
   return metaLeadCount(insights?.actions)
@@ -669,6 +669,9 @@ export default function CampaignCommandPage() {
           <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t('lm.place.unavailable')}</p>
         </section>
       )}
+
+      {/* Designs — which one brings the leads. Money follows the winner. */}
+      <DesignsBlock campaignId={id} />
 
       {/* Ad sets + budget steppers */}
       <section className="mt-8">
@@ -1645,5 +1648,72 @@ function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => voi
         </button>
       </div>
     </div>
+  )
+}
+
+
+/** The designs report: one row per ad (design) in the campaign — spend,
+ *  leads, cost per lead, and a pause/resume switch. Shown only when the
+ *  campaign actually has more than one design; a single-design campaign has
+ *  nothing to compare. */
+function DesignsBlock({ campaignId }: { campaignId: string }) {
+  const t = useT()
+  const [ads, setAds] = useState<Array<{ id: string; name: string; status: string; thumbnailUrl: string | null; spend: number; leads: number; cpl: number | null }>>([])
+  const [busy, setBusy] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    fetch(`/api/meta/campaigns/${encodeURIComponent(campaignId)}/ads`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && Array.isArray(d?.ads)) setAds(d.ads) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [campaignId])
+
+  if (ads.length < 2) return null
+  const best = ads.filter((a) => a.leads > 0).sort((a, b) => (a.cpl ?? Infinity) - (b.cpl ?? Infinity))[0]
+
+  async function toggle(adId: string, cur: string) {
+    setBusy(adId)
+    const next = cur === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'
+    try {
+      const res = await fetch(`/api/meta/campaigns/${encodeURIComponent(campaignId)}/ads`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adId, status: next }),
+      })
+      if (res.ok) setAds((xs) => xs.map((x) => (x.id === adId ? { ...x, status: next } : x)))
+    } finally { setBusy(null) }
+  }
+
+  return (
+    <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+      <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.designs.title')}</div>
+      <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('lm.designs.sub')}</p>
+      <div className="mt-3 space-y-2">
+        {ads.map((a) => {
+          const live = a.status === 'ACTIVE'
+          const winner = best && a.id === best.id
+          return (
+            <div key={a.id} className={`flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-2.5 ${winner ? 'border-gold/40 bg-gold/[0.06]' : 'border-line bg-surface'}`}>
+              {a.thumbnailUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={a.thumbnailUrl} alt="" className="h-9 w-14 shrink-0 rounded object-cover" />
+                : <span className="h-9 w-14 shrink-0 rounded bg-surface-2" />}
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-200">{a.name}</span>
+              {winner && <span className="shrink-0 rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-gold">{t('lm.designs.winner')}</span>}
+              <span className="shrink-0 text-xs text-slate-500">{t('lm.campaignList.field.leads')} <span className="font-semibold text-gold">{a.leads}</span></span>
+              <span className="shrink-0 text-xs text-slate-500">{t('lm.campaignList.field.cpl')} <span className="text-slate-300">{a.cpl != null ? `AED ${a.cpl}` : '—'}</span></span>
+              <span className="shrink-0 text-xs text-slate-500">{t('lm.campaignList.field.spend')} <span className="text-slate-300">AED {a.spend.toFixed(0)}</span></span>
+              <button type="button" onClick={() => void toggle(a.id, a.status)} disabled={busy === a.id}
+                className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition disabled:opacity-50 ${
+                  live ? 'border-line text-slate-300 hover:border-amber-400/40 hover:text-amber-300'
+                       : 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'}`}>
+                {busy === a.id ? '…' : live ? t('lm.designs.pause') : t('lm.designs.resume')}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
