@@ -46,14 +46,52 @@ const FIELD_ALIASES: Record<string, string> = {
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 const ACCEPTED_EXT = ['.csv', '.txt', '.xlsx', '.xls']
 
+/** The fields a row can actually carry. Anything else is not storage — it is
+ *  a column the pool has no place to put. */
+const TARGET_FIELDS = [
+  'source', 'platform', 'campaign', 'area', 'projectType', 'priceBandAED',
+  'ageBand', 'city', 'interest', 'outcome', 'leadDate',
+] as const
+export type TargetField = (typeof TARGET_FIELDS)[number]
+
 function aliasHeader(h: string): string {
   return FIELD_ALIASES[h.trim().toLowerCase().replace(/\s+/g, '_')] ?? ''
 }
 
+/**
+ * WHAT THE FILE ACTUALLY CONTAINS, before anything is thrown away.
+ *
+ * The importer used to alias a header and, on a miss, return '' — and the
+ * caller then dropped that column without a word. A file whose headers did
+ * not happen to match our list imported its full row COUNT with every
+ * dimension stripped out: 24,713 rows, 0% coverage on all seven fields, and
+ * nothing on screen saying so. The rows were real and the pool was empty.
+ *
+ * So parsing now surfaces every header with a sample value and its guess.
+ * Nothing is imported until someone has seen what would be discarded.
+ */
+export interface HeaderPlan {
+  /** The header exactly as written in their file. */
+  raw: string
+  /** Our guess, or '' when we do not recognise it. */
+  guess: string
+  /** A real value from the first row that has one — proof of what this column
+   *  holds, so a decision is made on the data rather than on a name. */
+  sample: string
+}
+
+function planHeaders(headers: string[], rows: string[][]): HeaderPlan[] {
+  return headers.map((raw, i) => ({
+    raw,
+    guess: aliasHeader(raw),
+    sample: rows.map((r) => (r[i] ?? '').trim()).find(Boolean) ?? '',
+  }))
+}
+
 // Minimal CSV parser (handles quoted cells with commas).
-function parseCsv(text: string): Record<string, string>[] {
+function parseCsv(text: string): { headers: string[]; cells: string[][] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim())
-  if (lines.length < 2) return []
+  if (lines.length < 2) return { headers: [], cells: [] }
   const parseLine = (line: string): string[] => {
     const out: string[] = []
     let cur = ''
@@ -67,12 +105,22 @@ function parseCsv(text: string): Record<string, string>[] {
     out.push(cur)
     return out
   }
-  const headers = parseLine(lines[0]).map(aliasHeader)
-  return lines.slice(1).map((line) => {
-    const cells = parseLine(line)
-    const row: Record<string, string> = {}
-    headers.forEach((h, i) => { if (h && cells[i]?.trim()) row[h] = cells[i].trim() })
-    return row
+  const headers = parseLine(lines[0]).map((h) => h.trim())
+  const cells = lines.slice(1).map(parseLine)
+  return { headers, cells }
+}
+
+/** Apply a confirmed mapping. A header mapped to '' is dropped ON PURPOSE,
+ *  by someone who saw it and chose to. */
+function applyMapping(headers: string[], cells: string[][], map: Record<string, string>): Record<string, string>[] {
+  return cells.map((row) => {
+    const out: Record<string, string> = {}
+    headers.forEach((h, i) => {
+      const field = map[h]
+      const v = (row[i] ?? '').trim()
+      if (field && v) out[field] = v
+    })
+    return out
   }).filter((r) => Object.keys(r).length > 0)
 }
 
@@ -80,16 +128,13 @@ function parseCsv(text: string): Record<string, string>[] {
 // their original (un-aliased) header text — the shape xlsx's sheet_to_json
 // returns, so a spreadsheet upload maps onto the exact same columns a pasted
 // CSV does, no separate parsing path to keep in sync.
-function remapObjectRows(raw: Record<string, unknown>[]): Record<string, string>[] {
-  return raw.map((r) => {
-    const row: Record<string, string> = {}
-    for (const [key, value] of Object.entries(r)) {
-      const h = aliasHeader(key)
-      const v = String(value ?? '').trim()
-      if (h && v) row[h] = v
-    }
-    return row
-  }).filter((r) => Object.keys(r).length > 0)
+/** A spreadsheet arrives keyed by its own header text. Same shape as the CSV
+ *  path so there is ONE mapping step, not two that can drift apart. */
+function sheetToTable(raw: Record<string, unknown>[]): { headers: string[]; cells: string[][] } {
+  const headers: string[] = []
+  for (const r of raw) for (const k of Object.keys(r)) if (!headers.includes(k)) headers.push(k)
+  const cells = raw.map((r) => headers.map((h) => String(r[h] ?? '').trim()))
+  return { headers, cells }
 }
 
 export default function DataBasePage() {
@@ -102,6 +147,10 @@ export default function DataBasePage() {
   const [importing, setImporting] = useState(false)
   const [fileName, setFileName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  /** A parsed file waiting on a decision. Nothing reaches the server until
+   *  someone has looked at what would be discarded. */
+  const [pending, setPending] = useState<{ headers: string[]; cells: string[][]; plan: HeaderPlan[] } | null>(null)
+  const [mapping, setMapping] = useState<Record<string, string>>({})
 
   function load() {
     fetch('/api/freehold/base/import', { cache: 'no-store' })
@@ -142,22 +191,30 @@ export default function DataBasePage() {
     } finally { setImporting(false) }
   }
 
+  /** Stage a parsed table for review. */
+  function stage(headers: string[], cells: string[][]) {
+    if (!headers.length || !cells.length) { toast.error(t('sd.noRows')); return }
+    const plan = planHeaders(headers, cells.slice(0, 50))
+    setPending({ headers, cells, plan })
+    setMapping(Object.fromEntries(plan.map((p) => [p.raw, p.guess])))
+  }
+
   async function runImport() {
     const raw = text.trim()
     if (!raw) return
-    let rows: Record<string, unknown>[] = []
     try {
       if (raw.startsWith('[') || raw.startsWith('{')) {
+        // Pasted JSON already names its own fields — nothing to guess at.
         const parsed = JSON.parse(raw)
-        rows = Array.isArray(parsed) ? parsed : Array.isArray(parsed.rows) ? parsed.rows : []
-      } else {
-        rows = parseCsv(raw)
+        const rows = Array.isArray(parsed) ? parsed : Array.isArray(parsed.rows) ? parsed.rows : []
+        await importRows(rows)
+        return
       }
+      const { headers, cells } = parseCsv(raw)
+      stage(headers, cells)
     } catch {
       toast.error(t('sd.parseError'))
-      return
     }
-    await importRows(rows)
   }
 
   async function onFileSelected(file: File | null) {
@@ -167,22 +224,30 @@ export default function DataBasePage() {
     if (file.size > MAX_UPLOAD_BYTES) { toast.error(t('sd.uploadTooLarge')); return }
     setFileName(file.name)
     try {
-      let rows: Record<string, unknown>[] = []
       if (ext === '.csv' || ext === '.txt') {
-        rows = parseCsv(await file.text())
+        const { headers, cells } = parseCsv(await file.text())
+        stage(headers, cells)
       } else {
         const XLSX = await import('xlsx')
-        const buf = await file.arrayBuffer()
-        const wb = XLSX.read(buf, { type: 'array' })
+        const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
         const sheet = wb.Sheets[wb.SheetNames[0]]
         const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
-        rows = remapObjectRows(raw)
+        const { headers, cells } = sheetToTable(raw)
+        stage(headers, cells)
       }
-      await importRows(rows)
     } catch {
       toast.error(t('sd.uploadReadError'))
       setFileName('')
     }
+  }
+
+  /** Import what the mapping says, and nothing else. */
+  async function confirmMapping() {
+    if (!pending) return
+    const rows = applyMapping(pending.headers, pending.cells, mapping)
+    if (!rows.length) { toast.error(t('sd.mapNothing')); return }
+    await importRows(rows)
+    setPending(null); setMapping({})
   }
 
   return (
@@ -195,6 +260,79 @@ export default function DataBasePage() {
       />
 
       {/* Import */}
+      {/* WHAT WOULD BE DISCARDED, BEFORE ANYTHING IS. The old importer aliased
+          each header and dropped it on a miss, silently — a file whose headers
+          did not match our list imported its full row COUNT with every field
+          stripped out, and no screen said so. Nothing goes to the server now
+          until this has been read. */}
+      {pending && (
+        <Panel className="mt-6">
+          <PanelHeader title={t('sd.map.title')} icon={<UploadCloud className="h-4 w-4 text-gold" />} />
+          <div className="p-5">
+            <p className="text-[12.5px] leading-relaxed text-slate-400">
+              {t('sd.map.sub', { rows: pending.cells.length, cols: pending.headers.length })}
+            </p>
+
+            <div className="mt-4 space-y-1.5">
+              {pending.plan.map((h) => {
+                const chosen = mapping[h.raw] ?? ''
+                return (
+                  <div key={h.raw} className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[12.5px] font-medium text-slate-200">{h.raw}</div>
+                      {/* The sample is the point: a decision made on the data,
+                          not on what someone called the column. */}
+                      <div className="truncate text-[11px] text-slate-500">
+                        {h.sample ? h.sample : t('sd.map.noSample')}
+                      </div>
+                    </div>
+                    <select
+                      value={chosen}
+                      onChange={(e) => setMapping((m) => ({ ...m, [h.raw]: e.target.value }))}
+                      className={`shrink-0 rounded-lg border bg-surface px-2.5 py-1.5 text-[12px] outline-none focus:border-gold/40 ${
+                        chosen ? 'border-line text-slate-200' : 'border-line text-slate-500'
+                      }`}
+                    >
+                      <option value="">{t('sd.map.ignore')}</option>
+                      {TARGET_FIELDS.map((f) => (
+                        <option key={f} value={f}>{t(`sd.field.${f}`)}</option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Said plainly, with a number. "Some columns were ignored" is the
+                sentence that let 24,713 empty rows through. */}
+            <p className="mt-3 text-[11.5px] text-slate-500">
+              {t('sd.map.willDrop', {
+                n: pending.plan.filter((h) => !mapping[h.raw]).length,
+                total: pending.plan.length,
+              })}
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={confirmMapping}
+                disabled={importing || Object.values(mapping).every((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-50"
+              >
+                {t('sd.map.confirm')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPending(null); setMapping({}); setFileName('') }}
+                className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white"
+              >
+                {t('sd.map.cancel')}
+              </button>
+            </div>
+          </div>
+        </Panel>
+      )}
+
       <Panel className="mt-6">
         <PanelHeader title={t('sd.import')} icon={<UploadCloud className="h-4 w-4 text-gold" />} />
         <div className="space-y-3 p-5">
