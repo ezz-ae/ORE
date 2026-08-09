@@ -26,6 +26,15 @@ export interface AudienceOutcome {
   leads: number
   qualified: number
   won: number
+  /**
+   * A few of the actual people this audience brought.
+   *
+   * "34 leads, 6 real" is a number; "it brought Ahmed, who is now viewing"
+   * is the thing a broker can judge. Real leads out of their own CRM, best
+   * ones first — a targeting choice is easier to make against faces than
+   * against a percentage.
+   */
+  samples: Array<{ name: string; status: string | null; interest: string | null }>
 }
 
 /** DDL runs once per tenant schema, not once per process — a module-level
@@ -76,7 +85,13 @@ export interface AttributedLead {
   audienceName: string
   campaignId: string
   status: string | null
+  name?: string | null
+  interest?: string | null
 }
+
+/** How many real people to show per audience. Enough to recognise a pattern,
+ *  few enough that the card stays a card. */
+export const SAMPLE_LEADS = 3
 
 /**
  * Fold attributed leads into one row per audience.
@@ -96,12 +111,19 @@ export function rollupAudienceLeads(
       key: lead.audienceKey,
       name: lead.audienceName,
       campaigns: campaignsPerAudience.get(lead.audienceKey) ?? 0,
-      leads: 0, qualified: 0, won: 0,
+      leads: 0, qualified: 0, won: 0, samples: [],
     }
     row.leads++
     const status = String(lead.status ?? '').toLowerCase()
     if (QUALIFIED_STATUSES.has(status)) row.qualified++
     if (WON_STATUSES.has(status)) row.won++
+    // The examples are the ones that went somewhere. A card showing three
+    // leads that all went nowhere would misrepresent an audience that also
+    // produced buyers — so the best are shown, and the count above already
+    // says how many there were in total.
+    if (lead.name && QUALIFIED_STATUSES.has(status) && row.samples.length < SAMPLE_LEADS) {
+      row.samples.push({ name: lead.name, status: lead.status, interest: lead.interest ?? null })
+    }
     byKey.set(lead.audienceKey, row)
   }
   // An audience that has been run but produced nothing yet is still worth
@@ -110,6 +132,14 @@ export function rollupAudienceLeads(
   for (const [key, campaigns] of campaignsPerAudience) {
     if (!byKey.has(key)) continue
     byKey.get(key)!.campaigns = campaigns
+  }
+  // An audience that brought only raw leads still deserves an example — the
+  // second pass fills from whatever it has rather than showing nothing.
+  for (const lead of leads) {
+    const row = byKey.get(lead.audienceKey)
+    if (!row || !lead.name || row.samples.length >= SAMPLE_LEADS) continue
+    if (row.samples.some((s) => s.name === lead.name)) continue
+    row.samples.push({ name: lead.name, status: lead.status, interest: lead.interest ?? null })
   }
   return [...byKey.values()].sort((a, b) =>
     b.won - a.won || b.qualified - a.qualified || b.leads - a.leads)
@@ -130,8 +160,8 @@ export async function audienceOutcomes(): Promise<AudienceOutcome[]> {
     // carry the campaign id as utm_id, landing-page leads carry the campaign
     // name as utm_campaign. Matching only one of the two would silently drop
     // an entire channel's leads and make an audience look barren.
-    const leads = await query<{ audience_key: string; campaign_id: string; status: string | null }>(
-      `SELECT ca.audience_key, ca.campaign_id, l.status
+    const leads = await query<{ audience_key: string; campaign_id: string; status: string | null; name: string | null; interest: string | null }>(
+      `SELECT ca.audience_key, ca.campaign_id, l.status, l.name, l.interest
          FROM freehold_campaign_audience ca
          JOIN freehold_site_leads l
            ON (l.utm_id = ca.campaign_id)
@@ -145,6 +175,8 @@ export async function audienceOutcomes(): Promise<AudienceOutcome[]> {
         audienceName: names.get(l.audience_key) ?? l.audience_key,
         campaignId: l.campaign_id,
         status: l.status,
+        name: l.name,
+        interest: l.interest,
       })),
       perAudience,
     )
@@ -153,7 +185,7 @@ export async function audienceOutcomes(): Promise<AudienceOutcome[]> {
     // omitted, so "tried, brought nothing" is visible.
     for (const [key, n] of perAudience) {
       if (rows.some((r) => r.key === key)) continue
-      rows.push({ key, name: names.get(key) ?? key, campaigns: n, leads: 0, qualified: 0, won: 0 })
+      rows.push({ key, name: names.get(key) ?? key, campaigns: n, leads: 0, qualified: 0, won: 0, samples: [] })
     }
     return rows
   } catch {

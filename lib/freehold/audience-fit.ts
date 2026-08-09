@@ -27,6 +27,8 @@
  *
  * Pure + client-safe. Runs in `pnpm guards`.
  */
+import { LEARNING_EVENTS, LEARNING_WINDOW_DAYS, dailyBudgetToLearn } from '@/lib/freehold/learning-phase'
+
 
 export type FitLevel = 'wrong' | 'watch' | 'ok'
 
@@ -55,8 +57,17 @@ export interface FitInput {
   results?: number | null
 }
 
-/** Meta's own threshold: an ad set leaves the learning phase at ~50 results/week. */
-export const LEARNING_RESULTS_PER_WEEK = 50
+/**
+ * Meta's own threshold: an ad set leaves the learning phase at ~50 results per
+ * 7 days.
+ *
+ * THE SAME NUMBER learning-phase.ts already reasons with, imported rather than
+ * retyped. A second copy of a constant is a copy that will disagree with the
+ * first one the day somebody edits either — which is the failure this codebase
+ * has now paid for three times (the interest catalog, the qualified-status
+ * list, the form-page tag).
+ */
+export const LEARNING_RESULTS_PER_WEEK = LEARNING_EVENTS
 
 /**
  * The frequency at which a Dubai property audience is being re-shown rather
@@ -68,7 +79,7 @@ export const BURNOUT_FREQUENCY = 1.6
 /** Nothing about a campaign's first days is stable. Judge nothing before this. */
 export const MIN_DAYS_FOR_JUDGEMENT = 7
 
-/** Results a single ad set can buy in a week at the operator's own CPL cap. */
+/** Results a single ad set can buy in a learning window at the operator's CPL cap. */
 export function weeklyResultsPerAdSet(input: {
   dailyBudgetAED: number
   adSets: number
@@ -76,7 +87,7 @@ export function weeklyResultsPerAdSet(input: {
 }): number | null {
   const { dailyBudgetAED, adSets, targetCplAED } = input
   if (!(dailyBudgetAED > 0) || !(targetCplAED > 0) || !(adSets > 0)) return null
-  return ((dailyBudgetAED / adSets) * 7) / targetCplAED
+  return ((dailyBudgetAED / adSets) * LEARNING_WINDOW_DAYS) / targetCplAED
 }
 
 /**
@@ -89,7 +100,7 @@ export function weeklyResultsPerAdSet(input: {
 export function budgetToLearn(input: { adSets: number; targetCplAED: number }): number | null {
   const { adSets, targetCplAED } = input
   if (!(targetCplAED > 0) || !(adSets > 0)) return null
-  return Math.ceil((LEARNING_RESULTS_PER_WEEK * targetCplAED) / 7) * adSets
+  return Math.ceil(dailyBudgetToLearn(targetCplAED)) * adSets
 }
 
 export function checkAudienceFit(input: FitInput): FitFinding[] {
