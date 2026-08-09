@@ -127,6 +127,15 @@ export async function sendLeadConversion(params: LeadConversionParams): Promise<
 export interface QualifiedLeadParams {
   /** Deterministic — see writeBackEventId. A retry must not count twice. */
   eventId: string
+  /**
+   * Our own id for this person, hashed before it leaves.
+   *
+   * It lets Meta join the submission event and this one as the same human
+   * without a cookie surviving in between — which on iOS it usually does not.
+   * Hashed because it is still an identifier: Meta matches on equality, so it
+   * has no need of the readable value and no business holding it.
+   */
+  externalId?: string
   /** 'qualified' → someone real. 'won' → a deal. */
   stage: 'qualified' | 'won'
   email?: string
@@ -154,9 +163,12 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
   const ph = params.phone ? hashPhone(params.phone) : null
   if (em) userData.em = [em]
   if (ph) userData.ph = [ph]
+  if (params.externalId) userData.external_id = [sha256(params.externalId.trim().toLowerCase())]
   // No match key means Meta cannot attach this to anyone. Sending it anyway
   // would inflate the count with events that teach the optimiser nothing.
-  if (Object.keys(userData).length === 0) return null
+  // An external id alone does not count: it only matches a person Meta has
+  // already seen it against, so on its own it identifies nobody.
+  if (!em && !ph) return null
 
   const custom: Record<string, unknown> = { content_category: 'real_estate' }
   if (params.contentName) custom.content_name = params.contentName

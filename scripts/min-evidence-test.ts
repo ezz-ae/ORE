@@ -18,7 +18,7 @@
  */
 import {
   countBounds, rateRange, costRange, support, isWithheld, displayMetrics,
-  MIN_ATTRIBUTED_FOR_QUALITY, type Evidence,
+  MIN_ATTRIBUTED_FOR_QUALITY, MIN_IMPRESSIONS_FOR_FREQUENCY, type Evidence,
 } from '../lib/freehold/min-evidence'
 import { evaluateRules, type CampaignRule, type RuleMetric, type RuleOperator, type RuleAction } from '../lib/freehold/campaign-rules'
 
@@ -232,6 +232,40 @@ console.log('\n── the gate stops binding at scale ──')
   check('a tight rule that is true at scale does fire',
     evaluateRules([rule('cpl', 'gt', 142)], ev({ spend: 300_000, leads: 2000 })).matches.length === 1)
 }
+
+console.log('\n── the ladder trigger is a rule, and it withholds like every other ──')
+{
+  // Frequency is Meta's own reported number, so there is nothing to bound —
+  // but plenty to withhold on. Widening an audience is destructive: it throws
+  // away the targeting that was working. Doing it on a few hundred
+  // impressions, where frequency swings on single deliveries, is the exact
+  // mistake the whole evidence gate exists to prevent.
+  const ev = (over: Partial<Evidence>): Evidence => ({
+    spend: 500, leads: 3, clicks: 40, impressions: 20_000,
+    attributed: 3, qualityScore: 60, ...over,
+  })
+
+  const decided = support('frequency', 'gt', ev({ frequency: 2.4 }))
+  check('a real frequency on real volume is decidable',
+    !isWithheld(decided) && (decided as { value: number }).value === 2.4,
+    JSON.stringify(decided))
+
+  check('no frequency from Meta is withheld, not read as zero',
+    isWithheld(support('frequency', 'gt', ev({ frequency: null }))))
+  check('…and an absent field is the same as a null one',
+    isWithheld(support('frequency', 'gt', ev({ frequency: undefined }))))
+
+  const thin = support('frequency', 'gt', ev({ frequency: 4.0, impressions: 400 }))
+  check(`below ${MIN_IMPRESSIONS_FOR_FREQUENCY} impressions it is withheld however alarming the number`,
+    isWithheld(thin), JSON.stringify(thin))
+  check('…and the reason says why, in words an operator can act on',
+    isWithheld(thin) && /swings on single deliveries/.test(thin.reason))
+
+  check('frequency appears beside the other metrics for display',
+    displayMetrics(ev({ frequency: 1.8 })).frequency === 1.8)
+  check('…as null when there is none', displayMetrics(ev({ frequency: null })).frequency === null)
+}
+
 
 if (failures > 0) {
   console.error(`\n${failures} minimum-evidence rule(s) broken.`)

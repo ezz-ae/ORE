@@ -62,6 +62,10 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
     const ok = await sendQualifiedLead({
       eventId: writeBackEventId(leadId, stage),
       stage,
+      // Our own id for this person, hashed on the way out — it joins this
+      // event to the submission event as the same human without depending on
+      // a cookie that iOS has usually already dropped.
+      externalId: leadId,
       email: lead.email ?? undefined,
       phone: lead.phone ?? undefined,
       contentName: lead.interest ?? undefined,
