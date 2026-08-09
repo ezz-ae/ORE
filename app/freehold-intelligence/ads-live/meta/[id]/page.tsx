@@ -14,6 +14,7 @@ import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/f
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkCampaignSetup, setupProblemCount, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
+import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 
 // The campaign read attaches each ad set's ads; MetaAdSet carries them now,
 // so there is one definition of an ad's status instead of two that drift.
@@ -188,6 +189,30 @@ export default function CampaignCommandPage() {
     [data],
   )
   const setupProblems = setupProblemCount(setup)
+
+  // CAN THIS BUDGET BUY THIS AUDIENCE — read from what actually happened.
+  //
+  // Frequency and result count are Meta's own numbers, so nothing here is
+  // modelled: a campaign too young to mean anything produces no finding at
+  // all rather than a confident one. This is the "ladder" trigger — widen the
+  // audience when the same people are being re-shown the ad, and only then.
+  const fit = useMemo(() => {
+    if (!data) return []
+    const created = data.campaign.created_time ? Date.parse(data.campaign.created_time) : NaN
+    const days = Number.isFinite(created)
+      ? Math.floor((Date.now() - created) / 86_400_000)
+      : null
+    return checkAudienceFit({
+      // Budget-vs-learning is answered before launch, where the CPL cap is
+      // known. Here the real result count answers it better than any forecast.
+      dailyBudgetAED: 0,
+      adSets: Math.max(1, data.adSets.length),
+      targetCplAED: 0,
+      frequency: Number(data.insights?.frequency) || null,
+      daysRunning: days,
+      results: leadsFrom(data.insights ?? null),
+    })
+  }, [data])
   const active = data?.campaign.status === 'ACTIVE'
 
   // ── AI Advisor ──────────────────────────────────────────────────────────────
@@ -802,6 +827,18 @@ export default function CampaignCommandPage() {
           </div>
         </div>
         <div className="mt-4 space-y-1.5">
+          {fit.map((f) => (
+            <div key={`fit-${f.key}`}
+              className={`flex items-start gap-2 rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed ${
+                f.level === 'wrong' ? 'border-rose-400/25 bg-rose-400/[0.07] text-rose-100'
+                : f.level === 'watch' ? 'border-amber-400/25 bg-amber-400/[0.06] text-amber-100'
+                : 'border-line bg-surface text-slate-300'}`}>
+              {f.level === 'wrong' ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                : f.level === 'watch' ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                : <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
+              <span>{t(`lm.fit.${f.key}`, f.vars)}</span>
+            </div>
+          ))}
           {setup.map((f, i) => (
             <div key={`${f.key}-${f.adSet ?? ''}-${i}`}
               className={`flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-3.5 py-2.5 text-xs ${
