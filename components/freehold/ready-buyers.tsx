@@ -30,6 +30,7 @@ import Link from 'next/link'
 import { Users, Loader2, Rocket } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { dailyBudgetToLearn } from '@/lib/freehold/learning-phase'
+import { weeklyResultsPerAdSet, LEARNING_RESULTS_PER_WEEK } from '@/lib/freehold/audience-fit'
 import { READY_BUYERS, BUYER_GROUPS } from '@/lib/freehold/ready-buyers'
 
 interface Reach { lower: number; upper: number; ready: boolean }
@@ -47,6 +48,24 @@ export default function ReadyBuyers() {
   const [audiences, setAudiences] = useState<{ id: string; name: string }[]>([])
   const [readySaving, setReadySaving] = useState<string | null>(null)
   const [readyReach, setReadyReach] = useState<Record<string, Reach | null>>({})
+  // WHAT EACH OF THESE ACTUALLY BROUGHT. The reach band says how many people
+  // exist; this says how many of them turned into someone worth calling. A
+  // name a broker recognises beats a percentage.
+  const [record, setRecord] = useState<Record<string, {
+    leads: number; qualified: number
+    samples: Array<{ name: string; status: string | null }>
+  }>>({})
+  useEffect(() => {
+    fetch('/api/freehold/ads/audiences/outcomes', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!Array.isArray(d?.outcomes)) return
+        const map: Record<string, { leads: number; qualified: number; samples: Array<{ name: string; status: string | null }> }> = {}
+        for (const o of d.outcomes) map[o.key] = { leads: o.leads, qualified: o.qualified, samples: o.samples ?? [] }
+        setRecord(map)
+      })
+      .catch(() => {})
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -54,6 +73,7 @@ export default function ReadyBuyers() {
       const data = await res.json()
       setAudiences(Array.isArray(data.audiences) ? data.audiences : [])
     } catch { /* section still renders; reach shows connect-hint */ }
+
   }, [])
   useEffect(() => { void load() }, [load])
 
@@ -126,7 +146,49 @@ export default function ReadyBuyers() {
                       <span className="text-[11px] text-slate-500">{t('lm.aud.ready.budget')}</span>
                       <span className="text-[12px] font-semibold text-gold">AED {suggestedDailyAed(cplAed).toLocaleString()}{t('lm.aud.ready.perDay')}</span>
                     </div>
+                    {/* What that budget buys in a week, at the middle of the
+                        cost band above. Both numbers are already on the card;
+                        the one that decides whether Meta can learn was the one
+                        nobody worked out. */}
+                    {(() => {
+                      const perWeek = weeklyResultsPerAdSet({
+                        dailyBudgetAED: suggestedDailyAed(cplAed),
+                        adSets: 1,
+                        targetCplAED: (cplAed[0] + cplAed[1]) / 2,
+                      })
+                      if (perWeek === null) return null
+                      return (
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-[11px] text-slate-500">{t('lm.aud.ready.expect')}</span>
+                          <span className={`text-[12px] font-semibold ${perWeek >= LEARNING_RESULTS_PER_WEEK ? 'text-white' : 'text-amber-300'}`}>
+                            {t('lm.aud.ready.perWeek', { n: Math.floor(perWeek) })}
+                          </span>
+                        </div>
+                      )
+                    })()}
                   </div>
+
+                  {/* THE RECORD. Only where there is one — an audience nobody
+                      has run says nothing rather than a row of zeros. */}
+                  {record[`ready:${id}`] && record[`ready:${id}`]!.leads > 0 && (
+                    <div className="mt-2.5 rounded-lg border border-line bg-surface px-3 py-2">
+                      <div className="text-[11px] text-slate-400">
+                        {t('lm.aud.ready.brought', {
+                          leads: record[`ready:${id}`]!.leads,
+                          qualified: record[`ready:${id}`]!.qualified,
+                        })}
+                      </div>
+                      {record[`ready:${id}`]!.samples.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {record[`ready:${id}`]!.samples.map((p) => (
+                            <span key={p.name} className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">
+                              {p.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-3">
                     {saved ? (
                       <Link href={useHref(saved.id)} className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-black">

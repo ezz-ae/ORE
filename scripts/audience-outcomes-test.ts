@@ -17,7 +17,7 @@
  *
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
-import { rollupAudienceLeads, type AttributedLead } from '../lib/freehold/audience-outcomes'
+import { rollupAudienceLeads, SAMPLE_LEADS, type AttributedLead } from '../lib/freehold/audience-outcomes'
 import { QUALIFIED_STATUSES, WON_STATUSES } from '../lib/freehold/lead-stages'
 
 let failures = 0
@@ -25,8 +25,8 @@ const ok = (m: string) => console.log(`  ✓ ${m}`)
 const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}\n      got: ${got}`) }
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
-const lead = (key: string, status: string | null): AttributedLead =>
-  ({ audienceKey: key, audienceName: key.replace(/^\w+:/, ''), campaignId: 'c1', status })
+const lead = (key: string, status: string | null, name?: string): AttributedLead =>
+  ({ audienceKey: key, audienceName: key.replace(/^\w+:/, ''), campaignId: 'c1', status, name })
 
 console.log('\n── the record of a name ──')
 {
@@ -85,6 +85,41 @@ console.log('\n── nothing is invented, and nothing flattering is hidden ─�
     rollupAudienceLeads([], new Map([['ready:x', 3]])).length === 0)
   check('a lead whose audience has no recorded campaign still counts',
     rollupAudienceLeads([lead('ready:x', 'qualified')], new Map())[0].campaigns === 0)
+}
+
+console.log('\n── the people it actually brought ──')
+{
+  // A percentage is a number. A name a broker recognises is a judgement they
+  // can make. The examples shown are the ones that went somewhere, because
+  // three leads that all went nowhere would misrepresent an audience that
+  // also produced buyers — and the counts above already say how many there
+  // were in total.
+  const rows = rollupAudienceLeads(
+    [
+      lead('k', 'new', 'Nobody One'),
+      lead('k', 'closed', 'Ahmed Buyer'),
+      lead('k', 'new', 'Nobody Two'),
+      lead('k', 'viewing', 'Sara Viewer'),
+    ],
+    new Map([['k', 1]]),
+  )
+  const r = rows[0]
+  check('the examples are the leads that went somewhere',
+    r.samples.slice(0, 2).map((s) => s.name).join('|') === 'Ahmed Buyer|Sara Viewer',
+    JSON.stringify(r.samples))
+  check('…and never more than three', r.samples.length <= SAMPLE_LEADS)
+  check('the totals still count every lead', r.leads === 4 && r.qualified === 2)
+
+  // An audience with nothing but raw leads still shows a face rather than a
+  // blank — it is still the honest answer to "who did this bring?".
+  const raw = rollupAudienceLeads([lead('k', 'new', 'Only Lead')], new Map([['k', 1]]))[0]
+  check('an audience with only raw leads still shows one',
+    raw.samples.length === 1 && raw.samples[0].name === 'Only Lead', JSON.stringify(raw.samples))
+  check('a lead with no name is never shown as a blank face',
+    rollupAudienceLeads([lead('k', 'qualified')], new Map([['k', 1]]))[0].samples.length === 0)
+  check('the same person is not listed twice',
+    rollupAudienceLeads([lead('k', 'new', 'Same One'), lead('k', 'new', 'Same One')], new Map([['k', 1]]))[0]
+      .samples.length === 1)
 }
 
 if (failures > 0) {
