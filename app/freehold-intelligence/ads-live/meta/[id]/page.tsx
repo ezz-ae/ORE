@@ -15,6 +15,7 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkCampaignSetup, setupProblemCount, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
+import { deliveryOf } from '@/lib/meta/delivery-status'
 
 // The campaign read attaches each ad set's ads; MetaAdSet carries them now,
 // so there is one definition of an ad's status instead of two that drift.
@@ -724,12 +725,13 @@ export default function CampaignCommandPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        {/* The state, stated. Without it a toggle is a guess. */}
-                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                          adSetLive ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-                                    : 'border-line bg-surface text-slate-500'}`}>
-                          {adSetLive ? t('lm.cmd.live') : t('lm.cmd.paused')}
-                        </span>
+                        {/* The state, stated — the real one. */}
+                        <DeliveryChip t={t} d={deliveryOf({
+                          effectiveStatus: a.effective_status,
+                          status: a.status,
+                          learningStage: a.learning_stage_info?.status,
+                          results: leadsFrom(data.insights ?? null),
+                        })} />
                         <div className="truncate text-sm font-semibold text-slate-100">{a.name}</div>
                       </div>
                       {a.ads?.length ? (
@@ -778,7 +780,12 @@ export default function CampaignCommandPage() {
                         const adLive = ad.status === 'ACTIVE'
                         return (
                           <div key={ad.id} className="flex items-center gap-3 px-3.5 py-2">
-                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${adLive ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                            {/* Where "in review" and "rejected" actually live —
+                                an ad, not an ad set. A dot could not say it. */}
+                            <DeliveryChip t={t} d={deliveryOf({
+                              effectiveStatus: ad.effective_status,
+                              status: ad.status,
+                            })} />
                             <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{ad.name}</span>
                             <button type="button"
                               onClick={() => setAdStatus(a.id, ad.id, ad.status, adLive ? 'PAUSED' : 'ACTIVE')}
@@ -1795,5 +1802,30 @@ function DesignsBlock({ campaignId }: { campaignId: string }) {
         })}
       </div>
     </section>
+  )
+}
+
+/**
+ * WHAT THIS IS ACTUALLY DOING — one chip, in words.
+ *
+ * "Active" was true for an ad awaiting review, an ad Meta had given up
+ * learning, an ad delivering perfectly and an ad reaching nobody. Two of those
+ * need someone today. The chip now says which.
+ */
+function DeliveryChip({ d, t }: {
+  d: ReturnType<typeof deliveryOf>
+  t: (key: string, vars?: Record<string, string | number>) => string
+}) {
+  const style =
+    d.tone === 'good' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+    : d.tone === 'working' ? 'border-sky-400/30 bg-sky-400/10 text-sky-200'
+    : d.tone === 'bad' ? 'border-rose-400/30 bg-rose-400/10 text-rose-200'
+    : 'border-line bg-surface text-slate-500'
+  return (
+    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${style}`}>
+      {d.progress
+        ? t('lm.delivery.learningProgress', { have: d.progress.have, need: d.progress.need })
+        : t(`lm.delivery.${d.state}`)}
+    </span>
   )
 }
