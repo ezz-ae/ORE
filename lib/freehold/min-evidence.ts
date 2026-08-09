@@ -102,6 +102,12 @@ export interface Evidence {
   leads: number
   clicks: number
   impressions: number
+  /**
+   * Meta's own frequency — average times each person saw the ad. Null when
+   * Meta has not reported one, which is not the same as zero and must never
+   * be read as "nobody has seen it twice".
+   */
+  frequency?: number | null
   /** CRM-attributed leads behind `qualityScore` (its sample size). */
   attributed: number
   qualityScore: number | null
@@ -131,8 +137,16 @@ export interface Supported {
  * it would have compared the raw metric — the gate is in which number it gets,
  * not in a second branch the caller has to remember to write.
  */
+/**
+ * Impressions below which a frequency figure is arithmetic rather than
+ * information. Frequency is a reported ratio, not an estimate — but on a
+ * few hundred impressions it swings on single deliveries, and a rule that
+ * widens an audience on that noise throws away targeting that was working.
+ */
+export const MIN_IMPRESSIONS_FOR_FREQUENCY = 1000
+
 export function support(
-  metric: 'quality' | 'cpl' | 'leads' | 'spend' | 'ctr',
+  metric: 'quality' | 'cpl' | 'leads' | 'spend' | 'ctr' | 'frequency',
   op: Direction,
   ev: Evidence,
 ): Supported | Withheld {
@@ -157,6 +171,20 @@ export function support(
       }
     }
     return { value: r.hi, point }
+  }
+
+  if (metric === 'frequency') {
+    // Meta's own number. Nothing to bound — but plenty to withhold on.
+    if (ev.frequency === null || ev.frequency === undefined) {
+      return { metric, reason: 'Meta has not reported a frequency for this yet' }
+    }
+    if (ev.impressions < MIN_IMPRESSIONS_FOR_FREQUENCY) {
+      return {
+        metric,
+        reason: `${ev.impressions} impressions — frequency swings on single deliveries below ${MIN_IMPRESSIONS_FOR_FREQUENCY}, and widening an audience on that noise throws away targeting that was working`,
+      }
+    }
+    return { value: ev.frequency, point: ev.frequency }
   }
 
   if (metric === 'ctr') {
@@ -193,8 +221,10 @@ export const isWithheld = (s: Supported | Withheld): s is Withheld =>
 /** The point estimates, for DISPLAY only. Never pass these to a decision. */
 export function displayMetrics(ev: Evidence): {
   quality: number | null; cpl: number | null; leads: number; spend: number; ctr: number | null
+  frequency: number | null
 } {
   return {
+    frequency: ev.frequency ?? null,
     quality: ev.qualityScore,
     cpl: ev.leads > 0 ? ev.spend / ev.leads : null,
     leads: ev.leads,

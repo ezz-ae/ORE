@@ -97,6 +97,9 @@ export async function runAutopilotPass(email: string): Promise<{ applied: Array<
       leads: metaLeadCount(insights?.actions),
       clicks: Number(insights?.clicks ?? 0),
       impressions: Number(insights?.impressions ?? 0),
+      // Meta's own figure, passed through rather than derived — null when it
+      // has not reported one, so the gate can withhold instead of guessing.
+      frequency: insights?.frequency != null ? Number(insights.frequency) : null,
       attributed: quality.attributed,
       qualityScore: quality.score,
     }

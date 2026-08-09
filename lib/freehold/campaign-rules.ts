@@ -23,11 +23,15 @@ import { support, isWithheld, displayMetrics, type Evidence, type Withheld } fro
  * hand this function a rate any more.
  */
 
-export type RuleMetric = 'quality' | 'cpl' | 'leads' | 'spend' | 'ctr'
+export type RuleMetric = 'quality' | 'cpl' | 'leads' | 'spend' | 'ctr' | 'frequency'
 export type RuleOperator = 'lt' | 'gt'
 export type RuleAction = 'pause' | 'resume' | 'budget_up' | 'budget_down' | 'notify'
 
-export const RULE_METRICS: RuleMetric[] = ['quality', 'cpl', 'leads', 'spend', 'ctr']
+// `frequency` is the ladder rule: when the same people are being re-shown
+// the ad rather than new ones being reached, the audience is too small for the
+// budget and widening a tier is the answer — but only once the impressions
+// behind that number make it mean something.
+export const RULE_METRICS: RuleMetric[] = ['quality', 'cpl', 'leads', 'spend', 'ctr', 'frequency']
 export const RULE_OPERATORS: RuleOperator[] = ['lt', 'gt']
 export const RULE_ACTIONS: RuleAction[] = ['pause', 'resume', 'budget_up', 'budget_down', 'notify']
 

@@ -74,6 +74,16 @@ console.log('\n── nothing personal leaves in the clear ──')
     /^[a-f0-9]{64}$/.test((e.user_data as { em: string[] }).em[0]))
   check('the phone is hashed too and normalised first',
     /^[a-f0-9]{64}$/.test((e.user_data as { ph: string[] }).ph[0]))
+  const withId = buildQualifiedLeadEvent({
+    eventId: 'x', stage: 'qualified', phone: '0501234567', externalId: 'lead-42',
+  })!
+  check('our own id for the person is hashed too, never sent readable',
+    !JSON.stringify(withId).includes('lead-42') &&
+    /^[a-f0-9]{64}$/.test((withId.user_data as { external_id: string[] }).external_id[0]),
+    JSON.stringify(withId.user_data))
+  check('an id alone identifies nobody, so it cannot stand in for a match key',
+    buildQualifiedLeadEvent({ eventId: 'y', stage: 'qualified', externalId: 'lead-42' }) === null)
+
   check('capital letters and stray spaces do not make a different person',
     JSON.stringify(buildQualifiedLeadEvent({ eventId: 'x', stage: 'qualified', email: 'buyer@example.com' })!.user_data)
     === JSON.stringify(buildQualifiedLeadEvent({ eventId: 'x', stage: 'qualified', email: ' BUYER@Example.com ' })!.user_data))
