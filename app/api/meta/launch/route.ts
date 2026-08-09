@@ -10,6 +10,7 @@ import { getAudience } from '@/lib/freehold/audiences'
 import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { adEndTimeForPermit, endTimeHasPassed } from '@/lib/freehold/permit-schedule'
+import { crmExclusionAudienceId } from '@/lib/freehold/crm-exclusion'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
 import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
 import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
@@ -256,6 +257,18 @@ export async function POST(req: NextRequest) {
     // permit gate remains the backstop it has always been.
   }
 
+  // WHO THIS MUST NOT BE SHOWN TO.
+  //
+  // Resolved server-side from our own record. The browser sends the intent —
+  // "not the CRM" — and never the id, so it cannot point an exclusion at an
+  // audience that is not ours.
+  let excludeAudienceIds: string[] = []
+  if (body.excludeCrmAudience) {
+    const id = await crmExclusionAudienceId().catch(() => null)
+    if (id) excludeAudienceIds = [id]
+    // No audience built yet ⇒ no exclusion, and no pretending there was one.
+  }
+
   const projectSlug = String(body.listingId)
   const intent: CampaignIntent = {
     projectSlug,
@@ -318,7 +331,18 @@ export async function POST(req: NextRequest) {
       objective:        body.objective,
       listingName:      body.listingName,
       dailyBudgetAED:   body.dailyBudgetAED,
-      targeting:        body.targeting,
+      // The exclusion is merged LAST, after the audience (saved or preset) has
+      // been resolved into body.targeting — so it survives whichever path
+      // built the spec, and an audience that already carries its own
+      // exclusions keeps them.
+      targeting: excludeAudienceIds.length
+        ? {
+            ...body.targeting,
+            excludedCustomAudienceIds: [
+              ...new Set([...(body.targeting.excludedCustomAudienceIds ?? []), ...excludeAudienceIds]),
+            ],
+          }
+        : body.targeting,
       creative:         body.creative,
       launchStatus:     body.launchStatus ?? 'PAUSED',
       destination:      body.destination,

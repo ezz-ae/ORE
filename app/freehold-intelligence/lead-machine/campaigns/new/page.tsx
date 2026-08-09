@@ -759,6 +759,34 @@ export default function NewCampaignPage() {
   )
   const capUnit = capUnitFor(optimizationGoal)
 
+  // DON'T PAY TWICE FOR THE SAME PERSON.
+  //
+  // Someone already in the CRM is not a new lead. If they fill the form again
+  // they are a duplicate the CRM then spends effort un-duplicating. Off by
+  // default: excluding people is a targeting decision, and a targeting
+  // decision nobody made is exactly what this system refuses to ship.
+  const [crmExclusionId, setCrmExclusionId] = useState<string | null>(null)
+  const [excludeCrm, setExcludeCrm] = useState(false)
+  const [crmSyncing, setCrmSyncing] = useState(false)
+  useEffect(() => {
+    fetch('/api/freehold/ads/audiences/crm-exclusion', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.audienceId) setCrmExclusionId(String(d.audienceId)) })
+      .catch(() => {})
+  }, [])
+  async function buildCrmExclusion() {
+    if (crmSyncing) return
+    setCrmSyncing(true)
+    try {
+      const r = await fetch('/api/freehold/ads/audiences/crm-exclusion', { method: 'POST' })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { toast.error(d?.error || t('lm.newCampaign.s2.crmExcludeFailed')); return }
+      if (d?.audienceId) { setCrmExclusionId(String(d.audienceId)); setExcludeCrm(true) }
+      else toast.error(t('lm.newCampaign.s2.crmExcludeEmpty'))
+    } catch { toast.error(t('lm.newCampaign.s2.crmExcludeFailed')) }
+    finally { setCrmSyncing(false) }
+  }
+
   // A cost cap only means what the label says when Meta is optimising for the
   // thing being capped. Switching to an objective whose goal is clicks or
   // views drops the lead-shaped default rather than leaving AED 150 sitting
@@ -1246,6 +1274,10 @@ export default function NewCampaignPage() {
       // A pattern audience arrives here WITHOUT its spec, on purpose. Sending
       // the id lets the server read the definition; spreading an undefined
       // spec launched a campaign targeting nobody.
+      // Who this must NOT be shown to. Sent as intent the server re-checks
+      // against its own record of the audience, never as an id the browser
+      // supplies.
+      excludeCrmAudience: excludeCrm && !!crmExclusionId,
       audienceId: attachedAudience ? attachedAudience.id : undefined,
       presetId: !attachedAudience && attachedPreset ? attachedPreset : undefined,
       // Only spread a spec we actually have. A pattern audience has none here,
@@ -1792,6 +1824,31 @@ export default function NewCampaignPage() {
                     </button>
                   )
                 })}
+              </div>
+
+              {/* DON'T PAY TWICE FOR THE SAME PERSON.
+                  Someone already in the CRM is not a new lead — if they fill
+                  the form again they are a duplicate the CRM then spends
+                  effort un-duplicating. Off by default: excluding people is a
+                  targeting decision, and a targeting decision nobody made is
+                  what this system refuses to ship. */}
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2.5">
+                {crmExclusionId ? (
+                  <label className="flex cursor-pointer items-center gap-2 text-[12px] text-slate-300">
+                    <input type="checkbox" checked={excludeCrm} onChange={(e) => setExcludeCrm(e.target.checked)}
+                      className="h-3.5 w-3.5 accent-[#C69B3E]" />
+                    {t('lm.newCampaign.s2.excludeCrm')}
+                  </label>
+                ) : (
+                  <>
+                    <span className="text-[12px] text-slate-400">{t('lm.newCampaign.s2.excludeCrmNone')}</span>
+                    <button type="button" onClick={() => void buildCrmExclusion()} disabled={crmSyncing}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+                      {crmSyncing && <Loader2 className="h-3 w-3 animate-spin" />}
+                      {t('lm.newCampaign.s2.excludeCrmBuild')}
+                    </button>
+                  </>
+                )}
               </div>
 
               {(attachedAudience || attachedPreset) && (
