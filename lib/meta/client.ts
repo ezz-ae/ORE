@@ -554,7 +554,9 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
   // Explicit high limit so a multi-ad-set (ABO) campaign isn't silently capped
   // at Meta's default page size — the budget rollup must see every ad set.
   const res = await apiFetch<{ data: MetaAdSet[] }>(`/${campaignId}/adsets`, undefined, {
-    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event',
+    // learning_stage_info is the difference between "active" and "Meta gave
+    // up learning at this volume" — the state that quietly costs the most.
+    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info',
     limit: '200',
   })
   return res.data ?? []
