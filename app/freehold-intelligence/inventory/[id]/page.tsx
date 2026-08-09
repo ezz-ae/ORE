@@ -22,6 +22,7 @@ import { type PropertyStatus } from '@/src/features/freehold-intelligence/invent
 import { getServerT } from '@/lib/i18n/server'
 import { OpportunityRefreshButton } from './opportunity-refresh'
 import { ProfileGenerateButton } from './profile-generate'
+import { PermitCard } from './permit-card'
 
 function fmtAed(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -250,6 +251,19 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               ))}
             </div>
           </div>
+
+          {/* THE TRAKHEESI PERMIT LIVES ON THE PROPERTY.
+              Until now it could only arrive with ingested data — the number
+              typed at launch review is stored on the campaign plan, so a
+              manually added listing had no permit anywhere. Both the ad set's
+              end_time and the Ads Machine's compliance gate read the PROPERTY,
+              and on those listings both read null. */}
+          <PermitCard
+            slug={prop.slug}
+            permitNumber={prop.permitNumber ?? null}
+            permitExpiry={prop.permitExpiry ?? null}
+            canEdit={canLaunchAds}
+          />
 
           <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
