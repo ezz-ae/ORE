@@ -1748,6 +1748,51 @@ export async function listAccessiblePages(): Promise<MetaPageRef[]> {
 }
 
 /**
+ * WHOSE PROFILE THE AD APPEARS UNDER.
+ *
+ * An ad does not run from the ad account, it runs from a Facebook Page — and
+ * on Instagram it appears as whichever Instagram account that Page is
+ * connected to. The system knew both and showed neither, so nobody launching
+ * an ad could see whose name and picture the buyer would see next to it. On a
+ * brokerage with more than one Page that is not a detail.
+ *
+ * The Instagram side is read, not assumed: a Page with no connected Instagram
+ * account still runs on Instagram, as the Page itself, and saying so is the
+ * honest answer rather than showing a blank.
+ */
+export interface AdIdentity {
+  pageId: string
+  pageName: string | null
+  /** The Instagram account the ads appear as, when the Page has one. */
+  instagram: { id: string; username: string | null } | null
+}
+
+export async function getAdIdentity(pageIdOverride?: string): Promise<AdIdentity> {
+  const { pageId: configured } = await creds()
+  const pageId = pageIdOverride || configured
+  try {
+    const page = await apiFetch<{
+      id: string
+      name?: string
+      instagram_business_account?: { id: string; username?: string }
+      connected_instagram_account?: { id: string; username?: string }
+    }>(`/${pageId}`, undefined, {
+      fields: 'id,name,instagram_business_account{id,username},connected_instagram_account{id,username}',
+    })
+    const ig = page.instagram_business_account ?? page.connected_instagram_account ?? null
+    return {
+      pageId,
+      pageName: page.name ?? null,
+      instagram: ig ? { id: ig.id, username: ig.username ?? null } : null,
+    }
+  } catch {
+    // Never throws: not knowing the name is a smaller problem than a screen
+    // that will not load.
+    return { pageId, pageName: null, instagram: null }
+  }
+}
+
+/**
  * Lead-gen forms across EVERY accessible Page, not just the configured one.
  * Each Page is read with its own token, and each form is tagged with the Page
  * it belongs to so the UI can group them and the sync can pick the right token.
