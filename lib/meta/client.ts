@@ -342,6 +342,36 @@ export async function getCampaign(campaignId: string): Promise<MetaCampaign> {
   })
 }
 
+/**
+ * EVERYTHING THIS CAMPAIGN EVER DID — a total that cannot shrink.
+ *
+ * `getCampaignInsights` reads a rolling 30 days, which is right for judging
+ * how a LIVE campaign is doing now and wrong for the question a broker asks
+ * about a finished one: how many leads did this bring?
+ *
+ * A rolling window has a property nobody expects until they see it. Switch a
+ * campaign off and its results start draining out of the window a day at a
+ * time; thirty days after the last lead the campaign reads zero leads and zero
+ * spend, as though it had never run. The work is not gone from Meta — it has
+ * simply fallen out of the question we were asking.
+ *
+ * `maximum` is Meta's lifetime preset. The number it returns only ever goes up.
+ *
+ * Returns null rather than throwing — a caller falls back to the rolling
+ * window instead of losing the page.
+ */
+export async function getCampaignLifetimeInsights(campaignId: string): Promise<MetaInsights | null> {
+  try {
+    const res = await apiFetch<{ data: MetaInsights[] }>(`/${campaignId}/insights`, undefined, {
+      fields: 'impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm,frequency,reach',
+      date_preset: 'maximum',
+    })
+    return res.data?.[0] ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function getCampaignInsights(campaignId: string): Promise<MetaInsights | null> {
   const res = await apiFetch<{ data: MetaInsights[] }>(`/${campaignId}/insights`, undefined, {
     // frequency/reach are what make creative fatigue detectable at all —
