@@ -8,6 +8,8 @@ import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { getAudience } from '@/lib/freehold/audiences'
 import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
+import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
+import { adEndTimeForPermit, endTimeHasPassed } from '@/lib/freehold/permit-schedule'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
 import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
 import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
@@ -221,6 +223,39 @@ export async function POST(req: NextRequest) {
   // launch proceeds unchanged. Under full autopilot, a redundant duplicate
   // launched during the learning phase is silently HELD (the identical campaign
   // is already working; a competitor would just burn credits in the same auction).
+  // ── THE PERMIT WINDOW IS THE AD'S WINDOW ────────────────────────────────
+  //
+  // trakheesi.ts states the rule: an ad running past its permit is as
+  // non-compliant as one that never had a permit. Until now the Ads Machine
+  // was the only thing enforcing it, on a cron that runs twice a day — so a
+  // lapsed permit could keep advertising for up to twelve hours — and this
+  // manual launch path enforced nothing at all.
+  //
+  // Meta enforces it exactly, for free, whether or not anything of ours is
+  // awake: end_time on the ad set. Read from the listing here rather than
+  // trusted from the browser, because a compliance deadline the client can
+  // edit is not a deadline.
+  let permitEndTime: string | undefined
+  try {
+    const listing = await getInventoryPropertyBySlug(String(body.listingId))
+    const end = adEndTimeForPermit(listing?.permitExpiry)
+    if (end && endTimeHasPassed(end)) {
+      // We KNOW this one has lapsed. 'missing' and 'no_expiry' are different:
+      // they are the absence of evidence, and refusing on those would block
+      // launches over a blank field. Only a date that has actually passed is
+      // grounds to stop someone.
+      return NextResponse.json({
+        error: `The Trakheesi permit for this listing expired on ${String(listing?.permitExpiry).slice(0, 10)}. Renew it before advertising this property.`,
+        type: 'validation',
+      }, { status: 400 })
+    }
+    permitEndTime = end ?? undefined
+  } catch {
+    // Inventory unreachable is not grounds to block a launch — but it is also
+    // not grounds to invent a deadline. No end time, and the Ads Machine's own
+    // permit gate remains the backstop it has always been.
+  }
+
   const projectSlug = String(body.listingId)
   const intent: CampaignIntent = {
     projectSlug,
@@ -295,6 +330,8 @@ export async function POST(req: NextRequest) {
       placementMode:    body.placementMode === 'manual' ? 'manual' : undefined,
       manualPlacements: Array.isArray(body.manualPlacements) ? body.manualPlacements.map(String) : undefined,
       leadLanguages:    Array.isArray(body.leadLanguages) ? body.leadLanguages.map(String) : undefined,
+      // The permit window, applied to every ad set this launch creates.
+      endTimeIso:       permitEndTime,
     })
 
     // Launch succeeded → the ad WILL serve, so the reservation is now committed.

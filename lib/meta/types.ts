@@ -93,6 +93,8 @@ export interface MetaAdSet {
   targeting?: Record<string, unknown>
   /** Present when the campaign detail read attaches them. */
   ads?: MetaAd[]
+  /** When delivery stops. Ours carry the Trakheesi permit window. */
+  end_time?: string
   /** Meta's own learning state: LEARNING | SUCCESS | FAIL. FAIL means it
    *  stopped trying to learn at this volume, which "Active" never showed. */
   learning_stage_info?: { status?: string; last_sig_edit_ts?: number; attribution_window_days?: number }

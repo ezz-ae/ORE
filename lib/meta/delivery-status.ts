@@ -31,7 +31,8 @@
 export type DeliveryState =
   | 'inReview' | 'rejected' | 'billing' | 'issue'
   | 'learning' | 'learningLimited' | 'delivering' | 'notDelivering'
-  | 'pausedByAdSet' | 'pausedByCampaign' | 'paused' | 'archived' | 'unknown'
+  | 'pausedByAdSet' | 'pausedByCampaign' | 'paused' | 'archived'
+  | 'finished' | 'unknown'
 
 export type DeliveryTone = 'good' | 'working' | 'idle' | 'bad'
 
@@ -47,6 +48,10 @@ export const LEARNING_TARGET = 50
 
 const TONE: Record<DeliveryState, DeliveryTone> = {
   delivering: 'good',
+  // An ad set that reached its end date did what it was told. Reading it as a
+  // fault would put the Trakheesi permit stop — the thing we WANT to happen —
+  // in the same red as an ad reaching nobody.
+  finished: 'idle',
   learning: 'working',
   inReview: 'working',
   learningLimited: 'bad',
@@ -76,6 +81,15 @@ export interface DeliveryInput {
    * distinction "Active" erased.
    */
   impressions?: number | null
+  /**
+   * The ad set's own end_time, when it has one. Ours carry the Trakheesi
+   * permit window, so an ad set past its end stopped ON PURPOSE — without
+   * this it lands in `notDelivering`, which this file's own header calls the
+   * most alarming state in the list.
+   */
+  endTime?: string | null
+  /** Injected for tests; the clock is never read implicitly. */
+  now?: Date
 }
 
 export function deliveryOf(input: DeliveryInput): Delivery {
@@ -98,7 +112,14 @@ export function deliveryOf(input: DeliveryInput): Delivery {
       default:                     return raw ? 'unknown' : 'unknown'
     }
 
-    // ACTIVE is where the real answer lives.
+    // ACTIVE is where the real answer lives — but an ad set past its end date
+    // is finished, whatever Meta still calls it. Checked first, because every
+    // other ACTIVE answer below would be a wrong one.
+    if (input.endTime) {
+      const end = Date.parse(input.endTime)
+      if (Number.isFinite(end) && end <= (input.now ?? new Date()).getTime()) return 'finished'
+    }
+
     const stage = String(input.learningStage ?? '').toUpperCase()
     if (stage === 'FAIL' || stage === 'LEARNING_LIMITED') return 'learningLimited'
     if (stage === 'LEARNING') return 'learning'

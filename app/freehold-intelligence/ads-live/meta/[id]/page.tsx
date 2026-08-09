@@ -731,6 +731,7 @@ export default function CampaignCommandPage() {
                           status: a.status,
                           learningStage: a.learning_stage_info?.status,
                           results: leadsFrom(data.insights ?? null),
+                          endTime: a.end_time,
                         })} />
                         <div className="truncate text-sm font-semibold text-slate-100">{a.name}</div>
                       </div>
