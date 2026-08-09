@@ -12,6 +12,7 @@ import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { recordLostMark } from '@/lib/freehold/lost-burst'
 import { LostBurstNudge } from '@/components/freehold/lost-burst-nudge'
 import { useT } from '@/lib/i18n/provider'
+import { Monogram } from '@/components/freehold/monogram'
 
 // ─── Stage config ──────────────────────────────────────────────────────────────
 
@@ -202,9 +203,7 @@ export default function CrmBoardPage() {
                     >
                       {/* Avatar + name */}
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-surface-2 text-[10px] font-bold text-slate-400">
-                          {initials(lead.name)}
-                        </div>
+                        <Monogram name={lead.name} size={28} round="lg" />
                         <Link
                           href={`/freehold-intelligence/crm/leads/${lead.id}`}
                           onClick={e => e.stopPropagation()}

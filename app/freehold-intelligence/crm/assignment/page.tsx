@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { CRMInboxLead, CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
+import { Monogram } from '@/components/freehold/monogram'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
 
@@ -166,9 +167,7 @@ function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
   return (
     <div className="rounded-[18px] border border-line bg-ink p-4">
       <div className="flex items-center gap-3">
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-semibold ${agentAvatarClass(agent.status)}`}>
-          {agent.initials}
-        </div>
+        <Monogram name={agent.name} size={36} round="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-semibold text-white truncate">{agent.name}</span>

@@ -7,6 +7,7 @@ import { type CRMAgentCapacity } from '@/src/features/freehold-intelligence/serv
 import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { TeamSignpost } from '@/components/freehold/team-signpost'
+import { Monogram } from '@/components/freehold/monogram'
 
 const STATUS_CONFIG = {
   available:    { labelKey: 'crm.status.available',  classes: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25' },
@@ -167,9 +168,7 @@ export default function CrmAgentsPage() {
                   <div key={agent.id} className="rounded-[24px] border border-line bg-surface p-5 transition hover:border-line-strong sm:p-7">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
-                          {agent.initials}
-                        </div>
+                        <Monogram name={agent.name} size={56} round="2xl" />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2.5">
                             <Link

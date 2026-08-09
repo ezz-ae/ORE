@@ -18,6 +18,7 @@ import { useThemeMode } from '@/lib/freehold/use-theme-mode'
 import { WhatsNew, WhatsNewMenuButton } from '@/components/freehold/whats-new'
 import { PrefsSync, saveUserPref } from '@/components/freehold/prefs-sync'
 import { CommandNav } from '@/components/freehold/command-nav'
+import { Monogram } from '@/components/freehold/monogram'
 
 const HOME_HREF = '/freehold-intelligence'
 
@@ -190,12 +191,7 @@ export function SpacesNav() {
           data-coach="user-menu"
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.06]"
         >
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-            style={{ backgroundColor: role ? `${ROLE_COLORS[role]}22` : '#33415544', color: role ? ROLE_COLORS[role] : '#94A3B8' }}
-          >
-            {user?.initials ?? '··'}
-          </span>
+          <Monogram name={user?.name ?? 'Account'} size={28} />
           <span className="hidden text-start sm:block">
             <span className="block text-xs font-semibold leading-tight text-slate-100">{user?.name ?? 'Account'}</span>
             <span className="block text-[10px] leading-tight" style={{ color: role ? ROLE_COLORS[role] : '#64748B' }}>

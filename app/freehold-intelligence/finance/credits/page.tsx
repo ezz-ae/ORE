@@ -12,6 +12,7 @@ import {
   CREDIT_TIERS, TIER_MONTHLY_QUOTA, isCycleGrantReference, type CreditTier,
 } from '@/lib/freehold/credits-shared'
 import { useT } from '@/lib/i18n/provider'
+import { Monogram } from '@/components/freehold/monogram'
 
 type BrokerBalance = {
   id: string
@@ -218,9 +219,7 @@ export default function AgentCreditsPage() {
 
               {/* Agent identity */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">
-                  {initialsOf(agent.name)}
-                </div>
+                <Monogram name={agent.name} size={40} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-semibold text-white">{agent.name}</div>
                   <div className="mt-0.5 flex items-center gap-2">

@@ -24,6 +24,7 @@ import {
   type Member, type AgentMetric, type BrokerBalance, type LedgerEntry, type AdAllocation,
 } from '../_lib'
 import { ProfileTab } from './_profile-tab'
+import { Monogram } from '@/components/freehold/monogram'
 
 // ─── Wire types ──────────────────────────────────────────────────────────────
 
@@ -234,9 +235,7 @@ export default function TeamMemberPage() {
       <PageHeader
         title={
           <span className="flex flex-wrap items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-slate-200">
-              {member?.initials ?? initialsOf(name)}
-            </span>
+            <Monogram name={name} size={40} />
             {name}
             <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ROLE_CHIP[dbRole] ?? ROLE_CHIP.broker}`}>
               {t(`role.${dbRole}`)}
