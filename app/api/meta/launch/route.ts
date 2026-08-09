@@ -7,6 +7,7 @@ import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { getAudience } from '@/lib/freehold/audiences'
+import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
 import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
 import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
@@ -173,11 +174,18 @@ export async function POST(req: NextRequest) {
   // spec on the way out, and the wizard then spread `undefined` into
   // `targeting` and launched a campaign with no audience at all. The recipe
   // staying server-side only works if the server can also USE it.
+  // The audience this launch came from, kept for the record. A fingerprint of
+  // the targeting can spot a duplicate; only the identity answers "which of
+  // our audiences produces buyers".
+  let launchedAudienceKey = ''
+  let launchedAudienceName = ''
   if (typeof body.audienceId === 'string' && body.audienceId) {
     const saved = await getAudience(body.audienceId)
     if (!saved) {
       return NextResponse.json({ error: 'That audience no longer exists', type: 'validation' }, { status: 400 })
     }
+    launchedAudienceKey = `saved:${saved.id}`
+    launchedAudienceName = saved.name
     // The wizard still owns placements; everything else comes from the
     // audience, whose definition is the whole reason it was attached.
     body.targeting = {
@@ -193,6 +201,10 @@ export async function POST(req: NextRequest) {
     if (!preset) {
       return NextResponse.json({ error: 'That audience no longer exists', type: 'validation' }, { status: 400 })
     }
+    launchedAudienceKey = `ready:${preset.id}`
+    // A ready-buyer's display name lives in the dictionaries, keyed by id —
+    // storing an English label here would freeze it out of Arabic and Russian.
+    launchedAudienceName = preset.id
     const plan = planPattern(parsePattern({ ...preset.pattern, name: preset.id }), [...SUPPORTED_LEAD_LANGUAGES])
     body.targeting = {
       ...plan.targeting,
@@ -295,6 +307,19 @@ export async function POST(req: NextRequest) {
       await attributeCampaign(result.campaignId)
       await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
       await recordCampaignProject(result.campaignId, projectSlug) // link for the router
+      // WHICH AUDIENCE THIS CAME FROM. The launch resolves a named audience
+      // into a targeting spec and then, until now, forgot the name — so the
+      // one question worth asking before the next launch ("which of these
+      // actually brought buyers?") had no answer. Recorded here, read back
+      // against the CRM's own outcomes.
+      if (launchedAudienceKey) {
+        await rememberCampaignAudience({
+          campaignId: result.campaignId,
+          campaignName: body.campaignName ?? '',
+          audienceKey: launchedAudienceKey,
+          audienceName: launchedAudienceName || launchedAudienceKey,
+        })
+      }
       await recordLaunchDecision(result.campaignId)
       // Persist the wizard's autopilot policy — the autopilot pass reads it.
       if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {

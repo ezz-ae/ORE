@@ -361,6 +361,23 @@ export default function NewCampaignPage() {
   // wizard's placements still apply. ?audience=<id> pre-attaches.
   const [savedAudiences, setSavedAudiences] = useState<SavedAudienceOption[]>([])
   const [attachedAudience, setAttachedAudience] = useState<SavedAudienceOption | null>(null)
+  // WHAT EACH AUDIENCE HAS ACTUALLY BROUGHT BACK. A name is a hypothesis;
+  // after a few campaigns it should not have to be. Shown on the chip you are
+  // about to press, and shown for nothing that has never been run.
+  const [audienceRecord, setAudienceRecord] = useState<Record<string, { leads: number; qualified: number; won: number }>>({})
+  useEffect(() => {
+    fetch('/api/freehold/ads/audiences/outcomes', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!Array.isArray(d?.outcomes)) return
+        const map: Record<string, { leads: number; qualified: number; won: number }> = {}
+        for (const o of d.outcomes as Array<{ key: string; leads: number; qualified: number; won: number }>) {
+          map[o.key] = { leads: o.leads, qualified: o.qualified, won: o.won }
+        }
+        setAudienceRecord(map)
+      })
+      .catch(() => {})
+  }, [])
   // A ready-buyer template picked directly — no save-first detour. One pick
   // total: choosing a template clears the saved pick and vice versa.
   const [attachedPreset, setAttachedPreset] = useState<string | null>(null)
@@ -1495,6 +1512,7 @@ export default function NewCampaignPage() {
                 canEdit={canEditLandings}
                 t={t}
                 inputCls={inputCls()}
+                showLanding={activeObjective.dest === 'landing'}
               />
               {form.listingId && (
                 <button type="button" onClick={runDataQuality}
@@ -1706,11 +1724,19 @@ export default function NewCampaignPage() {
               <div className="mt-2 flex flex-wrap gap-2">
                 {READY_BUYERS.map(({ id }) => {
                   const on = attachedPreset === id
+                  const record = audienceRecord[`ready:${id}`]
                   return (
                     <button key={id} type="button"
                       onClick={() => { setAttachedPreset(on ? null : id); if (!on) setAttachedAudience(null) }}
                       className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
                       {t(`lm.aud.ready.${id}.name`)}
+                      {/* Only where there is a record. An audience nobody has
+                          run says nothing rather than "0 · 0". */}
+                      {record && record.leads > 0 && (
+                        <span className="ms-1.5 text-[10px] font-normal text-slate-500">
+                          {t('lm.aud.record', { leads: record.leads, qualified: record.qualified })}
+                        </span>
+                      )}
                     </button>
                   )
                 })}
@@ -1984,19 +2010,27 @@ export default function NewCampaignPage() {
               </p>
             </div>
 
-            <div>
-              <Label>{t('lm.newCampaign.s3.label.landingUrl')} <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span></Label>
-              <input
-                className={inputCls(!form.landingUrl && !form.listingId)}
-                value={form.landingUrl}
-                onChange={(e) => update('landingUrl', e.target.value)}
-                placeholder={t('lm.landingUrlPlaceholder')}
-              />
-            </div>
+            {/* A Meta instant-form ad collects the lead ON Meta. There is no
+                landing page in it at all, so asking for one — and blocking
+                Continue until it is filled — was asking for something that
+                does not exist in the ad being built. */}
+            {activeObjective.dest === 'landing' && (
+              <div>
+                <Label>{t('lm.newCampaign.s3.label.landingUrl')} <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span></Label>
+                <input
+                  className={inputCls(!form.landingUrl && !form.listingId)}
+                  value={form.landingUrl}
+                  onChange={(e) => update('landingUrl', e.target.value)}
+                  placeholder={t('lm.landingUrlPlaceholder')}
+                />
+              </div>
+            )}
 
             {/* Layer 4 — buyer intent carried on the click. Optional: appends
                 ?intent= to the landing URL at launch so the ONE landing page
-                reorders its real sections for this buyer profile. */}
+                reorders its real sections for this buyer profile. Meaningless
+                where there is no click and no landing page. */}
+            {activeObjective.dest === 'landing' && (
             <div>
               <Label>{t('lm.newCampaign.s3.label.clickIntent')}</Label>
               <select
@@ -2011,6 +2045,7 @@ export default function NewCampaignPage() {
               </select>
               <p className="mt-1 text-xs text-slate-500">{t('lm.newCampaign.s3.clickIntentHint')}</p>
             </div>
+            )}
 
             <div data-coach="wiz-creative">
               <Label>{t('lm.newCampaign.s3.label.imageUrl')}</Label>
@@ -2746,7 +2781,8 @@ export default function NewCampaignPage() {
             disabled={
               (step === 1 && (!form.listingId || !form.campaignName)) ||
               (step === 2 && (form.dailyBudgetAED < 50 || needsAudience)) ||
-              (step === 3 && (!form.primaryText || !form.headlines[0] || (!form.landingUrl && !form.listingId)))
+              (step === 3 && (!form.primaryText || !form.headlines[0]
+                || (activeObjective.dest === 'landing' && !form.landingUrl && !form.listingId)))
             }
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-40 disabled:cursor-not-allowed"
           >

@@ -27,6 +27,17 @@ interface Props {
   canEdit: boolean
   t: (key: string, vars?: Record<string, string | number>) => string
   inputCls: string
+  /**
+   * Does this ad actually go to a landing page?
+   *
+   * A Meta instant-form ad collects the lead ON Meta and never touches a
+   * landing page, so the landing status, preview and edit affordances are not
+   * merely noise there — they imply a landing page is required, which is why
+   * "I have to choose a landing page and can't avoid it" was the first thing
+   * anyone hit when launching a form ad. Defaults true: every existing caller
+   * IS a landing ad.
+   */
+  showLanding?: boolean
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -37,7 +48,7 @@ const STATUS_STYLE: Record<string, string> = {
 // Sentinel developer key so blank-developer projects sort last under "Other".
 const NO_DEV = '￿'
 
-export function CampaignListingPicker({ listings, value, onChange, loading, canEdit, t, inputCls }: Props) {
+export function CampaignListingPicker({ listings, value, onChange, loading, canEdit, t, inputCls, showLanding = true }: Props) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -170,7 +181,8 @@ export function CampaignListingPicker({ listings, value, onChange, loading, canE
                             <span className="block truncate text-[11px] text-slate-500">{l.area}</span>
                           </span>
                         </button>
-                        {statusBadge(l)}
+                        {showLanding && statusBadge(l)}
+                        {showLanding && (
                         <a
                           href={previewHref(l)}
                           target="_blank"
@@ -182,7 +194,8 @@ export function CampaignListingPicker({ listings, value, onChange, loading, canE
                         >
                           <Eye className="h-4 w-4" />
                         </a>
-                        {edit && (
+                        )}
+                        {showLanding && edit && (
                           <a
                             href={edit}
                             target="_blank"
