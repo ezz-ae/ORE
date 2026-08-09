@@ -34,6 +34,7 @@ import type {
 import { mergeLeadLanguages } from './lead-language'
 import { questionsForMeta } from './form-templates'
 import { explainMetaError } from './error-advice'
+import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
@@ -577,20 +578,10 @@ function toOdaxObjective(obj: MetaCampaignObjective, hasPixel: boolean, destinat
   }
 }
 
-function objectiveToOptimizationGoal(obj: MetaCampaignObjective, hasPixel: boolean, destination?: AdDestination): MetaOptimizationGoal {
-  // On-ad instant form optimizes on the form itself; call ads on call quality.
-  if (destination === 'form')  return 'LEAD_GENERATION'
-  if (destination === 'phone') return 'QUALITY_CALL'
-  switch (obj) {
-    case 'LEAD_GENERATION':
-    case 'CONVERSIONS':
-      // With a pixel we optimize on real conversion signal; without one,
-      // landing-page views is the best available quality proxy.
-      return hasPixel ? 'OFFSITE_CONVERSIONS' : 'LANDING_PAGE_VIEWS'
-    default:
-      return 'LINK_CLICKS'
-  }
-}
+// The goal lives in lib/meta/optimization-goal.ts — client-safe, so the wizard
+// can SHOW what Meta will optimise for instead of the operator discovering it
+// from the shape of the results. One definition: a second copy here is a copy
+// that disagrees with the screen the day either is edited.
 
 export async function createAdSet(params: {
   campaignId: string

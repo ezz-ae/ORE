@@ -39,6 +39,7 @@ import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCr
 import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, groupFormsByPage, type FormTemplateKey } from '@/lib/meta/form-templates'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
+import { objectiveToOptimizationGoal, capUnitFor } from '@/lib/meta/optimization-goal'
 import { explainMetaError, splitLaunchStep } from '@/lib/meta/error-advice'
 
 // A saved audience from the Audiences tab, attachable to this launch.
@@ -219,10 +220,14 @@ function Label({ children }: { children: React.ReactNode }) {
 // success screen. The audience's REAL reach comes from Meta and is already
 // attached to the picked audience; when there isn't one, the card is not
 // shown. A blank is honest, an invented range is not.
-function estimateMonthlyResults(dailyBudgetAED: number, cplCapAED: number): number {
-  if (cplCapAED <= 0) return 0
-  return Math.max(0, Math.floor((dailyBudgetAED * 30) / cplCapAED))
-}
+//
+// There was an "expected results" card here too: budget × 30 ÷ the cost cap.
+// It was wrong in three ways at once. The cap is a CAP, not a forecast — Meta
+// delivering under it says nothing about volume. On a click-goal ad set the
+// cap was per click, so the division mixed units entirely. And the arithmetic
+// ran backwards: TIGHTENING the cap made the product promise MORE leads, when
+// a tighter cost cap throttles delivery. The real number lives on the review
+// step now, derived from the budget and the learning threshold.
 const fmtReach = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n))
 
 // Appends one AI copy variant to a headlines/descriptions list for Meta's
@@ -740,6 +745,29 @@ export default function NewCampaignPage() {
   // option, so a demo/disconnected session never blocks the wizard.
   const [pixels, setPixels] = useState<MetaPixel[]>([])
   const [pixelsLoading, setPixelsLoading] = useState(false)
+
+  // WHAT META WILL ACTUALLY OPTIMISE FOR.
+  //
+  // Derived, never chosen — and it decides what the cost cap caps. The same
+  // rule the launch uses, imported rather than re-typed, so the screen and the
+  // payload can never disagree. 'event' (the roadshow route) has no Meta
+  // destination at all and never reaches a launch, so it reads as undefined.
+  const optimizationGoal = objectiveToOptimizationGoal(
+    activeObjective.meta ?? 'LINK_CLICKS',
+    !!form.pixelId || pixels.length > 0,
+    activeObjective.dest === 'event' ? undefined : activeObjective.dest,
+  )
+  const capUnit = capUnitFor(optimizationGoal)
+
+  // A cost cap only means what the label says when Meta is optimising for the
+  // thing being capped. Switching to an objective whose goal is clicks or
+  // views drops the lead-shaped default rather than leaving AED 150 sitting
+  // there as a cap on a link click — thirty times the going rate, which is no
+  // cap at all, under a label promising one.
+  useEffect(() => {
+    if (capUnit === 'lead' || capUnit === 'call') return
+    setForm((prev) => (prev.cplCapAED > 0 ? { ...prev, cplCapAED: 0 } : prev))
+  }, [capUnit])
   useEffect(() => {
     setPixelsLoading(true)
     fetch('/api/meta/pixels', { cache: 'no-store' })
@@ -1335,7 +1363,6 @@ export default function NewCampaignPage() {
   // becomes the real metric once Meta reports the first delivery.
   if (launched) {
     const realReach = attachedAudience?.reach ?? null
-    const expected = estimateMonthlyResults(form.dailyBudgetAED, form.cplCapAED)
     const enhanceLabel = AUTO_ENHANCE_OPTIONS.find((o) => o.value === form.autoEnhance)?.labelKey ?? 'lm.newCampaign.s4.autoEnhance.approval'
     const resultCards = [
       // Meta's own number for the audience that was actually attached, or no
@@ -1343,8 +1370,10 @@ export default function NewCampaignPage() {
       ...(realReach && realReach.upper > 0
         ? [{ label: t('lm.newCampaign.result.potentialReach'), value: `${fmtReach(realReach.lower)}–${fmtReach(realReach.upper)}`, note: t('lm.newCampaign.result.potentialReachNote'), tone: 'text-gold' }]
         : []),
-      { label: t('lm.newCampaign.result.expectedResults'), value: expected > 0 ? `~${expected}/${t('lm.newCampaign.result.perMonth')}` : '—', note: t('lm.newCampaign.result.expectedResultsNote'), tone: 'text-emerald-400' },
-      { label: t('lm.newCampaign.result.cplCap'), value: `AED ${form.cplCapAED.toLocaleString()}`, note: t('lm.newCampaign.result.cplCapNote'), tone: 'text-white' },
+      // The cap, in the unit it actually caps — and only when one is set.
+      ...(form.cplCapAED > 0
+        ? [{ label: t(`lm.newCampaign.s4.label.cap.${capUnit}`), value: `AED ${form.cplCapAED.toLocaleString()}`, note: t(`lm.newCampaign.s4.capHint.${capUnit}`), tone: 'text-white' }]
+        : []),
       { label: t('lm.newCampaign.result.autoEnhance'), value: t(enhanceLabel), note: t('lm.newCampaign.result.autoEnhanceNote'), tone: 'text-violet-300' },
     ]
     return (
@@ -2740,9 +2769,16 @@ export default function NewCampaignPage() {
               </select>
             </div>
 
-            {/* CPL cap — the number that actually matters before there's a real CPL. */}
+            {/* THE COST CAP, IN THE UNIT IT ACTUALLY CAPS.
+                Meta caps the cost of whatever it was told to optimise for, and
+                that was derived from the objective, not chosen. Printing "per
+                lead" over a cap on link clicks is the difference between a
+                control and a decoration. */}
             <div>
-              <Label>{t('lm.newCampaign.s4.label.cplCap')}</Label>
+              <Label>{t(`lm.newCampaign.s4.label.cap.${capUnit}`)}</Label>
+              <p className="mb-1.5 text-xs text-slate-500">
+                {t('lm.newCampaign.s4.optimisingFor')} {t(`lm.newCampaign.s4.goal.${capUnit}`)}
+              </p>
               <div className="relative">
                 <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">AED</span>
                 <input
@@ -2752,7 +2788,9 @@ export default function NewCampaignPage() {
                   onChange={(e) => update('cplCapAED', Math.max(0, parseInt(e.target.value) || 0))}
                 />
               </div>
-              <p className="mt-1 text-sm text-slate-500">{t('lm.newCampaign.s4.cplCapHint')}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {form.cplCapAED > 0 ? t(`lm.newCampaign.s4.capHint.${capUnit}`) : t('lm.newCampaign.s4.capOff')}
+              </p>
             </div>
 
             {/* Auto-enhancement — let the AI act, recommend, or stay out. */}
