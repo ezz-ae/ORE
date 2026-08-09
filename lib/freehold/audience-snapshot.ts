@@ -26,6 +26,7 @@
  */
 import { query, ensureOnce } from '@/lib/db'
 import type { CampaignTargeting } from '@/lib/meta/types'
+import { QUALIFIED_STATUSES } from '@/lib/freehold/lead-stages'
 
 export interface AudienceSnapshot {
   leadId: string
@@ -226,10 +227,10 @@ export interface SnapshotOutcomeRow {
   won: boolean
 }
 
-/** CRM statuses that count as a lead having gone somewhere. Mirrors
- *  campaign-quality's QUALIFIED_STATUSES so one lead is never "good" in one
- *  screen and "not yet" in another. */
-const PROGRESSED = ['qualified', 'viewing', 'negotiation', 'converted', 'closed']
+/** CRM statuses that count as a lead having gone somewhere. THE list, not a
+ *  copy of it — a comment promising two lists match is a promise that expires
+ *  the first time one of them is edited. */
+const PROGRESSED = [...QUALIFIED_STATUSES]
 
 export async function snapshotOutcomes(): Promise<SnapshotOutcomeRow[]> {
   try {
