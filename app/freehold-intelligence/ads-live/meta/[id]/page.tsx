@@ -20,7 +20,11 @@ import { deliveryOf } from '@/lib/meta/delivery-status'
 // The campaign read attaches each ad set's ads; MetaAdSet carries them now,
 // so there is one definition of an ad's status instead of two that drift.
 type AdSetRow = MetaAdSet
-type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
+// `insights` is a rolling 30 days — right for judging a LIVE campaign.
+// `lifetime` is everything it ever did, and is what the headline numbers show:
+// a rolling window drains after a campaign is switched off, and thirty days
+// past its last lead the campaign reads zero, as though it never ran.
+type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; lifetime?: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
 type Analysis = { working: string[]; blocking: string[]; actions: string[] }
 type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number; pointValue: number | null }
 import type { PlacementAudit } from '@/lib/freehold/placement-audit'
@@ -158,7 +162,7 @@ export default function CampaignCommandPage() {
       if (res.status === 404) { setNotFound(true); return }
       const d = await res.json()
       if (!res.ok || !d.campaign) { setNotFound(true); return }
-      setData({ campaign: d.campaign, insights: d.insights ?? null, adSets: Array.isArray(d.adSets) ? d.adSets : [], demo: !!d.demo })
+      setData({ campaign: d.campaign, insights: d.insights ?? null, lifetime: d.lifetime ?? null, adSets: Array.isArray(d.adSets) ? d.adSets : [], demo: !!d.demo })
       // Lead-quality is computed from OUR CRM funnel (independent of Meta's connection).
       fetch(`/api/freehold/ads/campaign-quality?id=${encodeURIComponent(id)}&name=${encodeURIComponent(String(d.campaign.name ?? ''))}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null)).then((q) => { if (q?.quality) setQuality(q.quality) }).catch(() => {})
@@ -172,7 +176,18 @@ export default function CampaignCommandPage() {
   }, [id])
 
   const kpis = useMemo(() => {
-    const ins = data?.insights
+    // THE HEADLINE NUMBERS ARE LIFETIME, and they were not.
+    //
+    // Every insights read in this system uses a rolling 30 days, which is the
+    // right window for judging a campaign that is running. It is the wrong one
+    // for "how many leads did this bring?": switch a campaign off and its
+    // results drain out of the window a day at a time until, thirty days after
+    // the last lead, the page reads zero. The work was never lost — the
+    // question had simply moved on without it.
+    //
+    // Falls back to the rolling window when Meta returns no lifetime figure,
+    // which is better than an empty tile and is still a real number.
+    const ins = data?.lifetime ?? data?.insights
     const spend = Number(ins?.spend) || 0
     const impressions = Number(ins?.impressions) || 0
     const clicks = Number(ins?.clicks) || 0
@@ -650,8 +665,16 @@ export default function CampaignCommandPage() {
         </div>
       )}
 
-      {/* Live KPIs — phones keep the daily trio (spend · leads · CPL) */}
-      <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
+      {/* KPIs — LIFETIME, phones keep the daily trio (spend · leads · CPL).
+          Labelled, because a total and a 30-day figure are different claims
+          and a number with no window on it invites the reader to assume the
+          wrong one. */}
+      <div className="mt-6 flex items-center justify-between gap-2">
+        <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+          {data.lifetime ? t('lm.meta.kpi.sinceLaunch') : t('lm.meta.kpi.last30')}
+        </div>
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
         {[
           { label: t('lm.meta.kpi.spend'),       value: kpis.spend > 0 ? fmtAED(kpis.spend) : '—' },
           { label: t('lm.meta.col.clicks'),      value: kpis.clicks > 0 ? kpis.clicks.toLocaleString() : '—', lite: false },

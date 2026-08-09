@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { getCampaign, getCampaignInsights, listAdSets, listAds, updateCampaignStatus, deleteCampaign } from '@/lib/meta/client'
+import { getCampaign, getCampaignInsights, getCampaignLifetimeInsights, listAdSets, listAds, updateCampaignStatus, deleteCampaign } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { getLocalCampaign, updateLocalCampaignStatus } from '@/lib/meta/local-store'
 import { authorizeDelete } from '@/lib/freehold/authority-db'
@@ -15,9 +15,20 @@ export async function GET(
   if ('res' in __auth) return __auth.res
   try {
     const { id } = await params
-    const [campaign, insights, adSets] = await Promise.all([
+    // TWO WINDOWS, ON PURPOSE.
+    //
+    // `insights` is a rolling 30 days — the right read for judging a LIVE
+    // campaign, and what the frequency and placement panels compare against.
+    //
+    // `lifetime` is everything it ever did. A rolling window drains after a
+    // campaign is switched off: thirty days past the last lead it reads zero,
+    // as though the campaign never ran. "How many leads did this bring?" is a
+    // question about the whole life of the campaign, and its answer must never
+    // go down.
+    const [campaign, insights, lifetime, adSets] = await Promise.all([
       getCampaign(id),
       getCampaignInsights(id),
+      getCampaignLifetimeInsights(id),
       listAdSets(id),
     ])
 
@@ -29,7 +40,7 @@ export async function GET(
       }),
     )
 
-    return NextResponse.json({ campaign, insights, adSets: adSetsWithAds })
+    return NextResponse.json({ campaign, insights, lifetime, adSets: adSetsWithAds })
   } catch (err) {
     if (err instanceof MetaConfigError) {
       // Not connected → read the local store so demo/in-app campaigns open.
