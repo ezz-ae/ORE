@@ -15,7 +15,7 @@ import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
   Monitor, Sparkles, ChevronRight, ChevronDown, Sliders, Crosshair, Gauge, MessageCircle, Phone,
-  FolderOpen, Upload, X, Copy, RefreshCw, Plus,
+  FolderOpen, Upload, X, Copy, RefreshCw, Plus, AlertTriangle,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -38,6 +38,7 @@ interface WizardListing {
 import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel, CreateLeadFormPayload } from '@/lib/meta/types'
 import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTemplateKey } from '@/lib/meta/form-templates'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
+import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { explainMetaError, splitLaunchStep } from '@/lib/meta/error-advice'
 
 // A saved audience from the Audiences tab, attachable to this launch.
@@ -212,11 +213,12 @@ function Label({ children }: { children: React.ReactNode }) {
 // Honest projections for a just-fired campaign — clearly labelled as ESTIMATES,
 // never presented as delivered numbers. They give way to real reach/leads/CPL
 // once Meta reports the first delivery.
-function estimatePotentialReach(countryCount: number, interestCount: number): { min: number; max: number } {
-  // Broad (no interest constraint) hunts a far larger pool than a refined stack.
-  const base = Math.max(1, countryCount) * (interestCount > 0 ? 45_000 : 130_000)
-  return { min: Math.round((base * 0.6) / 1000) * 1000, max: Math.round((base * 1.15) / 1000) * 1000 }
-}
+//
+// There used to be a "potential reach" here computed as countries × 45,000. It
+// was a number nobody could stand behind, printed in front of the client on a
+// success screen. The audience's REAL reach comes from Meta and is already
+// attached to the picked audience; when there isn't one, the card is not
+// shown. A blank is honest, an invented range is not.
 function estimateMonthlyResults(dailyBudgetAED: number, cplCapAED: number): number {
   if (cplCapAED <= 0) return 0
   return Math.max(0, Math.floor((dailyBudgetAED * 30) / cplCapAED))
@@ -1290,11 +1292,15 @@ export default function NewCampaignPage() {
   // itself, and the auto-enhancement mode. Each estimate is labelled as such and
   // becomes the real metric once Meta reports the first delivery.
   if (launched) {
-    const reach = estimatePotentialReach(form.countries.length, form.interestIds.length)
+    const realReach = attachedAudience?.reach ?? null
     const expected = estimateMonthlyResults(form.dailyBudgetAED, form.cplCapAED)
     const enhanceLabel = AUTO_ENHANCE_OPTIONS.find((o) => o.value === form.autoEnhance)?.labelKey ?? 'lm.newCampaign.s4.autoEnhance.approval'
     const resultCards = [
-      { label: t('lm.newCampaign.result.potentialReach'), value: `${fmtReach(reach.min)}–${fmtReach(reach.max)}`, note: t('lm.newCampaign.result.potentialReachNote'), tone: 'text-gold' },
+      // Meta's own number for the audience that was actually attached, or no
+      // card at all.
+      ...(realReach && realReach.upper > 0
+        ? [{ label: t('lm.newCampaign.result.potentialReach'), value: `${fmtReach(realReach.lower)}–${fmtReach(realReach.upper)}`, note: t('lm.newCampaign.result.potentialReachNote'), tone: 'text-gold' }]
+        : []),
       { label: t('lm.newCampaign.result.expectedResults'), value: expected > 0 ? `~${expected}/${t('lm.newCampaign.result.perMonth')}` : '—', note: t('lm.newCampaign.result.expectedResultsNote'), tone: 'text-emerald-400' },
       { label: t('lm.newCampaign.result.cplCap'), value: `AED ${form.cplCapAED.toLocaleString()}`, note: t('lm.newCampaign.result.cplCapNote'), tone: 'text-white' },
       { label: t('lm.newCampaign.result.autoEnhance'), value: t(enhanceLabel), note: t('lm.newCampaign.result.autoEnhanceNote'), tone: 'text-violet-300' },
@@ -1373,6 +1379,24 @@ export default function NewCampaignPage() {
   // rail iframes the same deployment (works in preview and production alike).
   const lpMatch = form.landingUrl.match(/\/lp\/[A-Za-z0-9-]+/)
   const lpPath = lpMatch ? lpMatch[0] : ''
+
+  // HOW MANY AD SETS THIS BUDGET WILL BE DIVIDED BETWEEN.
+  //
+  // A lead-form launch splits into one ad set per customised placement plus
+  // one for the rest — control that costs nothing when the budget can feed it
+  // and everything when it cannot, because each ad set then needs its own 50
+  // results a week to stop guessing.
+  const plannedAdSets = (() => {
+    if (activeObjective.dest !== 'form' || !supportsPlacementCreative) return 1
+    const customized = PLACEMENT_KEYS.filter(isCustomized).length
+    if (!customized) return 1
+    return customized + (customized < PLACEMENT_KEYS.length ? 1 : 0)
+  })()
+  const fit = checkAudienceFit({
+    dailyBudgetAED: form.dailyBudgetAED,
+    adSets: plannedAdSets,
+    targetCplAED: form.cplCapAED,
+  })
 
   const summaryTiles = [
     { labelKey: 'lm.newCampaign.s4.tileLabel.listing',   value: selectedListing?.projectName ?? form.listingId },
@@ -2504,6 +2528,31 @@ export default function NewCampaignPage() {
                 </div>
               ))}
             </div>
+
+            {/* CAN THIS BUDGET BUY THIS AUDIENCE?
+                Meta needs about 50 results per ad set per week before it stops
+                guessing. Below that the ad set pays the beginner's price AND
+                its numbers are noise — so every verdict drawn from them is
+                noise too. Said before the money is spent, not after. */}
+            {fit.length > 0 && (
+              <div className="rounded-[16px] border border-line bg-surface-2 p-5">
+                <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('lm.fit.title')}</div>
+                <div className="space-y-1.5">
+                  {fit.map((f) => (
+                    <div key={f.key}
+                      className={`flex items-start gap-2 rounded-xl border px-3.5 py-2.5 text-[12.5px] leading-relaxed ${
+                        f.level === 'wrong' ? 'border-rose-400/25 bg-rose-400/[0.07] text-rose-100'
+                        : f.level === 'watch' ? 'border-amber-400/25 bg-amber-400/[0.06] text-amber-100'
+                        : 'border-line bg-surface text-slate-300'}`}>
+                      {f.level === 'wrong' ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        : f.level === 'watch' ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        : <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
+                      <span>{t(`lm.fit.${f.key}`, f.vars)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Creative preview — the actual ad (image + copy), not lines of text */}
             <div className="rounded-[16px] border border-line bg-surface-2 p-5">
