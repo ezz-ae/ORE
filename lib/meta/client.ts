@@ -519,6 +519,11 @@ export async function getReachEstimate(
       ...(targeting.customAudienceIds?.length
         ? { custom_audiences: targeting.customAudienceIds.map((id) => ({ id })) }
         : {}),
+      // The estimate has to see the exclusion too. A reach number that counts
+      // people the ad will never be shown to is not this audience's reach.
+      ...(targeting.excludedCustomAudienceIds?.length
+        ? { excluded_custom_audiences: targeting.excludedCustomAudienceIds.map((id) => ({ id })) }
+        : {}),
       ...(targeting.exclusions && ((targeting.exclusions.interests?.length || 0) + (targeting.exclusions.behaviors?.length || 0) > 0)
         ? {
             exclusions: {
@@ -672,6 +677,11 @@ export async function createAdSet(params: {
   const excludedInterests = t.exclusions?.interests ?? []
   const excludedBehaviors = t.exclusions?.behaviors ?? []
   const customAudienceIds = t.customAudienceIds ?? []
+  // An id cannot be both included and excluded — Meta rejects the ad set, and
+  // the intent is incoherent anyway. Exclusion wins: it is the safer reading
+  // of "do not show this to these people".
+  const excludedCustomAudienceIds = (t.excludedCustomAudienceIds ?? [])
+    .filter((id) => !customAudienceIds.includes(id))
   // Advantage audience is OFF, unconditionally. It used to switch on whenever
   // an ad set had no interest/behaviour/custom-audience definition — which is
   // exactly the broad control arm whose whole job is to measure ONE thing.
@@ -722,6 +732,12 @@ export async function createAdSet(params: {
     ...interestSpec,
     ...(t.locales && t.locales.length > 0
       ? { locales: t.locales }
+      : {}),
+    // Who this must NOT be shown to. Meta keeps audience exclusion in its own
+    // field — `exclusions` above is interests and behaviours only — which is
+    // why "exclude our own CRM" was advice the system could not carry out.
+    ...(excludedCustomAudienceIds.length > 0
+      ? { excluded_custom_audiences: excludedCustomAudienceIds.map((id) => ({ id })) }
       : {}),
     ...(customAudienceIds.length > 0
       ? { custom_audiences: customAudienceIds.map((id) => ({ id })) }

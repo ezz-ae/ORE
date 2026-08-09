@@ -153,6 +153,12 @@ export function combineSpecs(specs: CampaignTargeting[]): CampaignTargeting {
       return i.length + b.length > 0 ? { interests: i, behaviors: b } : undefined
     })(),
     customAudienceIds: [...new Set(specs.flatMap((s) => s.customAudienceIds ?? []))],
+    // Combining audiences is a UNION of who to reach — but an exclusion is
+    // the opposite kind of statement. If any one of the combined audiences
+    // says "not these people", that still holds for the combination: adding
+    // more people to reach is not a reason to start showing the ad to someone
+    // it was explicitly kept from.
+    excludedCustomAudienceIds: [...new Set(specs.flatMap((s) => s.excludedCustomAudienceIds ?? []))],
   }
 }
 
@@ -211,6 +217,7 @@ export function normalizeSpec(raw: unknown): CampaignTargeting {
     narrowing: groups(r.narrowing),
     exclusions: exclusions.interests.length + exclusions.behaviors.length > 0 ? exclusions : undefined,
     customAudienceIds: strings(r.customAudienceIds),
+    excludedCustomAudienceIds: strings(r.excludedCustomAudienceIds),
   }
 }
 

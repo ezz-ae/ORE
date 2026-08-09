@@ -172,6 +172,20 @@ export interface CampaignTargeting {
   exclusions?: { interests?: TargetingEntity[]; behaviors?: TargetingEntity[] }
   /** Meta Custom/Lookalike audience ids to include (from the Audiences tab). */
   customAudienceIds?: string[]
+  /**
+   * Custom audiences to EXCLUDE — people this ad must not be shown to.
+   *
+   * The obvious case is the one nobody could execute: the company's own CRM.
+   * Every dirham spent re-advertising a property to someone already in the
+   * pipeline, already qualified, or already closed is pure waste, and the
+   * targeting advisor has literally been recommending this exclusion in words
+   * the system had no field for.
+   *
+   * `exclusions` next to this covers interests and behaviours only. Meta keeps
+   * audience exclusion in its own field, and its absence here is why the
+   * advice could never be carried out.
+   */
+  excludedCustomAudienceIds?: string[]
 }
 
 /** A Meta ad locale (language) from the live adlocale search vocabulary. */
@@ -254,6 +268,14 @@ export interface LaunchCampaignPayload {
   audienceId?: string
   /** A ready-buyer template id, launched directly — resolved server-side. */
   presetId?: string
+  /**
+   * Don't show this to people already in the CRM.
+   *
+   * Intent, not an id: the server looks up the audience it built itself. A
+   * browser that could name the audience to exclude could also name one that
+   * is not ours.
+   */
+  excludeCrmAudience?: boolean
 
   campaignName: string
   objective: MetaCampaignObjective
