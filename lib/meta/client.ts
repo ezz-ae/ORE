@@ -396,6 +396,59 @@ export interface MetaPlacementInsight {
  * Returns [] rather than throwing when the breakdown is unavailable, so a
  * caller degrades to the rollup instead of losing the whole view.
  */
+/**
+ * WHERE THE MONEY ACTUALLY LANDED, BY COUNTRY.
+ *
+ * A campaign targets the UAE. That is an instruction, not a receipt. Meta will
+ * deliver to people it believes are IN the targeted locations, and the only
+ * way to know whether that held is to read the country breakdown back.
+ *
+ * This answers one question and deliberately not another. It says WHERE an
+ * impression was served and what it cost — a delivery fact, the same kind as
+ * the placement audit. It says nothing about who anyone is; Meta's `country`
+ * breakdown is the location the ad was shown in, not a person's nationality,
+ * and it must never be read as one.
+ *
+ * What it is FOR: spend that lands outside the countries the campaign was
+ * pointed at is money bought by mistake, and until now nothing in this product
+ * could see it.
+ *
+ * Returns [] rather than throwing — a caller degrades to the rollup instead of
+ * losing the whole view.
+ */
+export interface MetaCountryInsight {
+  country: string
+  impressions: number
+  clicks: number
+  spend: number
+  leads: number
+}
+
+export async function getCampaignInsightsByCountry(campaignId: string): Promise<MetaCountryInsight[]> {
+  try {
+    const res = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/${campaignId}/insights`, undefined, {
+      fields: 'impressions,clicks,spend,actions',
+      breakdowns: 'country',
+      // The same rolling window as the rollup and the placement audit, so the
+      // three can be read side by side without one quietly covering a
+      // different span of time.
+      date_preset: 'last_30d',
+      limit: '200',
+    })
+    return (res.data ?? []).map((r) => ({
+      country: String(r.country ?? 'unknown'),
+      impressions: Number(r.impressions) || 0,
+      clicks: Number(r.clicks) || 0,
+      spend: Number(r.spend) || 0,
+      // The canonical lead rule — Meta reports one lead under several
+      // overlapping action types, and summing them multiplies it.
+      leads: metaLeadCount(r.actions as MetaInsightActions[] | undefined),
+    })).sort((a, b) => b.spend - a.spend)
+  } catch {
+    return []
+  }
+}
+
 export async function getCampaignInsightsByPlacement(campaignId: string): Promise<MetaPlacementInsight[]> {
   try {
     const res = await apiFetch<{ data: Array<Record<string, unknown>> }>(`/${campaignId}/insights`, undefined, {
