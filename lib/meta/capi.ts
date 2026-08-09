@@ -112,3 +112,97 @@ export async function sendLeadConversion(params: LeadConversionParams): Promise<
     return false
   }
 }
+
+// ─── The other half of the signal: what the CRM decided ───────────────────────
+// Meta knows a form was submitted. It does not know whether anyone answered
+// the phone, whether the lead qualified, or whether a property was sold. That
+// is the half that decides whether the money worked, and until now it never
+// travelled back — so the optimiser kept buying more of whatever produced
+// submissions.
+//
+// Sending it costs no control. It is our own judgment of our own leads,
+// expressed as an event; targeting, placement and delivery stay exactly where
+// they are.
+
+export interface QualifiedLeadParams {
+  /** Deterministic — see writeBackEventId. A retry must not count twice. */
+  eventId: string
+  /** 'qualified' → someone real. 'won' → a deal. */
+  stage: 'qualified' | 'won'
+  email?: string
+  phone?: string
+  /** What this lead is worth, in AED. Omitted when we do not really know. */
+  valueAED?: number | null
+  /** Listing / project name, for Meta's breakdowns. */
+  contentName?: string
+}
+
+/** Meta's custom event names for the two stages. */
+const STAGE_EVENT: Record<'qualified' | 'won', string> = {
+  qualified: 'QualifiedLead',
+  won: 'Purchase',
+}
+
+/**
+ * The exact event body. Split out from the send so the shape can be tested
+ * without a network — the hashing especially: a raw email reaching Meta would
+ * be a privacy failure that no amount of retry logic fixes afterwards.
+ */
+export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<string, unknown> | null {
+  const userData: Record<string, unknown> = {}
+  const em = params.email ? hashEmail(params.email) : null
+  const ph = params.phone ? hashPhone(params.phone) : null
+  if (em) userData.em = [em]
+  if (ph) userData.ph = [ph]
+  // No match key means Meta cannot attach this to anyone. Sending it anyway
+  // would inflate the count with events that teach the optimiser nothing.
+  if (Object.keys(userData).length === 0) return null
+
+  const custom: Record<string, unknown> = { content_category: 'real_estate' }
+  if (params.contentName) custom.content_name = params.contentName
+  // A value is sent only when it is real. A placeholder number here becomes
+  // the optimiser's idea of what a customer is worth.
+  if (typeof params.valueAED === 'number' && params.valueAED > 0) {
+    custom.value = Math.round(params.valueAED * 100) / 100
+    custom.currency = 'AED'
+  }
+
+  return {
+    event_name: STAGE_EVENT[params.stage],
+    event_time: Math.floor(Date.now() / 1000),
+    event_id: params.eventId,
+    // The decision happened in the CRM, not in a browser.
+    action_source: 'system_generated',
+    user_data: userData,
+    custom_data: custom,
+  }
+}
+
+/**
+ * Tell Meta this lead turned out to be real. Never throws and never blocks the
+ * CRM write that triggered it — a failed event is logged and the lead is
+ * unaffected.
+ */
+export async function sendQualifiedLead(params: QualifiedLeadParams): Promise<boolean> {
+  try {
+    const creds = await capiCreds()
+    if (!creds) return false
+    const event = buildQualifiedLeadEvent(params)
+    if (!event) return false
+    const res = await fetch(`${GRAPH}/${creds.pixelId}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: [event], access_token: creds.token }),
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      console.error(`[meta-capi] ${params.stage} event rejected`, res.status, detail.slice(0, 400))
+      return false
+    }
+    return true
+  } catch (error) {
+    console.error(`[meta-capi] ${params.stage} event failed`, error)
+    return false
+  }
+}

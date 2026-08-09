@@ -9,6 +9,7 @@ import { emailLeadMovementToInbox, notifyBrokerOfAssignedLead } from '@/lib/tran
 import { answerLeadScore } from '@/lib/freehold/ads-machine'
 import { authorizeReassign, authorizeDelete } from '@/lib/freehold/authority-db'
 import { statusForDenial } from '@/lib/freehold/authority'
+import { reportLeadToMeta } from '@/lib/freehold/lead-writeback'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -262,6 +263,12 @@ export async function PATCH(
       values
     )
     await logPatchActivity(id, body, user.email)
+    // THE OTHER HALF OF THE SIGNAL. Meta only ever learns that a form was
+    // submitted; whether the lead was real is decided here, in the CRM, and
+    // until now that judgment never travelled back — so the optimiser kept
+    // buying more of whatever produced submissions. Fire-and-forget: an ad
+    // platform must never be able to fail a CRM write.
+    void reportLeadToMeta(id)
     return NextResponse.json({ ok: true, id })
   } catch {
     return NextResponse.json({ error: 'Update failed' }, { status: 500 })

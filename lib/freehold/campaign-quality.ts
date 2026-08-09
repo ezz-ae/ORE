@@ -1,5 +1,6 @@
 import { query } from '@/lib/db'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
+import { QUALIFIED_STATUSES, WON_STATUSES } from '@/lib/freehold/lead-stages'
 
 /**
  * Live lead-QUALITY score for a Meta campaign — computed from OUR CRM funnel
@@ -46,8 +47,11 @@ export interface CampaignQuality {
 
 /** CRM statuses that count as "qualified or deeper" — shared with the Ads
  * Machine's verdict logic so both judge lead depth identically. */
-export const QUALIFIED_STATUSES = new Set(['qualified', 'viewing', 'negotiation', 'converted', 'closed'])
-const WON = new Set(['converted', 'closed'])
+// One definition, shared with the Meta write-back — a lead that is "qualified"
+// for the funnel score and "qualified" for the optimiser must never be able to
+// drift apart.
+export { QUALIFIED_STATUSES } from '@/lib/freehold/lead-stages'
+const WON = WON_STATUSES
 /** An unusable phone (missing or too short to dial) — the "junk" half of the
  * lost+badPhone signal. Exported for the Ads Machine's suggested verdicts. */
 export const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
