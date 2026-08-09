@@ -21,6 +21,7 @@ import type { DriveKind } from '@/lib/freehold/drive'
 import { composeVariant, ensureAdFonts, PALETTES as AD_PALETTES } from '@/lib/freehold/ad-compose'
 import { SUITE_TEMPLATES, SUITE_LANGS, templateOverlay, type SuiteLang, type SuiteTemplate } from '@/lib/freehold/creative-suite'
 import { TemplateThumb } from '@/components/freehold/drive/template-thumb'
+import { normalizePermit, permitVerificationUrl } from '@/lib/freehold/trakheesi'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type LibRow = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
@@ -500,7 +501,19 @@ export default function DriveImageEditor() {
     if (!value || qrBusy) return
     setQrBusy(true)
     try {
-      const url = await QRCode.toDataURL(value, { margin: 1, width: 640, color: { dark: '#000000', light: '#ffffff' } })
+      // A PERMIT QR MUST SCAN TO THE VALIDATOR, NOT TO A NUMBER.
+      //
+      // This encoded whatever was typed. A buyer scanning it got the string
+      // "12345" — no page, no verification, nothing. The whole point of the
+      // QR on a property ad is that a scan lands on DLD's own page and proves
+      // the permit is real. permitVerificationUrl is the single place that URL
+      // is built, and the server-rendered QR route has always used it.
+      //
+      // Anything that is not a permit number is encoded as typed — someone
+      // pasting their own link is doing something deliberate and different.
+      const permit = normalizePermit(value)
+      const encoded = permit ? permitVerificationUrl(permit) : value
+      const url = await QRCode.toDataURL(encoded, { margin: 1, width: 640, color: { dark: '#000000', light: '#ffffff' } })
       const im = await loadImage(url)
       setQr((prev) => ({ value, url, img: im, x: prev?.x ?? 0.84, y: prev?.y ?? 0.84, scale: prev?.scale ?? 0.16, stamp: prev?.stamp ?? true }))
       mark()

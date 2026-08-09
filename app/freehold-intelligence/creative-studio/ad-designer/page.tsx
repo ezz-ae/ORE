@@ -25,6 +25,7 @@ import {
   isPayLayout, missingPayFields,
   type LayoutKey, type FormatKey, type Overlay,
 } from '@/lib/freehold/ad-compose'
+import { normalizePermit, permitVerificationUrl } from '@/lib/freehold/trakheesi'
 
 /**
  * AD DESIGNER — the generative ad-creative flow, end to end:
@@ -558,13 +559,35 @@ export default function AdDesignerPage() {
     reader.readAsDataURL(file)
   }
 
+  /**
+   * A PERMIT NUMBER MAKES THE PERMIT QR; ANYTHING ELSE IS ENCODED AS TYPED.
+   *
+   * A QR holding the string "12345" scans to nothing. The point of the code on
+   * a property ad is that a scan lands on DLD's own validator and proves the
+   * permit is real, so a recognised permit number is turned into that URL by
+   * the one function that builds it. Someone pasting their own link is doing
+   * something deliberate and different, and it is encoded exactly as given.
+   */
   async function qrFromLink() {
-    const link = qrLink.trim()
-    if (!link) return
+    const raw = qrLink.trim()
+    if (!raw) return
     try {
-      const url = await QRCode.toDataURL(link, { margin: 0, width: 512 })
+      const permit = normalizePermit(raw)
+      const url = await QRCode.toDataURL(permit ? permitVerificationUrl(permit) : raw, { margin: 0, width: 512 })
       setQrImage(await loadImage(url))
     } catch { toast.error(t('adz.err.qr')) }
+  }
+
+  // DLD may issue a QR image that must be used verbatim. Dropping it here is
+  // the whole flow — the click-to-browse input stays for anyone who prefers it.
+  const [qrDragging, setQrDragging] = useState(false)
+  function onQrDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setQrDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error(t('adz.qr.notImage')); return }
+    void onQrUpload(file)
   }
 
   async function applyQr() {
@@ -949,10 +972,20 @@ export default function AdDesignerPage() {
             Trakhees <ExternalLink className="h-3 w-3" />
           </a>
           <div className="border-t border-line pt-3 space-y-2">
-            <button type="button" onClick={() => qrFileRef.current?.click()}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30">
-              <QrCode className="h-3.5 w-3.5" /> {t('adz.qr.upload')}
-            </button>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setQrDragging(true) }}
+              onDragLeave={() => setQrDragging(false)}
+              onDrop={onQrDrop}
+              onClick={() => qrFileRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') qrFileRef.current?.click() }}
+              className={`flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed px-3 py-5 text-xs font-semibold transition ${
+                qrDragging ? 'border-gold/60 bg-gold/10 text-gold' : 'border-line-strong bg-surface-2 text-slate-200 hover:border-gold/30'}`}>
+              <QrCode className="h-4 w-4" />
+              {t('adz.qr.drop')}
+              <span className="text-[10px] font-normal text-slate-500">{t('adz.qr.dropHint')}</span>
+            </div>
             <input ref={qrFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { onQrUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
             <div className="flex gap-1.5">
               {/* Wrapper owns the width — fieldClass bakes in w-full. */}
