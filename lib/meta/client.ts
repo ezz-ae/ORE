@@ -557,7 +557,7 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
   const res = await apiFetch<{ data: MetaAdSet[] }>(`/${campaignId}/adsets`, undefined, {
     // learning_stage_info is the difference between "active" and "Meta gave
     // up learning at this volume" — the state that quietly costs the most.
-    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info',
+    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info,end_time',
     limit: '200',
   })
   return res.data ?? []
@@ -624,6 +624,18 @@ export async function createAdSet(params: {
    * actual creative shape always agree.
    */
   wantsDynamicCreative?: boolean
+  /**
+   * When delivery must stop, as an ABSOLUTE instant (ISO 8601 with an
+   * offset). Used for the Trakheesi permit window: an ad running past its
+   * permit is as non-compliant as one that never had a permit, and Meta
+   * enforces this exactly whether or not our cron is awake.
+   *
+   * An offset is required rather than polite. A bare local timestamp is read
+   * in the AD ACCOUNT's timezone, which this codebase never reads — on an
+   * account set to anything west of Dubai that keeps a lapsed permit
+   * advertising for hours.
+   */
+  endTimeIso?: string
 }): Promise<{ id: string }> {
   const { adAccountId, pageId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -736,6 +748,10 @@ export async function createAdSet(params: {
     bid_strategy:      useCostCap ? 'COST_CAP' : 'LOWEST_COST_WITHOUT_CAP',
     ...(useCostCap ? { bid_amount: Math.round(params.cplCapAED! * 100) } : {}),
     daily_budget:      params.dailyBudgetAED * 100, // AED → fils (smallest unit)
+    // Only ever sent when a real stop is known. Meta treats an absent
+    // end_time as "runs until stopped", which is the truth when no permit
+    // window is on file — inventing one would be worse than not having it.
+    ...(params.endTimeIso ? { end_time: params.endTimeIso } : {}),
     targeting:         targetingSpec,
     status:            params.status,
     // Meta's real Dynamic Creative flag — REQUIRED for the ad's
@@ -2658,6 +2674,12 @@ export async function launchFullCampaign(params: {
   manualPlacements?: string[]
   /** Lead-language codes ('en'|'ar'|'ru') resolved live to Meta locale IDs. */
   leadLanguages?: string[]
+  /**
+   * When delivery must stop — the Trakheesi permit window, as an absolute
+   * instant. Applied to EVERY ad set the launch creates, including each one
+   * in a placement split: a permit does not expire per placement.
+   */
+  endTimeIso?: string
 }): Promise<LaunchCampaignResult> {
   const { adAccountId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -2812,6 +2834,7 @@ export async function launchFullCampaign(params: {
         pixelId: pixelId ?? undefined,
         destination: params.destination,
         cplCapAED: params.cplCapAED,
+        endTimeIso: params.endTimeIso,
         placementOverride: PLACEMENT_TARGETING[key],
       }))
       const creative = await step(`creative (${label})`, () => createAdCreative({
@@ -2842,6 +2865,7 @@ export async function launchFullCampaign(params: {
         pixelId: pixelId ?? undefined,
         destination: params.destination,
         cplCapAED: params.cplCapAED,
+        endTimeIso: params.endTimeIso,
         placementOverride: unionPlacementTargeting(defaultKeys),
       }))
       const creative = await step('creative (other placements)', () => createAdCreative({
@@ -2882,6 +2906,7 @@ export async function launchFullCampaign(params: {
     pixelId:        pixelId ?? undefined,
     destination:    params.destination,
     cplCapAED:      params.cplCapAED,
+    endTimeIso:     params.endTimeIso,
     placementMode:      params.placementMode,
     manualPlacements:   params.manualPlacements,
     wantsDynamicCreative: singleAdSetWantsDynamicCreative,

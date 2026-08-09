@@ -91,6 +91,32 @@ console.log('\n── nothing is inferred from a status alone ──')
   check('no status at all is unknown', deliveryOf({}).state === 'unknown')
 }
 
+console.log('\n── an ad set that reached its end date did what it was told ──')
+{
+  // Our ad sets carry the Trakheesi permit window as end_time. Without this
+  // the permit stop — the thing we WANT to happen — lands in notDelivering,
+  // which this file's own header calls the most alarming state in the list.
+  const NOW = new Date('2026-09-01T08:00:00Z')
+  const ended = deliveryOf({ effectiveStatus: 'ACTIVE', endTime: '2026-08-31T23:59:59+04:00', now: NOW })
+  check('past its end date it reads as finished, not as a fault',
+    ended.state === 'finished', JSON.stringify(ended))
+  check('…and it is not painted as a problem', ended.tone === 'idle')
+  check('…and it is not counted as still spending', !isSpending('finished'))
+
+  const running = deliveryOf({ effectiveStatus: 'ACTIVE', endTime: '2026-12-31T23:59:59+04:00', impressions: 900, now: NOW })
+  check('before its end date nothing changes', running.state === 'delivering', JSON.stringify(running))
+  check('an ad set with no end date is unaffected',
+    deliveryOf({ effectiveStatus: 'ACTIVE', impressions: 900, now: NOW }).state === 'delivering')
+  check('an unparseable end date is ignored rather than treated as passed',
+    deliveryOf({ effectiveStatus: 'ACTIVE', endTime: 'whenever', impressions: 900, now: NOW }).state === 'delivering')
+  check('finished beats every other ACTIVE answer, including stuck-in-learning',
+    deliveryOf({ effectiveStatus: 'ACTIVE', learningStage: 'FAIL', endTime: '2026-08-31T23:59:59+04:00', now: NOW }).state === 'finished')
+  // A PAUSED ad set past its end is still paused — the switch a human threw
+  // is the more useful fact.
+  check('a paused ad set past its end still reads as paused',
+    deliveryOf({ effectiveStatus: 'PAUSED', endTime: '2026-08-31T23:59:59+04:00', now: NOW }).state === 'paused')
+}
+
 console.log('\n── which of these are spending money ──')
 {
   check('delivering, learning and stuck-in-learning are all spending',
