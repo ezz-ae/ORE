@@ -938,6 +938,18 @@ export default function NewCampaignPage() {
   const [imageAspect, setImageAspect] = useState<number | null>(null)
   /** Taller than 4:5 — Feed will crop it. */
   const tallCreativeWillCrop = imageAspect !== null && imageAspect < 0.8
+  /**
+   * Would adding a per-placement design cost this campaign its ability to
+   * learn? On a lead-form ad the split is real ad sets, each needing its own
+   * 50 results a week. Checked at TWO groups — the cheapest split there is —
+   * so this is the optimistic case, not the worst one.
+   */
+  const splitWouldStarve = activeObjective.dest === 'form' && checkAudienceFit({
+    dailyBudgetAED: form.dailyBudgetAED,
+    adSets: 2,
+    targetCplAED: form.cplCapAED,
+  }).some((f) => f.level === 'wrong')
+
   const feedPlacementsInPlay =
     form.placementMode !== 'manual' || form.manualPlacements.some((k) => k === 'igFeed' || k === 'fbFeed')
 
@@ -2046,14 +2058,23 @@ export default function NewCampaignPage() {
               </div>
 
               {/* A tall design cropped in Feed loses the headline and the
-                  price. Say it once, plainly, with the button that fixes it. */}
+                  price. Say it once, plainly, with the button that fixes it.
+                  EXCEPT on a lead-form ad whose budget cannot feed the split
+                  that a per-placement design creates — there, sending someone
+                  to add a second design would trade a cropped picture for an
+                  ad set that never learns, which is the worse of the two. The
+                  answer there is a square design, not another one. */}
               {tallCreativeWillCrop && feedPlacementsInPlay && supportsPlacementCreative && (
                 <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2">
-                  <span className="text-[12px] text-slate-300">{t('lm.newCampaign.s3.tallCrop')}</span>
-                  <button type="button" onClick={() => setPlacementsOpen(true)}
-                    className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
-                    {t('lm.newCampaign.s3.tallCropCta')}
-                  </button>
+                  <span className="text-[12px] text-slate-300">
+                    {t(splitWouldStarve ? 'lm.newCampaign.s3.tallCropSquare' : 'lm.newCampaign.s3.tallCrop')}
+                  </span>
+                  {!splitWouldStarve && (
+                    <button type="button" onClick={() => setPlacementsOpen(true)}
+                      className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
+                      {t('lm.newCampaign.s3.tallCropCta')}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -2123,10 +2144,18 @@ export default function NewCampaignPage() {
                   if (!customizedCount) return null
                   const groups = customizedCount + (customizedCount < PLACEMENT_KEYS.length ? 1 : 0)
                   const perSet = Math.round((form.dailyBudgetAED / groups) * 100) / 100
+                  // The split is chosen HERE, so the consequence belongs here
+                  // too — not only on the review step after the decision.
+                  const starves = checkAudienceFit({
+                    dailyBudgetAED: form.dailyBudgetAED,
+                    adSets: groups,
+                    targetCplAED: form.cplCapAED,
+                  }).find((x) => x.level !== 'ok')
                   return (
-                    <p className="mb-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2 text-[11px] leading-relaxed text-amber-300/90">
-                      {t('lm.newCampaign.s3.perPlacement.leadSplitNote', { n: groups, perSet: perSet.toLocaleString() })}
-                    </p>
+                    <div className="mb-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2 text-[11px] leading-relaxed text-amber-300/90">
+                      <p>{t('lm.newCampaign.s3.perPlacement.leadSplitNote', { n: groups, perSet: perSet.toLocaleString() })}</p>
+                      {starves && <p className="mt-1.5">{t(`lm.fit.${starves.key}`, starves.vars)}</p>}
+                    </div>
                   )
                 })()}
                 <div className="flex flex-wrap gap-2">
@@ -2547,7 +2576,19 @@ export default function NewCampaignPage() {
                       {f.level === 'wrong' ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         : f.level === 'watch' ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         : <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
-                      <span>{t(`lm.fit.${f.key}`, f.vars)}</span>
+                      <div className="min-w-0">
+                        <span>{t(`lm.fit.${f.key}`, f.vars)}</span>
+                        {/* The free half of the fix, as a button. Clearing the
+                            per-placement designs IS the consolidation: with no
+                            overrides a lead-form launch builds one ad set. */}
+                        {f.key === 'splitStarves' && hasActivePlacementOverrides && (
+                          <button type="button"
+                            onClick={() => setForm((prev) => ({ ...prev, placementOverrides: {} }))}
+                            className="mt-2 block rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
+                            {t('lm.fit.runAsOne')}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
