@@ -245,6 +245,31 @@ export function questionsForMeta(questions: MetaFormQuestion[]): MetaFormQuestio
     : { type: q.type }))
 }
 
+/**
+ * Forms, grouped by the Page they belong to.
+ *
+ * A lead form is a PAGE asset: it lives on one Facebook Page, collects that
+ * Page's leads, and is read with that Page's own token. A flat list mixes
+ * them, so on a brokerage with two Pages there is no way to tell whose form
+ * is about to be attached to an ad.
+ *
+ * One Page means no headings — a heading that never varies is furniture.
+ */
+export function groupFormsByPage<T extends { page_id?: string | null; page_name?: string | null }>(
+  forms: T[],
+): Array<{ pageId: string; pageName: string; forms: T[]; showHeading: boolean }> {
+  const byPage = new Map<string, { pageId: string; pageName: string; forms: T[] }>()
+  for (const f of forms) {
+    const id = String(f.page_id ?? '')
+    const g = byPage.get(id) ?? { pageId: id, pageName: String(f.page_name ?? '') || id, forms: [] }
+    g.forms.push(f)
+    byPage.set(id, g)
+  }
+  const groups = [...byPage.values()].sort((a, b) => a.pageName.localeCompare(b.pageName))
+  const showHeading = groups.length > 1
+  return groups.map((g) => ({ ...g, showHeading }))
+}
+
 // ─── Intro card from the listing ─────────────────────────────────────────────
 
 /** Bullets built ONLY from fields the listing really has — each drops if absent. */

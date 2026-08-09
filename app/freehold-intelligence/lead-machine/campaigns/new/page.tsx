@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { BRAND, getBrandSiteUrl } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,7 @@ import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
   Monitor, Sparkles, ChevronRight, ChevronDown, Sliders, Crosshair, Gauge, MessageCircle, Phone,
-  FolderOpen, Upload, X, Copy, RefreshCw, Plus, AlertTriangle,
+  FolderOpen, Upload, X, Copy, RefreshCw, Plus, AlertTriangle, Facebook, Instagram,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -36,7 +36,7 @@ interface WizardListing {
   brochureUrl: string | null
 }
 import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride, MetaPixel, CreateLeadFormPayload } from '@/lib/meta/types'
-import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, type FormTemplateKey } from '@/lib/meta/form-templates'
+import { FORM_TEMPLATES, materializeTemplate, customToMetaQuestion, groupFormsByPage, type FormTemplateKey } from '@/lib/meta/form-templates'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { explainMetaError, splitLaunchStep } from '@/lib/meta/error-advice'
@@ -364,6 +364,17 @@ export default function NewCampaignPage() {
   // WHAT EACH AUDIENCE HAS ACTUALLY BROUGHT BACK. A name is a hypothesis;
   // after a few campaigns it should not have to be. Shown on the chip you are
   // about to press, and shown for nothing that has never been run.
+  // WHOSE PROFILE THE AD APPEARS UNDER. An ad runs from a Facebook Page, and
+  // on Instagram it appears as whatever Instagram account that Page is
+  // connected to. The system knew both and showed neither — so nobody could
+  // see whose name and picture the buyer would see next to the ad.
+  const [adIdentity, setAdIdentity] = useState<{ pageName: string | null; instagram: { username: string | null } | null } | null>(null)
+  useEffect(() => {
+    fetch('/api/meta/identity', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.identity) setAdIdentity(d.identity) })
+      .catch(() => {})
+  }, [])
   const [audienceRecord, setAudienceRecord] = useState<Record<string, { leads: number; qualified: number; won: number }>>({})
   useEffect(() => {
     fetch('/api/freehold/ads/audiences/outcomes', { cache: 'no-store' })
@@ -551,7 +562,9 @@ export default function NewCampaignPage() {
   // Lead form — wired into the Meta Lead objective. The forms feature already
   // exists (/lead-machine/forms + /api/meta/forms); the builder now lets you
   // pick, create, or edit the in-ad form the leads land in.
-  type LeadFormLite = { id: string; name: string; leads_count?: number; status?: string }
+  // A form belongs to a PAGE. Carried here so the picker can group by it and
+  // the ad can say whose profile it will appear under.
+  type LeadFormLite = { id: string; name: string; leads_count?: number; status?: string; page_id?: string; page_name?: string }
   const [leadForms, setLeadForms] = useState<LeadFormLite[]>([])
   const [leadFormId, setLeadFormId] = useState('')
   // In-ad form creation: the form is created (or duplicated) in a popup and
@@ -1617,8 +1630,18 @@ export default function NewCampaignPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <select value={leadFormId} onChange={(e) => setLeadFormId(e.target.value)} className={`${inputCls()} max-w-xs`}>
                     <option value="">{leadFormsLoading ? t('common.loading') : t('lm.newCampaign.leadForm.pick')}</option>
-                    {leadForms.map((f) => (
-                      <option key={f.id} value={f.id}>{f.name}{typeof f.leads_count === 'number' ? ` · ${f.leads_count}` : ''}</option>
+                    {groupFormsByPage(leadForms).map((g) => (
+                      g.showHeading
+                        ? <optgroup key={g.pageId} label={g.pageName}>
+                            {g.forms.map((f) => (
+                              <option key={f.id} value={f.id}>{f.name}{typeof f.leads_count === 'number' ? ` · ${f.leads_count}` : ''}</option>
+                            ))}
+                          </optgroup>
+                        : <Fragment key={g.pageId}>
+                            {g.forms.map((f) => (
+                              <option key={f.id} value={f.id}>{f.name}{typeof f.leads_count === 'number' ? ` · ${f.leads_count}` : ''}</option>
+                            ))}
+                          </Fragment>
                     ))}
                   </select>
                   {leadFormId ? (
@@ -2047,6 +2070,25 @@ export default function NewCampaignPage() {
             </div>
             )}
 
+            {/* The buyer sees a name and a picture next to this ad. Which
+                one was never shown anywhere in the launcher. */}
+            {adIdentity && (adIdentity.pageName || adIdentity.instagram) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface-2 px-4 py-2.5 text-[12px] text-slate-400">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s3.runsFrom')}</span>
+                {adIdentity.pageName && (
+                  <span className="flex items-center gap-1.5"><Facebook className="h-3.5 w-3.5 text-slate-500" />{adIdentity.pageName}</span>
+                )}
+                <span className="flex items-center gap-1.5">
+                  <Instagram className="h-3.5 w-3.5 text-slate-500" />
+                  {/* A Page with no connected Instagram account still runs on
+                      Instagram — as the Page itself. Saying so beats a blank. */}
+                  {adIdentity.instagram?.username
+                    ? `@${adIdentity.instagram.username}`
+                    : t('lm.newCampaign.s3.igViaPage')}
+                </span>
+              </div>
+            )}
+
             <div data-coach="wiz-creative">
               <Label>{t('lm.newCampaign.s3.label.imageUrl')}</Label>
               <input
@@ -2467,7 +2509,10 @@ export default function NewCampaignPage() {
                   <div className="max-h-52 space-y-1.5 overflow-y-auto">
                     {leadForms.map((f) => (
                       <div key={f.id} className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2">
-                        <span className="min-w-0 flex-1 truncate text-xs text-slate-200">{f.name}</span>
+                        <span className="min-w-0 flex-1 truncate text-xs text-slate-200">
+                          {f.name}
+                          {f.page_name && <span className="ms-1.5 text-[10px] text-slate-500">{f.page_name}</span>}
+                        </span>
                         <button type="button" disabled={!!dupBusyId} onClick={() => duplicateForm(f)}
                           className="inline-flex shrink-0 items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
                           {dupBusyId === f.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} {t('lm.newCampaign.leadForm.duplicate')}

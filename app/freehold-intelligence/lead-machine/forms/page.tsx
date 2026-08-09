@@ -3,9 +3,10 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
-import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
+import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap, Facebook } from 'lucide-react'
 import { MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
+import { groupFormsByPage } from '@/lib/meta/form-templates'
 import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
 import { query } from '@/lib/db'
@@ -275,8 +276,24 @@ export default async function FormsPage() {
       {forms.length > 0 && (
         <section className="mt-12">
           <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.forms.allForms')}</div>
-          <div className="mt-4 space-y-3">
-            {forms.map((form) => {
+          {/* GROUPED BY THE PAGE THEY BELONG TO.
+              A form is a Page asset — it lives on one Facebook Page, collects
+              leads for that Page, and is read with that Page's own token. The
+              list mixed every Page's forms into one column, so with two Pages
+              there was no way to tell whose form you were about to attach to
+              an ad. listLeadForms has tagged each form with its Page all
+              along; nothing read the tag. */}
+          <div className="mt-4 space-y-6">
+            {groupFormsByPage(forms).map((group) => (
+              <div key={group.pageId}>
+                {group.showHeading && (
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-400">
+                    <Facebook className="h-3.5 w-3.5 text-slate-500" />
+                    {group.pageName}
+                  </div>
+                )}
+                <div className="space-y-3">
+            {group.forms.map((form) => {
               const st = statusConfig(form.status)
               return (
                 <Link
@@ -349,6 +366,9 @@ export default async function FormsPage() {
                 </Link>
               )
             })}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}

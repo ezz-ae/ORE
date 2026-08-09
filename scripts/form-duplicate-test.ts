@@ -19,7 +19,7 @@
  *
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
-import { customToMetaQuestion, mapFormToBuilder, questionsForMeta } from '../lib/meta/form-templates'
+import { customToMetaQuestion, mapFormToBuilder, questionsForMeta, groupFormsByPage } from '../lib/meta/form-templates'
 import type { MetaFormQuestion, MetaLeadForm } from '../lib/meta/types'
 
 let failures = 0
@@ -103,6 +103,33 @@ console.log('\n── Meta writes its own wording for name / email / phone ─�
     out[2].label === 'Your budget?' && out[2].key === 'budget_range' && (out[2].options ?? []).length === 1,
     JSON.stringify(out[2]))
   check('nothing is dropped from the form', out.length === 3)
+}
+
+console.log('\n── a form belongs to a Page ──')
+{
+  // A lead form is a Page asset: it lives on one Page, collects that Page's
+  // leads, and is read with that Page's own token. A flat list mixes them, so
+  // on a brokerage with two Pages nobody could tell whose form was about to be
+  // attached to an ad. listLeadForms has tagged every form with its Page all
+  // along; nothing read the tag.
+  const forms = [
+    { id: '1', page_id: 'p2', page_name: 'Freehold Sales' },
+    { id: '2', page_id: 'p1', page_name: 'Freehold Properties' },
+    { id: '3', page_id: 'p2', page_name: 'Freehold Sales' },
+  ]
+  const groups = groupFormsByPage(forms)
+  check('forms are grouped by their Page', groups.length === 2, JSON.stringify(groups.map((g) => g.pageId)))
+  check('…in a stable, readable order', groups[0].pageName === 'Freehold Properties')
+  check('…with every form kept', groups.reduce((n, g) => n + g.forms.length, 0) === 3)
+  check('two Pages means the headings are shown', groups.every((g) => g.showHeading))
+
+  const one = groupFormsByPage([{ id: '1', page_id: 'p1', page_name: 'Only Page' } as typeof forms[number]])
+  check('one Page means no heading — a label that never varies is furniture',
+    one.length === 1 && one[0].showHeading === false)
+
+  const unknown = groupFormsByPage([{ id: '1' } as unknown as typeof forms[number]])
+  check('a form with no Page still appears rather than vanishing',
+    unknown.length === 1 && unknown[0].forms.length === 1, JSON.stringify(unknown))
 }
 
 if (failures > 0) {
