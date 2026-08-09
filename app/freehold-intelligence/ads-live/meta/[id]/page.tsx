@@ -191,6 +191,21 @@ export default function CampaignCommandPage() {
   )
   const setupProblems = setupProblemCount(setup)
 
+  // DID THE MONEY GO WHERE IT WAS POINTED?
+  //
+  // Targeting the UAE is an instruction, not a receipt. This reads Meta's own
+  // country breakdown back and compares it to what the live ad sets actually
+  // ask for. It reports where impressions were SERVED — a delivery fact, like
+  // the placement audit — and says nothing about who anyone is.
+  const [geo, setGeo] = useState<{ rows: Array<{ country: string; spend: number; leads: number; impressions: number }>; findings: Array<{ level: string; key: string; vars?: Record<string, string | number> }> } | null>(null)
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/freehold/ads/geo?campaignId=${encodeURIComponent(id)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.available) setGeo({ rows: d.rows ?? [], findings: d.findings ?? [] }) })
+      .catch(() => {})
+  }, [id])
+
   // CAN THIS BUDGET BUY THIS AUDIENCE — read from what actually happened.
   //
   // Frequency and result count are Meta's own numbers, so nothing here is
@@ -845,6 +860,18 @@ export default function CampaignCommandPage() {
                 : f.level === 'watch' ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 : <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
               <span>{t(`lm.fit.${f.key}`, f.vars)}</span>
+            </div>
+          ))}
+          {(geo?.findings ?? []).map((f) => (
+            <div key={`geo-${f.key}`}
+              className={`flex items-start gap-2 rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed ${
+                f.level === 'wrong' ? 'border-rose-400/25 bg-rose-400/[0.07] text-rose-100'
+                : f.level === 'watch' ? 'border-amber-400/25 bg-amber-400/[0.06] text-amber-100'
+                : 'border-line bg-surface text-slate-300'}`}>
+              {f.level === 'wrong' ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                : f.level === 'watch' ? <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                : <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
+              <span>{t(`lm.geo.${f.key}`, f.vars)}</span>
             </div>
           ))}
           {setup.map((f, i) => (
