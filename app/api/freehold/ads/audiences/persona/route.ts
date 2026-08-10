@@ -94,7 +94,13 @@ export async function POST(req: NextRequest) {
 
   const ageMin = recipes.reduce((m, r) => Math.max(m, r.ageMin ?? 30), 30)
   const ageMax = recipes.reduce((m, r) => Math.min(m, r.ageMax ?? 65), 65)
-  const targeting = planPersona({ stack, speaker, residency, ageMin, ageMax })
+  // Women/men/everyone — a real Meta field, permitted for UAE property ads
+  // (the housing special-category restriction is a North-America rule). Only
+  // the two codes Meta defines survive; anything else means everyone.
+  const genders = Array.isArray(body.genders)
+    ? (body.genders as unknown[]).map(Number).filter((g) => g === 1 || g === 2)
+    : []
+  const targeting = planPersona({ stack, speaker, residency, ageMin, ageMax, genders })
 
   const reach = await getReachEstimate(targeting).catch(() => null)
 

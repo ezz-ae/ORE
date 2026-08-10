@@ -25,6 +25,9 @@ const PERSONA_GROUPS: { id: string; personas: string[] }[] = [
 const MAX_STACK = 3
 
 const SPEAKERS = ['arabic', 'english', 'russian'] as const
+// Meta's gender codes. 'all' sends nothing — everyone — which stays the default.
+const GENDERS = ['all', 'women', 'men'] as const
+const GENDER_CODE: Record<(typeof GENDERS)[number], number[]> = { all: [], women: [2], men: [1] }
 const MARKETS = ['resident', 'saudi', 'qatar', 'kuwait', 'bahrain', 'oman', 'gcc', 'egypt', 'france', 'europe', 'overseas'] as const
 
 interface Reach { lower: number; upper: number; ready: boolean }
@@ -35,6 +38,7 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
   const [picked, setPicked] = useState<string[]>([])
   const [speaker, setSpeaker] = useState<(typeof SPEAKERS)[number]>('arabic')
   const [market, setMarket] = useState<(typeof MARKETS)[number]>('resident')
+  const [gender, setGender] = useState<(typeof GENDERS)[number]>('all')
   const [name, setName] = useState('')
   const [reach, setReach] = useState<Reach | null>(null)
   const [layers, setLayers] = useState<number | null>(null)
@@ -63,6 +67,7 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personaIds: picked, speaker, residency: market, save,
+          genders: GENDER_CODE[gender],
           ...(save ? {
             name: name.trim(),
             description: `${picked.map((id) => t(`lm.aud.persona.${id}.name`)).join(' + ')} · ${t(`lm.aud.pat.speakers.${speaker}`)} · ${t(`lm.aud.pat.res.${market}`)}`,
@@ -132,6 +137,16 @@ export default function PersonaStudio({ onSaved }: { onSaved: () => void }) {
               <button key={m} type="button" onClick={() => { setMarket(m); setReach(null) }}
                 className={`rounded-full border px-3 py-1 text-[12px] transition ${market === m ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-white'}`}>
                 {t(`lm.aud.pat.res.${m}`)}
+              </button>
+            ))}
+          </div>
+          {/* A real Meta field — the honest half of "local women". The other
+              half is the language + market pickers above, and nothing else. */}
+          <div className="flex flex-wrap gap-2">
+            {GENDERS.map((g) => (
+              <button key={g} type="button" onClick={() => { setGender(g); setReach(null) }}
+                className={`rounded-full border px-3 py-1 text-[12px] transition ${gender === g ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-white'}`}>
+                {t(`lm.aud.gender.${g}`)}
               </button>
             ))}
           </div>

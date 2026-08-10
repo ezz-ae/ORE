@@ -59,6 +59,14 @@ export const PERSONAS: PersonaRecipe[] = [
   { id: 'actorsCreatives',   interests: ['Actor', 'Film industry', 'Television'] },
   { id: 'governmentSector',  interests: ['Government', 'Public administration', 'Civil service'] },
   { id: 'policeSecurity',    interests: ['Dubai Police', 'Police', 'Law enforcement'] },
+  // Government + energy + police as ONE layer, because the ask is "works in
+  // any of these", and stacking them as separate personas would demand a
+  // person interested in ALL of them — an intersection of nearly nobody.
+  // Meta sells INTEREST in these employers, not employment at them (employer
+  // targeting was removed platform-wide in 2022); stacked with a seniority
+  // persona and the real-estate MUST, interest is a usable proxy — alone it
+  // would mostly find fans of Dubai Police's supercars.
+  { id: 'publicSectorEnergy', interests: ['Government', 'Public administration', 'Civil service', 'ADNOC', 'Petroleum industry', 'Oil and gas', 'Energy industry', 'Dubai Police'] },
   // ── Seniority and money ──
   { id: 'ceosExecutives',    interests: ['Chief executive officer', 'Management', 'Leadership', 'Executive director'] },
   { id: 'topProfessionals',  interests: ['LinkedIn', 'Professional development', 'Business networking'] },
@@ -157,6 +165,10 @@ export interface PersonaPlanInput {
   residency: Residency
   ageMin?: number
   ageMax?: number
+  /** Meta gender codes: 2 = women, 1 = men. Omitted/empty = everyone. A real
+   *  Meta field — unlike "local", which is served honestly by language +
+   *  residency and never by anything else. */
+  genders?: number[]
 }
 
 /**
@@ -187,6 +199,7 @@ export function planPersona(input: PersonaPlanInput): CampaignTargeting {
     publisherPlatforms: ['facebook', 'instagram'],
     interests: [],
     behaviors: [],
+    ...(input.genders && input.genders.length > 0 ? { genders: input.genders.filter((g) => g === 1 || g === 2) } : {}),
     narrowing: groups,
     exclusions: { interests: standardExclusions(), behaviors: [] },
     customAudienceIds: [],
