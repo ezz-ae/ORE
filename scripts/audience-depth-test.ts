@@ -680,6 +680,11 @@ console.log('\n── tuning an ad set resets what it learned ──')
   check('a 15% rise does not', !wouldResetLearning(100, 115))
   check('a 30% CUT resets it too — direction is irrelevant', wouldResetLearning(100, 70))
   check('starting from nothing always counts as a reset', wouldResetLearning(0, 100))
+  // The early-return rounding bug: from 288 a target of 345.6 is EXACTLY the
+  // 20% line — safe — and Math.round used to hand back 346, which is 20.14%,
+  // a reset manufactured by the rounding of a safe number.
+  check('a target exactly ON the line is not rounded across it',
+    !wouldResetLearning(288, safeBudgetStep(288, 345.6)), String(safeBudgetStep(288, 345.6)))
   check('a safe step stops short of the threshold',
     safeBudgetStep(100, 200) === 120, String(safeBudgetStep(100, 200)))
   check('…and a target already within reach is taken whole',
