@@ -373,7 +373,12 @@ export default function NewCampaignPage() {
   // on Instagram it appears as whatever Instagram account that Page is
   // connected to. The system knew both and showed neither — so nobody could
   // see whose name and picture the buyer would see next to the ad.
-  const [adIdentity, setAdIdentity] = useState<{ pageName: string | null; instagram: { username: string | null } | null } | null>(null)
+  const [adIdentity, setAdIdentity] = useState<{ pageName: string | null; instagram: { id?: string; username: string | null } | null; instagramOptions?: Array<{ id: string; username: string | null }> } | null>(null)
+  // Which of the Page's own Instagram accounts the ad runs as. '' = Meta's
+  // default (the connected account, or the Page itself). The choice set is
+  // the Page's connections and nothing else — Meta's rule, not a menu we
+  // invented; see getAdIdentity().instagramOptions.
+  const [igUserId, setIgUserId] = useState('')
   // Every Page this account can publish as. The identity API returned this
   // list from the day it shipped and the wizard never read it — so the ad
   // could only ever run as the ONE configured Page, and an operator whose
@@ -385,7 +390,13 @@ export default function NewCampaignPage() {
     fetch(`/api/meta/identity${q}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d?.identity) setAdIdentity(d.identity)
+        if (d?.identity) {
+          setAdIdentity(d.identity)
+          // An IG id belongs to ONE Page. Whatever was chosen for the last
+          // Page is meaningless for this one — fall back to Meta's default
+          // rather than sending another Page's account.
+          setIgUserId((prev) => (d.identity.instagramOptions ?? []).some((o: { id: string }) => o.id === prev) ? prev : '')
+        }
         if (Array.isArray(d?.pages) && d.pages.length > 0) setMetaPages(d.pages)
         // Resolve '' to the configured Page's real id once, so the picker
         // always holds an actual choice and the launch always states one.
@@ -1323,7 +1334,9 @@ export default function NewCampaignPage() {
         // back to the project's public page, which always exists for a
         // listed project. Never block a launch on a missing LP. The picked
         // buyer intent rides the click as ?intent= (Layer 4).
-        landingUrl:  withIntent(form.landingUrl || `${getBrandSiteUrl()}/projects/${encodeURIComponent(form.listingId)}`, form.clickIntent),
+        // …and with no listing either (a form ad), the brand site itself —
+        // the URL is only Meta's link fallback there, never the lead's path.
+        landingUrl:  withIntent(form.landingUrl || (form.listingId ? `${getBrandSiteUrl()}/projects/${encodeURIComponent(form.listingId)}` : getBrandSiteUrl()), form.clickIntent),
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
@@ -1368,6 +1381,7 @@ export default function NewCampaignPage() {
       // With an instant form the effect above has already set this to the
       // form's owner, so the pair always matches.
       pageId:           adPageId || undefined,
+      instagramUserId:  igUserId || undefined,
       placementMode:    form.placementMode,
       manualPlacements: form.placementMode === 'manual' ? form.manualPlacements : undefined,
       // Persisted per campaign — the autopilot pass enforces it.
@@ -2216,8 +2230,21 @@ export default function NewCampaignPage() {
                 <span className="flex items-center gap-1.5">
                   <Instagram className="h-3.5 w-3.5 text-slate-500" />
                   {/* A Page with no connected Instagram account still runs on
-                      Instagram — as the Page itself. Saying so beats a blank. */}
-                  {adIdentity.instagram?.username
+                      Instagram — as the Page itself. Saying so beats a blank.
+                      More than one connection ⇒ a choice, same as the Page. */}
+                  {(adIdentity.instagramOptions?.length ?? 0) > 1 ? (
+                    <select
+                      value={igUserId}
+                      onChange={(e) => setIgUserId(e.target.value)}
+                      className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-slate-200 outline-none focus:border-gold/40"
+                      aria-label="Instagram"
+                    >
+                      <option value="">{adIdentity.instagram?.username ? `@${adIdentity.instagram.username}` : t('lm.newCampaign.s3.igViaPage')}</option>
+                      {(adIdentity.instagramOptions ?? []).filter((o) => o.id !== adIdentity.instagram?.id).map((o) => (
+                        <option key={o.id} value={o.id}>{o.username ? `@${o.username}` : o.id}</option>
+                      ))}
+                    </select>
+                  ) : adIdentity.instagram?.username
                     ? `@${adIdentity.instagram.username}`
                     : t('lm.newCampaign.s3.igViaPage')}
                 </span>
@@ -2968,7 +2995,10 @@ export default function NewCampaignPage() {
             type="button"
             onClick={() => setStep((s) => (s + 1) as WizardStep)}
             disabled={
-              (step === 1 && (!form.listingId || !form.campaignName)) ||
+              // A form ad needs no listing to continue: its lead is captured
+              // ON the ad. The listing stays required when the ad's
+              // destination IS the listing's page.
+              (step === 1 && ((!form.listingId && activeObjective.dest !== 'form') || !form.campaignName)) ||
               (step === 2 && (form.dailyBudgetAED < 50 || needsAudience)) ||
               (step === 3 && (!form.primaryText || !form.headlines[0]
                 || (activeObjective.dest === 'landing' && !form.landingUrl && !form.listingId)))

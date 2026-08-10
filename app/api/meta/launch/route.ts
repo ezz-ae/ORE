@@ -43,7 +43,15 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json()) as LaunchCampaignPayload
 
-  const required = ['campaignName', 'objective', 'listingId', 'listingName', 'dailyBudgetAED', 'creative']
+  // An instant-form ad captures the lead ON the ad — there is no landing page
+  // in its journey, so demanding a listing before launch was a wall in front
+  // of nothing. The listing stays required for landing-page ads (it IS the
+  // destination's content) and stays USEFUL for form ads (permit window,
+  // project attribution) — useful is offered, required is dropped.
+  const isFormAd = body.destination === 'form'
+  const required = isFormAd
+    ? ['campaignName', 'objective', 'dailyBudgetAED', 'creative']
+    : ['campaignName', 'objective', 'listingId', 'listingName', 'dailyBudgetAED', 'creative']
   for (const field of required) {
     if (!body[field as keyof LaunchCampaignPayload]) {
       return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 })
@@ -238,7 +246,7 @@ export async function POST(req: NextRequest) {
   // edit is not a deadline.
   let permitEndTime: string | undefined
   try {
-    const listing = await getInventoryPropertyBySlug(String(body.listingId))
+    const listing = body.listingId ? await getInventoryPropertyBySlug(String(body.listingId)) : null
     const end = adEndTimeForPermit(listing?.permitExpiry)
     if (end && endTimeHasPassed(end)) {
       // We KNOW this one has lapsed. 'missing' and 'no_expiry' are different:
@@ -269,7 +277,10 @@ export async function POST(req: NextRequest) {
     // No audience built yet ⇒ no exclusion, and no pretending there was one.
   }
 
-  const projectSlug = String(body.listingId)
+  // Attribution key. A form ad launched without a listing still needs a
+  // stable non-empty slug for the ledger, the router and the audience memory
+  // — 'general' groups them rather than scattering them under ''.
+  const projectSlug = String(body.listingId || 'general')
   const intent: CampaignIntent = {
     projectSlug,
     objectiveKey: String(body.objective),
@@ -346,7 +357,7 @@ export async function POST(req: NextRequest) {
     const result = await launchFullCampaign({
       campaignName:     body.campaignName,
       objective:        body.objective,
-      listingName:      body.listingName,
+      listingName:      body.listingName || body.campaignName,
       dailyBudgetAED:   body.dailyBudgetAED,
       // The exclusion is merged LAST, after the audience (saved or preset) has
       // been resolved into body.targeting — so it survives whichever path
@@ -366,6 +377,7 @@ export async function POST(req: NextRequest) {
       leadFormId:       body.leadFormId,
       destinationPhone: body.destinationPhone,
       pageId:           launchPageId,
+      instagramUserId:  typeof body.instagramUserId === 'string' && body.instagramUserId.trim() ? body.instagramUserId.trim() : undefined,
       lifetimeCapAED:   typeof body.lifetimeCapAED === 'number' && body.lifetimeCapAED > 0 ? body.lifetimeCapAED : undefined,
       cplCapAED:        typeof body.cplCapAED === 'number' && body.cplCapAED > 0 ? body.cplCapAED : undefined,
       pixelId:          typeof body.pixelId === 'string' && body.pixelId.trim() ? body.pixelId.trim() : undefined,
