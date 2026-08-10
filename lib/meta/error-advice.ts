@@ -40,6 +40,12 @@ export const SUBCODE_ADVICE: Record<number, string> = {
   // interest by name first, so reaching this means a name Meta dropped too.
   1487079:
     'One of the interests in this audience is not available at Meta any more. Open the audience, press Check now, and launch again.',
+  // Meta's crawler could not fetch an externally linked ad image. The launch
+  // path now ingests every external URL into the ad account first and refuses
+  // when it cannot — so reaching this from a NEW launch should be impossible;
+  // it survives here for edits and replayed payloads.
+  3858258:
+    'Meta could not download the linked image — the URL is not publicly reachable (blocked by robots.txt, moved, or behind a login). Upload the picture in the launcher instead of linking it; an uploaded image lives in the ad account and cannot break this way.',
   // Facebook Stories cannot be the only placement in an ad set.
   1815891:
     'Facebook Stories cannot run on its own. Add Facebook Feed or Instagram Stories to this ad, or remove Facebook Stories.',
