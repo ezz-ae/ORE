@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from 'react'
 import { BRAND, getBrandSiteUrl } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -379,6 +379,9 @@ export default function NewCampaignPage() {
   // the Page's connections and nothing else — Meta's rule, not a menu we
   // invented; see getAdIdentity().instagramOptions.
   const [igUserId, setIgUserId] = useState('')
+  // The optional property attach on a form ad — closed by default: the wall
+  // this replaces was the point.
+  const [attachListingOpen, setAttachListingOpen] = useState(false)
   // Every Page this account can publish as. The identity API returned this
   // list from the day it shipped and the wizard never read it — so the ad
   // could only ever run as the ONE configured Page, and an operator whose
@@ -597,6 +600,20 @@ export default function NewCampaignPage() {
   // the ad can say whose profile it will appear under.
   type LeadFormLite = { id: string; name: string; leads_count?: number; status?: string; page_id?: string; page_name?: string }
   const [leadForms, setLeadForms] = useState<LeadFormLite[]>([])
+  // Every Page the ad could run as: the account's own list, UNIONED with the
+  // Pages the lead forms are tagged with. The union matters — the forms sweep
+  // and /me/accounts can disagree (token scope, a lookup hiccup), and a Page
+  // that provably owns one of OUR forms belongs in the choices whatever the
+  // accounts edge said.
+  const pageChoices = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string }>()
+    for (const pg of metaPages) seen.set(pg.id, pg)
+    for (const f of leadForms) {
+      const id = String(f.page_id ?? '')
+      if (id && !seen.has(id)) seen.set(id, { id, name: String(f.page_name ?? '') || id })
+    }
+    return [...seen.values()]
+  }, [metaPages, leadForms])
   const [leadFormId, setLeadFormId] = useState('')
   // In-ad form creation: the form is created (or duplicated) in a popup and
   // attached to THIS ad immediately — the wizard and its state never unload.
@@ -1609,8 +1626,20 @@ export default function NewCampaignPage() {
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s1.heading')}</h2>
 
+            {/* A form ad's lead is captured ON the ad — no landing page in
+                its journey, so the property grid is an optional attach (for
+                the permit window and generated copy), never a wall. */}
+            {activeObjective.dest === 'form' && !attachListingOpen && !form.listingId ? (
+              <button
+                type="button"
+                onClick={() => setAttachListingOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-300 transition hover:text-white"
+              >
+                <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s1.attachOptional')}
+              </button>
+            ) : (
             <div data-coach="wiz-listing">
-              <Label>{t('lm.newCampaign.s1.label.listing')}</Label>
+              <Label>{t('lm.newCampaign.s1.label.listing')}{activeObjective.dest === 'form' ? <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span> : null}</Label>
               <CampaignListingPicker
                 listings={listings}
                 value={form.listingId}
@@ -1628,6 +1657,7 @@ export default function NewCampaignPage() {
                 </button>
               )}
             </div>
+            )}
 
             {/* Campaign sources — brochure/link/file material that completes the
                 campaign when the project is a NEW LAUNCH with no landing page.
@@ -2202,27 +2232,27 @@ export default function NewCampaignPage() {
             {adIdentity && (adIdentity.pageName || adIdentity.instagram) && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface-2 px-4 py-2.5 text-[12px] text-slate-400">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s3.runsFrom')}</span>
-                {metaPages.length > 1 ? (
-                  // More than one Page ⇒ this is a CHOICE, not a caption.
-                  // With an instant form attached the choice is already made
-                  // by the form's owner — shown, not overridable, because a
-                  // mismatched pair cannot launch.
+                {pageChoices.length > 1 ? (
+                  // More than one Page ⇒ this is a CHOICE, never a caption
+                  // and never locked. Choosing a form still auto-selects the
+                  // form's Page (the pair must match or Meta rejects it), but
+                  // the operator can always re-choose — a lock that guessed
+                  // wrong once was just the old hardcode with extra steps.
                   <span className="flex items-center gap-1.5">
                     <Facebook className="h-3.5 w-3.5 text-slate-500" />
+                    <select
+                      value={adPageId}
+                      onChange={(e) => setAdPageId(e.target.value)}
+                      className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-slate-200 outline-none focus:border-gold/40"
+                      aria-label={t('lm.newCampaign.s3.runsFrom')}
+                    >
+                      {pageChoices.map((pg) => (
+                        <option key={pg.id} value={pg.id}>{pg.name}</option>
+                      ))}
+                    </select>
                     {form.productObjective === 'meta_lead' && leadFormId ? (
-                      <span className="text-slate-300">{adIdentity.pageName}<span className="ml-1.5 text-[10px] text-slate-500">{t('lm.newCampaign.s3.pageFromForm')}</span></span>
-                    ) : (
-                      <select
-                        value={adPageId}
-                        onChange={(e) => setAdPageId(e.target.value)}
-                        className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-slate-200 outline-none focus:border-gold/40"
-                        aria-label={t('lm.newCampaign.s3.runsFrom')}
-                      >
-                        {metaPages.map((pg) => (
-                          <option key={pg.id} value={pg.id}>{pg.name}</option>
-                        ))}
-                      </select>
-                    )}
+                      <span className="text-[10px] text-slate-500">{t('lm.newCampaign.s3.pageFromForm')}</span>
+                    ) : null}
                   </span>
                 ) : adIdentity.pageName ? (
                   <span className="flex items-center gap-1.5"><Facebook className="h-3.5 w-3.5 text-slate-500" />{adIdentity.pageName}</span>
