@@ -18,6 +18,39 @@ import { writeBackFor, writeBackEventId, type WriteBackStage } from '@/lib/freeh
  * human moving the card or rating the lead; nothing is inferred, and nothing
  * is sent on a guess, because Meta has no way to take an event back.
  */
+/**
+ * A DEAL REACHED ITS FINAL STATE — teach every downstream reader.
+ *
+ * Two writes, both idempotent, both fire-and-forget from the deals route:
+ *
+ *  1. Stamp freehold_site_leads.deal_value_aed — the column the seed builder
+ *     has read since it shipped and NOTHING ever wrote (the deep-seed route
+ *     even documents it as "created lazily by the deals feature"; this is
+ *     that feature finally doing it). GREATEST keeps the biggest deal when a
+ *     person buys twice, because a seed weights people, not transactions.
+ *  2. Run the write-back, which now sees the closed deal and sends the
+ *     Purchase with the real value — once, guarded by meta_reported_stages.
+ */
+export async function reportDealCloseToMeta(deal: {
+  leadId: string | null
+  propertyValueAed?: number | null
+}): Promise<void> {
+  if (!deal.leadId) return
+  const value = Number(deal.propertyValueAed)
+  if (Number.isFinite(value) && value > 0) {
+    try {
+      await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS deal_value_aed numeric`)
+      await query(
+        `UPDATE freehold_site_leads
+            SET deal_value_aed = GREATEST(coalesce(deal_value_aed, 0), $2)
+          WHERE id = $1`,
+        [deal.leadId, value],
+      )
+    } catch { /* the stamp is an enrichment, never a blocker */ }
+  }
+  await reportLeadToMeta(deal.leadId).catch(() => null)
+}
+
 export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage | null> {
   try {
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_reported_stages text[]`)
@@ -38,6 +71,25 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
     const lead = rows[0]
     if (!lead) return null
 
+    // THE DEAL IS THE MONEY'S OWN RECORD. A final approved/closed deal makes
+    // this lead won whatever its CRM column says, and its property value is
+    // the only number honest enough to ride the Purchase event. Defensive:
+    // the deals table is created lazily by its own feature, and a database
+    // without it means "no deals", never a failed write-back.
+    let dealClosed = false
+    let dealValueAed: number | null = null
+    try {
+      const deals = await query<{ n: number; v: number | null }>(
+        `SELECT COUNT(*)::int AS n, MAX(property_value_aed) AS v
+           FROM freehold_site_deals
+          WHERE lead_id = $1 AND status IN ('approved', 'closed')`,
+        [leadId],
+      )
+      dealClosed = (deals[0]?.n ?? 0) > 0
+      const v = Number(deals[0]?.v)
+      if (dealClosed && Number.isFinite(v) && v > 0) dealValueAed = v
+    } catch { /* no deals feature in this database */ }
+
     const sent = (lead.meta_reported_stages ?? []).filter(
       (s): s is WriteBackStage => s === 'qualified' || s === 'won',
     )
@@ -45,6 +97,7 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
       status: lead.status,
       valueRating: lead.value_rating,
       sent,
+      dealClosed,
     })
     if (!stage) return null
 
@@ -69,10 +122,13 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
       email: lead.email ?? undefined,
       phone: lead.phone ?? undefined,
       contentName: lead.interest ?? undefined,
-      // No invented deal value. Meta treats `value` as what a customer is
-      // worth, and a placeholder there quietly becomes the target the
-      // optimiser aims at.
-      valueAED: null,
+      // The REAL deal value when one exists — the closed deal's property
+      // price, read from the deals ledger above — and nothing otherwise.
+      // Meta treats `value` as what a customer is worth: with it, value-based
+      // lookalikes rank buyers by dirhams closed; with a placeholder, they
+      // would rank them by our imagination. The builder additionally drops it
+      // for anything but the Purchase.
+      valueAED: dealValueAed,
     })
     if (!ok) {
       // Nothing reached Meta — release the stage so the next update can retry.
