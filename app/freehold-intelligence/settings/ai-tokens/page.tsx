@@ -14,11 +14,22 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, Cpu, TriangleAlert } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-const OPENING_CONSUMED = 2003.32
-const OPENING_BALANCE = 314.4
-const LOW_WATERMARK = 500
-const DEV_SHARE = 94
-const TEAM_SHARE = 6
+const OPENING_CONSUMED = 2_003_320_000
+const OPENING_BALANCE = 314_400_000
+const LOW_WATERMARK = 500_000_000
+/** Per-workload utilization meters (percent of each workload's allocation). */
+const WORKLOADS: Array<{ key: string; pct: number }> = [
+  { key: 'settings.tokens.usageDev', pct: 85 },
+  { key: 'settings.tokens.usageExpertChat', pct: 31 },
+  { key: 'settings.tokens.usageMediaGen', pct: 17 },
+  { key: 'settings.tokens.usageOperations', pct: 9 },
+  { key: 'settings.tokens.usageDeployment', pct: 4 },
+]
+
+/** Meta AI runs on its own dedicated quota, metered apart from platform usage. */
+const META_AI = { pct: 54, used: 810_000_000, total: 1_500_000_000 }
+/** The sender takes amounts in millions of tokens. */
+const SEND_UNIT = 1_000_000
 
 interface TrailEntry {
   id: string
@@ -30,15 +41,15 @@ interface TrailEntry {
 const txnId = () =>
   `txn_${Array.from(crypto.getRandomValues(new Uint8Array(6))).map((b) => b.toString(16).padStart(2, '0')).join('')}`
 
-/** Fixed opening trail so the ledger reads as an operating system, day one. */
+/** Fixed opening trail so the ledger reads as an operating system, day one.
+ *  Balance-after chain is coherent: each row's after = next row's after + amount. */
 const OPENING_TRAIL: TrailEntry[] = [
-  { id: 'txn_9f41c02a77d1', at: new Date('2026-08-08T14:22:00+04:00'), amount: 120, after: 314.4 },
-  { id: 'txn_5b8e33f19c04', at: new Date('2026-08-06T09:10:00+04:00'), amount: 250, after: 434.4 },
-  { id: 'txn_c27a90d45e18', at: new Date('2026-08-03T18:45:00+04:00'), amount: 300, after: 684.4 },
+  { id: 'txn_9f41c02a77d1', at: new Date('2026-08-10T10:15:00+04:00'), amount: 750_000_000, after: 314_400_000 },
+  { id: 'txn_5b8e33f19c04', at: new Date('2026-08-09T18:40:00+04:00'), amount: 1_250_000_000, after: 1_064_400_000 },
+  { id: 'txn_c27a90d45e18', at: new Date('2026-08-09T09:05:00+04:00'), amount: 2_000_000_000, after: 2_314_400_000 },
 ]
 
-const num = (v: number) =>
-  v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const num = (v: number) => Math.round(v).toLocaleString('en-US')
 
 export default function AiTokenControlPage() {
   const t = useT()
@@ -57,13 +68,13 @@ export default function AiTokenControlPage() {
     const tick = () => {
       const r = Math.random()
       // ~25% idle · ~60% trickle · ~15% burst
-      const delta = r < 0.25 ? 0 : r < 0.85 ? 0.02 + Math.random() * 0.06 : 0.12 + Math.random() * 0.25
+      const delta = r < 0.25 ? 0 : r < 0.85 ? 20_000 + Math.random() * 70_000 : 150_000 + Math.random() * 300_000
       if (delta === 0) return
       setBalance((b) => {
-        const burned = Math.min(delta, b)
+        const burned = Math.round(Math.min(delta, b))
         if (burned <= 0) return b
-        setConsumed((c) => Math.round((c + burned) * 100) / 100)
-        return Math.round((b - burned) * 100) / 100
+        setConsumed((c) => c + burned)
+        return b - burned
       })
     }
     const id = setInterval(tick, 2000)
@@ -71,9 +82,10 @@ export default function AiTokenControlPage() {
   }, [])
 
   const low = balance < LOW_WATERMARK
+  // Sender input is in MILLIONS of tokens.
   const parsed = useMemo(() => {
     const n = Number.parseFloat(amount)
-    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null
+    return Number.isFinite(n) && n > 0 ? Math.round(n * SEND_UNIT) : null
   }, [amount])
 
   const send = (e: React.FormEvent) => {
@@ -84,9 +96,9 @@ export default function AiTokenControlPage() {
       setError(t('settings.tokens.insufficient'))
       return
     }
-    const after = Math.round((balance - parsed) * 100) / 100
+    const after = balance - parsed
     setBalance(after)
-    setConsumed((c) => Math.round((c + parsed) * 100) / 100)
+    setConsumed((c) => c + parsed)
     setTrail((prev) => [{ id: txnId(), at: new Date(), amount: parsed, after }, ...prev])
     setAmount('')
     setFlash(true)
@@ -143,24 +155,38 @@ export default function AiTokenControlPage() {
         </div>
       </section>
 
-      {/* Allocation split */}
-      <section className="mb-6 rounded-[14px] border border-line bg-surface p-4">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.tokens.usageTitle')}</div>
-        <div className="flex h-2 overflow-hidden rounded-full bg-white/5" dir="ltr">
-          <div className="bg-gold" style={{ width: `${DEV_SHARE}%` }} />
-          <div className="bg-slate-500" style={{ width: `${TEAM_SHARE}%` }} />
+      {/* Meta AI — dedicated quota, its own meter */}
+      <section className="mb-6 rounded-[14px] border border-emerald-500/25 bg-emerald-500/[0.04] p-4">
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-sm font-semibold text-white">{t('settings.tokens.usageMetaAi')}</div>
+          <span className="font-mono text-sm tabular-nums text-emerald-400" dir="ltr">{META_AI.pct}%</span>
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-400">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-gold" />
-            {t('settings.tokens.usageDev')}
-            <span className="font-mono tabular-nums text-white" dir="ltr">{DEV_SHARE}%</span>
+        <p className="mb-3 text-xs text-slate-400">{t('settings.tokens.metaAiDesc')}</p>
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/5" dir="ltr">
+          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${META_AI.pct}%` }} />
+        </div>
+        <div className="mt-2 text-xs text-slate-500" dir="ltr">
+          <span className="font-mono tabular-nums text-slate-300">
+            {t('settings.tokens.metaAiUsed', { used: num(META_AI.used), total: num(META_AI.total) })}
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-slate-500" />
-            {t('settings.tokens.usageTeam')}
-            <span className="font-mono tabular-nums text-white" dir="ltr">{TEAM_SHARE}%</span>
-          </span>
+        </div>
+      </section>
+
+      {/* Usage by workload */}
+      <section className="mb-6 rounded-[14px] border border-line bg-surface p-4">
+        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.tokens.usageTitle')}</div>
+        <div className="space-y-3.5">
+          {WORKLOADS.map(({ key, pct }) => (
+            <div key={key}>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-slate-300">{t(key)}</span>
+                <span className="font-mono tabular-nums text-white" dir="ltr">{pct}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/5" dir="ltr">
+                <div className="h-full rounded-full bg-gold" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -177,6 +203,7 @@ export default function AiTokenControlPage() {
             dir="ltr"
             className="w-40 rounded-lg border border-line bg-white/[0.03] px-3 py-2 font-mono text-sm tabular-nums text-white outline-none placeholder:text-slate-600 focus:border-gold/50"
           />
+          <span className="text-xs text-slate-500">{t('settings.tokens.amountUnit')}</span>
           <button
             type="submit"
             disabled={!parsed}
