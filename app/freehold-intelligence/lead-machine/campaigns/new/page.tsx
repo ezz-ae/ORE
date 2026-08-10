@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { BUYER_INTENTS, withIntent, type BuyerIntent } from '@/lib/meta/intent'
+import { loadImage } from '@/lib/freehold/ad-compose'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
 import { useSession } from '@/lib/freehold/use-session'
@@ -426,6 +427,18 @@ export default function NewCampaignPage() {
   // A ready-buyer template picked directly — no save-first detour. One pick
   // total: choosing a template clears the saved pick and vice versa.
   const [attachedPreset, setAttachedPreset] = useState<string | null>(null)
+  // WHERE THE BUYER LIVES comes first — it decides everything else about an
+  // audience, so it is the first choice on the screen, and the UAE is the
+  // default because the inventory is here and so are most buyers.
+  const [audMarket, setAudMarket] = useState<'uae' | 'gulf' | 'world'>('uae')
+  const GULF = ['SA', 'QA', 'KW', 'BH', 'OM']
+  const marketOfAudience = (a: SavedAudienceOption): 'uae' | 'gulf' | 'world' => {
+    const cs = a.spec?.countries ?? []
+    // A pattern audience's spec never reaches the browser by design; its
+    // market lives in its description, and the safe shelf is the default one.
+    if (cs.length === 0 || cs.includes('AE')) return 'uae'
+    return cs.some((c) => GULF.includes(c)) ? 'gulf' : 'world'
+  }
   const [audRefreshing, setAudRefreshing] = useState(false)
 
   // Refreshable + focus-refetching: an audience the user just built in the
@@ -1096,6 +1109,105 @@ export default function NewCampaignPage() {
     }
   }
 
+  // The last uploaded design's pixels, kept for on-spot work: the QR
+  // composite and the auto-enhance both need the image itself, and the hash
+  // Meta returned cannot give it back.
+  const lastDesignDataUrl = useRef<string>('')
+  // Copy read OFF the uploaded design by the vision extractor. A suggestion,
+  // never an overwrite: it fills only fields the operator left empty.
+  const [captionSuggestion, setCaptionSuggestion] = useState<{ headline: string; primaryText: string; description: string } | null>(null)
+  const [qrBusy, setQrBusy] = useState(false)
+  const [enhanceBusy, setEnhanceBusy] = useState(false)
+
+  async function extractDesignCaption(dataUrl: string) {
+    try {
+      const r = await fetch('/api/freehold/ads/design-caption', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl }),
+      })
+      if (!r.ok) return
+      const d = await r.json()
+      if (!d?.headline && !d?.primaryText) return
+      setCaptionSuggestion(d)
+      // Empty fields fill themselves; typed fields are the operator's and
+      // stay untouched — the suggestion strip offers the rest.
+      setForm((prev) => ({
+        ...prev,
+        headlines: prev.headlines[0] ? prev.headlines : [String(d.headline ?? '')],
+        primaryText: prev.primaryText || String(d.primaryText ?? ''),
+        descriptions: prev.descriptions[0] ? prev.descriptions : [String(d.description ?? '')],
+      }))
+    } catch { /* a convenience that failed is a convenience skipped */ }
+  }
+
+  /** Upload a ready dataUrl (composite/enhanced) as the campaign design. */
+  async function uploadDataUrl(dataUrl: string): Promise<boolean> {
+    const res = await fetch('/api/meta/adimages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl }),
+    })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return false }
+    lastDesignDataUrl.current = dataUrl
+    setForm((prev) => {
+      if (prev.imageUrl?.startsWith('blob:')) URL.revokeObjectURL(prev.imageUrl)
+      return { ...prev, imageUrl: dataUrl, imageHash: d.hash }
+    })
+    return true
+  }
+
+  /** The Trakheesi QR, composited ONTO the design in the browser: bottom
+   *  corner, white pad so any scanner reads it against any artwork. */
+  async function onUploadQr(file: File | null) {
+    if (!file) return
+    if (!lastDesignDataUrl.current) { setApiError(t('lm.newCampaign.s3.qr.needsDesign')); return }
+    setQrBusy(true); setApiError(null)
+    try {
+      const [design, qr] = await Promise.all([
+        loadImage(lastDesignDataUrl.current),
+        loadImage(await new Promise<string>((res, rej) => {
+          const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(file)
+        })),
+      ])
+      const canvas = document.createElement('canvas')
+      canvas.width = design.naturalWidth; canvas.height = design.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('no canvas')
+      ctx.drawImage(design, 0, 0)
+      // 16% of the short edge: big enough to scan from a phone screen, small
+      // enough to keep off the headline band.
+      const size = Math.round(Math.min(canvas.width, canvas.height) * 0.16)
+      const pad = Math.round(size * 0.08)
+      const x = canvas.width - size - pad * 3
+      const y = canvas.height - size - pad * 3
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(x - pad, y - pad, size + pad * 2, size + pad * 2)
+      ctx.drawImage(qr, x, y, size, size)
+      await uploadDataUrl(canvas.toDataURL('image/jpeg', 0.9))
+    } catch {
+      setApiError(t('lm.newCampaign.s3.qr.failed'))
+    } finally { setQrBusy(false) }
+  }
+
+  /** One-press enhance, on the spot: a gentle brightness/contrast/saturation
+   *  lift — the phone-photo fix — never a crop and never text. */
+  async function enhanceDesign() {
+    if (!lastDesignDataUrl.current || enhanceBusy) return
+    setEnhanceBusy(true); setApiError(null)
+    try {
+      const img = await loadImage(lastDesignDataUrl.current)
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('no canvas')
+      ctx.filter = 'brightness(1.04) contrast(1.07) saturate(1.08)'
+      ctx.drawImage(img, 0, 0)
+      await uploadDataUrl(canvas.toDataURL('image/jpeg', 0.9))
+    } catch {
+      setApiError(t('lm.newCampaign.s3.enhance.failed'))
+    } finally { setEnhanceBusy(false) }
+  }
+
   async function onUploadImage(file: File | null) {
     if (!file) return
     setUploadingImg(true); setApiError(null)
@@ -1106,6 +1218,8 @@ export default function NewCampaignPage() {
     })
     try {
       const dataUrl = await fileToUploadDataUrl(file)
+      lastDesignDataUrl.current = dataUrl
+      void extractDesignCaption(dataUrl)
       const res = await fetch('/api/meta/adimages', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataUrl }),
@@ -1959,43 +2073,58 @@ export default function NewCampaignPage() {
 
               <p className="mt-1 text-[11px] text-slate-500">{t('lm.aud.attach.sub')}</p>
 
-              {savedAudiences.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {savedAudiences.map((a) => {
-                    const on = attachedAudience?.id === a.id
-                    return (
-                      <button key={a.id} type="button"
-                        onClick={() => { setAttachedAudience(on ? null : a); if (!on) setAttachedPreset(null) }}
-                        className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
-                        {a.name}
-                        {a.reach ? <span className="ms-1.5 text-[11px] text-slate-500">{fmtReach(a.reach.lower)}–{fmtReach(a.reach.upper)}</span> : null}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+              {/* WHERE THE BUYER LIVES, first. The chips filter everything
+                  below; the UAE is the default because the inventory is here
+                  and so are most buyers. */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(['uae', 'gulf', 'world'] as const).map((m) => (
+                  <button key={m} type="button" onClick={() => setAudMarket(m)}
+                    className={`rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${audMarket === m ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-white'}`}>
+                    {t(`lm.newCampaign.s2.market.${m}`)}
+                  </button>
+                ))}
+              </div>
 
-              {/* The ready-buyer templates, usable directly — no save first. */}
-              <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{t('lm.aud.ready.title')}</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {READY_BUYERS.map(({ id }) => {
+              {/* CARDS, not a wall of pills: each audience carries its name,
+                  what it is, its reach or its track record — enough to choose
+                  by, small enough to scan. */}
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {savedAudiences.filter((a) => marketOfAudience(a) === audMarket).map((a) => {
+                  const on = attachedAudience?.id === a.id
+                  return (
+                    <button key={a.id} type="button"
+                      onClick={() => { setAttachedAudience(on ? null : a); if (!on) setAttachedPreset(null) }}
+                      className={`flex flex-col items-start rounded-xl border p-3 text-start transition ${on ? 'border-gold/60 bg-gold/10' : 'border-line bg-surface-2 hover:border-white/15'}`}>
+                      <span className={`text-[13px] font-semibold ${on ? 'text-gold' : 'text-white'}`}>{a.name}</span>
+                      <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">{t('lm.newCampaign.s2.card.saved')}</span>
+                      {a.reach && <span className="mt-1 text-[11px] text-slate-400">{t('lm.aud.ready.reach')}: {fmtReach(a.reach.lower)}–{fmtReach(a.reach.upper)}</span>}
+                    </button>
+                  )
+                })}
+                {READY_BUYERS.filter((b) => b.group === audMarket).map(({ id, cplAed }) => {
                   const on = attachedPreset === id
                   const record = audienceRecord[`ready:${id}`]
                   return (
                     <button key={id} type="button"
                       onClick={() => { setAttachedPreset(on ? null : id); if (!on) setAttachedAudience(null) }}
-                      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
-                      {t(`lm.aud.ready.${id}.name`)}
-                      {/* Only where there is a record. An audience nobody has
-                          run says nothing rather than "0 · 0". */}
-                      {record && record.leads > 0 && (
-                        <span className="ms-1.5 text-[10px] font-normal text-slate-500">
-                          {t('lm.aud.record', { leads: record.leads, qualified: record.qualified })}
-                        </span>
-                      )}
+                      className={`flex flex-col items-start rounded-xl border p-3 text-start transition ${on ? 'border-gold/60 bg-gold/10' : 'border-line bg-surface-2 hover:border-white/15'}`}>
+                      <span className={`text-[13px] font-semibold ${on ? 'text-gold' : 'text-white'}`}>{t(`lm.aud.ready.${id}.name`)}</span>
+                      <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">{t('lm.newCampaign.s2.card.ready')}</span>
+                      <span className="mt-1 text-[11px] text-slate-400">
+                        {record && record.leads > 0
+                          ? t('lm.aud.record', { leads: record.leads, qualified: record.qualified })
+                          : t('lm.newCampaign.s2.card.cpl', { lo: cplAed[0], hi: cplAed[1] })}
+                      </span>
                     </button>
                   )
                 })}
+                {/* Making a NEW audience is a real option on the shelf, not a
+                    link hidden in the corner. */}
+                <Link href="/freehold-intelligence/lead-machine/audiences" target="_blank"
+                  className="flex flex-col items-start justify-center rounded-xl border border-dashed border-line bg-surface p-3 transition hover:border-gold/40">
+                  <span className="flex items-center gap-1.5 text-[13px] font-semibold text-gold"><Plus className="h-3.5 w-3.5" /> {t('lm.newCampaign.s2.card.create')}</span>
+                  <span className="mt-0.5 text-[11px] text-slate-500">{t('lm.newCampaign.s2.card.createSub')}</span>
+                </Link>
               </div>
 
               {/* DON'T PAY TWICE FOR THE SAME PERSON.
@@ -2396,6 +2525,17 @@ export default function NewCampaignPage() {
                 onChange={(e) => { update('imageUrl', e.target.value); update('imageHash', '') }}
                 placeholder={t('lm.imageUrlPlaceholder')}
               />
+              {captionSuggestion && (
+                <div className="mt-2 rounded-lg border border-gold/25 bg-gold/[0.05] px-3 py-2 text-[11px] leading-relaxed text-slate-300">
+                  <span className="font-semibold text-gold">{t('lm.newCampaign.s3.caption.title')}</span>{' '}
+                  {t('lm.newCampaign.s3.caption.sub')}
+                  <button type="button"
+                    onClick={() => { setForm((prev) => ({ ...prev, headlines: [captionSuggestion.headline], primaryText: captionSuggestion.primaryText, descriptions: [captionSuggestion.description] })); setCaptionSuggestion(null) }}
+                    className="ms-2 font-semibold text-gold underline">{t('lm.newCampaign.s3.caption.apply')}</button>
+                  <button type="button" onClick={() => setCaptionSuggestion(null)}
+                    className="ms-2 text-slate-500 underline">{t('lm.newCampaign.s3.caption.dismiss')}</button>
+                </div>
+              )}
               {/* Media sources: upload → Meta (image_hash), pick from the
                   Library (incl. Drive-edited/QR-stamped images), or open the
                   Drive editor to stamp QR/permit/text and save back. */}
@@ -2405,6 +2545,21 @@ export default function NewCampaignPage() {
                   <input type="file" accept="image/*" className="hidden" disabled={uploadingImg}
                     onChange={(e) => onUploadImage(e.target.files?.[0] ?? null)} />
                 </label>
+                {/* The permit QR, composited onto the design right here —
+                    white pad so any scanner reads it on any artwork. */}
+                <label className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${form.imageHash ? 'border-line-strong bg-surface-2 text-slate-200 hover:border-gold/40' : 'border-line bg-surface text-slate-500'}`}>
+                  {qrBusy ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.qr.add')}
+                  <input type="file" accept="image/*" className="hidden" disabled={qrBusy || !form.imageHash}
+                    onChange={(e) => { void onUploadQr(e.target.files?.[0] ?? null); e.target.value = '' }} />
+                </label>
+                {/* On-spot enhance: the phone-photo lift — light, contrast,
+                    colour. Never a crop, never text. */}
+                {form.imageHash ? (
+                  <button type="button" onClick={() => void enhanceDesign()} disabled={enhanceBusy}
+                    className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40 disabled:opacity-50">
+                    {enhanceBusy ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.enhance.button')}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={toggleLibrary}
