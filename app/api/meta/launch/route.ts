@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { launchFullCampaign } from '@/lib/meta/client'
+import { launchFullCampaign, listAccessiblePages } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { createLocalCampaign } from '@/lib/meta/local-store'
 import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
@@ -326,6 +326,23 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // THE PAGE THE AD RUNS AS. Optional; the configured Page when absent. A
+    // posted id is checked against the Pages this account can actually use —
+    // not because Meta would accept a stranger's Page (it would not), but so
+    // the operator gets a readable sentence instead of a Graph error code.
+    let launchPageId: string | undefined
+    if (typeof body.pageId === 'string' && body.pageId.trim()) {
+      const wanted = body.pageId.trim()
+      const accessible = await listAccessiblePages().catch(() => [])
+      // An empty list is a lookup failure, not proof of inaccessibility —
+      // pass through and let Meta be the judge rather than blocking a launch
+      // on our own outage.
+      if (accessible.length > 0 && !accessible.some((pg) => pg.id === wanted)) {
+        return NextResponse.json({ error: `This Meta account cannot publish as Page ${wanted} — reconnect the Page or pick one of the ${accessible.length} connected Pages.` }, { status: 400 })
+      }
+      launchPageId = wanted
+    }
+
     const result = await launchFullCampaign({
       campaignName:     body.campaignName,
       objective:        body.objective,
@@ -348,6 +365,7 @@ export async function POST(req: NextRequest) {
       destination:      body.destination,
       leadFormId:       body.leadFormId,
       destinationPhone: body.destinationPhone,
+      pageId:           launchPageId,
       lifetimeCapAED:   typeof body.lifetimeCapAED === 'number' && body.lifetimeCapAED > 0 ? body.lifetimeCapAED : undefined,
       cplCapAED:        typeof body.cplCapAED === 'number' && body.cplCapAED > 0 ? body.cplCapAED : undefined,
       pixelId:          typeof body.pixelId === 'string' && body.pixelId.trim() ? body.pixelId.trim() : undefined,

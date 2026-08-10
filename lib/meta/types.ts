@@ -100,6 +100,12 @@ export interface MetaAdSet {
   /** Meta's own learning state: LEARNING | SUCCESS | FAIL. FAIL means it
    *  stopped trying to learn at this volume, which "Active" never showed. */
   learning_stage_info?: { status?: string; last_sig_edit_ts?: number; attribution_window_days?: number }
+  /** COST_CAP | LOWEST_COST_WITHOUT_CAP. A cap is set only at creation —
+   *  updateAdSet carries no bid fields, so it can never be raised or removed
+   *  by this product. Reading it back is the only way anyone finds out. */
+  bid_strategy?: string
+  /** The cap itself, in FILS (AED × 100), only under COST_CAP. */
+  bid_amount?: string
 }
 
 export interface MetaAdCreative {
@@ -272,6 +278,9 @@ export interface CampaignCreative {
 }
 
 export interface LaunchCampaignPayload {
+  /** The Page the ads run as. Absent = the configured Page. When the
+   *  destination is an instant form this is the Page that owns the form. */
+  pageId?: string
   /** Attach a saved audience by id and let the SERVER read its definition.
    *  Required for pattern audiences, whose targeting deliberately never
    *  reaches the browser and so cannot be sent back from it. */

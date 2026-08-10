@@ -679,7 +679,7 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
   const res = await apiFetch<{ data: MetaAdSet[] }>(`/${campaignId}/adsets`, undefined, {
     // learning_stage_info is the difference between "active" and "Meta gave
     // up learning at this volume" — the state that quietly costs the most.
-    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info,end_time',
+    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info,end_time,bid_strategy,bid_amount',
     limit: '200',
   })
   return res.data ?? []
@@ -708,6 +708,8 @@ function toOdaxObjective(obj: MetaCampaignObjective, hasPixel: boolean, destinat
 export async function createAdSet(params: {
   campaignId: string
   name: string
+  /** Page override for promoted_object — must be the Page the ad runs as. */
+  pageId?: string
   objective: MetaCampaignObjective
   dailyBudgetAED: number
   targeting: CampaignTargeting
@@ -759,7 +761,10 @@ export async function createAdSet(params: {
    */
   endTimeIso?: string
 }): Promise<{ id: string }> {
-  const { adAccountId, pageId, pixelId: accountPixel } = await creds()
+  const { adAccountId, pageId: configuredPageId, pixelId: accountPixel } = await creds()
+  // The Page in promoted_object must be the Page the ad runs as, or Meta
+  // rejects the ad against its own form. See createAdCreative's pageId.
+  const pageId = params.pageId || configuredPageId
   const pixelId = params.pixelId || accountPixel
   const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId, params.destination)
 
@@ -1246,8 +1251,17 @@ export async function createAdCreative(params: {
   leadFormId?: string
   /** E.164 number for 'whatsapp' / 'phone' destinations. */
   destinationPhone?: string
+  /**
+   * The Page the ad RUNS AS. Defaults to the configured Page — which was the
+   * only option for as long as this parameter did not exist, even though the
+   * account can post from several Pages and an instant form belongs to ONE of
+   * them. An ad pointing at a form from a different Page is rejected by Meta,
+   * so the form's Page must be able to travel here.
+   */
+  pageId?: string
 }): Promise<{ id: string }> {
-  const { adAccountId, pageId } = await creds()
+  const { adAccountId, pageId: configuredPageId } = await creds()
+  const pageId = params.pageId || configuredPageId
 
   // CTA shaping per destination. The instant form rides ON the CTA
   // (lead_gen_form_id) — this is the wiring that makes a picked Meta form
@@ -2803,6 +2817,13 @@ export async function launchFullCampaign(params: {
   placementMode?: 'automatic' | 'manual'
   /** PlacementKey values to run on when placementMode is 'manual'. */
   manualPlacements?: string[]
+  /**
+   * The Page the campaign's ads run as. Omitted = the configured Page, the
+   * unchanged behaviour. When the destination is an instant form this must be
+   * the Page that OWNS the form — Meta rejects the mismatch, and the wizard
+   * follows the form's Page automatically for exactly that reason.
+   */
+  pageId?: string
   /** Lead-language codes ('en'|'ar'|'ru') resolved live to Meta locale IDs. */
   leadLanguages?: string[]
   /**
@@ -2965,6 +2986,7 @@ export async function launchFullCampaign(params: {
         pixelId: pixelId ?? undefined,
         destination: params.destination,
         cplCapAED: params.cplCapAED,
+        pageId: params.pageId,
         endTimeIso: params.endTimeIso,
         placementOverride: PLACEMENT_TARGETING[key],
       }))
@@ -2974,6 +2996,7 @@ export async function launchFullCampaign(params: {
         destination: params.destination,
         leadFormId: params.leadFormId,
         destinationPhone: params.destinationPhone,
+        pageId: params.pageId,
       }))
       const ad = await step(`ad (${label})`, () => createAd({
         adSetId: adSet.id,
@@ -2996,6 +3019,7 @@ export async function launchFullCampaign(params: {
         pixelId: pixelId ?? undefined,
         destination: params.destination,
         cplCapAED: params.cplCapAED,
+        pageId: params.pageId,
         endTimeIso: params.endTimeIso,
         placementOverride: unionPlacementTargeting(defaultKeys),
       }))
@@ -3005,6 +3029,7 @@ export async function launchFullCampaign(params: {
         destination: params.destination,
         leadFormId: params.leadFormId,
         destinationPhone: params.destinationPhone,
+        pageId: params.pageId,
       }))
       const ad = await step('ad (other placements)', () => createAd({
         adSetId: adSet.id,
@@ -3037,6 +3062,7 @@ export async function launchFullCampaign(params: {
     pixelId:        pixelId ?? undefined,
     destination:    params.destination,
     cplCapAED:      params.cplCapAED,
+    pageId:         params.pageId,
     endTimeIso:     params.endTimeIso,
     placementMode:      params.placementMode,
     manualPlacements:   params.manualPlacements,
@@ -3050,6 +3076,7 @@ export async function launchFullCampaign(params: {
     destination:      params.destination,
     leadFormId:       params.leadFormId,
     destinationPhone: params.destinationPhone,
+    pageId:           params.pageId,
   }))
 
   // 6 — Ad
@@ -3075,6 +3102,7 @@ export async function launchFullCampaign(params: {
       destination:      params.destination,
       leadFormId:       params.leadFormId,
       destinationPhone: params.destinationPhone,
+      pageId:           params.pageId,
     }))
     await step(`ad (design ${letter})`, () => createAd({
       adSetId:    adSet.id,
