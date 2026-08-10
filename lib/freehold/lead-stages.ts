@@ -17,6 +17,20 @@
 /** Qualified or deeper: a human decided this lead is real. */
 export const QUALIFIED_STATUSES = new Set(['qualified', 'viewing', 'negotiation', 'converted', 'closed'])
 
+/**
+ * When an untouched lead becomes a NEGLECTED one: three days without contact.
+ *
+ * An internal working convention, not a client-facing SLA (the first-response
+ * SLA is admin-configurable and separate). Three days is house judgment about
+ * when a property lead has gone cold enough to chase — no platform or legal
+ * constraint sets it. What IS a hard rule: the follow-up queue, the team
+ * metrics rollup and the leader coach must all mean the same thing by
+ * "overdue", which is why the number lives here and nowhere else. The coach
+ * copy in lib/i18n/dictionaries/coach.ts says "three days" in prose — change
+ * this and change those words with it.
+ */
+export const OVERDUE_FOLLOWUP_HOURS = 72
+
 /** The real objective event — money changed hands. */
 export const WON_STATUSES = new Set(['converted', 'closed'])
 

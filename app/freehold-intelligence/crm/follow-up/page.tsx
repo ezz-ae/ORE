@@ -9,6 +9,7 @@ import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/
 import { useT } from '@/lib/i18n/provider'
 import { LeadValueChips } from '@/components/freehold/lead-value-chips'
 import { triage, type SetAsideReason } from '@/lib/freehold/queue-priority'
+import { OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
 
@@ -148,7 +149,10 @@ export default function FollowUpQueuePage() {
         l.pipelineStage === 'contacted' || l.pipelineStage === 'qualified' || breachMinutesOf(l.id) !== null)
       .map((l) => {
         const lastMs   = new Date(l.lastContactAt).getTime()
-        const dueMs    = lastMs + 72 * 60 * 60 * 1000 // 72h follow-up window
+        // The shared definition of neglected — same number the team metrics
+        // rollup and the leader coach use, so every screen means the same thing
+        // by "overdue".
+        const dueMs    = lastMs + OVERDUE_FOLLOWUP_HOURS * 60 * 60 * 1000
         const overdue  = Math.max(0, Math.round((NOW_MS - dueMs) / (60 * 60 * 1000)))
         return {
           leadId:        l.id,

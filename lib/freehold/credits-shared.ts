@@ -7,7 +7,15 @@
 export const CREDIT_TIERS = ['Starter', 'Growth', 'Pro', 'Elite'] as const
 export type CreditTier = (typeof CREDIT_TIERS)[number]
 
-/** Monthly credit quota per tier — the single source of truth for UI + server. */
+/**
+ * Monthly credit quota per tier — the single source of truth for UI + server.
+ *
+ * The numbers are COMMERCIAL TERMS, not derived from any platform constraint:
+ * they are what each subscription tier buys, set by whoever owns Freehold's
+ * pricing. There is nothing in the code to balance them against — change them
+ * only on a pricing decision, and expect brokers to notice: the grant job
+ * tops accounts up to these values every month.
+ */
 export const TIER_MONTHLY_QUOTA: Record<CreditTier, number> = {
   Starter: 12,
   Growth: 18,

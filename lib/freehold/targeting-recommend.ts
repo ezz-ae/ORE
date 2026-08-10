@@ -139,6 +139,13 @@ function clampRecommendation(raw: Record<string, unknown>): TargetingRecommendat
     ageMin: num(raw.ageMin, 28, 18, 60),
     ageMax: Math.max(num(raw.ageMax, 60, 25, 65), num(raw.ageMin, 28, 18, 60) + 5),
     cityKeys: cities.length ? cities : ['297928'],
+    // The clamp stands between a language model's guess and a screen that
+    // recommends spend in the product's voice. 50 is Meta's ad-set daily
+    // minimum (META_MIN_TRIAL_BUDGET_AED); 5000 caps a hallucinated number at
+    // the top of what this product's accounts actually spend in a day; 250 is
+    // the middle-of-the-road trial the machine suggests when the model returns
+    // nothing usable. The bounds are judgment sized to this account scale, not
+    // platform facts — revisit them if the client base changes.
     dailyBudgetAED: num(raw.dailyBudgetAED, 250, 50, 5000),
     signalPlan: txt(raw.signalPlan),
     creativeAngle: txt(raw.creativeAngle),
