@@ -125,14 +125,21 @@ export default function DeveloperProfilesPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.text) throw new Error(data?.error || 'AI failed')
-      // Persist the generated profile as published web-content (create, or
-      // update an existing custom row) — no clipboard-only output.
-      const existing = developers.find((d) => d.slug === slug && d.custom)
-      const save = existing
-        ? fetch('/api/freehold/web-content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: existing.id, body: data.text, status: 'published' }) })
-        : fetch('/api/freehold/web-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'developer', name, slug, body: data.text, status: 'published' }) })
-      const saved = await save
-      if (!saved.ok) throw new Error('save failed')
+      // ONE UPSERT, INTO THE TABLE THE PUBLIC SITE READS.
+      //
+      // This used to branch: PATCH an existing custom row, otherwise POST a
+      // new one — and the lookup could never find a row for a REAL developer,
+      // because the merge below filters those out of state. So every press
+      // took the POST branch and minted another row, with no unique index to
+      // stop it. A create-or-update endpoint has no branch to get wrong.
+      //
+      // And it went to web-content, which no public page has ever read: the
+      // profile was written, and the website never saw a word of it.
+      const saved = await fetch('/api/freehold/developers', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, slug, description: data.text }),
+      })
+      if (!saved.ok) throw new Error((await saved.json().catch(() => ({})))?.error || 'save failed')
       setWritten((p) => [...p, name])
       toast.success(t('paim.devs.toastGenerated', { name }))
       load()
@@ -184,13 +191,21 @@ export default function DeveloperProfilesPage() {
               const name = newName.trim()
               if (!name) return
               try {
-                const res = await fetch('/api/freehold/web-content', {
+                const res = await fetch('/api/freehold/developers', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ kind: 'developer', name }),
+                  body: JSON.stringify({ name }),
                 })
                 const data = await res.json()
                 if (!res.ok) throw new Error(data?.error || 'Failed')
-                setShowNew(false); setNewName(''); toast.success(t('paim.devs.toastCreated')); load()
+                setShowNew(false); setNewName('')
+                // The public directory lists developers that HAVE projects.
+                // A profile saved with none is saved correctly and simply not
+                // listed yet — saying so beats letting a working save look
+                // like a silent failure when /developers does not change.
+                toast.success(data?.listed
+                  ? t('paim.devs.toastCreated')
+                  : t('paim.devs.toastCreatedNoProjects'))
+                load()
               } catch (err) { toast.error(err instanceof Error ? err.message : t('paim.devs.toastCreateFail')) }
             }}
               className="rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">

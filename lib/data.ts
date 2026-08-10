@@ -1000,6 +1000,86 @@ export async function getAreaBySlug(slug: string) {
   return rows[0] ? mapAreaRow(rows[0]) : null
 }
 
+/**
+ * CREATE OR UPDATE A DEVELOPER PROFILE — in the table the public site reads.
+ *
+ * "Add developer" wrote to `freehold_site_web_content`, which nothing public
+ * has ever read. The row existed, the toast said created, and /developers
+ * never listed it while its Preview link 404ed. The table the site DOES read,
+ * `freehold_site_developer_profiles`, had no writer anywhere in the codebase
+ * — it was populated out of band and never from the product.
+ *
+ * PROJECT COUNT IS COUNTED, NEVER TYPED. The public listing filters on it, so
+ * it decides whether a developer appears at all. Deriving it from the projects
+ * that actually name this developer means the number cannot be wrong, and a
+ * developer with no projects is honestly invisible on a directory of
+ * developers-with-projects rather than mysteriously so.
+ */
+export async function upsertDeveloperProfile(input: {
+  slug: string
+  name: string
+  /** Long-form profile copy, when there is any. */
+  description?: string | null
+  logo?: string | null
+}): Promise<{ slug: string; name: string; projectCount: number }> {
+  const slug = normalizeSlug(input.slug || input.name)
+  if (!slug) throw new Error('A developer needs a name')
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS freehold_site_developer_profiles (
+      id            text PRIMARY KEY,
+      slug          text,
+      name          text,
+      tier          text,
+      avg_score     numeric,
+      honesty_index numeric,
+      risk_discount numeric,
+      logo          text,
+      banner_image  text,
+      payload       jsonb NOT NULL DEFAULT '{}'::jsonb
+    )`)
+
+  // Counted from the real inventory, matched on the name the projects carry.
+  const counted = await query<{ n: string }>(
+    `SELECT count(*)::text AS n FROM freehold_site_projects WHERE lower(developer_name) = lower($1)`,
+    [input.name],
+  ).catch(() => [{ n: '0' }])
+  const projectCount = Number(counted[0]?.n) || 0
+
+  const existing = await query<{ id: string; payload: Record<string, unknown> | null }>(
+    `SELECT id, payload FROM freehold_site_developer_profiles WHERE lower(slug) = lower($1) LIMIT 1`,
+    [slug],
+  )
+
+  // Merged over whatever is already there: a profile that arrived with a logo,
+  // a tier and an award list must not lose them because someone edited the
+  // description.
+  const payload = {
+    ...(existing[0]?.payload ?? {}),
+    slug,
+    name: input.name,
+    ...(input.description !== undefined ? { description: input.description } : {}),
+    ...(input.logo ? { logo: input.logo } : {}),
+    projectCount,
+  }
+
+  if (existing[0]) {
+    await query(
+      `UPDATE freehold_site_developer_profiles
+          SET name = $2, slug = $3, payload = $4::jsonb
+        WHERE id = $1`,
+      [existing[0].id, input.name, slug, JSON.stringify(payload)],
+    )
+  } else {
+    await query(
+      `INSERT INTO freehold_site_developer_profiles (id, slug, name, payload)
+       VALUES ($1, $2, $3, $4::jsonb)`,
+      [`dev_${slug}`, slug, input.name, JSON.stringify(payload)],
+    )
+  }
+  return { slug, name: input.name, projectCount }
+}
+
 export async function getDevelopers() {
   const rows = await query<DeveloperRow>(
     `SELECT id, slug, name, tier, avg_score, honesty_index, risk_discount, logo, banner_image, payload 
