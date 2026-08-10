@@ -27,6 +27,7 @@ import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
 import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
 import { personaIds } from '../lib/freehold/persona-audience'
+import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 
@@ -92,6 +93,15 @@ console.log('\n── campaign-request statuses ──')
 {
   // Broker screen and fulfilment queue both render t(`creq.status.${s}`).
   family('creq.status', 'creq.status.', REQUEST_STATUSES)
+}
+
+console.log('\n── warm audience rungs ──')
+{
+  // The warm panel renders t(`lm.aud.warmRung.${s.rung}`) and its blocked
+  // states — from the WARM_AUDIENCES catalog, so a new rung cannot ship
+  // wordless.
+  family('lm.aud.warmRung', 'lm.aud.warmRung.', WARM_AUDIENCES.map((w) => w.rung), lm_audiences)
+  family('lm.aud.warm.blocked', 'lm.aud.warm.blocked.', ['pixel', 'page'], lm_audiences)
 }
 
 console.log('\n── persona names ──')

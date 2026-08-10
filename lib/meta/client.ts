@@ -2716,6 +2716,27 @@ export async function listCustomAudiences(): Promise<CustomAudienceSummary[]> {
   }))
 }
 
+/**
+ * A RULE audience: Meta fills it from behaviour — pixel visits, Page
+ * engagement, lead-form opens — instead of an uploaded list. The rule shapes
+ * are Meta's own vocabulary and are validated by Meta at creation; a refused
+ * rule surfaces as a readable error rather than a silently empty audience.
+ */
+export async function createRuleAudience(
+  name: string,
+  description: string,
+  subtype: 'WEBSITE' | 'ENGAGEMENT',
+  rule: Record<string, unknown>,
+): Promise<{ id: string }> {
+  const { adAccountId } = await creds()
+  return apiPost(`/${adAccountId}/customaudiences`, {
+    name,
+    description,
+    subtype,
+    rule: JSON.stringify(rule),
+  })
+}
+
 export async function createCustomAudience(
   name: string,
   description: string,
