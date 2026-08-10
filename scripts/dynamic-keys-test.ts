@@ -74,7 +74,7 @@ console.log('\n── setup-check findings ──')
     'noPlace', 'place', 'manyCountries', 'visitors', 'residents',
     'noProperty', 'property', 'expansion', 'youngAge', 'age',
     'anyPlacement', 'offPlatform', 'loosePlacement', 'placements',
-    'softGoal', 'noBudget',
+    'softGoal', 'noBudget', 'capped', 'capChoking',
   ]
   family('lm.setupCheck', 'lm.setupCheck.', SETUP_KEYS)
 }
