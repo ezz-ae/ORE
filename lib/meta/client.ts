@@ -2941,10 +2941,34 @@ export async function launchFullCampaign(params: {
 
   // 3 — Creative prep. Prefer a NATIVE image: ingest the external URL into
   // the ad account first (image_hash); external `picture` URLs are flaky.
+  //
+  // AND WHEN THE INGEST FAILS, REFUSE — never fall back to the URL. The
+  // fallback handed Meta the very address our own server just failed to
+  // fetch, so Meta failed on it too (subcode 3858258, "Image Wasn't
+  // Downloaded") — but only AFTER the campaign and ad set existed, leaving a
+  // half-built campaign and an error at the far end of the launch. A picture
+  // neither we nor Meta can download is a fact best delivered before any
+  // money object is created, with the URL named so the operator knows which
+  // image to re-upload.
   const creativeInput = { ...params.creative }
   if (!creativeInput.imageHash && creativeInput.imageUrl) {
+    // A blob:/data: URL is a browser-local preview — it does not exist
+    // outside the operator's own tab, so "ingest" is not a thing that can
+    // succeed. Reaching here with one means the real upload never finished.
+    if (creativeInput.imageUrl.startsWith('blob:') || creativeInput.imageUrl.startsWith('data:')) {
+      throw new MetaApiError(
+        'The ad picture never finished uploading — what launched would have been a preview only your browser can see. Go back to the design step and upload the image again.',
+        100, 'validation',
+      )
+    }
     const hash = await ingestImageFromUrl(creativeInput.imageUrl)
     if (hash) creativeInput.imageHash = hash
+    else {
+      throw new MetaApiError(
+        `The ad image could not be downloaded from ${creativeInput.imageUrl} — the link is not publicly reachable (blocked, moved, or behind a login). Upload the picture in the launcher instead of linking it.`,
+        100, 'validation',
+      )
+    }
   }
   // Same ingestion for any per-placement override image that only carries a
   // pasted/library URL — a native hash is required everywhere an override's
@@ -3117,9 +3141,18 @@ export async function launchFullCampaign(params: {
   // 7 — Extra designs: one ad per variant image, same copy, same ad set.
   // Meta's delivery routes spend to whichever design converts; the per-design
   // report reads the result back. Cap keeps an ad set reviewable.
-  const variants = (creativeInput.variants ?? [])
+  // Each extra design's picture goes native too. One whose URL cannot be
+  // fetched is DROPPED rather than launched: by the time designs launch the
+  // main ad already exists, and killing a live launch over a side design's
+  // dead link would cost the whole campaign to save a variant.
+  const variantsRaw = (creativeInput.variants ?? [])
     .filter((v) => v.imageHash || v.imageUrl)
     .slice(0, 3)
+  const variants = (await Promise.all(variantsRaw.map(async (v) => {
+    if (v.imageHash || !v.imageUrl || v.imageUrl.startsWith('blob:') || v.imageUrl.startsWith('data:')) return v
+    const hash = await ingestImageFromUrl(v.imageUrl)
+    return hash ? { ...v, imageHash: hash } : null
+  }))).filter((v): v is NonNullable<typeof v> => v !== null)
   for (let i = 0; i < variants.length; i++) {
     const letter = String.fromCharCode(66 + i) // B, C, D
     const v = variants[i]
