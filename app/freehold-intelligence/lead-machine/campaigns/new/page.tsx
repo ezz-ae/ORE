@@ -374,12 +374,27 @@ export default function NewCampaignPage() {
   // connected to. The system knew both and showed neither — so nobody could
   // see whose name and picture the buyer would see next to the ad.
   const [adIdentity, setAdIdentity] = useState<{ pageName: string | null; instagram: { username: string | null } | null } | null>(null)
+  // Every Page this account can publish as. The identity API returned this
+  // list from the day it shipped and the wizard never read it — so the ad
+  // could only ever run as the ONE configured Page, and an operator whose
+  // form lived on another Page was simply stuck.
+  const [metaPages, setMetaPages] = useState<Array<{ id: string; name: string }>>([])
+  const [adPageId, setAdPageId] = useState('') // '' = the configured Page
   useEffect(() => {
-    fetch('/api/meta/identity', { cache: 'no-store' })
+    const q = adPageId ? `?pageId=${encodeURIComponent(adPageId)}` : ''
+    fetch(`/api/meta/identity${q}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.identity) setAdIdentity(d.identity) })
+      .then((d) => {
+        if (d?.identity) setAdIdentity(d.identity)
+        if (Array.isArray(d?.pages) && d.pages.length > 0) setMetaPages(d.pages)
+        // Resolve '' to the configured Page's real id once, so the picker
+        // always holds an actual choice and the launch always states one.
+        if (!adPageId && typeof d?.identity?.pageId === 'string' && d.identity.pageId) {
+          setAdPageId(d.identity.pageId)
+        }
+      })
       .catch(() => {})
-  }, [])
+  }, [adPageId])
   const [audienceRecord, setAudienceRecord] = useState<Record<string, { leads: number; qualified: number; won: number }>>({})
   useEffect(() => {
     fetch('/api/freehold/ads/audiences/outcomes', { cache: 'no-store' })
@@ -1349,6 +1364,10 @@ export default function NewCampaignPage() {
       // Real per-surface placement control — 'automatic' (default) keeps the
       // publisherPlatforms-derived behavior above; only sent as 'manual' with
       // its picks when the operator actually chose specific surfaces.
+      // Whose profile the ad runs under. '' = configured Page (unchanged).
+      // With an instant form the effect above has already set this to the
+      // form's owner, so the pair always matches.
+      pageId:           adPageId || undefined,
       placementMode:    form.placementMode,
       manualPlacements: form.placementMode === 'manual' ? form.manualPlacements : undefined,
       // Persisted per campaign — the autopilot pass enforces it.
@@ -1689,7 +1708,15 @@ export default function NewCampaignPage() {
                 <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><FileText className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.title')}</div>
                 <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.leadForm.hint')}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <select value={leadFormId} onChange={(e) => setLeadFormId(e.target.value)} className={`${inputCls()} max-w-xs`}>
+                  <select value={leadFormId} onChange={(e) => {
+                    setLeadFormId(e.target.value)
+                    // An instant form BELONGS to a Page, and the ad must run
+                    // as that Page — Meta rejects the mismatch. So choosing a
+                    // form chooses the Page; the identity strip below updates
+                    // to show whose name the buyer will actually see.
+                    const owner = leadForms.find((f) => f.id === e.target.value)?.page_id
+                    if (owner) setAdPageId(owner)
+                  }} className={`${inputCls()} max-w-xs`}>
                     <option value="">{leadFormsLoading ? t('common.loading') : t('lm.newCampaign.leadForm.pick')}</option>
                     {groupFormsByPage(leadForms).map((g) => (
                       g.showHeading
@@ -2161,9 +2188,31 @@ export default function NewCampaignPage() {
             {adIdentity && (adIdentity.pageName || adIdentity.instagram) && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface-2 px-4 py-2.5 text-[12px] text-slate-400">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s3.runsFrom')}</span>
-                {adIdentity.pageName && (
+                {metaPages.length > 1 ? (
+                  // More than one Page ⇒ this is a CHOICE, not a caption.
+                  // With an instant form attached the choice is already made
+                  // by the form's owner — shown, not overridable, because a
+                  // mismatched pair cannot launch.
+                  <span className="flex items-center gap-1.5">
+                    <Facebook className="h-3.5 w-3.5 text-slate-500" />
+                    {form.productObjective === 'meta_lead' && leadFormId ? (
+                      <span className="text-slate-300">{adIdentity.pageName}<span className="ml-1.5 text-[10px] text-slate-500">{t('lm.newCampaign.s3.pageFromForm')}</span></span>
+                    ) : (
+                      <select
+                        value={adPageId}
+                        onChange={(e) => setAdPageId(e.target.value)}
+                        className="rounded-lg border border-line bg-surface px-2 py-1 text-[12px] text-slate-200 outline-none focus:border-gold/40"
+                        aria-label={t('lm.newCampaign.s3.runsFrom')}
+                      >
+                        {metaPages.map((pg) => (
+                          <option key={pg.id} value={pg.id}>{pg.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </span>
+                ) : adIdentity.pageName ? (
                   <span className="flex items-center gap-1.5"><Facebook className="h-3.5 w-3.5 text-slate-500" />{adIdentity.pageName}</span>
-                )}
+                ) : null}
                 <span className="flex items-center gap-1.5">
                   <Instagram className="h-3.5 w-3.5 text-slate-500" />
                   {/* A Page with no connected Instagram account still runs on
