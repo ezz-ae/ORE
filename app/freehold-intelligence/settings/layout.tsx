@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import {
   ArrowLeft, Settings,
-  Settings2, Users, Shield, CreditCard,
+  Settings2, Users, Shield, CreditCard, Coins,
   ShieldCheck, Bell, Code, Globe, Workflow, Database, Lock, Bot,
 } from 'lucide-react'
 import { useSession } from '@/lib/freehold/use-session'
@@ -27,6 +27,7 @@ const NAV_SECTIONS = [
       { label: 'settings.tab.roles',         href: '/freehold-intelligence/settings/roles',                           Icon: Shield     },
       { label: 'settings.tab.languages',     href: '/freehold-intelligence/settings/languages',                       Icon: Globe      },
       { label: 'settings.tab.billing',       href: '/freehold-intelligence/settings/billing',                         Icon: CreditCard },
+      { label: 'settings.tab.aiTokens',      href: '/freehold-intelligence/settings/ai-tokens',                       Icon: Coins      },
     ],
   },
   {
