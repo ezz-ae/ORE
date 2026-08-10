@@ -169,7 +169,15 @@ export function wouldResetLearning(fromAed: number, toAed: number): boolean {
  *  tripping a learning reset. Returns the target itself when it is already
  *  safe. */
 export function safeBudgetStep(fromAed: number, targetAed: number): number {
-  if (!wouldResetLearning(fromAed, targetAed)) return Math.round(targetAed)
+  if (!wouldResetLearning(fromAed, targetAed)) {
+    // The round itself can cross the boundary the target just passed: from
+    // 288, a target of 345.6 is exactly 20%, and Math.round hands back 346 —
+    // 20.14%, a reset manufactured by the rounding. When the plain round
+    // crosses, round towards the current budget instead.
+    const rounded = Math.round(targetAed)
+    if (!wouldResetLearning(fromAed, rounded)) return rounded
+    return targetAed > fromAed ? Math.floor(targetAed) : Math.ceil(targetAed)
+  }
   const up = targetAed > fromAed
   // ROUND TOWARDS THE CURRENT BUDGET, never away from it. Math.round would
   // cross the very threshold this function exists to respect: from 288, a

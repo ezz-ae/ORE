@@ -1477,7 +1477,10 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       if (increase < 1) continue
 
       try {
-        const newBudget = survivor.row.dailyBudgetAed + increase
+        // The freed money is taken up to the learning line, never across it —
+        // a +50% raise on the survivor was a reset dressed as a reward.
+        const newBudget = safeBudgetStep(survivor.row.dailyBudgetAed, survivor.row.dailyBudgetAed + increase)
+        if (newBudget <= survivor.row.dailyBudgetAed) continue
         if (survivor.row.channel === 'google') {
           // Google budgets live on the campaign's budget resource.
           await googleUpdateCampaignBudget(survivor.row.campaignId, newBudget)

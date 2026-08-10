@@ -12,6 +12,7 @@ import type { MetaCampaign, MetaCampaignStatus, MetaAdSet, MetaInsights, Placeme
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/freehold/campaign-rules'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkCampaignSetup, setupProblemCount, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
@@ -81,11 +82,13 @@ function leadsFrom(insights: MetaInsights | null): number {
   return metaLeadCount(insights?.actions)
 }
 
-// Budget nudge scales with the current budget (±20%, rounded to AED 10, floor 50)
-// so the control stays meaningful whether the ad set spends 100 or 5,000 a day.
+// Budget nudge scales with the current budget, THROUGH the learning guard.
+// The old "round to a pretty AED 10" turned a +20% button into +21% at some
+// budgets — a learning reset manufactured by cosmetics. safeBudgetStep owns
+// the one rule every budget move obeys: to the reset line, never across it.
 function nextBudget(current: number, dir: 'up' | 'down'): number {
   const factor = dir === 'up' ? 1.2 : 0.8
-  return Math.max(50, Math.round((current * factor) / 10) * 10)
+  return Math.max(50, safeBudgetStep(current, current * factor))
 }
 
 export default function CampaignCommandPage() {
@@ -418,7 +421,12 @@ export default function CampaignCommandPage() {
     for (const a of data.adSets) {
       const current = Math.round(Number(a.daily_budget) / 100) || 0
       if (!current) continue
-      const target = Math.max(50, Math.round((current * factor) / 10) * 10)
+      // A request past the reset line is taken TO the line, not through it:
+      // "+50%" from chat used to apply literally and silently restart the ad
+      // set's learning — the guard against resets has to own every path that
+      // moves money, or it guards nothing.
+      const target = Math.max(50, safeBudgetStep(current, current * factor))
+      if (target === current) continue
       setData((d) => (d ? { ...d, adSets: d.adSets.map((x) => (x.id === a.id ? { ...x, daily_budget: String(target * 100) } : x)) } : d))
       try {
         await fetch(`/api/meta/adsets/${encodeURIComponent(a.id)}`, {

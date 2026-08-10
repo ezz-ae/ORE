@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { geminiApiKey } from "@/lib/gemini-rest"
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { requireSession } from '@/lib/freehold/api-auth'
@@ -212,7 +213,10 @@ function validateAction(raw: unknown, campaign: MetaCampaign | null, adSets: Met
     if (current <= 0) return null
     const proposed = Math.round(Number(a.dailyBudgetAED))
     if (!Number.isFinite(proposed) || proposed <= 0) return null
-    const clamped = Math.max(50, Math.min(Math.round(current * 1.3), Math.max(Math.round(current * 0.7), proposed)))
+    // Through the learning guard, not a ±30% clamp: 30% either way is past
+    // Meta's ~20% reset line, so the old bound APPROVED resets while looking
+    // like a safety rail. The advisor's ask is taken to the line, never over.
+    const clamped = Math.max(50, safeBudgetStep(current, proposed))
     if (clamped === current) return null
     return { type: 'set_budget', adSetId: adSet.id, dailyBudgetAED: clamped }
   }

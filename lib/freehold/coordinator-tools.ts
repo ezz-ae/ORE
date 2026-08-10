@@ -28,6 +28,7 @@ import { listAudiences, getAudience, type SavedAudience } from '@/lib/freehold/a
 import type { AdDestination, CampaignTargeting, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
 import { genImage } from '@/lib/creative-studio/providers'
 import { z } from 'zod'
+import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 
 /**
  * Coordinator tools — the Vertex-ADK-style "marketing coordinator" layer of
@@ -206,8 +207,18 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     run: async (args) => {
       const budget = n(args.dailyBudgetAED)
       if (!Number.isFinite(budget) || budget < 50) return { error: 'dailyBudgetAED must be ≥ 50' }
-      await updateAdSet(s(args.adSetId), { dailyBudgetAED: budget })
-      return { ok: true, adSetId: s(args.adSetId), dailyBudgetAED: budget }
+      // The agent's ask goes through the same learning guard as every human
+      // path: a move past ±20% resets Meta's learning phase, so the ask is
+      // taken to the line and the clamp is REPORTED — an agent that thinks it
+      // set 900 while the ad set holds 600 will reason from a fiction.
+      const currentFils = Number((await getAdSet(s(args.adSetId))).daily_budget)
+      const current = Number.isFinite(currentFils) ? Math.round(currentFils / 100) : 0
+      const applied = current > 0 ? Math.max(50, safeBudgetStep(current, budget)) : budget
+      await updateAdSet(s(args.adSetId), { dailyBudgetAED: applied })
+      return {
+        ok: true, adSetId: s(args.adSetId), dailyBudgetAED: applied,
+        ...(applied !== budget ? { note: `Clamped from AED ${budget} to AED ${applied}: a budget change past ±20% resets the ad set's learning phase. Move again after the current step settles.` } : {}),
+      }
     },
   },
   {
