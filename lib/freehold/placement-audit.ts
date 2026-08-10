@@ -80,7 +80,21 @@ export function fits(shape: SurfaceShape, aspect: CreativeAspect | null): boolea
   return null                                    // video/other: not an aspect question
 }
 
-export type PlacementVerdict =
+/**
+ * EVERY VERDICT, ENUMERATED.
+ *
+ * The screen renders these through a COMPUTED key — `t(\`lm.place.verdict.${v}\`)`
+ * — and `pnpm i18n` can only audit literal `t()` calls. So when `noClicks` was
+ * added, the audit passed with full EN/AR/RU parity and the live campaign page
+ * printed the raw string `lm.place.verdict.noClicks` at a client.
+ *
+ * A union cannot be walked at runtime. This array can, and the type is derived
+ * FROM it, so a new verdict cannot be added without appearing here — and
+ * `scripts/dynamic-keys-test.ts` walks it against all three dictionaries.
+ */
+export const PLACEMENT_VERDICTS = ['drain', 'mismatch', 'strong', 'noClicks', 'undecided'] as const
+
+type PlacementVerdictDoc =
   /** Proven to convert worse than the rest of the campaign, and taking real spend. */
   | 'drain'
   /** The creative does not fit this surface — it is being cropped to run here. */
@@ -100,6 +114,14 @@ export type PlacementVerdict =
   | 'noClicks'
   /** Not enough delivery to say anything. */
   | 'undecided'
+
+export type PlacementVerdict = (typeof PLACEMENT_VERDICTS)[number]
+// The doc-comment union above and the array must describe the same set.
+type _VerdictsAgree = PlacementVerdictDoc extends PlacementVerdict
+  ? PlacementVerdict extends PlacementVerdictDoc ? true : never
+  : never
+const _verdictsAgree: _VerdictsAgree = true
+void _verdictsAgree
 
 export interface PlacementReading extends ArmReading {
   platform: string
