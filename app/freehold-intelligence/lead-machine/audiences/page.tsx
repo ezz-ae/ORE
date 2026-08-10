@@ -26,6 +26,7 @@ import PatternBuilder from './PatternBuilder'
 import PersonaStudio from './PersonaStudio'
 import LookalikeStudio from './LookalikeStudio'
 import CrmAudiences from './CrmAudiences'
+import WarmAudiences from './WarmAudiences'
 
 // ─── Types mirrored from the API ──────────────────────────────────────────────
 
@@ -162,6 +163,11 @@ export default function AudiencesPage() {
           </button>
         ))}
       </section>
+
+      {/* The warm layer's live state — Meta fills these from behaviour once
+          built; the floor that guards a retargeting launch reports readiness
+          here in people, not promises. */}
+      <WarmAudiences />
 
       {tool === 'personas' && <PersonaStudio onSaved={load} />}
       {tool === 'pattern' && <PatternBuilder onSaved={load} />}
