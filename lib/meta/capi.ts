@@ -172,9 +172,12 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
 
   const custom: Record<string, unknown> = { content_category: 'real_estate' }
   if (params.contentName) custom.content_name = params.contentName
-  // A value is sent only when it is real. A placeholder number here becomes
-  // the optimiser's idea of what a customer is worth.
-  if (typeof params.valueAED === 'number' && params.valueAED > 0) {
+  // A value is sent only when it is real — a placeholder number here becomes
+  // the optimiser's idea of what a customer is worth — and only on the
+  // PURCHASE. A QualifiedLead carrying the eventual deal value would teach
+  // Meta that qualification IS the money, and it would optimise for form
+  // answers instead of closings.
+  if (params.stage === 'won' && typeof params.valueAED === 'number' && params.valueAED > 0) {
     custom.value = Math.round(params.valueAED * 100) / 100
     custom.currency = 'AED'
   }

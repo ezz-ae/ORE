@@ -64,6 +64,14 @@ export function writeBackFor(input: {
   valueRating?: number | null
   /** Stages already sent for this lead. */
   sent?: WriteBackStage[]
+  /**
+   * A deal for this lead reached its final approved/closed state. That IS
+   * the won fact, wherever the CRM card happens to sit — deals close in the
+   * deals screen while the lead's column lags days behind, and waiting for
+   * someone to also drag the card would delay the one event Meta's
+   * optimiser learns the most from.
+   */
+  dealClosed?: boolean
 }): WriteBackDecision {
   const status = String(input.status ?? '').toLowerCase()
   const sent = new Set(input.sent ?? [])
@@ -71,7 +79,9 @@ export function writeBackFor(input: {
 
   // Won outranks qualified: it is the event worth optimising towards, and a
   // lead that closed is qualified by definition.
-  if (WON_STATUSES.has(status) && !sent.has('won')) return { stage: 'won', reason: 'status' }
+  if ((WON_STATUSES.has(status) || input.dealClosed === true) && !sent.has('won')) {
+    return { stage: 'won', reason: 'status' }
+  }
   if (QUALIFIED_STATUSES.has(status) && !sent.has('qualified')) return { stage: 'qualified', reason: 'status' }
   if (rating !== null && rating >= VALUABLE_RATING && !sent.has('qualified')) {
     return { stage: 'qualified', reason: 'rating' }

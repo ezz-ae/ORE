@@ -15,6 +15,7 @@ import {
   type DealDocumentChecklist,
   type Deal,
 } from "@/lib/deals"
+import { reportDealCloseToMeta } from "@/lib/freehold/lead-writeback"
 import { earnCreditsForDeal } from "@/lib/freehold/credits-db"
 import { notify } from "@/lib/freehold/notifications"
 
@@ -108,6 +109,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const deal = await finalApproveDeal(id, { name: user.name }, String(body.notes || ""))
         if (!deal) return NextResponse.json({ error: "Deal is not awaiting final approval" }, { status: 409 })
         await awardDealCredits(deal)
+        // The moment money became real: Meta hears the Purchase with the
+        // deal's value, and the lead carries it for future seeds.
+        void reportDealCloseToMeta({ leadId: deal.leadId, propertyValueAed: deal.propertyValueAed })
         // Real notification: deal fully approved (broadcast to management).
         notify('deal_approved', { id }, { href: '/freehold-intelligence/management/deals' }).catch(() => {})
         return NextResponse.json({ deal })
@@ -135,7 +139,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const deal = await recordDealPayment(id, amount)
         // Management-created deals skip final_approve and jump to approved →
         // closed; the close is their first "final" moment (idempotent anyway).
-        if (deal?.status === "closed") await awardDealCredits(deal)
+        if (deal?.status === "closed") {
+          await awardDealCredits(deal)
+          void reportDealCloseToMeta({ leadId: deal.leadId, propertyValueAed: deal.propertyValueAed })
+        }
         return NextResponse.json({ deal })
       }
 

@@ -44,6 +44,42 @@ console.log('\n── what counts as real ──')
   check('the funnel and the optimiser agree on "qualified"',
     [...QUALIFIED_STATUSES].every((s) => writeBackFor({ status: s }).stage !== null) &&
     [...WON_STATUSES].every((s) => writeBackFor({ status: s }).stage === 'won'))
+
+  // A closed deal IS the won fact, wherever the CRM card sits. Deals close in
+  // the deals screen while the lead's column lags days behind; waiting for
+  // someone to also drag the card would delay the event Meta learns the most
+  // from — and it would arrive without its value.
+  check('a closed deal reports the sale even while the card still says contacted',
+    writeBackFor({ status: 'contacted', dealClosed: true }).stage === 'won')
+  check('…but never twice', writeBackFor({ status: 'contacted', dealClosed: true, sent: ['won'] }).stage === null)
+}
+
+console.log('\n── the money rides ONLY the Purchase ──')
+{
+  // The deal's real value on the won event: this is what lets value-based
+  // lookalikes rank buyers by dirhams closed instead of by our imagination.
+  const won = buildQualifiedLeadEvent({
+    eventId: 'w1', stage: 'won', email: 'buyer@example.com', valueAED: 750_000,
+  })!
+  const custom = won.custom_data as Record<string, unknown>
+  check('a won event carries the deal value in AED',
+    custom.value === 750_000 && custom.currency === 'AED', JSON.stringify(custom))
+
+  // …and ONLY the won event. A QualifiedLead carrying the eventual deal value
+  // would teach Meta that qualification is the money, and it would optimise
+  // for form answers instead of closings.
+  const qual = buildQualifiedLeadEvent({
+    eventId: 'q1', stage: 'qualified', email: 'buyer@example.com', valueAED: 750_000,
+  })!
+  const qcustom = qual.custom_data as Record<string, unknown>
+  check('a qualified event never carries a value, even when one is passed',
+    qcustom.value === undefined && qcustom.currency === undefined, JSON.stringify(qcustom))
+
+  const zero = buildQualifiedLeadEvent({
+    eventId: 'z1', stage: 'won', email: 'buyer@example.com', valueAED: 0,
+  })!
+  check('a zero or missing value stays absent — never a placeholder',
+    (zero.custom_data as Record<string, unknown>).value === undefined)
 }
 
 console.log('\n── once, and only once ──')
