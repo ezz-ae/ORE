@@ -1,6 +1,7 @@
 import { query } from '@/lib/db'
 import { gatherDataQualityScores, type AgentDataQuality } from './data-quality-score'
 import { gatherAgentResponseStats } from '@/lib/freehold/response-time'
+import { OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
 
 /**
  * Live per-agent performance snapshot used by the (single) Freehold Expert
@@ -56,7 +57,7 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
            COUNT(*) AS total_leads,
            COUNT(*) FILTER (WHERE priority = 'hot') AS hot_leads,
            COUNT(*) FILTER (WHERE status IN ('closed','converted') AND updated_at > now() - INTERVAL '30 days') AS recent_wins,
-           COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','converted','lost')) AS overdue_followups
+           COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '${OVERDUE_FOLLOWUP_HOURS} hours' AND status NOT IN ('closed','converted','lost')) AS overdue_followups
          FROM freehold_site_leads WHERE assigned_broker_id = u.id::text
        ) l ON TRUE
        WHERE u.role = 'broker'

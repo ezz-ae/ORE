@@ -68,6 +68,15 @@ const ensure = async () => {
 }
 const ensureOnce = () => dbEnsureOnce('freehold_site_audiences', ensure)
 
+/**
+ * Where a spec that fails validation lands — and the one property that matters
+ * is that it can only ever land NARROWER, never wider. UAE alone, because the
+ * inventory is in the UAE and a corrupted audience must never quietly widen
+ * where money goes (a ten-country default is exactly how a Dubai campaign once
+ * bought an out-of-market lead and nearly ended the contract — #528). The
+ * 25–55 band is the original manual builder's untouched form state, kept so a
+ * degraded spec behaves like a blank one rather than inventing a new band.
+ */
 const DEFAULT_SPEC: CampaignTargeting = {
   countries: ['AE'],
   cityKeys: [],
@@ -168,6 +177,13 @@ export function combineSpecs(specs: CampaignTargeting[]): CampaignTargeting {
 
 // Sanitize a stored/user-provided spec into a valid CampaignTargeting — bad
 // entries are dropped, never guessed.
+//
+// The list caps (30 strings, 25 entities, 10 locales) are input hygiene, not
+// business numbers: this function's input is browser JSON, and what it returns
+// is stored and later replayed to Meta. Every cap sits far above the biggest
+// legitimate spec the product builds (the widest market list is 20 countries,
+// a pattern binds at most a handful of traits), so they never bite real work —
+// they bound what a malformed or hostile payload can persist and replay.
 export function normalizeSpec(raw: unknown): CampaignTargeting {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   const strings = (v: unknown): string[] =>

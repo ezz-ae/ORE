@@ -115,6 +115,12 @@ export async function POST(req: NextRequest) {
 
       if (investInterests.length && (travelBehaviors.length || expatBehaviors.length)) {
         const spec = normalizeSpec({
+          // A hand-picked shortlist of the strongest NAMED buyer markets:
+          // home, the three biggest GCC markets, and the UK (which heads both
+          // the europe and overseas lists in audience-pattern.ts). Deliberately
+          // short — a suggestion this route composes must never widen where
+          // money goes by default; adding a market here is a decision (#525:
+          // "launching to everyone is a choice, never a default").
           countries: ['AE', 'SA', 'QA', 'KW', 'GB'],
           ageMin: premium ? 30 : 25,
           ageMax: 60,
