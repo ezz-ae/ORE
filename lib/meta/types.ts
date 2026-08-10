@@ -1,5 +1,7 @@
 // Meta Marketing API v20.0 — core types
 
+import type { LocationType } from './geo-spec'
+
 export type MetaCampaignStatus = 'ACTIVE' | 'PAUSED' | 'DELETED' | 'ARCHIVED'
 export type MetaCampaignObjective =
   | 'LEAD_GENERATION'
@@ -139,6 +141,14 @@ export interface TargetingEntity {
 export interface CampaignTargeting {
   countries: string[]
   cityKeys: string[]
+  /**
+   * Whether the places above mean people who LIVE there or also people who are
+   * merely passing through. Absent = residents only, which is the setting a
+   * property campaign wants and the opposite of Meta's own default.
+   *
+   * A statement about residence, never about origin. See lib/meta/geo-spec.ts.
+   */
+  locationTypes?: LocationType[]
   ageMin: number
   ageMax: number
   publisherPlatforms: string[]

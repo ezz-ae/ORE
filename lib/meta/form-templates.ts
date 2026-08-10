@@ -334,7 +334,12 @@ export const FORM_TEMPLATES: FormTemplate[] = [
     key: 'offplan',
     nameKey: 'pforms.tpl.offplan',
     descKey: 'pforms.tpl.offplan.desc',
-    higherIntent: false,
+    // HIGHER INTENT. An off-plan purchase is a seven-figure decision taken over
+    // months; Meta's review step costs a fraction of the volume and removes the
+    // accidental taps that a one-touch form collects and a broker then chases.
+    // `brochure` stays on volume deliberately — a brochure download really is a
+    // top-of-funnel act, and it is the one template where volume is the point.
+    higherIntent: true,
     contact: ['FULL_NAME', 'PHONE', 'EMAIL'],
     presets: ['budget'],
     intro: true,

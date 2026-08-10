@@ -32,7 +32,11 @@ const good: AdSetForCheck = {
   optimization_goal: 'LEAD_GENERATION',
   ads: [{ id: 'ad1', status: 'ACTIVE', effective_status: 'ACTIVE' }],
   targeting: {
-    geo_locations: { countries: ['AE'] },
+    // `location_types` is part of what "correctly built" MEANS now. Omitting it
+    // is not neutral — Meta's default is home + recent, so an ad set without it
+    // is buying tourists, and this fixture would have been asserting that the
+    // product's own output raises nothing while doing exactly that.
+    geo_locations: { countries: ['AE'], location_types: ['home'] },
     age_min: 30, age_max: 65,
     publisher_platforms: ['instagram'],
     instagram_positions: ['stream'],

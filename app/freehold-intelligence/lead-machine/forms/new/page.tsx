@@ -60,7 +60,11 @@ function makeDefault(t: (key: string) => string): FormState {
     listingId: '',
     formName: '',
     landingUrl: '',
-    higherIntent: false,
+    // A form built from scratch starts on HIGHER INTENT. The volume setting
+    // collects the accidental tap, and the accidental tap is a lead somebody
+    // has to phone. Switchable on the next screen, but the default has to be
+    // the one that costs less to be wrong about.
+    higherIntent: true,
     introEnabled: false,
     introTitle: '',
     introBullets: [],
