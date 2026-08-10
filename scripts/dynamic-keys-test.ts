@@ -25,6 +25,7 @@
  */
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
+import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 
@@ -84,6 +85,12 @@ console.log('\n── setup-check findings ──')
 console.log('\n── geo delivery findings ──')
 {
   family('lm.geo', 'lm.geo.', ['onTarget', 'strayed'])
+}
+
+console.log('\n── campaign-request statuses ──')
+{
+  // Broker screen and fulfilment queue both render t(`creq.status.${s}`).
+  family('creq.status', 'creq.status.', REQUEST_STATUSES)
 }
 
 console.log('\n── ready-buyer names ──')

@@ -7,6 +7,7 @@ import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { getAudience } from '@/lib/freehold/audiences'
+import { getCampaignRequest, markRequestLaunched } from '@/lib/freehold/campaign-requests'
 import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { adEndTimeForPermit, endTimeHasPassed } from '@/lib/freehold/permit-schedule'
@@ -82,9 +83,27 @@ export async function POST(req: NextRequest) {
 
   // Identify the creating broker (if any) from the verified session.
   const sessionUser = __auth.user
-  const brokerId    = sessionUser.role === 'broker'
+  let brokerId: string | undefined = sessionUser.role === 'broker'
     ? (sessionUser.brokerId ?? sessionUser.email)
     : undefined
+
+  // A LAUNCH ON BEHALF. When the launch fulfils a broker's campaign request,
+  // the credits charge and the campaign attribution both belong to the
+  // REQUESTING broker, not to the manager clicking the button — that is the
+  // entire INBOUND deal: the broker pays in Assets and owns the result, the
+  // manager operates the tools. The request must still be launchable
+  // (requested/approved, never rejected or already launched).
+  let fulfilsRequest: Awaited<ReturnType<typeof getCampaignRequest>> = null
+  if (typeof body.campaignRequestId === 'string' && body.campaignRequestId) {
+    fulfilsRequest = await getCampaignRequest(body.campaignRequestId)
+    if (!fulfilsRequest) {
+      return NextResponse.json({ error: 'The campaign request behind this launch no longer exists.' }, { status: 404 })
+    }
+    if (fulfilsRequest.status === 'rejected' || fulfilsRequest.status === 'launched') {
+      return NextResponse.json({ error: `This campaign request is already ${fulfilsRequest.status} — launching it again would double-charge the broker.` }, { status: 409 })
+    }
+    brokerId = fulfilsRequest.brokerId
+  }
 
   // 1 credit = AED 10 of funded ad spend (CREDIT_VALUE_AED). Whole credits only —
   // the ledger column is INTEGER. The rate lives in credits-shared so Meta and
@@ -396,6 +415,8 @@ export async function POST(req: NextRequest) {
     reserved = false
     try {
       await attributeCampaign(result.campaignId)
+      // The request's receipt: it is a campaign now.
+      if (fulfilsRequest) await markRequestLaunched(fulfilsRequest.id, result.campaignId).catch(() => {})
       await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
       await recordCampaignProject(result.campaignId, projectSlug) // link for the router
       // WHICH AUDIENCE THIS CAME FROM. The launch resolves a named audience

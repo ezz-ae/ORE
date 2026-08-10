@@ -285,6 +285,10 @@ export interface LaunchCampaignPayload {
    *  connections (see getAdIdentity().instagramOptions). Absent = Meta's
    *  fallback: the connected account, or the Page itself. */
   instagramUserId?: string
+  /** When this launch fulfils a broker's campaign request: the request id.
+   *  The credits charge and the attribution then belong to the REQUESTING
+   *  broker, and the request is marked launched with the campaign id. */
+  campaignRequestId?: string
   /** Attach a saved audience by id and let the SERVER read its definition.
    *  Required for pattern audiences, whose targeting deliberately never
    *  reaches the browser and so cannot be sent back from it. */

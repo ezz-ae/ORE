@@ -973,6 +973,32 @@ export default function NewCampaignPage() {
   // The old ?template=<id> path is gone with the decorative template catalog
   // it read from — its own ids didn't even agree with each other on what
   // they targeted (see the commit that removed lib/meta/targeting-templates.ts).
+  // FULFILLING A BROKER'S REQUEST. ?request=<id> prefills the wizard from the
+  // request — name, budget, project, the broker's note as a reminder — and
+  // rides the launch payload so the charge and the attribution land on the
+  // REQUESTING broker, and the request is marked launched with the campaign.
+  const [fulfilRequestId, setFulfilRequestId] = useState('')
+  const [fulfilNote, setFulfilNote] = useState('')
+  useEffect(() => {
+    const rid = new URLSearchParams(window.location.search).get('request')
+    if (!rid) return
+    fetch(`/api/freehold/campaign-requests?id=${encodeURIComponent(rid)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const req = d?.request
+        if (!req || req.status === 'rejected' || req.status === 'launched') return
+        setFulfilRequestId(String(req.id))
+        setFulfilNote([req.title, req.note].filter(Boolean).join(' — '))
+        setForm((prev) => ({
+          ...prev,
+          campaignName: prev.campaignName || String(req.title ?? ''),
+          dailyBudgetAED: Number(req.dailyBudgetAed) > 0 ? Number(req.dailyBudgetAed) : prev.dailyBudgetAED,
+          listingId: String(req.projectSlug ?? '') || prev.listingId,
+        }))
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     const project = p.get('project')
@@ -1433,6 +1459,7 @@ export default function NewCampaignPage() {
       // With an instant form the effect above has already set this to the
       // form's owner, so the pair always matches.
       pageId:           adPageId || undefined,
+      campaignRequestId: fulfilRequestId || undefined,
       instagramUserId:  igUserId || undefined,
       placementMode:    form.placementMode,
       manualPlacements: form.placementMode === 'manual' ? form.manualPlacements : undefined,
@@ -1692,6 +1719,13 @@ export default function NewCampaignPage() {
         {step === 1 && (
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s1.heading')}</h2>
+
+            {fulfilRequestId && (
+              <div className="rounded-[14px] border border-gold/25 bg-gold/[0.05] px-4 py-3 text-[12px] leading-relaxed text-slate-300">
+                <span className="font-semibold text-gold">{t('lm.newCampaign.fulfil.title')}</span>{' '}
+                {t('lm.newCampaign.fulfil.sub')}{fulfilNote ? <span className="mt-1 block text-slate-400">“{fulfilNote}”</span> : null}
+              </div>
+            )}
 
             {/* A form ad's lead is captured ON the ad — no landing page in
                 its journey, so the property grid is an optional attach (for
