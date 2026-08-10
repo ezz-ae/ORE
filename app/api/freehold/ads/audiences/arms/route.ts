@@ -30,7 +30,9 @@ import { snapshotOutcomes } from '@/lib/freehold/audience-snapshot'
 import { assessEvents } from '@/lib/freehold/relevance'
 import { levelEvidenceFrom, narrowingByLevel, type EntityLevel } from '@/lib/freehold/level-evidence'
 import { selectColdArms, planArms, MIN_ARM_DAILY_AED, type PositiveLevel } from '@/lib/freehold/level-arms'
-import { getReachEstimate, isMetaConfigured } from '@/lib/meta/client'
+import { getReachEstimate, isMetaConfigured, getAccountEventCosts } from '@/lib/meta/client'
+import { noCostsKnown } from '@/lib/meta/event-costs'
+import type { EventCosts } from '@/lib/freehold/learning-phase'
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
 
 export const runtime = 'nodejs'
@@ -179,9 +181,19 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 3. Evidence, arms, budget ────────────────────────────────────────────
+  //
+  // THE COST PER EVENT IS AN INPUT, NOT AN OPTIONAL EXTRA. Without it the
+  // planner cannot say how many ad sets this budget can actually bring out of
+  // Meta's learning phase, and it used to be omitted here — which switched the
+  // learning ceiling off for every real plan this product has ever produced.
+  // Unmeasured is handled honestly downstream: one arm until there is a number.
+  const costs: EventCosts = connected
+    ? await getAccountEventCosts()
+    : { link_click: null, landing_view: null, lead: null }
+
   const evidence = levelEvidenceFrom(reports, assignment, narrowing)
   const selection = selectColdArms(levels, evidence)
-  const plan = planArms(selection.arms, dailyBudgetAed)
+  const plan = planArms(selection.arms, dailyBudgetAed, 0.25, costs)
 
   // Everything the plan could NOT establish, said out loud. A plan that hides
   // what it did not know reads as confidence and is a guess.
@@ -195,6 +207,9 @@ export async function POST(req: NextRequest) {
     caveats.push('Meta did not return audience sizes this time, so the split uses the safe default shares.')
   } else if (failedProbes > 0) {
     caveats.push(`${failedProbes} part${failedProbes === 1 ? '' : 's'} of this audience could not be checked with Meta this time — the split still works, just a little less precisely.`)
+  }
+  if (connected && noCostsKnown(costs)) {
+    caveats.push('This account has not spent enough yet for us to know what a click or a lead costs here, so the plan starts with one ad set. It splits into more as soon as there is a real number to divide the budget by.')
   }
   if (unassigned > 0) {
     caveats.push(`Part of this audience is new to the system, so the split does not count it yet.`)

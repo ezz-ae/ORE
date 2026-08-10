@@ -345,26 +345,34 @@ export function planArms(
   // much higher bar. Planning four arms that each deliver but none of which
   // ever stabilises produces four broken instruments that still print results,
   // and that is worse than one arm that works.
+  // THE CEILING RUNS WHETHER OR NOT THERE IS COST HISTORY. It used to sit
+  // inside `if (costs)`, and `costs` is optional — so the one production caller,
+  // which passed none, switched the entire ceiling off. Worse than a brand-new
+  // account slipping through: NO account was ever capped. `chooseOptimisation`
+  // already has the right answer for an unmeasured account — run one arm until
+  // it has produced enough to measure a cost — and nothing ever asked it.
+  //
+  // Splitting a budget requires knowing what an event costs. Not knowing is not
+  // permission to split; it is the reason not to.
   let planning = [...arms]
-  let learning: LearningVerdict | null = null
-  if (costs) {
-    learning = chooseOptimisation(planning.length, dailyBudgetAed, costs)
-    if (!learning.fits) {
-      const keep = Math.max(1, learning.supportedArms)
-      if (keep < planning.length) {
-        // Keep the heaviest arms — the persona arm is never among those cut,
-        // because it is the structure rather than a test within it.
-        const persona = planning.find((a) => a.kind === 'cold' && a.levels.length === 1)
-        const rest = planning.filter((a) => a !== persona).sort((x, y) => y.weight - x.weight)
-        const kept = persona ? [persona, ...rest.slice(0, keep - 1)] : rest.slice(0, keep)
-        notes.push(`Cut from ${planning.length} arms to ${kept.length}: at AED ${Math.round(dailyBudgetAed)}/day only ${learning.supportedArms} can clear Meta's learning phase, and an arm stuck in Learning Limited reports numbers that are not a fair read of its audience.`)
-        planning = kept
-        learning = chooseOptimisation(planning.length, dailyBudgetAed, costs)
-      }
+  let learning: LearningVerdict = chooseOptimisation(planning.length, dailyBudgetAed, costs ?? {})
+  if (!learning.fits) {
+    const keep = Math.max(1, learning.supportedArms)
+    if (keep < planning.length) {
+      // Keep the heaviest arms — the persona arm is never among those cut,
+      // because it is the structure rather than a test within it.
+      const persona = planning.find((a) => a.kind === 'cold' && a.levels.length === 1)
+      const rest = planning.filter((a) => a !== persona).sort((x, y) => y.weight - x.weight)
+      const kept = persona ? [persona, ...rest.slice(0, keep - 1)] : rest.slice(0, keep)
+      notes.push(learning.costPerEvent === null
+        ? `Cut from ${planning.length} arms to ${kept.length}: nothing on this account has produced a measured cost per click or per lead yet, so there is no number to divide the budget by. Run one until there is, then split it.`
+        : `Cut from ${planning.length} arms to ${kept.length}: at AED ${Math.round(dailyBudgetAed)}/day only ${learning.supportedArms} can clear Meta's learning phase, and an arm stuck in Learning Limited reports numbers that are not a fair read of its audience.`)
+      planning = kept
+      learning = chooseOptimisation(planning.length, dailyBudgetAed, costs ?? {})
     }
-    if (learning.event && learning.event !== 'lead') {
-      notes.push(learning.recommendation)
-    }
+  }
+  if (learning.event && learning.event !== 'lead') {
+    notes.push(learning.recommendation)
   }
   arms = planning
 
@@ -377,12 +385,20 @@ export function planArms(
     if (total <= 0) { live = []; break }
 
     // Persona floor first, the rest proportional to weight over what remains.
-    const rest = personaArm ? 1 - personaFloor : 1
-    const restTotal = live.filter((a) => a !== personaArm).reduce((n, a) => n + a.weight, 0)
+    //
+    // THE FLOOR IS A FLOOR, NOT A CEILING. When the persona arm is the only one
+    // left — which the learning ceiling above now makes common, and which is
+    // the entire plan for an account with no measured cost — pinning it to
+    // `personaFloor` left three-quarters of the daily budget allocated to
+    // nothing at all. The shares have to sum to one whatever survives.
+    const others = live.filter((a) => a !== personaArm)
+    const personaShare = personaArm ? (others.length === 0 ? 1 : personaFloor) : 0
+    const rest = 1 - personaShare
+    const restTotal = others.reduce((n, a) => n + a.weight, 0)
     planned = live.map((a) => {
       const share = a === personaArm
-        ? personaFloor
-        : restTotal > 0 ? (a.weight / restTotal) * rest : rest / Math.max(1, live.length)
+        ? personaShare
+        : restTotal > 0 ? (a.weight / restTotal) * rest : rest / Math.max(1, others.length)
       return { arm: a, share, dailyBudgetAed: Math.round(dailyBudgetAed * share) }
     })
 

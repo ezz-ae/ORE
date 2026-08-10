@@ -491,7 +491,12 @@ console.log('\n── evidence picks the arms, not the level number ──')
 
 console.log('\n── weighting lives in the budget split ──')
 {
-  const plan = planArms(coldArms([1, 2, 3, 4]), 1000)
+  // Costs are supplied throughout this block on purpose: the learning ceiling
+  // now runs on EVERY plan, so a split test with no cost data would be testing
+  // the ceiling instead of the split. AED 12.50 a click carries eleven arms at
+  // this budget, which puts the split back in charge of the outcome.
+  const cheap = { link_click: 12.5 }
+  const plan = planArms(coldArms([1, 2, 3, 4]), 1000, 0.25, cheap)
   check('every arm clears the delivery floor',
     plan.arms.every((p) => p.dailyBudgetAed >= MIN_ARM_DAILY_AED),
     plan.arms.map((p) => `${p.arm.label}:${p.dailyBudgetAed}`).join(' | '))
@@ -502,12 +507,14 @@ console.log('\n── weighting lives in the budget split ──')
     /clean experiment/.test(plan.headline), plan.headline)
 
   // A budget too small to split: arms are DROPPED, not launched starved.
-  const tight = planArms(coldArms([1, 2, 3, 4]), 200)
+  const tight = planArms(coldArms([1, 2, 3, 4]), 200, 0.25, { link_click: 5 })
   check('a tight budget drops arms rather than starving them',
     tight.arms.every((p) => p.dailyBudgetAed >= MIN_ARM_DAILY_AED),
     tight.arms.map((p) => p.dailyBudgetAed).join(','))
+  // Presence, not position: the learning ceiling now speaks on every plan, so
+  // the drop note is no longer necessarily the first thing said.
   check('…and says which were dropped and why',
-    tight.notes.length > 0 && /below the AED 50/.test(tight.notes[0]), tight.notes.join(' '))
+    tight.notes.some((n) => /below the AED 50/.test(n)), tight.notes.join(' | '))
   check('…and keeps the persona arm', tight.arms.some((p) => p.arm.kind === 'cold' && p.arm.levels.length === 1))
 
   const hopeless = planArms(coldArms([1, 2, 3, 4]), 30)
@@ -528,7 +535,7 @@ console.log('\n── retargeting is its own axis ──')
   check('the form-starter arm says why it is usually starved',
     /usually starved/.test(warm.find((a) => a.rung === 'started_form')!.rationale))
 
-  const mixed = planArms([...coldArms([1, 2, 4]), ...warm], 2000)
+  const mixed = planArms([...coldArms([1, 2, 4]), ...warm], 2000, 0.25, { link_click: 12.5 })
   check('cold and warm arms plan together',
     mixed.arms.some((p) => p.arm.kind === 'cold') && mixed.arms.some((p) => p.arm.kind === 'warm'))
   const starter = mixed.arms.find((p) => p.arm.kind === 'warm' && p.arm.rung === 'started_form')!
@@ -621,11 +628,31 @@ console.log('\n── the planner cannot produce arms that will never learn ─�
   const arms = coldArms([1, 2, 3, 4])
   const costs = { lead: 195.69, link_click: 12.50 }
 
-  // Without cost data the plan is a budget split and claims nothing about
-  // learning — it must not silently imply the arms will stabilise.
+  // NO COST DATA IS NOT PERMISSION TO SPLIT.
+  //
+  // This used to assert the opposite — that a plan without costs reports no
+  // learning verdict — and the ceiling was written to match, sitting inside an
+  // `if (costs)`. `costs` is optional and the one production caller passed
+  // none, so the ceiling never ran on a single real plan. The planner handed
+  // four ad sets to accounts that could not fund one, which is the failure the
+  // whole module exists to prevent.
+  //
+  // Splitting a budget means dividing it by what an event costs. Not knowing
+  // that number is the reason not to split, not a reason to skip the check.
   const blind = planArms(arms, 848)
-  check('a plan with no cost data reports no learning verdict',
-    blind.learning === null, JSON.stringify(blind.learning))
+  check('a plan with no cost data is cut to a single arm',
+    blind.arms.length === 1, String(blind.arms.length))
+  const only = blind.arms[0]?.arm
+  check('…which is the persona arm, never a deep untested one',
+    only?.kind === 'cold' && only.levels.length === 1, JSON.stringify(only?.label))
+  check('…and it gets the WHOLE budget, not the persona floor of it',
+    blind.arms[0]?.dailyBudgetAed === 848 && blind.unallocatedAed === 0,
+    `${blind.arms[0]?.dailyBudgetAed} + ${blind.unallocatedAed} unallocated`)
+  check('…and the plan says plainly why it did not split',
+    blind.notes.some((n) => /no number to divide the budget by/.test(n)), blind.notes.join(' | '))
+  check('…and still reports the verdict rather than a silent null',
+    blind.learning?.costPerEvent === null && blind.learning?.fits === false,
+    JSON.stringify(blind.learning))
 
   // With cost data at a budget that supports the arms on clicks.
   const real = planArms(arms, 848, 0.25, costs)
