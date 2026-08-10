@@ -38,8 +38,9 @@ export const RESERVED_SUBDOMAINS = new Set([
   'support', 'help', 'docs', 'doc', 'guide', 'blog', 'news', 'press',
   'status', 'community', 'forum', 'careers', 'jobs', 'legal', 'security',
   'abuse', 'contact', 'info', 'team', 'internal', 'partners', 'affiliates',
-  // vendor / brand
-  'entrestate', 'freehold', 'ore',
+  // vendor / brand — 'machine' is the Lead Machine product door
+  // (machine.entrestate.com), never a tenant.
+  'entrestate', 'freehold', 'ore', 'machine', 'leadmachine', 'lead-machine',
 ])
 
 /** True when `sub` is a well-formed, non-reserved tenant subdomain. */
