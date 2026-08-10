@@ -17,8 +17,17 @@ import { useT } from '@/lib/i18n/provider'
 const OPENING_CONSUMED = 2_003_320_000
 const OPENING_BALANCE = 314_400_000
 const LOW_WATERMARK = 500_000_000
-const DEV_SHARE = 94
-const TEAM_SHARE = 6
+/** Per-workload utilization meters (percent of each workload's allocation). */
+const WORKLOADS: Array<{ key: string; pct: number }> = [
+  { key: 'settings.tokens.usageDev', pct: 85 },
+  { key: 'settings.tokens.usageExpertChat', pct: 31 },
+  { key: 'settings.tokens.usageMediaGen', pct: 17 },
+  { key: 'settings.tokens.usageOperations', pct: 9 },
+  { key: 'settings.tokens.usageDeployment', pct: 4 },
+]
+
+/** Meta AI runs on its own dedicated quota, metered apart from platform usage. */
+const META_AI = { pct: 54, used: 810_000_000, total: 1_500_000_000 }
 /** The sender takes amounts in millions of tokens. */
 const SEND_UNIT = 1_000_000
 
@@ -146,24 +155,38 @@ export default function AiTokenControlPage() {
         </div>
       </section>
 
-      {/* Allocation split */}
-      <section className="mb-6 rounded-[14px] border border-line bg-surface p-4">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.tokens.usageTitle')}</div>
-        <div className="flex h-2 overflow-hidden rounded-full bg-white/5" dir="ltr">
-          <div className="bg-gold" style={{ width: `${DEV_SHARE}%` }} />
-          <div className="bg-slate-500" style={{ width: `${TEAM_SHARE}%` }} />
+      {/* Meta AI — dedicated quota, its own meter */}
+      <section className="mb-6 rounded-[14px] border border-emerald-500/25 bg-emerald-500/[0.04] p-4">
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-sm font-semibold text-white">{t('settings.tokens.usageMetaAi')}</div>
+          <span className="font-mono text-sm tabular-nums text-emerald-400" dir="ltr">{META_AI.pct}%</span>
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-400">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-gold" />
-            {t('settings.tokens.usageDev')}
-            <span className="font-mono tabular-nums text-white" dir="ltr">{DEV_SHARE}%</span>
+        <p className="mb-3 text-xs text-slate-400">{t('settings.tokens.metaAiDesc')}</p>
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/5" dir="ltr">
+          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${META_AI.pct}%` }} />
+        </div>
+        <div className="mt-2 text-xs text-slate-500" dir="ltr">
+          <span className="font-mono tabular-nums text-slate-300">
+            {t('settings.tokens.metaAiUsed', { used: num(META_AI.used), total: num(META_AI.total) })}
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-slate-500" />
-            {t('settings.tokens.usageTeam')}
-            <span className="font-mono tabular-nums text-white" dir="ltr">{TEAM_SHARE}%</span>
-          </span>
+        </div>
+      </section>
+
+      {/* Usage by workload */}
+      <section className="mb-6 rounded-[14px] border border-line bg-surface p-4">
+        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.tokens.usageTitle')}</div>
+        <div className="space-y-3.5">
+          {WORKLOADS.map(({ key, pct }) => (
+            <div key={key}>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-slate-300">{t(key)}</span>
+                <span className="font-mono tabular-nums text-white" dir="ltr">{pct}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/5" dir="ltr">
+                <div className="h-full rounded-full bg-gold" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
