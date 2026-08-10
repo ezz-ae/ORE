@@ -29,6 +29,7 @@ import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
 import { personaIds } from '../lib/freehold/persona-audience'
 import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
+import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 
 let failures = 0
@@ -93,6 +94,14 @@ console.log('\n── campaign-request statuses ──')
 {
   // Broker screen and fulfilment queue both render t(`creq.status.${s}`).
   family('creq.status', 'creq.status.', REQUEST_STATUSES)
+}
+
+console.log('\n── launcher audience markets ──')
+{
+  // Step 2 renders t(`lm.newCampaign.s2.market.${m}`) over the market chips.
+  // lm_core is a different shard than lm_ads, hence the explicit dict — the
+  // family helper does not care which shard, only that words exist.
+  family('lm.newCampaign.s2.market', 'lm.newCampaign.s2.market.', ['uae', 'gulf', 'world'], lm_core)
 }
 
 console.log('\n── warm audience rungs ──')
