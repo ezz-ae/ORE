@@ -7,6 +7,10 @@ import { AISearchBar } from "@/components/ai-search-bar"
 
 interface HeroWithMotionProps {
   heroPrompts: string[]
+  /** DB-editable overrides (Web Studio → Content). The built-in words below
+   *  are the fallback — an empty store renders the site exactly as before. */
+  heroTitle?: string
+  heroSubtitle?: string
 }
 
 const trustMetrics = [
@@ -22,7 +26,7 @@ const StarIcon = () => (
   </svg>
 )
 
-export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
+export function HeroWithMotion({ heroPrompts, heroTitle, heroSubtitle }: HeroWithMotionProps) {
   return (
     <section className="relative flex min-h-[90vh] items-center overflow-x-clip bg-[#0A1F17] text-white">
       {/* Background */}
@@ -76,11 +80,18 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
             transition={{ duration: 0.8, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
           >
             <h1 className="font-serif text-[2.9rem] font-bold leading-[1.04] text-white sm:text-5xl md:text-[4.2rem] lg:text-[5rem]">
-              Invest smarter in<br />
-              <span className="freehold-text-gradient">Dubai real estate.</span>
+              {heroTitle ? (
+                // An edited title is one phrase; the gradient dresses its last
+                // word so the treatment survives the edit.
+                <>{heroTitle.split(' ').slice(0, -1).join(' ')}{' '}
+                  <span className="freehold-text-gradient">{heroTitle.split(' ').slice(-1)[0]}</span></>
+              ) : (
+                <>Invest smarter in<br />
+                  <span className="freehold-text-gradient">Dubai real estate.</span></>
+              )}
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/45 md:text-[1.05rem]">
-              AI-powered market intelligence, curated projects, and expert advisory — from search to handover.
+              {heroSubtitle ?? 'AI-powered market intelligence, curated projects, and expert advisory — from search to handover.'}
             </p>
           </motion.div>
 

@@ -1,3 +1,4 @@
+import { getPageContent } from "@/lib/freehold/site-content"
 import { Button } from "@/components/ui/button"
 import { BRAND } from "@/lib/freehold/brand"
 
@@ -54,7 +55,9 @@ const principles = [
   { number: "03", title: "Senior team, not relays", body: "You speak with the advisor who handles your brief — same line from first call to closing." },
 ]
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  // Web Studio → Content overrides; built-in words are the fallback.
+  const content = await getPageContent('about')
   return (
     <div className="bg-[#FAF8F5]">
       {/* HERO */}
@@ -71,11 +74,11 @@ export default function AboutPage() {
                 About {BRAND.company}
               </span>
               <h1 className="mt-8 font-serif text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl lg:text-[5.5rem]">
-                Dubai property,<br />
-                <span className="freehold-text-gradient italic">decoded.</span>
+                {content.heroTitle ?? <>Dubai property,<br />
+                <span className="freehold-text-gradient italic">decoded.</span></>}
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/55">
-                {LEGAL_ENTITY} is a private advisory and brokerage firm built around one idea — clients should never have to guess. Nineteen years inside the Dubai market, 3,500+ projects mapped, and a team of senior advisors who own every brief end-to-end.
+                {content.heroIntro ?? `${LEGAL_ENTITY} is a private advisory and brokerage firm built around one idea — clients should never have to guess. Nineteen years inside the Dubai market, 3,500+ projects mapped, and a team of senior advisors who own every brief end-to-end.`}
               </p>
 
               <div className="mt-12 flex flex-wrap items-center gap-10">
