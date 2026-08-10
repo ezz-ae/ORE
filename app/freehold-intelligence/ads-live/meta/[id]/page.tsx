@@ -14,7 +14,7 @@ import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/f
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
-import { checkCampaignSetup, setupProblemCount, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
+import { checkCampaignSetup, setupProblemCount, surfaceLabels, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 
@@ -865,6 +865,81 @@ export default function CampaignCommandPage() {
           </div>
         </section>
       )}
+
+      {/* META'S OWN VERDICT, FIRST. Meta attaches issues_info to an ad set it
+          refuses to deliver — a targeting fault, a policy hold — while its
+          status still reads ACTIVE. A page that does not surface this field
+          calls a broken campaign healthy, which is exactly the complaint that
+          added it: "the campaign has an error in Meta, not in the platform." */}
+      {(() => {
+        const issues = data.adSets.flatMap((a) =>
+          (a.issues_info ?? []).map((i) => ({ where: a.name, text: i.error_summary || i.error_message || '' }))
+        ).filter((x) => x.text)
+        if (issues.length === 0) return null
+        return (
+          <section className="mt-8 rounded-2xl border border-rose-400/40 bg-rose-400/[0.08] p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-rose-200">
+              <AlertTriangle className="h-4 w-4" /> {t('lm.metaIssues.title')}
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-rose-200/70">{t('lm.metaIssues.sub')}</p>
+            <div className="mt-3 space-y-2">
+              {issues.map((i, idx) => (
+                <div key={idx} className="rounded-lg border border-rose-400/25 bg-rose-400/[0.06] px-3.5 py-2.5 text-[13px] leading-relaxed text-rose-100">
+                  <span className="font-semibold">{i.where}:</span> {i.text}
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      })()}
+
+      {/* WHO THIS REACHES — the live target read back from Meta, as facts in
+          rows: place, residents or visitors, age, gender, the signals, the
+          surfaces it buys. Not a score, not an essay. */}
+      {(() => {
+        const t0 = data.adSets[0]?.targeting as Record<string, unknown> | undefined
+        if (!t0) return null
+        const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
+        const geo = t0.geo_locations as { countries?: unknown; location_types?: unknown } | undefined
+        const countries = arr(geo?.countries).map(String)
+        const lt = arr(geo?.location_types).map(String)
+        const residents = lt.length > 0 && lt.every((x) => x === 'home')
+        const genders = arr(t0.genders).map(Number)
+        const names = (v: unknown): string[] => arr(v).map((x) => String((x as { name?: unknown })?.name ?? '')).filter(Boolean)
+        const signals = [
+          ...names(t0.interests), ...names(t0.behaviors),
+          ...arr(t0.flexible_spec).flatMap((g) => [...names((g as Record<string, unknown>).interests), ...names((g as Record<string, unknown>).behaviors)]),
+        ]
+        const excluded = arr((t0 as { excluded_custom_audiences?: unknown }).excluded_custom_audiences).length
+        const rows: Array<[string, string]> = [
+          [t('lm.reach.where'), countries.join(', ') || '—'],
+          [t('lm.reach.who'), residents ? t('lm.reach.residents') : t('lm.reach.visitors')],
+          [t('lm.reach.age'), `${Number(t0.age_min) || '—'}–${Number(t0.age_max) || '—'}`],
+          [t('lm.reach.gender'), genders.length === 1 ? (genders[0] === 2 ? t('lm.reach.women') : t('lm.reach.men')) : t('lm.reach.everyone')],
+          [t('lm.reach.signals'), signals.slice(0, 6).join(' · ') + (signals.length > 6 ? ` +${signals.length - 6}` : '') || '—'],
+          ...(excluded > 0 ? [[t('lm.reach.excludes'), t('lm.reach.excludesCrm')] as [string, string]] : []),
+          [t('lm.reach.surfaces'), surfaceLabels(t0).join(' · ') || '—'],
+        ]
+        return (
+          <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+            <div className="flex items-center gap-2.5">
+              <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><Users className="h-4 w-4 text-gold" /></div>
+              <div>
+                <div className="text-sm font-semibold text-white">{t('lm.reach.title')}</div>
+                <div className="text-xs text-slate-400">{t('lm.reach.sub')}</div>
+              </div>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-xl border border-line">
+              {rows.map(([label, value]) => (
+                <div key={label} className="flex items-baseline justify-between gap-4 border-b border-line bg-surface px-4 py-2.5 last:border-b-0">
+                  <span className="shrink-0 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">{label}</span>
+                  <span className="min-w-0 text-end text-[13px] text-white">{value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* SETUP CHECK — is the money pointed where somebody meant to point it.
           Read from what Meta holds right now, not from what we meant to send:

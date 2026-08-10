@@ -106,6 +106,14 @@ export interface MetaAdSet {
   bid_strategy?: string
   /** The cap itself, in FILS (AED × 100), only under COST_CAP. */
   bid_amount?: string
+  /**
+   * META'S OWN ERRORS ON THIS AD SET — the field that answers "the campaign
+   * has an error in Meta, not in the platform". Delivery can read ACTIVE
+   * while issues_info carries a targeting or policy fault that stops every
+   * impression; a page that does not read this field calls a broken ad set
+   * healthy.
+   */
+  issues_info?: Array<{ error_code?: number; error_summary?: string; error_message?: string; level?: string }>
 }
 
 export interface MetaAdCreative {

@@ -679,7 +679,7 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
   const res = await apiFetch<{ data: MetaAdSet[] }>(`/${campaignId}/adsets`, undefined, {
     // learning_stage_info is the difference between "active" and "Meta gave
     // up learning at this volume" — the state that quietly costs the most.
-    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info,end_time,bid_strategy,bid_amount',
+    fields: 'id,name,status,effective_status,daily_budget,targeting,optimization_goal,billing_event,learning_stage_info,end_time,bid_strategy,bid_amount,issues_info',
     limit: '200',
   })
   return res.data ?? []
