@@ -1832,7 +1832,13 @@ export default function NewCampaignPage() {
         {/* ── Step 1: Campaign ──────────────────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-6">
-            <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s1.heading')}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s1.heading')}</h2>
+              <Link href="/freehold-intelligence/lead-machine/campaigns/quick"
+                className="text-[12px] font-semibold text-gold underline transition hover:opacity-80">
+                ⚡ {t('lm.quick.title')}
+              </Link>
+            </div>
 
             {fulfilRequestId && (
               <div className="rounded-[14px] border border-gold/25 bg-gold/[0.05] px-4 py-3 text-[12px] leading-relaxed text-slate-300">
@@ -1841,92 +1847,9 @@ export default function NewCampaignPage() {
               </div>
             )}
 
-            {/* A form ad's lead is captured ON the ad — no landing page in
-                its journey, so the property grid is an optional attach (for
-                the permit window and generated copy), never a wall. */}
-            {activeObjective.dest === 'form' && !attachListingOpen && !form.listingId ? (
-              <button
-                type="button"
-                onClick={() => setAttachListingOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-300 transition hover:text-white"
-              >
-                <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s1.attachOptional')}
-              </button>
-            ) : (
-            <div data-coach="wiz-listing">
-              <Label>{t('lm.newCampaign.s1.label.listing')}{activeObjective.dest === 'form' ? <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span> : null}</Label>
-              <CampaignListingPicker
-                listings={listings}
-                value={form.listingId}
-                onChange={onListingChange}
-                loading={listingsLoading}
-                canEdit={canEditLandings}
-                t={t}
-                inputCls={inputCls()}
-                showLanding={activeObjective.dest === 'landing'}
-              />
-              {form.listingId && (
-                <button type="button" onClick={runDataQuality}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> {t('dq.run')}
-                </button>
-              )}
-            </div>
-            )}
-
-            {/* Campaign sources — brochure/link/file material that completes the
-                campaign when the project is a NEW LAUNCH with no landing page.
-                Feeds the AI copy generation on step 3. */}
-            <div className="rounded-2xl border border-line bg-surface p-4" data-coach="wiz-sources">
-              <button
-                type="button"
-                onClick={() => setSrcOpen((v) => !v)}
-                className="flex w-full items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-gold sm:pointer-events-none"
-              >
-                <span className="flex items-center gap-1.5">
-                  <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}
-                  {campaignSources.length > 0 && (
-                    <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-gold">{campaignSources.length}</span>
-                  )}
-                </span>
-                <ChevronDown className={`h-3.5 w-3.5 transition sm:hidden ${srcOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={srcOpen ? '' : 'max-sm:hidden'}>
-              <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{t('lm.newCampaign.src.sub')}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
-                  <Upload className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.upload')}
-                  <input type="file" accept=".pdf,.txt,.md,.csv,image/*" className="hidden"
-                    onChange={(e) => { void addSourceFile(e.target.files?.[0] ?? null); e.target.value = '' }} />
-                </label>
-                <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <input value={srcLink} onChange={(e) => setSrcLink(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSourceLink() } }}
-                    placeholder={t('lm.newCampaign.src.linkPh')}
-                    className="min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
-                  <button type="button" onClick={addSourceLink}
-                    className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
-                    {t('lm.newCampaign.src.addLink')}
-                  </button>
-                </div>
-                {srcBusy && <span className="flex items-center gap-1.5 text-[11px] text-slate-400"><Loader2 className="h-3 w-3 animate-spin" /> {t('lm.newCampaign.src.extracting')}</span>}
-              </div>
-              {srcError && <p className="mt-2 text-[11px] text-red-400">{srcError}</p>}
-              {campaignSources.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {campaignSources.map((src, i) => (
-                    <span key={`${src.label}-${i}`} className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold">
-                      {src.label}
-                      <button type="button" onClick={() => setCampaignSources((prev) => prev.filter((_, j) => j !== i))} aria-label={`Remove ${src.label}`}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              </div>
-            </div>
-
+            {/* THE OBJECTIVE LEADS. Every later choice — destination,
+                assets, targeting, budget strategy — derives from what the
+                campaign is FOR, so the wizard asks that first. */}
             <div>
               <Label>{t('lm.newCampaign.s1.label.objective')}</Label>
               <p className="mb-2 text-xs text-slate-500">{t('lm.newCampaign.s1.objectiveHint')}</p>
@@ -2039,6 +1962,93 @@ export default function NewCampaignPage() {
                 <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.destPhone.hintWa')}</p>
               </div>
             )}
+
+
+            {/* A form ad's lead is captured ON the ad — no landing page in
+                its journey, so the property grid is an optional attach (for
+                the permit window and generated copy), never a wall. */}
+            {activeObjective.dest === 'form' && !attachListingOpen && !form.listingId ? (
+              <button
+                type="button"
+                onClick={() => setAttachListingOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-300 transition hover:text-white"
+              >
+                <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s1.attachOptional')}
+              </button>
+            ) : (
+            <div data-coach="wiz-listing">
+              <Label>{t('lm.newCampaign.s1.label.listing')}{activeObjective.dest === 'form' ? <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span> : null}</Label>
+              <CampaignListingPicker
+                listings={listings}
+                value={form.listingId}
+                onChange={onListingChange}
+                loading={listingsLoading}
+                canEdit={canEditLandings}
+                t={t}
+                inputCls={inputCls()}
+                showLanding={activeObjective.dest === 'landing'}
+              />
+              {form.listingId && (
+                <button type="button" onClick={runDataQuality}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t('dq.run')}
+                </button>
+              )}
+            </div>
+            )}
+
+            {/* Campaign sources — brochure/link/file material that completes the
+                campaign when the project is a NEW LAUNCH with no landing page.
+                Feeds the AI copy generation on step 3. */}
+            <div className="rounded-2xl border border-line bg-surface p-4" data-coach="wiz-sources">
+              <button
+                type="button"
+                onClick={() => setSrcOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wider text-gold sm:pointer-events-none"
+              >
+                <span className="flex items-center gap-1.5">
+                  <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}
+                  {campaignSources.length > 0 && (
+                    <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-gold">{campaignSources.length}</span>
+                  )}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 transition sm:hidden ${srcOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={srcOpen ? '' : 'max-sm:hidden'}>
+              <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{t('lm.newCampaign.src.sub')}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
+                  <Upload className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.upload')}
+                  <input type="file" accept=".pdf,.txt,.md,.csv,image/*" className="hidden"
+                    onChange={(e) => { void addSourceFile(e.target.files?.[0] ?? null); e.target.value = '' }} />
+                </label>
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <input value={srcLink} onChange={(e) => setSrcLink(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSourceLink() } }}
+                    placeholder={t('lm.newCampaign.src.linkPh')}
+                    className="min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
+                  <button type="button" onClick={addSourceLink}
+                    className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
+                    {t('lm.newCampaign.src.addLink')}
+                  </button>
+                </div>
+                {srcBusy && <span className="flex items-center gap-1.5 text-[11px] text-slate-400"><Loader2 className="h-3 w-3 animate-spin" /> {t('lm.newCampaign.src.extracting')}</span>}
+              </div>
+              {srcError && <p className="mt-2 text-[11px] text-red-400">{srcError}</p>}
+              {campaignSources.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {campaignSources.map((src, i) => (
+                    <span key={`${src.label}-${i}`} className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold">
+                      {src.label}
+                      <button type="button" onClick={() => setCampaignSources((prev) => prev.filter((_, j) => j !== i))} aria-label={`Remove ${src.label}`}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              </div>
+            </div>
 
             <div>
               <Label>{t('lm.newCampaign.s1.label.name')}</Label>
@@ -2166,6 +2176,33 @@ export default function NewCampaignPage() {
             {/* Budget + Smart Spender */}
             <div data-coach="wiz-budget" className="rounded-[16px] border border-line bg-surface-2 p-4 space-y-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold"><Gauge className="h-3.5 w-3.5" /> {t('lm.newCampaign.s2.smartSpender')}</div>
+
+              {/* THE RECOMMENDED PLAN — derived, not decreed. The number comes
+                  from the audience actually attached (its expected or recorded
+                  cost per lead), aimed at ~3 leads/day: the pace that clears
+                  Meta's learning phase inside a week. One press applies it;
+                  typing your own number is equally honoured. */}
+              {(() => {
+                const band = attachedPreset
+                  ? READY_BUYERS.find((r) => r.id === attachedPreset)?.cplAed ?? [120, 250]
+                  : [120, 250]
+                const recommended = Math.max(150, Math.ceil((band[1] * 3) / 50) * 50)
+                const on = form.dailyBudgetAED === recommended
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gold/25 bg-gold/[0.05] px-3.5 py-2.5">
+                    <span className="text-[12px] leading-relaxed text-slate-300">
+                      <span className="font-semibold text-gold">{t('lm.newCampaign.s4.plan.title', { n: recommended.toLocaleString() })}</span>{' '}
+                      {t('lm.newCampaign.s4.plan.why', { hi: band[1] })}
+                    </span>
+                    {!on && (
+                      <button type="button" onClick={() => update('dailyBudgetAED', recommended)}
+                        className="rounded-full bg-gold px-3.5 py-1.5 text-[11px] font-semibold text-ink transition hover:bg-gold-bright">
+                        {t('lm.newCampaign.s4.plan.apply')}
+                      </button>
+                    )}
+                  </div>
+                )
+              })()}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label>{t('lm.newCampaign.s2.label.budget')}</Label>
