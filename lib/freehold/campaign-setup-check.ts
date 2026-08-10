@@ -36,6 +36,12 @@ export interface AdSetForCheck {
   status?: string
   daily_budget?: string | number
   optimization_goal?: string
+  /** COST_CAP when a hard bid ceiling was set at launch. */
+  bid_strategy?: string
+  /** The cap, in fils (AED x 100). */
+  bid_amount?: string | number
+  /** Meta's learning state — FAIL is Learning Limited. */
+  learning_stage_info?: { status?: string } | null
   targeting?: Record<string, unknown> | null
   ads?: Array<{ id: string; status?: string; effective_status?: string }>
 }
@@ -248,6 +254,22 @@ export function checkCampaignSetup(
     }
 
     // ── What Meta is told to buy ────────────────────────────────────────────
+    //
+    // A COST_CAP is permanent for the life of the ad set: updateAdSet carries
+    // no bid fields, so this product can never raise or remove one after
+    // launch. That makes it worth naming on every read — and when the ad set
+    // is also stuck in Learning Limited, the cap is the usual reason: a
+    // ceiling below what the auction clears does not save money, it silently
+    // strangles delivery until the ad set buys only the leftovers nobody else
+    // bid for.
+    if (String(a.bid_strategy ?? '').toUpperCase() === 'COST_CAP') {
+      const capAed = Math.round((Number(a.bid_amount) || 0) / 100)
+      const limited = String(a.learning_stage_info?.status ?? '').toUpperCase() === 'FAIL'
+      out.push(limited
+        ? { level: 'wrong', key: 'capChoking', vars: { cap: capAed }, adSet: where }
+        : { level: 'watch', key: 'capped', vars: { cap: capAed }, adSet: where })
+    }
+
     const goal = String(a.optimization_goal ?? '').toUpperCase()
     if (goal && SOFT_GOALS.includes(goal)) {
       out.push({ level: 'wrong', key: 'softGoal', vars: { goal }, adSet: where })

@@ -63,6 +63,7 @@ import { MIN_ATTRIBUTED_FOR_QUALITY } from '@/lib/freehold/min-evidence'
 import { samePace, SIGNIFICANT_P } from '@/lib/freehold/inventory-quality'
 import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { auditPlacements } from '@/lib/freehold/placement-audit'
+import { aggregatePlacementRows, learnedPlacements, type PlacementMemory } from '@/lib/freehold/placement-memory'
 import type { AdDestination, CreativeAngle } from '@/lib/meta/types'
 import { shouldMintCreativeArm, nextAngle, CREATIVE_ANGLE_FALLBACK } from '@/lib/freehold/creative-explore'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
@@ -508,6 +509,53 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
   const result = emptyResult(machineId, machine.status, true)
   let campaigns = await listMachineCampaigns(machineId)
 
+  // ── What the account already paid to learn about placements ──────────────
+  // The placement audit has condemned surfaces with an exact significance
+  // test since it shipped, and the verdict only ever reached an activity log.
+  // Every machine launch then bought the full spec again — including the
+  // surface the machine itself had just proven worthless. Live campaigns stay
+  // untouched (a mid-flight placement edit resets learning and silently
+  // changes what the operator approved); the LAUNCH is the safe moment, so
+  // the launch is where the memory acts.
+  //
+  // Computed at most once per cycle, on first launch that needs it, from the
+  // machine's own newest Meta campaigns — paused history included, because
+  // evidence does not expire when a trial ends.
+  let placementMemoryCache: PlacementMemory | null | undefined
+  const placementMemory = async (): Promise<PlacementMemory | null> => {
+    if (placementMemoryCache !== undefined) return placementMemoryCache
+    const metaIds = campaigns
+      .filter((c) => c.channel === 'meta')
+      .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1))
+      .slice(0, 12)
+      .map((c) => c.campaignId)
+    const rowsets = await Promise.all(
+      metaIds.map((id) => getCampaignInsightsByPlacement(id).catch(() => [])),
+    )
+    placementMemoryCache = learnedPlacements(aggregatePlacementRows(rowsets))
+    if (placementMemoryCache && !placementMemoryCache.allCondemned) {
+      await logActivity({
+        machineId, kind: 'observation',
+        detail: `New launches skip ${placementMemoryCache.avoid.join(', ')}: this account's own delivery history condemned ${placementMemoryCache.avoid.length === 1 ? 'that surface' : 'those surfaces'}. ${placementMemoryCache.reasons.join(' ')} Running campaigns are not touched — a live placement edit resets learning.`,
+        data: { reason: 'placements_narrowed', avoid: placementMemoryCache.avoid, keep: placementMemoryCache.keep },
+      })
+    } else if (placementMemoryCache?.allCondemned) {
+      await logActivity({
+        machineId, kind: 'observation',
+        detail: `Placement history condemns every launchable surface, which is a signal for a human rather than a launch instruction — new launches keep the full placement set. ${placementMemoryCache.reasons.join(' ')}`,
+        data: { reason: 'placements_all_condemned', avoid: placementMemoryCache.avoid },
+      })
+    }
+    return placementMemoryCache
+  }
+  // Spread into launchFullCampaign: narrows only when history condemns
+  // something and at least one surface survives.
+  const learnedPlacementArgs = async (): Promise<{ placementMode?: 'manual'; manualPlacements?: string[] }> => {
+    const mem = await placementMemory()
+    if (!mem || mem.allCondemned) return {}
+    return { placementMode: 'manual', manualPlacements: mem.keep }
+  }
+
   // ── Trakheesi permit per project ──────────────────────────────────────────
   // A permit is not a one-time checkbox: DET issues it for a fixed window, and
   // an ad still running past that window is exactly as non-compliant as one
@@ -761,6 +809,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
           launchStatus: 'ACTIVE',
           destination: resolveDestination(trial.destination, leadFormId),
           ...(leadFormId ? { leadFormId } : {}),
+          ...(await learnedPlacementArgs()),
         })
         await addMachineCampaign({
           machineId,
@@ -1281,6 +1330,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               launchStatus: 'ACTIVE',
               destination: resolveDestination(unlaunched.destination, leadFormId),
               ...(leadFormId ? { leadFormId } : {}),
+              ...(await learnedPlacementArgs()),
             })
             newCampaignId = launch.campaignId
           }
@@ -1382,6 +1432,7 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
               // would make the comparison with its parent unreadable.
               destination: resolveDestination(winnerTrial.destination, leadFormId),
               ...(leadFormId ? { leadFormId } : {}),
+              ...(await learnedPlacementArgs()),
             })
             platformLaunched = true
             await addMachineCampaign({
