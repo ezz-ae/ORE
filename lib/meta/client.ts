@@ -36,6 +36,8 @@ import { questionsForMeta } from './form-templates'
 import { explainMetaError } from './error-advice'
 import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
+import { eventCostsFromInsights } from './event-costs'
+import type { EventCosts } from '@/lib/freehold/learning-phase'
 import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
   findAdvantageInAdSet, describeViolations,
@@ -369,6 +371,31 @@ export async function getCampaignLifetimeInsights(campaignId: string): Promise<M
     return res.data?.[0] ?? null
   } catch {
     return null
+  }
+}
+
+/**
+ * WHAT AN EVENT COSTS ON THIS ACCOUNT, over the last 30 days.
+ *
+ * The input the learning-phase ceiling has always needed and never had. Read
+ * at the ACCOUNT, not at a campaign: the question is what this advertiser's
+ * money buys, and a brand-new campaign has no history of its own to answer it
+ * with — which is precisely the moment the ceiling matters.
+ *
+ * Returns all-null rather than throwing. All-null is a real answer here: it
+ * means nothing has been measured yet, and the planner is built to respond to
+ * that by running one arm until there is something to measure.
+ */
+export async function getAccountEventCosts(): Promise<EventCosts> {
+  try {
+    const { adAccountId } = await creds()
+    const res = await apiFetch<{ data: MetaInsights[] }>(`/${adAccountId}/insights`, undefined, {
+      fields: 'spend,actions',
+      date_preset: 'last_30d',
+    })
+    return eventCostsFromInsights(res.data?.[0] ?? null)
+  } catch {
+    return { link_click: null, landing_view: null, lead: null }
   }
 }
 
