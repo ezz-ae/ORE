@@ -78,6 +78,7 @@ const en: Dict = {
   'paim.devs.toastGenerated': 'AI profile for {name} generated',
   'paim.devs.toastGeneratedCopied': 'AI profile for {name} generated & copied to clipboard',
   'paim.devs.toastGenFail': 'AI generation failed',
+  'paim.devs.toastCreatedNoProjects': 'Saved. It will appear on the website once a project lists this developer.',
   'paim.devs.toastCreated': 'Developer profile created',
   'paim.devs.toastCreateFail': 'Failed to create',
 }
@@ -157,6 +158,7 @@ const ar: Dict = {
   'paim.devs.toastGenerated': 'تم إنشاء ملف {name} بالذكاء الاصطناعي',
   'paim.devs.toastGeneratedCopied': 'تم إنشاء ملف {name} بالذكاء الاصطناعي ونسخه إلى الحافظة',
   'paim.devs.toastGenFail': 'فشل التوليد بالذكاء الاصطناعي',
+  'paim.devs.toastCreatedNoProjects': 'تم الحفظ. سيظهر على الموقع عندما يرتبط مشروع بهذا المطوّر.',
   'paim.devs.toastCreated': 'تم إنشاء ملف المطوّر',
   'paim.devs.toastCreateFail': 'تعذّر الإنشاء',
 }
@@ -236,6 +238,7 @@ const ru: Dict = {
   'paim.devs.toastGenerated': 'Профиль для {name} сгенерирован ИИ',
   'paim.devs.toastGeneratedCopied': 'Профиль для {name} сгенерирован ИИ и скопирован в буфер обмена',
   'paim.devs.toastGenFail': 'Ошибка генерации ИИ',
+  'paim.devs.toastCreatedNoProjects': 'Сохранено. Появится на сайте, когда за застройщиком будет закреплён проект.',
   'paim.devs.toastCreated': 'Профиль застройщика создан',
   'paim.devs.toastCreateFail': 'Не удалось создать',
 }
