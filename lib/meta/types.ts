@@ -281,6 +281,10 @@ export interface LaunchCampaignPayload {
   /** The Page the ads run as. Absent = the configured Page. When the
    *  destination is an instant form this is the Page that owns the form. */
   pageId?: string
+  /** The Instagram account the ads run as — one of the Page's own
+   *  connections (see getAdIdentity().instagramOptions). Absent = Meta's
+   *  fallback: the connected account, or the Page itself. */
+  instagramUserId?: string
   /** Attach a saved audience by id and let the SERVER read its definition.
    *  Required for pattern audiences, whose targeting deliberately never
    *  reaches the browser and so cannot be sent back from it. */

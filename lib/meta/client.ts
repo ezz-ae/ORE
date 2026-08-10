@@ -1259,9 +1259,17 @@ export async function createAdCreative(params: {
    * so the form's Page must be able to travel here.
    */
   pageId?: string
+  /**
+   * The Instagram account the ad runs as on Instagram. Omitted = Meta's own
+   * fallback: the Page's connected account, or the Page itself. Must be one
+   * of the Page's own connections (getAdIdentity().instagramOptions) —
+   * Meta's rule, and the identity picker only offers that set.
+   */
+  instagramUserId?: string
 }): Promise<{ id: string }> {
   const { adAccountId, pageId: configuredPageId } = await creds()
   const pageId = params.pageId || configuredPageId
+  const igActor = params.instagramUserId ? { instagram_user_id: params.instagramUserId } : {}
 
   // CTA shaping per destination. The instant form rides ON the CTA
   // (lead_gen_form_id) — this is the wiring that makes a picked Meta form
@@ -1302,7 +1310,7 @@ export async function createAdCreative(params: {
     })
     return apiPost(`/${adAccountId}/adcreatives`, {
       name:              params.name,
-      object_story_spec: { page_id: pageId },
+      object_story_spec: { page_id: pageId, ...igActor },
       asset_feed_spec:   assetFeedSpec,
       url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     })
@@ -1331,7 +1339,7 @@ export async function createAdCreative(params: {
     })
     return apiPost(`/${adAccountId}/adcreatives`, {
       name:              params.name,
-      object_story_spec: { page_id: pageId },
+      object_story_spec: { page_id: pageId, ...igActor },
       asset_feed_spec:   assetFeedSpec,
       url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
     })
@@ -1355,7 +1363,7 @@ export async function createAdCreative(params: {
 
   return apiPost(`/${adAccountId}/adcreatives`, {
     name:               params.name,
-    object_story_spec:  { page_id: pageId, link_data: linkData },
+    object_story_spec:  { page_id: pageId, ...igActor, link_data: linkData },
     // Dynamic UTMs close the attribution loop: the lead that lands on the
     // page carries the REAL campaign/adset/ad ids into the CRM automatically.
     url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
@@ -1918,6 +1926,14 @@ export interface AdIdentity {
   pageName: string | null
   /** The Instagram account the ads appear as, when the Page has one. */
   instagram: { id: string; username: string | null } | null
+  /**
+   * Every distinct Instagram account this Page can run ads as. Meta allows
+   * the creative to name one via instagram_user_id, but only from the Page's
+   * own connections — the business account and the connected account, which
+   * are usually the same and occasionally two. This is the whole legal set;
+   * an arbitrary Instagram account cannot be chosen, by Meta's rule not ours.
+   */
+  instagramOptions: Array<{ id: string; username: string | null }>
 }
 
 export async function getAdIdentity(pageIdOverride?: string): Promise<AdIdentity> {
@@ -1933,15 +1949,20 @@ export async function getAdIdentity(pageIdOverride?: string): Promise<AdIdentity
       fields: 'id,name,instagram_business_account{id,username},connected_instagram_account{id,username}',
     })
     const ig = page.instagram_business_account ?? page.connected_instagram_account ?? null
+    const options = [page.instagram_business_account, page.connected_instagram_account]
+      .filter((x): x is { id: string; username?: string } => !!x?.id)
+      .filter((x, i, xs) => xs.findIndex((y) => y.id === x.id) === i)
+      .map((x) => ({ id: x.id, username: x.username ?? null }))
     return {
       pageId,
       pageName: page.name ?? null,
       instagram: ig ? { id: ig.id, username: ig.username ?? null } : null,
+      instagramOptions: options,
     }
   } catch {
     // Never throws: not knowing the name is a smaller problem than a screen
     // that will not load.
-    return { pageId, pageName: null, instagram: null }
+    return { pageId, pageName: null, instagram: null, instagramOptions: [] }
   }
 }
 
@@ -2824,6 +2845,9 @@ export async function launchFullCampaign(params: {
    * follows the form's Page automatically for exactly that reason.
    */
   pageId?: string
+  /** The Instagram account the ads run as — one of the Page's own
+   *  connections. Omitted = Meta's fallback (connected IG, or the Page). */
+  instagramUserId?: string
   /** Lead-language codes ('en'|'ar'|'ru') resolved live to Meta locale IDs. */
   leadLanguages?: string[]
   /**
@@ -2997,6 +3021,7 @@ export async function launchFullCampaign(params: {
         leadFormId: params.leadFormId,
         destinationPhone: params.destinationPhone,
         pageId: params.pageId,
+        instagramUserId: params.instagramUserId,
       }))
       const ad = await step(`ad (${label})`, () => createAd({
         adSetId: adSet.id,
@@ -3030,6 +3055,7 @@ export async function launchFullCampaign(params: {
         leadFormId: params.leadFormId,
         destinationPhone: params.destinationPhone,
         pageId: params.pageId,
+        instagramUserId: params.instagramUserId,
       }))
       const ad = await step('ad (other placements)', () => createAd({
         adSetId: adSet.id,
@@ -3077,6 +3103,7 @@ export async function launchFullCampaign(params: {
     leadFormId:       params.leadFormId,
     destinationPhone: params.destinationPhone,
     pageId:           params.pageId,
+    instagramUserId:  params.instagramUserId,
   }))
 
   // 6 — Ad
@@ -3103,6 +3130,7 @@ export async function launchFullCampaign(params: {
       leadFormId:       params.leadFormId,
       destinationPhone: params.destinationPhone,
       pageId:           params.pageId,
+      instagramUserId:  params.instagramUserId,
     }))
     await step(`ad (design ${letter})`, () => createAd({
       adSetId:    adSet.id,
