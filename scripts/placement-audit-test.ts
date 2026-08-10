@@ -152,6 +152,49 @@ console.log('\n── shares and degenerate input ──')
   check('a zero-impression campaign does not divide by zero', zero.readings.length === 0)
 }
 
+console.log('\n── the earlier read: nobody is clicking, and that is already decidable ──')
+{
+  // THE CRITIQUE THIS ANSWERS: the lead verdict waits on leads, which are
+  // rare. A placement buying nothing but cheap impressions spends the whole
+  // of that wait. Clicks are plentiful, so they separate from the field far
+  // sooner — judged by the SAME significance machinery, not by an invented
+  // threshold like "50,000 impressions in two hours", which would condemn an
+  // expensive, slow, high-intent audience for behaving exactly as it should.
+  const junk = auditPlacements([
+    // Huge cheap delivery, essentially no clicks, no leads anywhere yet.
+    { platform: 'facebook', position: 'feed', impressions: 400_000, clicks: 12, spend: 1600, leads: 0 },
+    { platform: 'instagram', position: 'stream', impressions: 40_000, clicks: 900, spend: 1400, leads: 0 },
+  ], null)
+  const flagged = junk.readings.find((r) => r.position === 'feed')
+  check('a placement nobody clicks is called out before any lead exists',
+    flagged?.verdict === 'noClicks', JSON.stringify(flagged?.verdict))
+  check('…and the sentence says why it is not a lead verdict',
+    /nobody is engaging/i.test(flagged?.sentence ?? ''), flagged?.sentence ?? '')
+  check('the placement people DO click is not condemned',
+    junk.readings.find((r) => r.position === 'stream')?.verdict !== 'noClicks')
+
+  // The expensive slow audience: few impressions, few clicks, but its click
+  // rate is in line with the rest. Nothing to say yet.
+  const slow = auditPlacements([
+    { platform: 'instagram', position: 'stream', impressions: 3_000, clicks: 30, spend: 1200, leads: 0 },
+    { platform: 'facebook', position: 'feed', impressions: 3_000, clicks: 31, spend: 1100, leads: 0 },
+  ], null)
+  check('a slow, expensive, low-volume audience is left alone',
+    slow.readings.every((r) => r.verdict === 'undecided'),
+    slow.readings.map((r) => `${r.position}:${r.verdict}`).join(' | '))
+
+  // A placement PROVEN to convert better converts better whatever its click
+  // rate — reading the shallower event as the truer one would be a regression.
+  const converts = auditPlacements([
+    { platform: 'facebook', position: 'feed', impressions: 200_000, clicks: 20, spend: 800, leads: 90 },
+    { platform: 'instagram', position: 'stream', impressions: 200_000, clicks: 4000, spend: 800, leads: 2 },
+  ], null)
+  check('a lead verdict is never overridden by a click verdict',
+    converts.readings.find((r) => r.position === 'feed')?.verdict === 'strong',
+    JSON.stringify(converts.readings.map((r) => `${r.position}:${r.verdict}`)))
+}
+
+
 if (failures > 0) {
   console.error(`\n${failures} placement-audit rule(s) broken.`)
   process.exit(1)

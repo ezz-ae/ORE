@@ -87,6 +87,17 @@ export type PlacementVerdict =
   | 'mismatch'
   /** Proven to convert better than the rest. */
   | 'strong'
+  /**
+   * Nobody is clicking, and that is already decidable.
+   *
+   * The lead verdict waits on leads, which are rare — a placement can burn
+   * weeks of budget before enough of them exist to prove anything. Clicks are
+   * plentiful, so a placement that is clicked significantly less than the rest
+   * of the campaign separates from the field FAR sooner. This is that earlier
+   * read, and it defers the moment the lead evidence arrives: it is only ever
+   * reported while the lead verdict is still undecided.
+   */
+  | 'noClicks'
   /** Not enough delivery to say anything. */
   | 'undecided'
 
@@ -143,6 +154,7 @@ export function auditPlacements(
   const totalImp = rows.reduce((n, r) => n + r.impressions, 0)
   const totalSpend = rows.reduce((n, r) => n + r.spend, 0)
   const totalLeads = rows.reduce((n, r) => n + r.leads, 0)
+  const totalClicks = rows.reduce((n, r) => n + r.clicks, 0)
 
   if (rows.length === 0 || totalImp === 0) {
     return {
@@ -172,17 +184,38 @@ export function auditPlacements(
     const rate = row.leads / row.impressions
     const restRate = restImp > 0 ? restLeads / restImp : 0
 
+    // THE EARLIER READ, ON THE PLENTIFUL EVENT.
+    //
+    // Leads are rare, so the verdict above needs a lot of delivery before it
+    // can say anything — and a placement buying nothing but cheap impressions
+    // spends the whole of that wait. Clicks are common enough to separate from
+    // the field in a fraction of the time, judged by the SAME significance
+    // machinery rather than an invented threshold like "50,000 impressions in
+    // two hours", which would condemn a genuinely expensive, slow, high-intent
+    // audience for behaving exactly as it should.
+    const restClicks = totalClicks - row.clicks
+    const clickP = restImp > 0 ? samePace(row.clicks, row.impressions, restClicks, restImp) : 1
+    const clickRate = row.clicks / row.impressions
+    const restClickRate = restImp > 0 ? restClicks / restImp : 0
+
     const creativeFits = fits(shape, aspect)
     let verdict: PlacementVerdict = 'undecided'
     if (p < SIGNIFICANT_P && rate < restRate) verdict = 'drain'
     else if (p < SIGNIFICANT_P && rate > restRate) verdict = 'strong'
     else if (creativeFits === false) verdict = 'mismatch'
+    // Only while the lead verdict is still open. A placement PROVEN to convert
+    // better than the rest converts better whatever its click rate — some
+    // audiences click little and buy anyway, and overriding a lead verdict
+    // with a click one would be reading the shallower event as the truer one.
+    else if (clickP < SIGNIFICANT_P && clickRate < restClickRate) verdict = 'noClicks'
 
     let sentence: string
     if (verdict === 'drain') {
       sentence = `${label(row)} takes ${pct(spendShare)} of spend and converts worse than the rest of the campaign (p=${p < 0.0001 ? p.toExponential(1) : p.toFixed(4)}).`
     } else if (verdict === 'strong') {
       sentence = `${label(row)} converts better than the rest of the campaign — ${Math.round((base.lpm ?? 0))} leads per million impressions.`
+    } else if (verdict === 'noClicks') {
+      sentence = `${label(row)} takes ${pct(spendShare)} of spend and is clicked far less than the rest of the campaign. Too few leads anywhere yet to judge it on leads — but nobody is engaging with it.`
     } else if (verdict === 'mismatch') {
       sentence = `${label(row)} is a ${shape === 'vertical' ? 'full-screen vertical' : 'feed'} surface carrying a ${aspect} creative — the ad is cropped to run here, and it is taking ${pct(spendShare)} of spend.`
     } else {
