@@ -1,4 +1,5 @@
 import { HeroWithMotion } from "@/components/hero-with-motion"
+import { getPageContent } from "@/lib/freehold/site-content"
 import { BRAND } from "@/lib/freehold/brand"
 import { FeaturedProperties } from "@/components/featured-properties"
 import { MarketSnapshot } from "@/components/market-snapshot"
@@ -154,6 +155,8 @@ const advisorySteps = [
 
 export default async function Home() {
   const intelligenceData = await getIntelligenceBlockData()
+  // Web Studio → Content. Empty store = the built-in words, unchanged.
+  const content = await getPageContent('home')
 
   return (
     <div className="overflow-x-clip">
@@ -163,10 +166,10 @@ export default async function Home() {
         <div className="mb-6">
           <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">{BRAND.company}</span>
           <h1 className="mt-2 text-[30px] font-bold leading-[1.08] text-white font-serif">
-            Invest smarter in<br/>Dubai real estate.
+            {content.heroTitle ?? <>Invest smarter in<br/>Dubai real estate.</>}
           </h1>
           <p className="mt-3 text-[13px] text-white/45 leading-relaxed">
-            AI-powered shortlists, curated projects, expert advisory.
+            {content.heroSubtitle ?? 'AI-powered shortlists, curated projects, expert advisory.'}
           </p>
         </div>
 
@@ -216,7 +219,7 @@ export default async function Home() {
 
       {/* ── Desktop hero ─────────────────────────────────────────────── */}
       <div className="hidden lg:block">
-        <HeroWithMotion heroPrompts={heroPrompts} />
+        <HeroWithMotion heroPrompts={heroPrompts} heroTitle={content.heroTitle} heroSubtitle={content.heroSubtitle} />
       </div>
 
       {/* ── Developer trust strip ────────────────────────────────────── */}

@@ -1,3 +1,4 @@
+import { getPageContent } from "@/lib/freehold/site-content"
 import { Button } from "@/components/ui/button"
 import { BRAND } from "@/lib/freehold/brand"
 import { COMPANY_EMAIL, COMPANY_PHONE, COMPANY_PHONE_E164, COMPANY_WHATSAPP_URL } from "@/lib/site"
@@ -61,7 +62,9 @@ const contactChannels = [
   },
 ]
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  // Web Studio → Content overrides; built-in words are the fallback.
+  const content = await getPageContent('contact')
   return (
     <>
       {/* HERO */}
@@ -77,10 +80,10 @@ export default function ContactPage() {
               Senior advisors online now
             </span>
             <h1 className="mt-8 font-serif text-5xl font-bold leading-[1.04] tracking-tight md:text-6xl lg:text-7xl">
-              Talk to a <span className="freehold-text-gradient italic">{BRAND.company}</span> advisor.
+              {content.heroTitle ?? <>Talk to a <span className="freehold-text-gradient italic">{BRAND.company}</span> advisor.</>}
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/60">
-              WhatsApp is fastest. Phone is direct. Email for documents. Pick whatever fits — we route the same to a senior desk.
+              {content.heroSubtitle ?? 'WhatsApp is fastest. Phone is direct. Email for documents. Pick whatever fits — we route the same to a senior desk.'}
             </p>
           </div>
         </div>
@@ -137,7 +140,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#152E24]/45">Address</p>
-                    <p className="mt-1 text-[14px] leading-relaxed text-[#152E24]">Sobha Sapphire Building, Office 904<br/>Business Bay, Dubai · UAE</p>
+                    <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed text-[#152E24]">{content.address ?? 'Sobha Sapphire Building, Office 904\nBusiness Bay, Dubai · UAE'}</p>
                   </div>
                 </div>
 
@@ -147,6 +150,9 @@ export default function ContactPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#152E24]/45">Hours</p>
+                    {content.hours ? (
+                      <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-[#152E24]">{content.hours}</p>
+                    ) : (
                     <div className="mt-2 space-y-1 text-[13px]">
                       <div className="flex justify-between">
                         <span className="text-[#152E24]/55">Monday – Saturday</span>
@@ -157,10 +163,11 @@ export default function ContactPage() {
                         <span className="font-semibold text-[#152E24]">Online only</span>
                       </div>
                     </div>
+                    )}
                   </div>
                 </div>
 
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[#152E24]/40">RERA ORN: 28628</p>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[#152E24]/40">RERA ORN: {content.rera ?? '28628'}</p>
               </div>
             </aside>
 

@@ -1,3 +1,4 @@
+import { getPageContent } from "@/lib/freehold/site-content"
 import { Button } from "@/components/ui/button"
 import { BRAND } from "@/lib/freehold/brand"
 
@@ -86,7 +87,8 @@ const principles = [
   { number: "03", title: "Technology-Driven", body: "AI shortlists, ROI modeling, and live market signals — built so decisions don't rely on guesswork." },
 ]
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const content = await getPageContent('services')
   return (
     <>
       {/* HERO */}
@@ -102,10 +104,10 @@ export default function ServicesPage() {
               Service Coverage
             </span>
             <h1 className="mt-8 font-serif text-5xl font-bold leading-[1.04] tracking-tight md:text-6xl lg:text-7xl">
-              End-to-end <span className="freehold-text-gradient italic">Dubai real estate</span> solutions.
+              {content.heroTitle ?? <>End-to-end <span className="freehold-text-gradient italic">Dubai real estate</span> solutions.</>}
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/60">
-              Eight services. One desk. Curated for international and resident investors who want clarity, speed, and execution.
+              {content.heroSubtitle ?? 'Eight services. One desk. Curated for international and resident investors who want clarity, speed, and execution.'}
             </p>
           </div>
         </div>
