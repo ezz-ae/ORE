@@ -57,6 +57,22 @@ export async function POST(req: NextRequest) {
   // Must be a real number BEFORE it becomes money: a non-numeric budget made
   // `Math.round(budget / 10)` NaN, which skipped the credit reservation entirely
   // and launched for free (NaN < 50 and NaN > 0 are both false).
+  // A COST CAP THAT CANNOT POSSIBLY CLEAR THE AUCTION IS A SELF-STRANGLE, and
+  // it is permanent: updateAdSet carries no bid fields, so the only exit is a
+  // relaunch. A real account shipped with a cap of AED 7.50 per lead — in a
+  // market where a property lead clears at ~AED 195 — and sat in "Active
+  // Learning" delivering nothing while the money waited. The wizard only ever
+  // sends a cap when the optimisation unit is a lead or a call (it zeroes the
+  // field for click goals), so any cap arriving here prices one of those; AED
+  // 30 is far below any lead this market has ever produced, which makes a cap
+  // under it a typo or a fils confusion, never an intent.
+  if (typeof body.cplCapAED === 'number' && body.cplCapAED > 0 && body.cplCapAED < 30) {
+    return NextResponse.json({
+      error: `A cost cap of AED ${body.cplCapAED} per result cannot win any auction for property leads — the ad set would sit "active" and deliver nothing, and a cap cannot be changed after launch. Launch without a cap (recommended), or set one above AED 30.`,
+      type: 'validation',
+    }, { status: 400 })
+  }
+
   if (typeof body.dailyBudgetAED !== 'number' || !Number.isFinite(body.dailyBudgetAED)) {
     return NextResponse.json({ error: 'Daily budget must be a number in AED' }, { status: 400 })
   }
