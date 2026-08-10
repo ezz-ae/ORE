@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import type { CampaignTargeting } from '@/lib/meta/types'
 import { REACHABLE_LEAD_LANGUAGES, SUPPORTED_LEAD_LANGUAGES, type LeadLanguage } from '@/lib/meta/lead-language'
+import { normalizeLocationTypes } from '@/lib/meta/geo-spec'
 import { planPattern, parsePattern, describePattern } from '@/lib/freehold/audience-pattern'
 
 // ─── Saved audiences ──────────────────────────────────────────────────────────
@@ -138,6 +139,9 @@ export function combineSpecs(specs: CampaignTargeting[]): CampaignTargeting {
   return {
     countries: [...new Set(specs.flatMap((s) => s.countries))],
     cityKeys: [...new Set(specs.flatMap((s) => s.cityKeys ?? []))],
+    // Combining widens WHERE, and it widens who counts as being there only if
+    // one of the combined audiences already said so.
+    locationTypes: normalizeLocationTypes([...new Set(specs.flatMap((s) => s.locationTypes ?? []))]),
     ageMin: Math.min(...specs.map((s) => s.ageMin)),
     ageMax: Math.max(...specs.map((s) => s.ageMax)),
     publisherPlatforms: [...new Set(specs.flatMap((s) => s.publisherPlatforms ?? []))],
@@ -198,6 +202,11 @@ export function normalizeSpec(raw: unknown): CampaignTargeting {
   return {
     countries: strings(r.countries).length ? strings(r.countries) : DEFAULT_SPEC.countries,
     cityKeys: strings(r.cityKeys),
+    // Residents unless an audience deliberately says otherwise. `normalize`
+    // reads an absent or unrecognised value as residents-only rather than as
+    // "no preference", because no-preference is Meta's default and Meta's
+    // default buys tourists.
+    locationTypes: normalizeLocationTypes(r.locationTypes),
     ageMin: num(r.ageMin, 18, 65, DEFAULT_SPEC.ageMin),
     ageMax: num(r.ageMax, 18, 65, DEFAULT_SPEC.ageMax),
     publisherPlatforms: strings(r.publisherPlatforms).length ? strings(r.publisherPlatforms) : DEFAULT_SPEC.publisherPlatforms,

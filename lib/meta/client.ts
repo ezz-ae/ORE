@@ -37,6 +37,7 @@ import { explainMetaError } from './error-advice'
 import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
+import { geoLocationsSpec } from './geo-spec'
 import type { EventCosts } from '@/lib/freehold/learning-phase'
 import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
@@ -611,7 +612,13 @@ export async function getReachEstimate(
       ...(targeting.behaviors?.length ? { behaviors: targeting.behaviors } : {}),
     }
     const spec: Record<string, unknown> = {
-      geo_locations: { countries: targeting.countries.length ? targeting.countries : ['AE'] },
+      // Through the ONE builder, so the reach number describes the audience the
+      // ad will actually buy — residents, not residents plus tourists.
+      geo_locations: geoLocationsSpec({
+        countries: targeting.countries.length ? targeting.countries : ['AE'],
+        cityKeys: targeting.cityKeys,
+        locationTypes: targeting.locationTypes,
+      }),
       age_min: targeting.ageMin,
       age_max: targeting.ageMax,
       ...(targeting.genders && targeting.genders.length ? { genders: targeting.genders } : {}),
@@ -827,12 +834,11 @@ export async function createAdSet(params: {
     : baseGroup
 
   const targetingSpec: Record<string, unknown> = {
-    geo_locations: {
+    geo_locations: geoLocationsSpec({
       countries: t.countries,
-      ...(t.cityKeys.length > 0
-        ? { cities: t.cityKeys.map((key) => ({ key })) }
-        : {}),
-    },
+      cityKeys: t.cityKeys,
+      locationTypes: t.locationTypes,
+    }),
     age_min: ageMin,
     age_max: ageMax,
     ...placementSpec,
@@ -2425,12 +2431,11 @@ export async function updateAdSet(
   if (params.dailyBudgetAED) body.daily_budget = params.dailyBudgetAED * 100
   if (params.targeting) {
     body.targeting = {
-      geo_locations: {
+      geo_locations: geoLocationsSpec({
         countries: params.targeting.countries,
-        ...(params.targeting.cityKeys.length > 0
-          ? { cities: params.targeting.cityKeys.map((k) => ({ key: k })) }
-          : {}),
-      },
+        cityKeys: params.targeting.cityKeys,
+        locationTypes: params.targeting.locationTypes,
+      }),
       age_min: params.targeting.ageMin,
       age_max: params.targeting.ageMax,
       publisher_platforms: params.targeting.publisherPlatforms,

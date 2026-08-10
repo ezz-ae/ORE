@@ -84,6 +84,26 @@ function hasPropertyIntent(t?: Record<string, unknown> | null): boolean {
   })
 }
 
+/**
+ * Does this ad set buy people who LIVE in the targeted place, or everyone Meta
+ * has recently seen there?
+ *
+ * Read here rather than trusted from the launcher, because the answer for
+ * every campaign launched before this check existed is "everyone" — the field
+ * was never sent, so Meta's own default (`home` + `recent`) was in force and a
+ * tourist on a five-day holiday was a valid target for a Dubai property ad.
+ *
+ * A statement about RESIDENCE. Not about origin, and it must never be read as
+ * one: everyone who lives in the UAE is inside `home`, whoever they are.
+ */
+const HOME_ONLY = ['home']
+function visitorsIncluded(t?: Record<string, unknown> | null): boolean {
+  const raw = (t?.geo_locations as { location_types?: unknown } | undefined)?.location_types
+  // Absent is not neutral — absent IS home + recent.
+  if (!Array.isArray(raw) || raw.length === 0) return true
+  return raw.map(String).some((x) => !HOME_ONLY.includes(x))
+}
+
 function countriesOf(t?: Record<string, unknown> | null): string[] {
   const g = t?.geo_locations as { countries?: unknown } | undefined
   return arr(g?.countries).map(String)
@@ -171,6 +191,12 @@ export function checkCampaignSetup(
         vars: { places: countries.join(', ') || String(cities), n: countries.length },
         adSet: where,
       })
+    }
+
+    if (countries.length > 0 || cities > 0) {
+      out.push(visitorsIncluded(t)
+        ? { level: 'wrong', key: 'visitors', adSet: where }
+        : { level: 'ok', key: 'residents', adSet: where })
     }
 
     if (!hasPropertyIntent(t)) {
