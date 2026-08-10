@@ -81,6 +81,9 @@ type DeveloperRow = {
   }
 }
 
+// The inverse of the dirham's USD peg (1 / 3.6725, fixed since 1997). A
+// hardcoded FX rate is safe HERE only because the AED is pegged — do not copy
+// this pattern for any floating currency.
 const USD_RATE = 0.2723
 
 const titleCase = (value: string) =>

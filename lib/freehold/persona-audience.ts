@@ -165,6 +165,9 @@ export interface PersonaPlanInput {
  * before, refusal happened before; this is arithmetic.
  */
 export function planPersona(input: PersonaPlanInput): CampaignTargeting {
+  // 30–65 is the market rule learned the expensive way — under 30 barely buys
+  // here (stated on the ready-buyers card, enforced in this kitchen). Persona
+  // ages can narrow inside the band, never widen it.
   const ageMin = Math.max(30, input.ageMin ?? 30)
   const ageMax = Math.min(65, input.ageMax ?? 65)
   const groups = input.stack
@@ -176,6 +179,11 @@ export function planPersona(input: PersonaPlanInput): CampaignTargeting {
     cityKeys: [],
     ageMin,
     ageMax: ageMax > ageMin ? ageMax : Math.min(65, ageMin + 10),
+    // Facebook and Instagram ONLY, stated explicitly: Audience Network and
+    // Messenger are overflow inventory whose cheap impressions do not convert,
+    // and an omitted/empty platform list is not "no preference" — Meta reads
+    // it as permission to place anywhere (see ALLOWED_PLATFORMS in
+    // lib/meta/no-advantage.ts, where the doctrine lives).
     publisherPlatforms: ['facebook', 'instagram'],
     interests: [],
     behaviors: [],

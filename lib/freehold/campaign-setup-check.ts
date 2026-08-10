@@ -185,6 +185,16 @@ export function checkCampaignSetup(
     if (countries.length === 0 && cities === 0) {
       out.push({ level: 'wrong', key: 'noPlace', adSet: where })
     } else {
+      // Why many countries in ONE ad set is worth a look: the ad set holds a
+      // single budget, and Meta pools it into whichever country's impressions
+      // are cheapest — so a wide list quietly becomes a campaign for its
+      // cheapest member. The product's own doctrine is each market its own
+      // campaign. The line sits at 8: above the biggest bundle this product
+      // deliberately builds (whole-GCC, 6), so a chosen Gulf campaign passes
+      // clean, while a whole-continent list (Europe is 20 here) gets the watch
+      // it deserves. A watch, not a wrong — a multi-market ad set can be a
+      // deliberate choice; buying only its cheapest corner cannot be seen from
+      // the spec alone.
       out.push({
         level: countries.length > 8 ? 'watch' : 'ok',
         key: countries.length > 8 ? 'manyCountries' : 'place',
@@ -213,6 +223,11 @@ export function checkCampaignSetup(
 
     const ageMin = Number(t.age_min) || 0
     const ageMax = Number(t.age_max) || 0
+    // 25 is the youngest floor this product ever sets on its own: the fallback
+    // spec starts at 25 and pattern-built audiences never go below 30 ("under
+    // 30 barely buys here" — the market rule on the ready-buyers card). So a
+    // live ad set below 25 was widened OUTSIDE the product, usually an Ads
+    // Manager edit, into an age band the product never chooses to spend on.
     if (ageMin && ageMin < 25) out.push({ level: 'watch', key: 'youngAge', vars: { min: ageMin }, adSet: where })
     if (ageMin && ageMax) out.push({ level: 'ok', key: 'age', vars: { min: ageMin, max: ageMax }, adSet: where })
 
