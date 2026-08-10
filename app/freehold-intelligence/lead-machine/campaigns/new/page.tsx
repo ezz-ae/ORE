@@ -883,7 +883,11 @@ export default function NewCampaignPage() {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (raw) {
         const draft = JSON.parse(raw) as Partial<WizardState> & { __leadFormId?: string }
-        setForm((prev) => ({ ...prev, ...draft }))
+        // Going live is a decision made at THIS launch's review, never
+        // inherited: a draft that once carried ACTIVE would otherwise put
+        // every future campaign straight live — which is exactly what "it
+        // launches live by itself" reports look like from the inside.
+        setForm((prev) => ({ ...prev, ...draft, launchStatus: 'PAUSED' }))
         if (typeof draft.__leadFormId === 'string' && draft.__leadFormId) setLeadFormId(draft.__leadFormId)
         restoredLocally = true
       }
@@ -899,7 +903,8 @@ export default function NewCampaignPage() {
         setForm((prev) => {
           if (JSON.stringify(prev) !== pristineForm.current) return prev
           applied = true
-          return { ...prev, ...(acctDraft as Partial<WizardState>) }
+          // Same rule as the local draft: live is chosen at review, not restored.
+          return { ...prev, ...(acctDraft as Partial<WizardState>), launchStatus: 'PAUSED' }
         })
         const savedFormId = (acctDraft as { __leadFormId?: string }).__leadFormId
         if (applied && typeof savedFormId === 'string' && savedFormId) setLeadFormId(savedFormId)
@@ -1027,6 +1032,44 @@ export default function NewCampaignPage() {
 
   /** Local preview while you work, the uploaded hash everywhere else. */
   const mediaSrc = adImageSrc
+  /**
+   * The picture, sized for the wire BEFORE it is sent.
+   *
+   * A phone photo is 5–12 MB; base64 adds a third; the hosting platform's
+   * request cap is ~4.5 MB — so uploading the raw file failed for exactly
+   * the images people most want to run (fresh, vertical, straight off the
+   * camera roll), with a generic "upload failed" and no reason. Meta renders
+   * nothing above 2048px anyway, so capping the long edge there loses no
+   * quality the ad could have used.
+   */
+  async function fileToUploadDataUrl(file: File): Promise<string> {
+    const readRaw = () => new Promise<string>((resolve, reject) => {
+      const r = new FileReader()
+      r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
+      r.readAsDataURL(file)
+    })
+    // Small files travel untouched — recompressing a 300 KB JPEG only costs.
+    if (file.size <= 900_000) return readRaw()
+    try {
+      const bmp = await createImageBitmap(file)
+      const long = Math.max(bmp.width, bmp.height)
+      const scale = Math.min(1, 2048 / long)
+      const w = Math.max(1, Math.round(bmp.width * scale))
+      const h = Math.max(1, Math.round(bmp.height * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return readRaw()
+      ctx.drawImage(bmp, 0, 0, w, h)
+      bmp.close()
+      return canvas.toDataURL('image/jpeg', 0.88)
+    } catch {
+      // A format the browser cannot decode goes through as-is — the server
+      // error is then at least about the real file.
+      return readRaw()
+    }
+  }
+
   async function onUploadImage(file: File | null) {
     if (!file) return
     setUploadingImg(true); setApiError(null)
@@ -1036,11 +1079,7 @@ export default function NewCampaignPage() {
       return { ...prev, imageUrl: preview }
     })
     try {
-      const dataUrl: string = await new Promise((resolve, reject) => {
-        const r = new FileReader()
-        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
-        r.readAsDataURL(file)
-      })
+      const dataUrl = await fileToUploadDataUrl(file)
       const res = await fetch('/api/meta/adimages', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataUrl }),
@@ -1206,11 +1245,7 @@ export default function NewCampaignPage() {
     // the launch, imageUrl here is display-only.
     const preview = localPreviewUrl(file)
     try {
-      const dataUrl: string = await new Promise((resolve, reject) => {
-        const r = new FileReader()
-        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
-        r.readAsDataURL(file)
-      })
+      const dataUrl = await fileToUploadDataUrl(file)
       const res = await fetch('/api/meta/adimages', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataUrl }),
@@ -1482,8 +1517,40 @@ export default function NewCampaignPage() {
           )}
         </div>
 
+        {/* THE RECEIPT. The screen used to show only the cards that had data
+            — no audience reach and no cap left one lonely card and a page
+            that read as broken. What was LAUNCHED is always known, so it is
+            always shown: the identity the buyer sees, the money, the form,
+            the audience, the surfaces. */}
+        <div className="mt-8 overflow-hidden rounded-[16px] border border-line bg-surface-2">
+          {([
+            [t('lm.newCampaign.receipt.campaign'), form.campaignName],
+            [t('lm.newCampaign.receipt.status'), launched.demo ? t('lm.newCampaign.receipt.statusDemo') : launched.status === 'ACTIVE' ? t('lm.newCampaign.receipt.statusLive') : t('lm.newCampaign.receipt.statusPaused')],
+            [t('lm.newCampaign.receipt.budget'), `AED ${form.dailyBudgetAED.toLocaleString()}/d`],
+            [t('lm.newCampaign.s3.runsFrom'), [
+              pageChoices.find((pg) => pg.id === adPageId)?.name ?? adIdentity?.pageName,
+              adIdentity?.instagram?.username ? `@${adIdentity.instagram.username}` : null,
+            ].filter(Boolean).join(' · ')],
+            ...(form.productObjective === 'meta_lead' && leadFormId
+              ? [[t('lm.newCampaign.leadForm.title'), leadForms.find((f) => f.id === leadFormId)?.name ?? leadFormId]]
+              : []),
+            [t('lm.newCampaign.receipt.audience'), attachedAudience?.name
+              ?? (attachedPreset ? t(`lm.aud.ready.${attachedPreset}.name`) : t('lm.newCampaign.receipt.audienceCustom'))],
+            [t('lm.newCampaign.receipt.placements'), form.placementMode === 'manual' && form.manualPlacements.length > 0
+              ? form.manualPlacements.map((k) => t(`lm.newCampaign.s3.pl.${k}`)).join(' · ')
+              : t('lm.newCampaign.receipt.placementsStandard')],
+          ] as Array<[string, string | null | undefined]>)
+            .filter(([, v]) => typeof v === 'string' && v.length > 0)
+            .map(([label, value]) => (
+              <div key={label} className="flex items-baseline justify-between gap-4 border-b border-line px-4 py-2.5 last:border-b-0">
+                <span className="shrink-0 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">{label}</span>
+                <span className="min-w-0 truncate text-end text-[13px] font-medium text-white">{value}</span>
+              </div>
+            ))}
+        </div>
+
         {/* Honest results — estimates until the campaign delivers. */}
-        <div className="mt-8 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3">
           {resultCards.map((c) => (
             <div key={c.label} className="rounded-[16px] border border-line bg-surface-2 p-4">
               <div className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">{c.label}</div>

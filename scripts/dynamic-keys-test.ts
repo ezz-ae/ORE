@@ -24,7 +24,9 @@
  * Runs in `pnpm guards`.
  */
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
+import { READY_BUYERS } from '../lib/freehold/ready-buyers'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
+import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -34,12 +36,12 @@ const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, go
 const LOCALES = ['en', 'ar', 'ru'] as const
 
 /** Every key the code can compute, checked in every language. */
-function family(label: string, prefix: string, members: readonly string[]) {
+function family(label: string, prefix: string, members: readonly string[], dict: typeof lm_ads = lm_ads) {
   const missing: string[] = []
   for (const locale of LOCALES) {
     for (const m of members) {
       const key = `${prefix}${m}`
-      const value = lm_ads[locale][key]
+      const value = dict[locale][key]
       // Present but empty is the same failure with a quieter symptom.
       if (typeof value !== 'string' || value.trim() === '') missing.push(`${locale}:${key}`)
     }
@@ -49,7 +51,7 @@ function family(label: string, prefix: string, members: readonly string[]) {
 
   // A value that merely echoes its own key is what the screen was showing.
   const echoes = LOCALES.flatMap((l) => members
-    .filter((m) => lm_ads[l][`${prefix}${m}`] === `${prefix}${m}`)
+    .filter((m) => dict[l][`${prefix}${m}`] === `${prefix}${m}`)
     .map((m) => `${l}:${prefix}${m}`))
   check(`${label} — none of them renders as its own key`, echoes.length === 0, echoes.join(', '))
 }
@@ -82,6 +84,14 @@ console.log('\n── setup-check findings ──')
 console.log('\n── geo delivery findings ──')
 {
   family('lm.geo', 'lm.geo.', ['onTarget', 'strayed'])
+}
+
+console.log('\n── ready-buyer names ──')
+{
+  // The launch receipt and the audiences gallery both render
+  // t(`lm.aud.ready.${id}.name`) from the READY_BUYERS catalog — a computed
+  // key per catalog entry, invisible to the literal audit like the rest.
+  family('lm.aud.ready.*.name', 'lm.aud.ready.', READY_BUYERS.map((b) => `${b.id}.name`), lm_audiences)
 }
 
 if (failures > 0) {
