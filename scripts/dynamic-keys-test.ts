@@ -26,6 +26,7 @@
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
 import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
+import { personaIds } from '../lib/freehold/persona-audience'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 
@@ -91,6 +92,14 @@ console.log('\n── campaign-request statuses ──')
 {
   // Broker screen and fulfilment queue both render t(`creq.status.${s}`).
   family('creq.status', 'creq.status.', REQUEST_STATUSES)
+}
+
+console.log('\n── persona names ──')
+{
+  // The Persona Studio renders t(`lm.aud.persona.${id}.name`) per catalog
+  // entry — the family that would break next time a persona is added without
+  // words, exactly as noClicks broke. (.desc is not a rendered family.)
+  family('lm.aud.persona.*.name', 'lm.aud.persona.', personaIds().map((id) => `${id}.name`), lm_audiences)
 }
 
 console.log('\n── ready-buyer names ──')
