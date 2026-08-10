@@ -28,6 +28,6 @@ export async function GET(req: NextRequest) {
     connected: true,
     identity,
     // Names only — a Page access token must never leave the server.
-    pages: pages.map((p) => ({ id: p.id, name: p.name })),
+    pages: pages.map((p) => ({ id: p.id, name: p.name, canAdvertise: p.canAdvertise })),
   })
 }

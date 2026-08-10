@@ -1886,22 +1886,36 @@ export async function getAdEngagement(adId: string): Promise<{ likes: number; co
  * be read — which is the normal case when the stored token IS already a page
  * token. Never throws: an unreadable page list degrades to today's behaviour.
  */
-export interface MetaPageRef { id: string; name: string | null; token: string }
+export interface MetaPageRef {
+  id: string
+  name: string | null
+  token: string
+  /** May this login run ads from the Page? Unknown reads as true — only an
+   *  explicit tasks list without ADVERTISE/MANAGE is a real no. */
+  canAdvertise: boolean
+}
 
 export async function listAccessiblePages(): Promise<MetaPageRef[]> {
   const { pageId, token } = await creds()
-  const fallback: MetaPageRef[] = [{ id: pageId, name: null, token }]
+  const fallback: MetaPageRef[] = [{ id: pageId, name: null, token, canAdvertise: true }]
   try {
-    const res = await apiFetchAllPages<{ id: string; name?: string; access_token?: string }>(
-      '/me/accounts', { fields: 'id,name,access_token', limit: '50' }, 100,
+    const res = await apiFetchAllPages<{ id: string; name?: string; access_token?: string; tasks?: string[] }>(
+      '/me/accounts', { fields: 'id,name,access_token,tasks', limit: '50' }, 100,
     )
     const pages = res
       .filter((p) => p.id)
-      .map((p) => ({ id: p.id, name: p.name ?? null, token: p.access_token || token }))
+      .map((p) => ({
+        id: p.id, name: p.name ?? null, token: p.access_token || token,
+        // Whether this login may RUN ADS from the Page — Meta's `tasks` edge.
+        // Absent tasks is unknown, not forbidden: only an explicit list that
+        // lacks ADVERTISE/MANAGE is a real "no", and the launcher shows it
+        // instead of letting the launch fail at the far end (subcode 1487202).
+        canAdvertise: !Array.isArray(p.tasks) || p.tasks.includes('ADVERTISE') || p.tasks.includes('MANAGE'),
+      }))
     if (pages.length === 0) return fallback
     // The configured Page must always be included, even if /me/accounts omits
     // it (it can, for Pages held through a Business rather than personally).
-    if (!pages.some((p) => p.id === pageId)) pages.unshift({ id: pageId, name: null, token })
+    if (!pages.some((p) => p.id === pageId)) pages.unshift({ id: pageId, name: null, token, canAdvertise: true })
     return pages
   } catch {
     return fallback

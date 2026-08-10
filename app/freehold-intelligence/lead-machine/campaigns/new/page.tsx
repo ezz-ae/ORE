@@ -386,7 +386,7 @@ export default function NewCampaignPage() {
   // list from the day it shipped and the wizard never read it — so the ad
   // could only ever run as the ONE configured Page, and an operator whose
   // form lived on another Page was simply stuck.
-  const [metaPages, setMetaPages] = useState<Array<{ id: string; name: string }>>([])
+  const [metaPages, setMetaPages] = useState<Array<{ id: string; name: string; canAdvertise?: boolean }>>([])
   const [adPageId, setAdPageId] = useState('') // '' = the configured Page
   useEffect(() => {
     const q = adPageId ? `?pageId=${encodeURIComponent(adPageId)}` : ''
@@ -606,11 +606,11 @@ export default function NewCampaignPage() {
   // that provably owns one of OUR forms belongs in the choices whatever the
   // accounts edge said.
   const pageChoices = useMemo(() => {
-    const seen = new Map<string, { id: string; name: string }>()
-    for (const pg of metaPages) seen.set(pg.id, pg)
+    const seen = new Map<string, { id: string; name: string; canAdvertise: boolean }>()
+    for (const pg of metaPages) seen.set(pg.id, { ...pg, canAdvertise: pg.canAdvertise !== false })
     for (const f of leadForms) {
       const id = String(f.page_id ?? '')
-      if (id && !seen.has(id)) seen.set(id, { id, name: String(f.page_name ?? '') || id })
+      if (id && !seen.has(id)) seen.set(id, { id, name: String(f.page_name ?? '') || id, canAdvertise: true })
     }
     return [...seen.values()]
   }, [metaPages, leadForms])
@@ -2314,7 +2314,13 @@ export default function NewCampaignPage() {
                       aria-label={t('lm.newCampaign.s3.runsFrom')}
                     >
                       {pageChoices.map((pg) => (
-                        <option key={pg.id} value={pg.id}>{pg.name}</option>
+                        // A Page this login cannot run ads from stays VISIBLE
+                        // but not selectable — hiding it reads as "the system
+                        // lost my Page", while letting it launch ends in
+                        // Meta's 1487202 refusal at the far end.
+                        <option key={pg.id} value={pg.id} disabled={!pg.canAdvertise}>
+                          {pg.name}{pg.canAdvertise ? '' : ` — ${t('lm.newCampaign.s3.noAdsPermission')}`}
+                        </option>
                       ))}
                     </select>
                     {form.productObjective === 'meta_lead' && leadFormId ? (
@@ -3095,7 +3101,9 @@ export default function NewCampaignPage() {
               // A form ad needs no listing to continue: its lead is captured
               // ON the ad. The listing stays required when the ad's
               // destination IS the listing's page.
-              (step === 1 && ((!form.listingId && activeObjective.dest !== 'form') || !form.campaignName)) ||
+              (step === 1 && ((!form.listingId && activeObjective.dest !== 'form')
+                || (activeObjective.dest === 'form' && !leadFormId)
+                || !form.campaignName)) ||
               (step === 2 && (form.dailyBudgetAED < 50 || needsAudience)) ||
               (step === 3 && (!form.primaryText || !form.headlines[0]
                 || (activeObjective.dest === 'landing' && !form.landingUrl && !form.listingId)))

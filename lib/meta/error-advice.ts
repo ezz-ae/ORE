@@ -33,6 +33,9 @@ export const SUBCODE_ADVICE: Record<number, string> = {
   // The app that issued the token is still in Development Mode.
   1885183:
     'Your Meta developer app is in Development Mode, so Meta blocks live ad creation. In developers.facebook.com open the app that issued your access token, complete Settings → Basic (privacy policy URL), switch the app to Live, then launch again.',
+  // The connected login can SEE the Page but cannot run ads for it.
+  1487202:
+    'The connected Meta login can see this Page but does not have permission to run ads from it. Someone with Full Control of the Page must grant it: Meta Business Suite → Settings → People (or Partners) → give this login Ads permission on the Page — or pick a different Page in the launcher.',
   // The token cannot act for the Page the ads run from.
   1341012:
     'The connected login cannot use this Facebook Page. In Business Settings, add the Page to the same Business as the ad account and give the connected person an Admin or Advertiser role on it, then reconnect under Integrations → Meta Ads.',
