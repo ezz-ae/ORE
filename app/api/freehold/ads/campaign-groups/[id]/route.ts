@@ -4,7 +4,7 @@ import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import {
   getCampaignGroup, renameCampaignGroup, addGroupMember, removeGroupMember, deleteCampaignGroup, filterOwnedCampaigns,
 } from '@/lib/meta/campaign-groups'
-import { listCampaigns, getCampaignInsights, listAdSets, listAds, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { listCampaigns, getCampaignInsights, getAccountCampaignInsights, listAdSets, listAds, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
@@ -30,26 +30,38 @@ export const dynamic = 'force-dynamic'
 
 type CampaignLite = { name: string; status: string; objective: string; insights: MetaInsights | null; insightsError: boolean }
 
-// Resolve every campaign the account can see (Meta live, else the local store)
-// into a lite map, with insights attached for the active ones.
+/**
+ * Resolve every campaign the account can see (Meta live, else the local store)
+ * into a lite map, WITH ITS NUMBERS — every one of them, not just the active
+ * ones.
+ *
+ * A group exists to compare arms. Attaching insights only to the ACTIVE arms
+ * meant the arm somebody switched off — usually the LOSER, which is the whole
+ * point of the comparison — showed nothing at all, so the group read as though
+ * only the survivor had ever run. And the rolling 30-day window drains after
+ * an arm stops, so even a recent loser trends to zero within the month.
+ *
+ * One account-level call at the lifetime window answers for all of them: the
+ * same read the campaigns list and the campaign page use, so no two screens
+ * disagree about what an arm did.
+ */
 async function campaignMap(): Promise<Map<string, CampaignLite>> {
   const map = new Map<string, CampaignLite>()
   try {
     const campaigns = await listCampaigns()
     for (const c of campaigns) map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null, insightsError: false })
-    await Promise.all(
-      [...map.entries()].map(async ([id, entry]) => {
-        if (entry.status === 'ACTIVE') {
-          // A FAILED insights fetch is not "AED 0" — flag it so the arm renders
-          // "—" (unavailable) rather than fabricating a zero as a real number.
-          // ANY throw counts: a timeout / dropped socket surfaces as TypeError and
-          // a 5xx HTML gateway body as SyntaxError — neither is a MetaApiError, yet
-          // both mean "no signal", so we must not read them as a real zero. We are
-          // already past a successful listCampaigns() here, so Meta IS connected.
-          try { entry.insights = await getCampaignInsights(id) } catch { entry.insightsError = true }
-        }
-      }),
-    )
+    // A FAILED insights read is not "AED 0" — the arms render "—"
+    // (unavailable) rather than fabricating a zero as a real number.
+    // getAccountCampaignInsights swallows its own errors and returns an empty
+    // map, so an empty map after a SUCCESSFUL listCampaigns means the read
+    // failed rather than that nothing has ever delivered.
+    const byCampaign = await getAccountCampaignInsights()
+    const readFailed = byCampaign.size === 0 && map.size > 0
+    for (const [id, entry] of map) {
+      if (readFailed) { entry.insightsError = true; continue }
+      // Absent means this arm never delivered — null, not a zeroed row.
+      entry.insights = byCampaign.get(id) ?? null
+    }
   } catch (err) {
     if (err instanceof MetaConfigError) {
       for (const c of await listLocalCampaigns()) {

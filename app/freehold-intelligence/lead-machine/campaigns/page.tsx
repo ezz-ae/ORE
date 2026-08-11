@@ -5,7 +5,7 @@ import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap, Layers } from 'lucide-
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 import { DemoNotice } from '@/components/freehold/demo-badge'
-import { listCampaigns, getCampaignInsights, scanAdAccounts, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { listCampaigns, getAccountCampaignInsights, scanAdAccounts, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
@@ -24,19 +24,24 @@ interface CampaignsResponse {
 async function getCampaigns(): Promise<CampaignsResponse> {
   try {
     const campaigns = await listCampaigns()
-    const withInsights = await Promise.all(
-      campaigns.map(async (c) => {
-        if (c.status === 'ACTIVE') {
-          try {
-            const insights = await getCampaignInsights(c.id)
-            return { ...c, insights }
-          } catch {
-            return { ...c, insights: null }
-          }
-        }
-        return { ...c, insights: null }
-      }),
-    )
+
+    // THIS PAGE HELD ITS OWN COPY OF THE LIST READ, and the copy kept a bug
+    // the shared route had already been cured of: insights were fetched only
+    // `if (c.status === 'ACTIVE')`, over a rolling 30 days. So seven paused
+    // campaigns that had really spent money and really brought leads printed
+    // nothing at all, and the one active campaign printed a different figure
+    // from its own detail page — which reads the lifetime window.
+    //
+    // One account-level call now answers for every campaign at the same
+    // lifetime window the campaign page uses, so the two screens cannot
+    // disagree. See lib/meta/insights-window.ts for why a list is a REPORT
+    // (lifetime, never goes down) and not a judgement (rolling 30 days).
+    const byCampaign = await getAccountCampaignInsights()
+    const withInsights = campaigns.map((c) => ({
+      ...c,
+      // Absent means never delivered — null, not a zeroed row.
+      insights: byCampaign.get(c.id) ?? null,
+    }))
     return { campaigns: withInsights }
   } catch (err) {
     // Not connected → the in-app sandbox campaigns (real, user-created) only.

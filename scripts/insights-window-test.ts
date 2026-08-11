@@ -24,6 +24,8 @@ import {
   type CampaignInsightRow,
 } from '../lib/meta/insights-window'
 import type { MetaInsights } from '../lib/meta/types'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -103,6 +105,48 @@ console.log('\n── one call for the whole list, keyed by campaign ──')
   ])
   check('a duplicated campaign keeps the first row, not the last',
     dupes.get('c1')?.spend === '100', String(dupes.get('c1')?.spend))
+}
+
+console.log('\n── the fix stays fixed everywhere, not in one route ──')
+{
+  // THE RECURRENCE THIS BLOCK EXISTS FOR. /api/meta/campaigns was cured of
+  // "insights only if ACTIVE, over a rolling 30 days" — and the campaigns
+  // PAGE held its own copy of the same read, uncured, so seven paused
+  // campaigns printed nothing while the one active campaign printed a figure
+  // its own detail page disagreed with. One fix, two readers, one still wrong.
+  //
+  // A source scan rather than a call: the fault is a SHAPE, and it can be
+  // written again in any file that lists campaigns.
+  const dir = join(process.cwd())
+  const files: string[] = []
+  const walk = (d: string) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === '.next' || e.name.startsWith('.')) continue
+      const full = join(d, e.name)
+      if (e.isDirectory()) walk(full)
+      else if (/\.tsx?$/.test(e.name)) files.push(full)
+    }
+  }
+  for (const top of ['app', 'lib', 'components']) {
+    try { walk(join(dir, top)) } catch { /* absent tree */ }
+  }
+
+  // The fault is a `status === 'ACTIVE'` test GUARDING an insights fetch, so
+  // the two must be near each other. A file that merely contains both — the
+  // advisor's pause-action guard, the autopilot's filter of what to act ON —
+  // is not this bug, and a scan that flags those trains people to ignore it.
+  const NEAR = 8
+  const offenders: string[] = []
+  for (const f of files) {
+    const lines = readFileSync(f, 'utf8').split('\n')
+    const gate = lines.map((l, i) => (/status\s*===\s*'ACTIVE'/.test(l) ? i : -1)).filter((i) => i >= 0)
+    const fetches = lines.map((l, i) => (/getCampaignInsights\s*\(/.test(l) ? i : -1)).filter((i) => i >= 0)
+    if (gate.some((g) => fetches.some((x) => x > g && x - g <= NEAR))) {
+      offenders.push(f.replace(dir + '/', ''))
+    }
+  }
+  check('no screen fetches insights only for ACTIVE campaigns — that is how a paused campaign that really spent prints zero',
+    offenders.length === 0, offenders.join(', '))
 }
 
 if (failures > 0) {
