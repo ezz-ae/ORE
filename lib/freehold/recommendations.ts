@@ -44,6 +44,7 @@ export type RecActionKind =
   | 'open_audiences'    // build/attach a better audience
   | 'rate_leads'        // the CRM half of lead quality
   | 'open_campaign'     // read Meta's own error, stated where it lives
+  | 'pause_adset'       // stop the ad set paying a multiple for nothing
 
 export interface RecAction {
   kind: RecActionKind
@@ -53,6 +54,8 @@ export interface RecAction {
   form?: boolean
   /** Numeric payload where the action carries one (a budget). */
   value?: number
+  /** The Meta object this acts on, when the action is about one of many. */
+  targetId?: string
 }
 
 export interface Recommendation {
@@ -94,6 +97,27 @@ export interface CampaignFacts {
    * useless while the real fault sits untouched.
    */
   deliveryBlocked?: boolean
+  /**
+   * THE AD SETS, SEPARATELY — because a campaign total is an average, and an
+   * average of two audiences is a description of neither.
+   *
+   * A live campaign: ad set 1 bought impressions at AED 15 CPM and produced
+   * 2 leads at AED 204; ad set 2 paid AED 89-163 CPM and produced none.
+   * Blended, the campaign reads "AED 250.70 per lead" — a number describing
+   * no ad set that exists, and one that sends an operator to fix the wrong
+   * thing. Meta's own advisor reported exactly that figure and asked whether
+   * to investigate it.
+   *
+   * Comparison is the only way that finding is visible, so the facts arrive
+   * per ad set rather than summed.
+   */
+  adSets?: Array<{
+    id: string
+    name: string
+    spendAed: number
+    impressions: number
+    leads: number
+  }>
 }
 
 /**
@@ -221,6 +245,45 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
     }
   }
 
+  // ── 5b. ONE AD SET IS BUYING THE SAME THING AT A MULTIPLE OF THE PRICE ───
+  //
+  // The finding a campaign total cannot contain. CPM is the honest basis for
+  // the comparison: it is what Meta charges to REACH people, so a large gap
+  // between two ad sets in the same country and week is a statement about
+  // the AUDIENCE — too small, too contested — and not about the creative,
+  // which has usually had too few impressions to have been tested at all.
+  //
+  // Both floors matter. The expensive ad set must have spent enough to be
+  // more than noise, and it must have produced NOTHING: an ad set at 3x the
+  // CPM that still converts is buying scarce people who are worth it, and
+  // stopping it would be the expensive mistake in the other direction.
+  if ((f.adSets?.length ?? 0) >= 2) {
+    const withCpm = f.adSets!
+      .filter((a) => a.impressions >= 100 && a.spendAed > 0)
+      .map((a) => ({ ...a, cpm: (a.spendAed / a.impressions) * 1000 }))
+    if (withCpm.length >= 2) {
+      const cheapest = withCpm.reduce((a, b) => (a.cpm <= b.cpm ? a : b))
+      const dearest = withCpm.reduce((a, b) => (a.cpm >= b.cpm ? a : b))
+      const ratio = cheapest.cpm > 0 ? dearest.cpm / cheapest.cpm : 1
+      if (dearest.id !== cheapest.id && ratio >= 3 && dearest.leads === 0 && dearest.spendAed >= 50) {
+        out.push({
+          id: 'expensive_adset',
+          priority: 'critical',
+          key: 'expensiveAdSet',
+          vars: {
+            dear: dearest.name,
+            dearCpm: Math.round(dearest.cpm),
+            cheap: cheapest.name,
+            cheapCpm: Math.round(cheapest.cpm),
+            times: Math.round(ratio),
+            wasted: Math.round(dearest.spendAed),
+          },
+          action: { kind: 'pause_adset', labelKey: 'pauseAdSet', value: 0, targetId: dearest.id },
+        })
+      }
+    }
+  }
+
   // ── 6. A PROVEN CAMPAIGN WITH ONE AUDIENCE ───────────────────────────────
   // The honest moment for a second audience: the first has produced real
   // leads at a readable cost. Before that, a second ad set splits a budget
@@ -246,11 +309,12 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
  *  key, which `pnpm i18n` cannot see. */
 export const REC_ACTION_LABELS = [
   'relaunch', 'audiences', 'openCrm', 'addDesign', 'raiseBudget', 'testAudience', 'seeError',
+  'pauseAdSet',
 ] as const
 
 /** Every recommendation key, walkable, for the same reason. */
 export const REC_KEYS = [
-  'deliveryBlocked',
+  'deliveryBlocked', 'expensiveAdSet',
   'throttledByCap', 'throttled', 'rateLeads', 'creativeDepth',
   'weakCtr', 'budgetForLearning', 'abAudience',
 ] as const

@@ -143,6 +143,11 @@ export default function CampaignCommandPage() {
       case 'rate_leads':
         router.push('/freehold-intelligence/crm')
         return
+      case 'pause_adset': {
+        const target = data?.adSets.find((a) => a.id === r.action.targetId)
+        if (target) await setAdSetStatus(target, 'PAUSED')
+        return
+      }
       case 'open_campaign':
         // Meta's words are already on this page, above everything else.
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -1385,6 +1390,19 @@ export default function CampaignCommandPage() {
             // read "Not delivering · Delivery error" while this panel advised
             // raising the budget — spending advice on an ad nobody can see.
             deliveryBlocked,
+            // PER AD SET, not summed — the comparison is the finding, and a
+            // campaign total is an average of audiences that describes none
+            // of them.
+            adSets: data.adSets.map((a) => {
+              const m = (a as { spendAED?: number; impressions?: number; leads?: number })
+              return {
+                id: a.id,
+                name: a.name,
+                spendAed: Number(m.spendAED) || 0,
+                impressions: Number(m.impressions) || 0,
+                leads: Number(m.leads) || 0,
+              }
+            }),
           })
           if (recs.length === 0) return null
           return (
