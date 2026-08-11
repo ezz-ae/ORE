@@ -135,6 +135,54 @@ console.log('\n── a second audience is earned, never assumed ──')
     !ids(recommendationsFor(facts({ leads: 5, spendAed: 201, days: 30 }))).includes('ab_audience'))
 }
 
+console.log('\n── the finding a campaign total cannot contain ──')
+{
+  // The live campaign, exactly: ad set 1 buys at AED 15 CPM and converts;
+  // ad set 2 pays AED 163 CPM for nothing. Blended, the campaign reads
+  // "AED 250.70 per lead" — a number describing NEITHER ad set, which is
+  // what Meta's own advisor reported and offered to investigate.
+  const r = recommendationsFor(facts({
+    spendAed: 501, leads: 2, attributedLeads: 2, impressions: 27_433, adSetCount: 2,
+    adSets: [
+      { id: 'a1', name: 'adset 1', spendAed: 408, impressions: 26_487, leads: 2 },
+      { id: 'a2', name: 'adset 2', spendAed: 93, impressions: 946, leads: 0 },
+    ],
+  }))
+  const hit = r.find((x) => x.id === 'expensive_adset')
+  check('the ad set paying a multiple for nothing is named', !!hit, ids(r).join(' | '))
+  check('…as critical, because it is money burning now', hit?.priority === 'critical')
+  check('…with both CPMs and the multiple, so the claim is checkable',
+    hit?.vars?.dearCpm === 98 && hit?.vars?.cheapCpm === 15 && hit?.vars?.times === 6,
+    JSON.stringify(hit?.vars))
+  check('…and the action stops THAT ad set, by id',
+    hit?.action.kind === 'pause_adset' && hit?.action.targetId === 'a2', JSON.stringify(hit?.action))
+
+  // The mistake in the other direction, which would be the expensive one:
+  // an ad set at a multiple that STILL CONVERTS is buying scarce people who
+  // are worth it, and stopping it is the costly error.
+  const converting = recommendationsFor(facts({
+    adSets: [
+      { id: 'a1', name: 'cheap', spendAed: 408, impressions: 26_487, leads: 2 },
+      { id: 'a2', name: 'dear but working', spendAed: 300, impressions: 950, leads: 3 },
+    ],
+  }))
+  check('an expensive ad set that CONVERTS is never told to stop',
+    !ids(converting).includes('expensive_adset'), ids(converting).join(' | '))
+
+  // And noise is not a finding: a few impressions at a wild CPM is a
+  // rounding artefact, not an audience verdict.
+  const noise = recommendationsFor(facts({
+    adSets: [
+      { id: 'a1', name: 'cheap', spendAed: 408, impressions: 26_487, leads: 2 },
+      { id: 'a2', name: 'barely ran', spendAed: 4, impressions: 20, leads: 0 },
+    ],
+  }))
+  check('an ad set that barely ran is not judged', !ids(noise).includes('expensive_adset'))
+
+  check('one ad set alone has nothing to compare against',
+    !ids(recommendationsFor(facts({ adSets: [{ id: 'a1', name: 'only', spendAed: 408, impressions: 26_487, leads: 2 }] }))).includes('expensive_adset'))
+}
+
 console.log('\n── the panel stays readable ──')
 {
   const everything = recommendationsFor(facts({

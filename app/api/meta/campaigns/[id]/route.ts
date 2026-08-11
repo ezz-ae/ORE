@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { getCampaign, getCampaignInsights, getCampaignLifetimeInsights, listAdSets, listAds, updateCampaignStatus, deleteCampaign } from '@/lib/meta/client'
+import { metaLeadCount } from '@/lib/meta/lead-count'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { getLocalCampaign, updateLocalCampaignStatus } from '@/lib/meta/local-store'
 import { authorizeDelete } from '@/lib/freehold/authority-db'
@@ -32,11 +33,29 @@ export async function GET(
       listAdSets(id),
     ])
 
-    // Get ads for each ad set
+    // Ads AND each ad set's OWN numbers.
+    //
+    // The per-ad-set insights are what make a comparison possible, and a
+    // comparison is the only way the most expensive finding in this product
+    // becomes visible: a campaign whose two ad sets buy impressions at AED 15
+    // and AED 163 reads as one blended "AED 250 per lead" — a figure that
+    // describes neither of them and sends the operator to fix the wrong
+    // thing. Fetched here rather than derived, because a campaign total
+    // cannot be un-averaged afterwards.
     const adSetsWithAds = await Promise.all(
       adSets.map(async (adSet) => {
-        const ads = await listAds(adSet.id)
-        return { ...adSet, ads }
+        const [ads, ins] = await Promise.all([
+          listAds(adSet.id),
+          getCampaignInsights(adSet.id).catch(() => null),
+        ])
+        return {
+          ...adSet,
+          ads,
+          spendAED: Number(ins?.spend) || 0,
+          impressions: Number(ins?.impressions) || 0,
+          clicks: Number(ins?.clicks) || 0,
+          leads: metaLeadCount(ins?.actions),
+        }
       }),
     )
 
