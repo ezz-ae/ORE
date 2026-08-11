@@ -100,6 +100,8 @@ export default function CampaignCommandPage() {
   const [notFound, setNotFound] = useState(false)
   const [data, setData] = useState<Detail | null>(null)
   const [statusBusy, setStatusBusy] = useState(false)
+  const [fixingLoc, setFixingLoc] = useState('')
+  const [fixError, setFixError] = useState('')
   // One id at a time: two simultaneous status writes to the same campaign is
   // a race whose loser silently reverts the winner.
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
@@ -996,9 +998,32 @@ export default function CampaignCommandPage() {
                 : f.level === 'watch' ? <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 : <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />}
               <span>{t(`lm.setupCheck.${f.key}`, f.vars)}</span>
+              {/* The deprecated-location flag gets its one-press cure: a
+                  surgical republish that changes ONLY location_types and
+                  carries the rest of the spec back verbatim. */}
+              {f.key === 'visitors' && f.adSet && (() => {
+                const target = data.adSets.find((x) => x.name === f.adSet)
+                if (!target) return null
+                return (
+                  <button type="button" disabled={fixingLoc === target.id}
+                    onClick={async () => {
+                      setFixingLoc(target.id)
+                      try {
+                        const r = await fetch(`/api/meta/adsets/${encodeURIComponent(target.id)}/fix-location`, { method: 'POST' })
+                        const d = await r.json().catch(() => ({}))
+                        if (!r.ok) { setFixError(d?.error || 'Fix failed'); return }
+                        window.location.reload()
+                      } finally { setFixingLoc('') }
+                    }}
+                    className="shrink-0 rounded-full bg-gold px-3 py-1 text-[11px] font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
+                    {fixingLoc === target.id ? t('lm.setupCheck.fixing') : t('lm.setupCheck.fixNow')}
+                  </button>
+                )
+              })()}
               {f.adSet && <span className="ms-auto shrink-0 rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">{f.adSet}</span>}
             </div>
           ))}
+          {fixError && <p className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3.5 py-2 text-xs text-rose-200">{fixError}</p>}
         </div>
       </section>
 
