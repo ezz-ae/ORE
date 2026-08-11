@@ -468,6 +468,45 @@ export async function getAccountCampaignInsights(): Promise<Map<string, MetaInsi
   }
 }
 
+/**
+ * EVERY AD'S LIFETIME NUMBERS, IN ONE CALL — keyed by ad id.
+ *
+ * The creative lab ranks recipes by what the ads made from them actually did,
+ * and a project can easily hold thirty ads across five campaigns. Asking per
+ * ad would be thirty Graph calls to answer one screen. The account-level
+ * insights edge answers for all of them at once, at the same lifetime window
+ * every other report in this product uses — a creative that ran in March and
+ * brought leads did not stop having brought them in April.
+ *
+ * Returns an empty map rather than throwing: the lab then shows the project's
+ * uniform and an empty history, which is a true screen, instead of an error.
+ */
+export async function getAccountAdInsights(): Promise<Map<string, {
+  impressions: number; clicks: number; leads: number; spendAED: number
+}>> {
+  const out = new Map<string, { impressions: number; clicks: number; leads: number; spendAED: number }>()
+  try {
+    const { adAccountId } = await creds()
+    const res = await apiFetch<{ data?: Array<Record<string, unknown>> }>(`/${adAccountId}/insights`, undefined, {
+      fields: 'ad_id,impressions,clicks,spend,actions',
+      level: 'ad',
+      date_preset: HEADLINE_WINDOW,
+      limit: '500',
+    })
+    for (const row of res.data ?? []) {
+      const id = String(row?.ad_id ?? '').trim()
+      if (!id || out.has(id)) continue
+      out.set(id, {
+        impressions: Number(row?.impressions) || 0,
+        clicks: Number(row?.clicks) || 0,
+        leads: metaLeadCount(row?.actions as MetaInsightActions[] | undefined),
+        spendAED: Number(row?.spend) || 0,
+      })
+    }
+  } catch { /* an empty history is a true screen; an error is not */ }
+  return out
+}
+
 export async function getCampaignInsights(campaignId: string): Promise<MetaInsights | null> {
   const res = await apiFetch<{ data: MetaInsights[] }>(`/${campaignId}/insights`, undefined, {
     // frequency/reach are what make creative fatigue detectable at all —

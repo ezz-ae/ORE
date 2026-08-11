@@ -33,6 +33,7 @@ import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
+import { LAB_LAYOUTS, LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -129,6 +130,15 @@ console.log('\n── recommendations ──')
   // behind it ships as its own key on the busiest screen in the product.
   family('lm.live.sig', 'lm.live.sig.', SIGNAL_IDS)
   family('lm.live.act', 'lm.live.act.', SIGNAL_ACTIONS.filter((a) => a !== 'none'))
+
+  // The creative lab names every layout, every argument, the reason each one
+  // is withheld and the verdict on each recipe — four computed families off
+  // four catalogs the types derive from. A layout with no word behind it is a
+  // greyed-out row whose reason renders as its own key.
+  family('lab.layout', 'lab.layout.', LAB_LAYOUTS)
+  family('lab.angle', 'lab.angle.', LAB_ANGLES)
+  family('lab.why', 'lab.why.', WITHHELD_REASONS)
+  family('lab.verdict', 'lab.verdict.', RECIPE_VERDICTS)
 }
 
 console.log('\n── delivery states ──')

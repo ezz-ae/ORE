@@ -54,6 +54,9 @@ import { getProjectSlugForCampaign } from '@/lib/meta/campaign-structure'
 import { getProjectBySlug } from '@/lib/data'
 import { listLibrary } from '@/lib/freehold/library'
 import { listAssetIds } from '@/lib/freehold/campaign-assets'
+import { recordRecipe } from '@/lib/freehold/creative-recipes'
+import { uniformFor, type LabLayout } from '@/lib/freehold/creative-lab'
+import type { CreativeAngle } from '@/lib/meta/types'
 import { buildPool, poolReadiness, type PoolItem, type PoolKind } from '@/lib/freehold/creative-pool'
 import type { MetaCta } from '@/lib/meta/types'
 
@@ -193,6 +196,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 interface PoolAdRequest {
+  /**
+   * How this design was made — the note the creative lab learns from.
+   *
+   * Meta will say what an ad DID and never what it WAS. The recipe exists only
+   * in the moment somebody pressed Create, so it is written down here or the
+   * lab has no memory. Optional: an operator can still add a raw photograph
+   * with no recipe, and that ad is simply absent from the ranking rather than
+   * guessed at.
+   */
+  layout?: string
+  angle?: string
   /** Meta image hash — present when the browser composed and uploaded first. */
   imageHash?: string
   /** A hosted picture the server ingests into the ad account instead. */
@@ -234,6 +248,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // The ad set must belong to THIS campaign. Without this check the campaign
   // id in the URL is decoration and any ad set in the account is writable
   // from any campaign page.
+  // Which project's lab learns from these ads. Null for a campaign launched
+  // without a listing — those ads simply teach no project.
+  const projectSlug = await getProjectSlugForCampaign(campaignId).catch(() => null)
+
   const adSets = await listAdSets(campaignId).catch(() => [])
   const target = adSets.find((a) => a.id === adSetId)
   if (!target) {
@@ -347,6 +365,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       const { id: adId } = await createAd({ adSetId, name, creativeId, status })
       created.push({ adId, creativeId, name })
+
+      // The lesson, noted. Best-effort and never in the way of an ad that has
+      // already reached Meta — see creative-recipes rule 1.
+      if (projectSlug && want.layout && want.angle) {
+        void recordRecipe({
+          adId,
+          projectSlug,
+          layout: want.layout as LabLayout,
+          angle: want.angle as CreativeAngle,
+          palette: uniformFor({ slug: projectSlug, name: projectSlug }).palette,
+        })
+      }
     } catch (error) {
       // One bad picture must not lose the ads that worked — each result is
       // reported on its own rather than the whole press failing.
