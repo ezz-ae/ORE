@@ -117,6 +117,13 @@ export default function CampaignCommandPage() {
    */
   const [poolFor, setPoolFor] = useState<string | null>(null)
 
+  // ARRIVING WITH THE FIX ALREADY OPEN. The live screen's "Add designs" button
+  // links here with ?pool=1, so the door opens where the fault was named
+  // rather than leaving the operator to find the panel on a page this size.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('pool') === '1') setPoolFor('')
+  }, [])
+
   /**
    * REPAIR EVERY AD SET'S LOCATION TARGETING.
    *

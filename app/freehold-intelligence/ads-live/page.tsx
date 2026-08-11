@@ -1,24 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import Link from 'next/link'
-import { ArrowUpRight, Radio, TrendingDown, TrendingUp, PlugZap } from 'lucide-react'
+import { ArrowUpRight, Radio, PlugZap } from 'lucide-react'
 import { PageHeader, StatCard, Section, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import LiveRow, { type LiveRowData } from '@/components/freehold/live-row'
+import { signalsFor, dataFreshness } from '@/lib/freehold/live-signals'
 
 type Platform = 'All' | 'Meta' | 'Google'
 
-// Normalized campaign shape across Meta + Google, derived from the live APIs.
-interface LiveCampaign {
-  id: string
-  name: string
-  platform: 'meta' | 'google'
-  status: string
-  spendAED: number
-  leads: number
-  cpl: number | null
-}
+/** Today, in Dubai, as yyyy-mm-dd — the day the freshness rule reads against.
+ *  The account is in GST and Meta reports in the ad account's timezone, so a
+ *  browser in another zone must not make yesterday's data look like today's. */
+const todayGst = (): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dubai' }).format(new Date())
 
 function fmtAed(n: number): string {
   return `AED ${Math.round(n).toLocaleString()}`
@@ -46,66 +43,97 @@ export default function AdsLivePage() {
   // return the demo flag (i.e. real credentials are configured).
   const [metaConnected, setMetaConnected] = useState(false)
   const [googleConnected, setGoogleConnected] = useState(false)
-  const [campaigns, setCampaigns] = useState<LiveCampaign[]>([])
-  const [now, setNow] = useState<string>('')
+  const [campaigns, setCampaigns] = useState<LiveRowData[]>([])
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const list: LiveCampaign[] = []
-      let metaOk = false
-      let googleOk = false
+  const load = useCallback(async () => {
+    const list: LiveRowData[] = []
+    let metaOk = false
+    let googleOk = false
+    const today = todayGst()
 
-      // Meta
-      try {
-        const r = await fetch('/api/meta/campaigns', { cache: 'no-store' })
-        const d = r.ok ? await r.json() : null
-        if (d && !d.demo) {
-          metaOk = true
-          for (const c of (d.campaigns ?? [])) {
-            const spend = Number(c?.insights?.spend) || 0
-            const leads = metaLeads(c?.insights)
-            list.push({
-              id: String(c.id ?? ''), name: c.name, platform: 'meta', status: c.status ?? 'PAUSED',
-              spendAED: spend, leads, cpl: leads > 0 ? spend / leads : null,
-            })
-          }
+    // Meta
+    try {
+      const r = await fetch('/api/meta/campaigns', { cache: 'no-store' })
+      const d = r.ok ? await r.json() : null
+      if (d && !d.demo) {
+        metaOk = true
+        for (const c of (d.campaigns ?? [])) {
+          const ins = c?.insights ?? null
+          const spend = Number(ins?.spend) || 0
+          const leads = metaLeads(ins)
+          const impressions = Number(ins?.impressions) || 0
+          const started = Date.parse(String(c?.created_time ?? '')) || Date.now()
+          list.push({
+            id: String(c.id ?? ''), name: c.name, platform: 'meta',
+            cpl: leads > 0 ? spend / leads : null,
+            facts: {
+              status: String(c.status ?? 'PAUSED'),
+              // META'S OWN VERDICT, not the status we asked for. issues_info is
+              // where a delivery error or a policy hold actually lives.
+              deliveryBlocked: Array.isArray(c?.issues_info) && c.issues_info.length > 0,
+              spendAed: spend,
+              leads,
+              // The cheap list read does not count these. NULL, never zero —
+              // a screen that cannot tell "none" from "not asked" invents
+              // faults on every row.
+              ratedLeads: null,
+              liveAds: null,
+              impressions,
+              clicks: Number(ins?.clicks) || 0,
+              frequency: ins?.frequency != null ? Number(ins.frequency) : null,
+              days: Math.max(1, Math.round((Date.now() - started) / 86_400_000)),
+              // The edge of the DATA — what makes "live" a claim about the
+              // numbers rather than about the browser clock.
+              dataThrough: ins?.date_stop ?? null,
+              today,
+            },
+          })
         }
-      } catch { /* leave metaOk false */ }
+      }
+    } catch { /* leave metaOk false */ }
 
-      // Google
-      try {
-        const r = await fetch('/api/google/campaigns', { cache: 'no-store' })
-        const d = r.ok ? await r.json() : null
-        if (d && !d.demo) {
-          googleOk = true
-          for (const c of (d.campaigns ?? [])) {
-            const spend = Number(c?.metrics?.costAed ?? c?.metrics?.cost) || 0
-            const leads = Number(c?.metrics?.conversions ?? c?.metrics?.leads) || 0
-            list.push({
-              id: String(c.id ?? ''), name: c.name, platform: 'google', status: c.status ?? 'PAUSED',
-              spendAED: spend, leads, cpl: leads > 0 ? spend / leads : null,
-            })
-          }
+    // Google
+    try {
+      const r = await fetch('/api/google/campaigns', { cache: 'no-store' })
+      const d = r.ok ? await r.json() : null
+      if (d && !d.demo) {
+        googleOk = true
+        for (const c of (d.campaigns ?? [])) {
+          const spend = Number(c?.metrics?.costAed ?? c?.metrics?.cost) || 0
+          const leads = Number(c?.metrics?.conversions ?? c?.metrics?.leads) || 0
+          list.push({
+            id: String(c.id ?? ''), name: c.name, platform: 'google',
+            cpl: leads > 0 ? spend / leads : null,
+            facts: {
+              status: /enabled|active|running/i.test(String(c.status ?? '')) ? 'ACTIVE' : 'PAUSED',
+              spendAed: spend, leads, ratedLeads: null, liveAds: null,
+              impressions: Number(c?.metrics?.impressions) || 0,
+              clicks: Number(c?.metrics?.clicks) || 0,
+              frequency: null,
+              days: 30,
+              dataThrough: null,
+              today,
+            },
+          })
         }
-      } catch { /* leave googleOk false */ }
+      }
+    } catch { /* leave googleOk false */ }
 
-      if (cancelled) return
-      setMetaConnected(metaOk)
-      setGoogleConnected(googleOk)
-      setCampaigns(list)
-      setLoading(false)
-    }
-    load()
-    return () => { cancelled = true }
+    setMetaConnected(metaOk)
+    setGoogleConnected(googleOk)
+    setCampaigns(list)
+    setLoading(false)
   }, [])
 
+  useEffect(() => { void load() }, [load])
+
+  // A LIVE SCREEN REFRESHES ITSELF. Not because the numbers move every minute
+  // — Meta's reporting lags hours — but because a page left open on a second
+  // monitor must not still be showing this morning at four o'clock.
   useEffect(() => {
-    const fmt = () => new Date().toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' })
-    setNow(fmt())
-    const id = setInterval(() => setNow(fmt()), 60_000)
+    const id = setInterval(() => { void load() }, 120_000)
     return () => clearInterval(id)
-  }, [])
+  }, [load])
 
   const connected = metaConnected || googleConnected
 
@@ -114,17 +142,34 @@ export default function AdsLivePage() {
     All: t('lm.live.tab.all'), Meta: t('lm.live.tab.meta'), Google: t('lm.live.tab.google'),
   }
 
-  const shown = campaigns.filter((c) => {
-    if (platform === 'All') return true
-    if (platform === 'Meta') return c.platform === 'meta'
-    return c.platform === 'google'
-  })
+  // Whatever is asking for a person, first — then by spend. A list ordered by
+  // money alone buries the blocked campaign under the big quiet one.
+  const shown = campaigns
+    .filter((c) => {
+      if (platform === 'All') return true
+      if (platform === 'Meta') return c.platform === 'meta'
+      return c.platform === 'google'
+    })
+    .sort((a, b) => {
+      const rank = (x: LiveRowData) => {
+        const s = signalsFor(x.facts)
+        return s.some((y) => y.tone === 'bad') ? 0 : s.some((y) => y.action !== 'none') ? 1 : 2
+      }
+      const d = rank(a) - rank(b)
+      return d !== 0 ? d : b.facts.spendAed - a.facts.spendAed
+    })
 
-  // Real aggregates from live campaigns.
-  const totalSpend = campaigns.reduce((s, c) => s + c.spendAED, 0)
-  const totalLeads = campaigns.reduce((s, c) => s + c.leads, 0)
+  // Real aggregates. LIFETIME, not a rolling window — /api/meta/campaigns
+  // returns what each campaign ever did, so a switched-off campaign's leads
+  // keep counting. A report must never go down.
+  const totalSpend = campaigns.reduce((s, c) => s + c.facts.spendAed, 0)
+  const totalLeads = campaigns.reduce((s, c) => s + c.facts.leads, 0)
   const avgCpl = totalLeads > 0 ? totalSpend / totalLeads : null
-  const activeCount = campaigns.filter((c) => c.status === 'ACTIVE' || c.status === 'Running').length
+  const activeCount = campaigns.filter((c) => c.facts.status === 'ACTIVE').length
+  // THE FOURTH CARD IS THE POINT OF THE SCREEN: how many campaigns are asking
+  // for a person right now. "Active campaigns" was a number nobody acts on.
+  const needsYou = campaigns.filter((c) => signalsFor(c.facts).some((s) => s.action !== 'none')).length
+  const fresh = dataFreshness(campaigns.map((c) => ({ dataThrough: c.facts.dataThrough })), todayGst())
 
   const header = (
     <PageHeader
@@ -132,13 +177,25 @@ export default function AdsLivePage() {
       Icon={Radio}
       title={t('lm.live.title')}
       subtitle={t('lm.live.subtitle')}
+      /* THE BADGE IS ABOUT THE DATA, NOT THE CLOCK.
+         It used to print the browser's time, which ticks every minute whether
+         or not a single number behind it has moved — so a campaign two days
+         stale read as live to the second. This is the freshest date_stop
+         across the rows on screen, and it says "nothing to report" rather
+         than filling the space with a time. */
       actions={connected ? (
         <span className="flex items-center gap-1.5 text-xs text-slate-400">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            {(fresh?.daysBehind ?? 0) === 0 && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            )}
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${
+              !fresh ? 'bg-slate-600' : fresh.daysBehind === 0 ? 'bg-emerald-400'
+                : fresh.daysBehind === 1 ? 'bg-amber-400' : 'bg-rose-400'}`} />
           </span>
-          {t('lm.live.status', { time: now })}
+          {!fresh ? t('lm.live.fresh.none')
+            : fresh.daysBehind === 0 ? t('lm.live.fresh.today')
+            : t('lm.live.fresh.behind', { days: fresh.daysBehind })}
         </span>
       ) : undefined}
     />
@@ -199,7 +256,8 @@ export default function AdsLivePage() {
             <StatCard label={t('lm.live.stat.totalSpend')} value={totalSpend > 0 ? fmtAed(totalSpend) : '—'} hint={t('lm.live.stat.totalSpend.hint')} />
             <StatCard label={t('lm.live.stat.totalLeads')} value={totalLeads} hint={t('lm.live.stat.totalLeads.hint')} />
             <StatCard label={t('lm.live.stat.avgCpl')} value={avgCpl !== null ? fmtAed(avgCpl) : '—'} hint={t('lm.live.stat.avgCpl.hint')} />
-            <StatCard label={t('lm.live.stat.activeCampaigns')} value={activeCount} hint={t('lm.live.stat.activeCampaigns.hint')} />
+            <StatCard label={t('lm.live.stat.needsYou')} value={needsYou}
+              hint={needsYou > 0 ? t('lm.live.stat.needsYou.hint') : t('lm.live.stat.needsYou.clear', { n: activeCount })} />
           </div>
 
           {/* Live campaigns */}
@@ -230,51 +288,10 @@ export default function AdsLivePage() {
                   }
                 />
               ) : (
-                <div className="divide-y divide-line">
-                  {shown.map((c) => {
-                    const isMeta  = c.platform === 'meta'
-                    const platClr = isMeta ? '#1877F2' : '#4285F4'
-                    const platLbl = isMeta ? 'Meta' : 'Google'
-                    const below   = c.cpl !== null && avgCpl !== null && c.cpl < avgCpl
-                    const CplIcon = below ? TrendingDown : TrendingUp
-                    const running = c.status === 'ACTIVE' || c.status === 'Running'
-                    return (
-                      <Link
-                        key={`${c.platform}-${c.name}`}
-                        href={
-                          // A Meta row opens ITS campaign command page; Google
-                          // rows go to the Google dashboard (no per-id page yet).
-                          isMeta && c.id
-                            ? `/freehold-intelligence/ads-live/meta/${encodeURIComponent(c.id)}`
-                            : '/freehold-intelligence/ads-live/google'
-                        }
-                        className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4 transition hover:bg-surface-2"
-                      >
-                        <span className="relative flex h-1.5 w-1.5 shrink-0">
-                          {running && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-50" />}
-                          <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${running ? 'bg-gold' : 'bg-surface-3'}`} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">{c.name}</div>
-                        </div>
-                        <span
-                          className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                          style={{ backgroundColor: `${platClr}18`, color: platClr, border: `1px solid ${platClr}30` }}
-                        >
-                          {platLbl}
-                        </span>
-                        <div className="flex gap-5 text-xs text-slate-400">
-                          <span>{c.spendAED > 0 ? fmtAed(c.spendAED) : '—'}</span>
-                          <span className="font-semibold text-gold">{t('lm.live.leadsCount', { count: String(c.leads) })}</span>
-                          <span className={`flex items-center gap-0.5 font-medium ${below ? 'text-emerald-400' : 'text-slate-400'}`}>
-                            {c.cpl !== null && <CplIcon className="h-3 w-3" />}
-                            {c.cpl !== null ? fmtAed(c.cpl) : '—'}
-                          </span>
-                        </div>
-                        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-500 opacity-0 group-hover:opacity-100 transition" />
-                      </Link>
-                    )
-                  })}
+                <div>
+                  {shown.map((c) => (
+                    <LiveRow key={`${c.platform}-${c.id || c.name}`} row={c} onChanged={() => void load()} />
+                  ))}
                 </div>
               )}
             </div>

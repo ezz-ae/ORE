@@ -32,6 +32,7 @@ import { DELIVERY_STATES } from '../lib/meta/delivery-status'
 import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
+import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -122,6 +123,12 @@ console.log('\n── recommendations ──')
   // a new shape cannot ship without a word behind it in all three languages.
   family('lm.place.name', 'lm.place.name.', LAUNCHABLE_PLACEMENTS)
   family('lm.pool.shape', 'lm.pool.shape.', AD_FORMATS)
+
+  // The live screen says one line per campaign through t(`lm.live.sig.${id}`)
+  // and buttons it through t(`lm.live.act.${action}`). A signal with no word
+  // behind it ships as its own key on the busiest screen in the product.
+  family('lm.live.sig', 'lm.live.sig.', SIGNAL_IDS)
+  family('lm.live.act', 'lm.live.act.', SIGNAL_ACTIONS.filter((a) => a !== 'none'))
 }
 
 console.log('\n── delivery states ──')
