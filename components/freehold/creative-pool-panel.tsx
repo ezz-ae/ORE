@@ -41,7 +41,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
-  X, Loader2, Upload, CheckCircle2, AlertTriangle, Wand2, Film, FileText, Images,
+  X, Loader2, Upload, CheckCircle2, AlertTriangle, Wand2, Film, FileText, Images, Type,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
@@ -50,12 +50,24 @@ import {
   isLaunchable, needsProcessing, adsToAdd, MAX_ADS_FOR_ROTATION, MIN_ADS_FOR_ROTATION,
   type PoolItem, type PoolReadiness,
 } from '@/lib/freehold/creative-pool'
+import {
+  placementsOfAdSet, formatsFor, croppedBy, bestFormatFor, type AdFormat,
+} from '@/lib/meta/adset-placements'
 
 interface PoolProject {
   name: string; slug: string; area: string; developer: string
   startingPriceAED: number | null; paymentPlan: string | null; handoverYear: number | null
 }
-export interface PoolAdSet { id: string; name: string; liveAds: number; active: boolean }
+export interface PoolAdSet {
+  id: string; name: string; liveAds: number; active: boolean
+  /**
+   * The ad set's OWN targeting, verbatim from Meta. Placement is an ad-set
+   * property — an ad cannot narrow it, widen it or opt out — so the surfaces
+   * this ad will run in are read from here rather than offered as a choice
+   * that Meta would reject at publish time.
+   */
+  targeting?: unknown
+}
 
 type Created = { adId: string; creativeId: string; name: string }
 type Failed = { name: string; error: string }
@@ -87,6 +99,14 @@ export default function CreativePoolPanel({
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ created: Created[]; failed: Failed[] } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  /** The shape the designs are rendered at. Only ever one the target ad set's
+   *  own surfaces can use — see the placement strip below. */
+  const [format, setFormat] = useState<AdFormat | null>(null)
+  /** The caption, edited once for the batch. Empty means "keep the working
+   *  ad's own words", which is the inheritance the write already performs —
+   *  a blank field must never overwrite a caption with nothing. */
+  const [caption, setCaption] = useState({ primaryText: '', headline: '' })
+  const [captionOpen, setCaptionOpen] = useState(false)
 
   // Default to the ad set that is actually running and carrying ads — never a
   // paused one, which is where a new ad would sit and do nothing.
@@ -114,6 +134,18 @@ export default function CreativePoolPanel({
   // How many this ad set is actually short. Shown next to the button so the
   // number is a reason, not a limit that appears from nowhere.
   const short = target ? adsToAdd(target.liveAds, readiness?.fresh ?? 0) : 0
+
+  // WHERE THIS AD WILL RUN — read off the ad set's own targeting, never
+  // offered as a choice. Placement is an ad-set property in Meta; an ad cannot
+  // narrow it or opt out, so a picker here would collect a value Meta rejects
+  // at publish time. What IS a choice is the shape we render for those
+  // surfaces, and only shapes they can actually use are offered.
+  const places = placementsOfAdSet(target?.targeting)
+  const shapeOptions = formatsFor(places.keys)
+  const shape: AdFormat | null = format && shapeOptions.includes(format)
+    ? format
+    : bestFormatFor(places.keys)
+  const cropped = shape ? croppedBy(places.keys, shape) : []
   // A video in the batch means Meta has to receive, transcode and cover-frame
   // it before the ad exists. Said BEFORE the press, so a slow action is not
   // mistaken for a broken one.
@@ -132,8 +164,8 @@ export default function CreativePoolPanel({
    * every change to the selection, because a preview that lags the selection
    * is a preview of a different ad than the one that would launch.
    */
-  const rebuild = useCallback(async (ids: string[], on: boolean) => {
-    if (!on || !project || ids.length === 0) { setPreviews({}); return }
+  const rebuild = useCallback(async (ids: string[], on: boolean, fmt: AdFormat | null) => {
+    if (!on || !project || ids.length === 0 || !fmt) { setPreviews({}); return }
     setComposing(true)
     const next: Record<string, string> = {}
     for (const [i, id] of ids.entries()) {
@@ -151,7 +183,8 @@ export default function CreativePoolPanel({
           total: t('lm.pool.compose.total'),
           handover: (y) => t('lm.pool.compose.handover', { y }),
         },
-        { image: adImageSrc(it.url, it.imageHash), variant: i },
+        // Rendered at the shape the ad set's OWN surfaces can use.
+        { image: adImageSrc(it.url, it.imageHash), variant: i, format: fmt },
       )
       if (url) next[id] = url
     }
@@ -159,7 +192,12 @@ export default function CreativePoolPanel({
     setComposing(false)
   }, [byId, project, t])
 
-  useEffect(() => { void rebuild(picked, design) }, [picked, design, rebuild])
+  // A shape chosen for one ad set is meaningless on another with different
+  // surfaces — cleared rather than carried, so the default is recomputed from
+  // the new ad set's own placements.
+  useEffect(() => { setFormat(null) }, [adSetId])
+
+  useEffect(() => { void rebuild(picked, design, shape) }, [picked, design, shape, rebuild])
 
   /** An upload joins the pool as a fresh, already-selected tile. The file is
    *  pushed to the ad account immediately so the hash — the thing that
@@ -195,13 +233,19 @@ export default function CreativePoolPanel({
     try {
       // A designed variant is uploaded first so the ad carries a native hash;
       // an undesigned pick rides its own hash or hosted URL.
-      const ads: Array<{ imageHash?: string; imageUrl?: string; videoUrl?: string; name?: string }> = []
+      // A blank caption field is "keep the working ad's words" — the write
+      // inherits them. Sending '' would overwrite a caption with nothing.
+      const words = {
+        ...(caption.primaryText.trim() ? { primaryText: caption.primaryText.trim() } : {}),
+        ...(caption.headline.trim() ? { headline: caption.headline.trim() } : {}),
+      }
+      const ads: Array<{ imageHash?: string; imageUrl?: string; videoUrl?: string; name?: string; primaryText?: string; headline?: string }> = []
       for (const id of picked) {
         const it = byId(id)
         if (!it) continue
         // A video travels as a URL Meta fetches itself — the server never
         // holds the file, and the transcode wait happens there.
-        if (needsProcessing(it)) { ads.push({ videoUrl: it.url, name: it.title }); continue }
+        if (needsProcessing(it)) { ads.push({ videoUrl: it.url, name: it.title, ...words }); continue }
         const composed = previews[id]
         if (composed) {
           const res = await fetch('/api/meta/adimages', {
@@ -210,10 +254,12 @@ export default function CreativePoolPanel({
           })
           const d = await res.json().catch(() => ({}))
           if (!res.ok || !d?.hash) { setError(d?.error || t('lm.pool.uploadFailed')); setBusy(false); return }
-          ads.push({ imageHash: String(d.hash), name: it.title })
+          ads.push({ imageHash: String(d.hash), name: it.title, ...words })
           continue
         }
-        ads.push(it.imageHash ? { imageHash: it.imageHash, name: it.title } : { imageUrl: it.url, name: it.title })
+        ads.push(it.imageHash
+          ? { imageHash: it.imageHash, name: it.title, ...words }
+          : { imageUrl: it.url, name: it.title, ...words })
       }
 
       const res = await fetch(`/api/meta/campaigns/${encodeURIComponent(campaignId)}/pool`, {
@@ -367,6 +413,78 @@ export default function CreativePoolPanel({
                 className="accent-[#D4AF37]" />
               {t('lm.pool.goLive')}
             </label>
+          </div>
+
+          {/* WHERE IT RUNS — the ad set's own surfaces, as FACTS.
+              Meta fixes placement at the ad set; an ad cannot narrow it or opt
+              out. A picker here would collect a value Meta rejects at publish
+              time, which is the whole class of Marketing-API trap this panel
+              refuses to walk into. What IS a choice is the shape rendered for
+              those surfaces — and only shapes they can use are offered. */}
+          {target && (
+            <div className="mt-3 rounded-xl border border-line bg-surface-2/60 px-3.5 py-2.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  {t('lm.pool.runsIn')}
+                </span>
+                {places.keys.length === 0 ? (
+                  <span className="text-[11px] text-amber-200">{t('lm.pool.noSurface')}</span>
+                ) : places.keys.map((k) => (
+                  <span key={k} className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] text-slate-300">
+                    {t(`lm.place.name.${k}`)}
+                  </span>
+                ))}
+                {places.automatic && (
+                  <span className="text-[10px] text-amber-200/80">{t('lm.pool.autoPlacement')}</span>
+                )}
+              </div>
+
+              {/* The shape. Offered only where the surfaces can use it. */}
+              {shapeOptions.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    {t('lm.pool.shape')}
+                  </span>
+                  {shapeOptions.map((f) => (
+                    <button key={f} type="button" onClick={() => setFormat(f)}
+                      className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition ${
+                        shape === f ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line text-slate-400 hover:text-white'
+                      }`}>
+                      {t(`lm.pool.shape.${f}`)}
+                    </button>
+                  ))}
+                  {cropped.length > 0 && (
+                    <span className="text-[10px] text-amber-200/80">
+                      {t('lm.pool.crops', { where: cropped.map((k) => t(`lm.place.name.${k}`)).join(', ') })}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* THE CAPTION. Folded away because the default — inherit the working
+              ad's own words — is right most of the time, and a blank field
+              never overwrites a caption with nothing. */}
+          <div className="mt-3">
+            <button type="button" onClick={() => setCaptionOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 transition hover:text-white">
+              <Type className="h-3 w-3" />
+              {captionOpen ? t('lm.pool.captionHide') : t('lm.pool.captionEdit')}
+            </button>
+            {captionOpen && (
+              <div className="mt-2 space-y-2">
+                <textarea value={caption.primaryText} rows={2} dir="auto"
+                  onChange={(e) => setCaption((c) => ({ ...c, primaryText: e.target.value }))}
+                  placeholder={t('lm.pool.captionBodyPh')}
+                  className="w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-slate-100 outline-none focus:border-gold/40" />
+                <input value={caption.headline} dir="auto"
+                  onChange={(e) => setCaption((c) => ({ ...c, headline: e.target.value }))}
+                  placeholder={t('lm.pool.captionHeadPh')}
+                  className="w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-slate-100 outline-none focus:border-gold/40" />
+                <p className="text-[10px] text-slate-500">{t('lm.pool.captionNote')}</p>
+              </div>
+            )}
           </div>
 
           {/* The cost of a video, before the press rather than after it. */}

@@ -30,6 +30,8 @@ import { personaIds } from '../lib/freehold/persona-audience'
 import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { DELIVERY_STATES } from '../lib/meta/delivery-status'
 import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
+import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
+import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -113,6 +115,13 @@ console.log('\n── recommendations ──')
   family('lm.rec.*.t', 'lm.rec.', REC_KEYS.map((k) => `${k}.t`))
   family('lm.rec.*.b', 'lm.rec.', REC_KEYS.map((k) => `${k}.b`))
   family('lm.rec.act', 'lm.rec.act.', REC_ACTION_LABELS)
+
+  // The creative pool names the ad set's REAL surfaces — t(`lm.place.name.${k}`)
+  // — and the design shapes those surfaces can use, t(`lm.pool.shape.${f}`).
+  // Both are computed off catalogs the types derive from, so a new surface or
+  // a new shape cannot ship without a word behind it in all three languages.
+  family('lm.place.name', 'lm.place.name.', LAUNCHABLE_PLACEMENTS)
+  family('lm.pool.shape', 'lm.pool.shape.', AD_FORMATS)
 }
 
 console.log('\n── delivery states ──')
