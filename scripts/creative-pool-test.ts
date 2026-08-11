@@ -9,13 +9,15 @@
  *    between a design and itself
  *  · an image already running counted as new → a duplicate ad, and a
  *    frequency problem made worse by the thing meant to fix it
- *  · a video offered as launchable → a button that 400s at Meta, which is
+ *  · a brochure offered as launchable → a button that 400s at Meta, which is
  *    rule 3 of the recommendations module in a different costume
+ *  · a video not marked as needing processing → a press that appears to hang,
+ *    because nothing warned that Meta has a file to transcode first
  *
  * Pure — no network, no database, no canvas. Runs in `pnpm guards`.
  */
 import {
-  buildPool, poolReadiness, adsToAdd, mediaKey, isLaunchable,
+  buildPool, poolReadiness, adsToAdd, mediaKey, isLaunchable, needsProcessing,
   MIN_ADS_FOR_ROTATION, POOL_DISPLAY_LIMIT, POOL_SOURCES, POOL_KINDS,
   type PoolItem,
 } from '../lib/freehold/creative-pool'
@@ -61,31 +63,41 @@ console.log('\n── "unused" means unused ──')
   check('a running design merged with its library copy stays marked as running',
     pool.find((p) => p.url.includes('running'))?.inUse === true, JSON.stringify(pool))
   const r = poolReadiness(pool)
-  check('…and is NOT counted as new material', r.freshImages === 1, JSON.stringify(r))
+  check('…and is NOT counted as new material', r.fresh === 1, JSON.stringify(r))
   check('…while still being visible', r.total === 2 && r.inUse === 1, JSON.stringify(r))
   check('unused sorts before used', pool[0].id === 'lib-2', ids(pool))
 }
 
 console.log('\n── only what can actually become an ad ──')
 {
-  // Meta video ads need /advideos, an encoding poll and a thumbnail — none of
-  // which this account's client has. A launch button on a video would fail at
-  // the far end, which is exactly the action-that-cannot-be-performed the
-  // recommendations module refuses to offer.
+  // Images and videos both reach Meta — the video path through /advideos, a
+  // transcode wait and a cover frame (lib/meta/video-ad.ts). A brochure never
+  // will: a PDF is not a creative object in any ad system, so a launch button
+  // on one is exactly the action-that-cannot-be-performed the recommendations
+  // module refuses to offer.
   check('an image can be launched', isLaunchable(item({ url: 'a.jpg', kind: 'image' })))
-  check('a video cannot — it is a SOURCE for the reel maker', !isLaunchable(item({ url: 'a.mp4', kind: 'video' })))
-  check('a brochure cannot — it is where a design\'s numbers come from',
+  check('a video can too — the /advideos path is real', isLaunchable(item({ url: 'a.mp4', kind: 'video' })))
+  check('a brochure cannot — a PDF is not a creative, it is where numbers come from',
     !isLaunchable(item({ url: 'a.pdf', kind: 'pdf' })))
+
+  // A video costs an upload and a transcode wait before the ad exists. That
+  // is a fact the panel must state BEFORE the press and the write must budget
+  // for, so it is a property of the item rather than a guess at the call site.
+  check('a video is marked as needing processing', needsProcessing(item({ url: 'a.mp4', kind: 'video' })))
+  check('an image is not', !needsProcessing(item({ url: 'a.jpg', kind: 'image' })))
 
   const pool = buildPool([
     item({ id: 'v', kind: 'video', url: 'https://cdn.x/tour.mp4' }),
     item({ id: 'p', kind: 'pdf', url: 'https://cdn.x/book.pdf' }),
     item({ id: 'i', kind: 'image', url: 'https://cdn.x/shot.jpg' }),
   ])
-  check('launchable media sorts above sources', pool[0].id === 'i', ids(pool))
+  check('launchable media sorts above sources', pool[0].id === 'i' || pool[0].id === 'v', ids(pool))
+  check('…and the brochure sorts last', pool[2].id === 'p', ids(pool))
   const r = poolReadiness(pool)
   check('the counts separate what can run from what needs a tool first',
-    r.freshImages === 1 && r.sources === 2, JSON.stringify(r))
+    r.fresh === 2 && r.sources === 1, JSON.stringify(r))
+  check('…and say how many of the runnable ones are videos',
+    r.freshVideos === 1, JSON.stringify(r))
 }
 
 console.log('\n── nothing enters the pool without a file ──')

@@ -29,13 +29,16 @@
  *     this module reports about "what you could add" is about media the
  *     campaign has not run, or it is a lie that produces duplicate ads.
  *
- *  3. ONLY IMAGES CAN BECOME AN AD HERE, and the pool says so rather than
- *     offering a button that fails at the far end. A Meta video ad needs the
- *     file uploaded to /advideos, an encoding poll, and a thumbnail — none of
- *     which this account's client has. Videos and brochures are in the pool
- *     because they are SOURCES: a brochure is where a design's numbers come
- *     from, a video is what the reel maker cuts. They route to the tool that
- *     can use them, not to a launch that would 400.
+ *  3. WHAT CAN BECOME AN AD IS A PROPERTY OF THE FILE, and the pool says so
+ *     rather than offering a button that fails at the far end. Images and
+ *     videos launch; a brochure does not, because a PDF is not a creative —
+ *     it is where a design's NUMBERS come from, so it routes to the ad
+ *     designer instead of to a launch that would 400.
+ *
+ *     Video ads are a four-step negotiation with Meta (upload, transcode,
+ *     cover frame, a `video_data` creative that shares no field names with
+ *     the image one). Those rules live in lib/meta/video-ad.ts; what matters
+ *     here is that a video tile is a real launch, not a link to a tool.
  *
  *  4. THE POOL NEVER INVENTS MEDIA. Everything here has a URL that already
  *     exists in this account. The generative half of this feature composes a
@@ -81,11 +84,19 @@ export interface PoolItem {
 }
 
 /**
- * ONLY IMAGES LAUNCH FROM HERE. Stated as a function rather than inlined at
+ * WHAT CAN ACTUALLY BECOME AN AD. Stated as a function rather than inlined at
  * each call site so the reason travels with the rule and there is one place to
- * change when the video path exists.
+ * change it.
+ *
+ * A brochure is excluded on purpose and permanently: a PDF is not a creative
+ * in any ad system, and pretending otherwise would put a document-shaped tile
+ * behind a Create button. It is a SOURCE — the ad designer reads its numbers.
  */
-export const isLaunchable = (item: PoolItem): boolean => item.kind === 'image'
+export const isLaunchable = (item: PoolItem): boolean => item.kind === 'image' || item.kind === 'video'
+
+/** A video ad takes an upload, a transcode wait and a cover frame before Meta
+ *  will show it — so the panel warns, and the write budgets for it. */
+export const needsProcessing = (item: PoolItem): boolean => item.kind === 'video'
 
 /**
  * Meta's own guidance and the reason it holds: an ad set wants three to six
@@ -177,18 +188,26 @@ export function buildPool(items: PoolItem[]): PoolItem[] {
 export interface PoolReadiness {
   /** Everything in the pool, after dedup. */
   total: number
-  /** Images not already running: the honest "you could add N ads today". */
-  freshImages: number
-  /** Sources that need a tool before they can be an ad (rule 3). */
+  /** Launchable and not already running: the honest "you could add N ads
+   *  today". Named `fresh` rather than `freshImages` since videos launch too —
+   *  a count whose name says images while it counts videos is the kind of
+   *  quiet lie that survives three refactors. */
+  fresh: number
+  /** How many of those are videos. Each costs an upload and a transcode wait,
+   *  so the panel warns and the write budgets for it. */
+  freshVideos: number
+  /** Files that need a tool before they can be an ad (rule 3). */
   sources: number
   /** Already running in this campaign. */
   inUse: number
 }
 
 export function poolReadiness(pool: PoolItem[]): PoolReadiness {
+  const fresh = pool.filter((p) => isLaunchable(p) && !p.inUse)
   return {
     total: pool.length,
-    freshImages: pool.filter((p) => isLaunchable(p) && !p.inUse).length,
+    fresh: fresh.length,
+    freshVideos: fresh.filter(needsProcessing).length,
     sources: pool.filter((p) => !isLaunchable(p)).length,
     inUse: pool.filter((p) => p.inUse).length,
   }
@@ -198,11 +217,11 @@ export function poolReadiness(pool: PoolItem[]): PoolReadiness {
  * HOW MANY ADS THIS AD SET IS SHORT.
  *
  * Not "how many can I make" — how many it needs to reach a rotation, capped by
- * what the pool can actually supply. An ad set at two ads with one fresh photo
+ * what the pool can actually supply. An ad set at two ads with one fresh file
  * is short by one, not by two: offering the second would be offering a
  * duplicate, and a duplicate ad is not a second test.
  */
-export function adsToAdd(currentAds: number, freshImages: number): number {
+export function adsToAdd(currentAds: number, fresh: number): number {
   const short = Math.max(0, MIN_ADS_FOR_ROTATION - Math.max(0, currentAds))
-  return Math.min(short, Math.max(0, freshImages))
+  return Math.min(short, Math.max(0, fresh))
 }

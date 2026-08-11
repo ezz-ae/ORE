@@ -24,9 +24,17 @@
  *  · An ad set whose only ad uses asset_feed_spec (per-placement creative).
  *    There is no single creative to copy — the same refusal
  *    updateAdCreativeContent already makes, for the same reason.
- *  · Anything that is not an image. Meta video ads need /advideos, an encoding
- *    poll and a thumbnail; none of that exists in this client, and a button
- *    that 400s at the far end is worse than no button.
+ *  · A brochure. A PDF is not a creative in any ad system — it is where a
+ *    design's numbers come from, and it routes to the ad designer instead.
+ *
+ * VIDEO ADS TAKE THE LONG WAY ROUND, on purpose. `POST /advideos` returns an
+ * id before the file has been transcoded, and a creative built on a processing
+ * video is accepted by the Graph API and then silently fails to deliver — the
+ * worst failure shape this product has, because everything reports success and
+ * the money does not move. So the write uploads, WAITS for status `ready` AND
+ * a cover frame, and only then builds the creative. A video still processing
+ * when the wait budget runs out is reported as such, with its id, rather than
+ * launched on a hope or thrown away.
  *
  * NEW ADS ARE CREATED PAUSED BY DEFAULT. The operator chose the pictures, not
  * the spend — switching three new ads live inside an ad set that is mid-
@@ -38,7 +46,9 @@ import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import {
   isMetaConfigured, MetaApiError, listAdSets, listAds, listCampaignAds,
   getAdWithCreative, createAdCreative, createAd, ingestImageFromUrl,
+  uploadAdVideoFromUrl, waitForAdVideo, createVideoAdCreative, type AdVideo,
 } from '@/lib/meta/client'
+import { whyNotLaunchable, VIDEO_POLL_BUDGET_MS } from '@/lib/meta/video-ad'
 import { getProjectSlugForCampaign } from '@/lib/meta/campaign-structure'
 import { getProjectBySlug } from '@/lib/data'
 import { listLibrary } from '@/lib/freehold/library'
@@ -47,6 +57,14 @@ import type { MetaCta } from '@/lib/meta/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+/**
+ * A video transcode is Meta's clock, not ours: VIDEO_POLL_BUDGET_MS is ~80
+ * seconds, and the default serverless ceiling is 60. Every video in one press
+ * is waited for concurrently (see the pre-pass below), so this ceiling covers
+ * a batch of six as easily as one — but it has to be raised above the default,
+ * or a successful upload becomes a timeout with no ads and no explanation.
+ */
+export const maxDuration = 300
 
 const WRITE_ROLES: Role[] = [...MANAGEMENT_ROLES, 'marketing']
 
@@ -163,6 +181,9 @@ interface PoolAdRequest {
   imageHash?: string
   /** A hosted picture the server ingests into the ad account instead. */
   imageUrl?: string
+  /** A hosted video. Mutually exclusive with the image fields — an ad is one
+   *  or the other, and Meta's two creative objects share no field names. */
+  videoUrl?: string
   /** Optional copy overrides; anything omitted is inherited from the ad set's
    *  working ad, which is the whole point of the inheritance rule. */
   headline?: string
@@ -226,39 +247,88 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const created: Array<{ adId: string; creativeId: string; name: string }> = []
   const failed: Array<{ name: string; error: string }> = []
 
+  // ── VIDEO PRE-PASS: upload and wait CONCURRENTLY ─────────────────────────
+  //
+  // The transcode wait is Meta's, not ours. Three videos waited for in
+  // sequence is three times the same minute for nothing — and it would run
+  // this function past its ceiling, turning a successful set of uploads into
+  // a timeout with no ads and no explanation. Uploading all of them first and
+  // awaiting them together costs ONE wait budget however many there are.
+  const videos = new Map<number, AdVideo>()
+  const videoErrors = new Map<number, string>()
+  await Promise.all(requested.map(async (want, i) => {
+    const url = httpUrl(want.videoUrl)
+    if (!url) return
+    try {
+      const { id: videoId } = await uploadAdVideoFromUrl(url, String(want.name ?? '').slice(0, 100))
+      videos.set(i, await waitForAdVideo(videoId))
+    } catch (e) {
+      videoErrors.set(i, e instanceof MetaApiError ? e.message : 'Meta refused this video.')
+    }
+  }))
+
   for (const [i, want] of requested.entries()) {
     const name = String(want.name ?? '').trim().slice(0, 100)
       || `${target.name} — design ${existing.length + i + 1}`
     try {
-      // A hash launches directly; a hosted URL is ingested into the ad
-      // account first, which is the same path the wizard's preview uses and
-      // the reliable one — Meta renders an external `picture` inconsistently.
-      let imageHash = String(want.imageHash ?? '').trim()
-      const imageUrl = httpUrl(want.imageUrl)
-      if (!imageHash && imageUrl) {
-        imageHash = (await ingestImageFromUrl(imageUrl)) ?? ''
+      // Copy is merged the same way whichever object shape the creative uses.
+      const copy = {
+        primaryText: String(want.primaryText ?? '').trim() || base.primaryText,
+        headline:    String(want.headline ?? '').trim() || base.headline,
+        description: String(want.description ?? '').trim() || base.description,
+        landingUrl:  base.landingUrl,
+        cta:         base.ctaType as MetaCta,
       }
-      if (!imageHash && !imageUrl) {
-        failed.push({ name, error: 'No picture — an ad without an image is not an ad.' })
-        continue
-      }
-
-      const { id: creativeId } = await createAdCreative({
-        name,
-        creative: {
-          primaryText: String(want.primaryText ?? '').trim() || base.primaryText,
-          headline:    String(want.headline ?? '').trim() || base.headline,
-          description: String(want.description ?? '').trim() || base.description,
-          landingUrl:  base.landingUrl,
-          cta:         base.ctaType as MetaCta,
-          imageHash:   imageHash || undefined,
-          imageUrl:    imageHash ? undefined : imageUrl,
-        },
-        // Inherited, never defaulted — see the header.
+      // Inherited, never defaulted — see the header. Identical for both paths,
+      // so a video variant lands in a form ad set carrying the same form.
+      const inherit = {
         destination:      source.destination,
         leadFormId:       source.leadFormId,
         destinationPhone: source.destinationPhone,
-      })
+      }
+
+      let creativeId: string
+      const isVideo = !!httpUrl(want.videoUrl)
+
+      if (isVideo) {
+        const uploadError = videoErrors.get(i)
+        if (uploadError) { failed.push({ name, error: uploadError }); continue }
+        const video = videos.get(i)
+        const blocked = video ? whyNotLaunchable(video) : 'error'
+        if (blocked || !video) {
+          // The upload SUCCEEDED and Meta is still working — report the state
+          // with the id rather than losing the upload to an exception.
+          failed.push({
+            name,
+            error: blocked === 'error'
+              ? 'Meta could not process this video. Try a shorter or smaller file.'
+              : `Meta is still processing this video${video ? ` (${video.id})` : ''} after ${Math.round(VIDEO_POLL_BUDGET_MS / 1000)}s. The upload worked — open the pool again in a minute and add it.`,
+          })
+          continue
+        }
+        ;({ id: creativeId } = await createVideoAdCreative({
+          name, videoId: video.id, thumbnailUrl: video.thumbnailUrl, creative: copy, ...inherit,
+        }))
+      } else {
+        // A hash launches directly; a hosted URL is ingested into the ad
+        // account first, which is the same path the wizard's preview uses and
+        // the reliable one — Meta renders an external `picture` inconsistently.
+        let imageHash = String(want.imageHash ?? '').trim()
+        const imageUrl = httpUrl(want.imageUrl)
+        if (!imageHash && imageUrl) {
+          imageHash = (await ingestImageFromUrl(imageUrl)) ?? ''
+        }
+        if (!imageHash && !imageUrl) {
+          failed.push({ name, error: 'No picture — an ad without an image is not an ad.' })
+          continue
+        }
+        ;({ id: creativeId } = await createAdCreative({
+          name,
+          creative: { ...copy, imageHash: imageHash || undefined, imageUrl: imageHash ? undefined : imageUrl },
+          ...inherit,
+        }))
+      }
+
       const { id: adId } = await createAd({ adSetId, name, creativeId, status })
       created.push({ adId, creativeId, name })
     } catch (error) {

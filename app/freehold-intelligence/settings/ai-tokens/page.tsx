@@ -15,8 +15,10 @@ import { ArrowUpRight, Cpu, TriangleAlert } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
 const OPENING_CONSUMED = 2_003_320_000
-const OPENING_BALANCE = 314_400_000
+const OPENING_BALANCE = 87_400_000
 const LOW_WATERMARK = 500_000_000
+/** Under this, the amber LOW state escalates to a critical EXTREMELY LOW alert. */
+const CRITICAL_WATERMARK = 100_000_000
 /** Per-workload utilization meters (percent of each workload's allocation). */
 const WORKLOADS: Array<{ key: string; pct: number }> = [
   { key: 'settings.tokens.usageDev', pct: 85 },
@@ -44,12 +46,17 @@ const txnId = () =>
 /** Fixed opening trail so the ledger reads as an operating system, day one.
  *  Balance-after chain is coherent: each row's after = next row's after + amount. */
 const OPENING_TRAIL: TrailEntry[] = [
-  { id: 'txn_9f41c02a77d1', at: new Date('2026-08-10T10:15:00+04:00'), amount: 750_000_000, after: 314_400_000 },
-  { id: 'txn_5b8e33f19c04', at: new Date('2026-08-09T18:40:00+04:00'), amount: 1_250_000_000, after: 1_064_400_000 },
-  { id: 'txn_c27a90d45e18', at: new Date('2026-08-09T09:05:00+04:00'), amount: 2_000_000_000, after: 2_314_400_000 },
+  { id: 'txn_9f41c02a77d1', at: new Date('2026-08-10T10:15:00+04:00'), amount: 750_000_000, after: 87_400_000 },
+  { id: 'txn_5b8e33f19c04', at: new Date('2026-08-09T18:40:00+04:00'), amount: 1_250_000_000, after: 837_400_000 },
+  { id: 'txn_c27a90d45e18', at: new Date('2026-08-09T09:05:00+04:00'), amount: 2_000_000_000, after: 2_087_400_000 },
 ]
 
 const num = (v: number) => Math.round(v).toLocaleString('en-US')
+/** Balance display, in the same "M tokens" unit the sender uses — the small,
+ *  readable magnitude is the point: it's what makes "critically low" legible
+ *  against a nine-figure consumed total. */
+const numM = (v: number) =>
+  (v / SEND_UNIT).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 export default function AiTokenControlPage() {
   const t = useT()
@@ -81,7 +88,8 @@ export default function AiTokenControlPage() {
     return () => clearInterval(id)
   }, [])
 
-  const low = balance < LOW_WATERMARK
+  const critical = balance < CRITICAL_WATERMARK
+  const low = !critical && balance < LOW_WATERMARK
   // Sender input is in MILLIONS of tokens.
   const parsed = useMemo(() => {
     const n = Number.parseFloat(amount)
@@ -139,18 +147,28 @@ export default function AiTokenControlPage() {
             <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-white" dir="ltr">{num(consumed)}</div>
             <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.tokens')}</div>
           </div>
-          <div className={`rounded-[14px] border p-4 ${low ? 'border-amber-500/30 bg-amber-500/[0.04]' : 'border-line bg-surface'}`}>
+          <div className={`rounded-[14px] border p-4 ${critical ? 'border-red-500/40 bg-red-500/[0.06]' : low ? 'border-amber-500/30 bg-amber-500/[0.04]' : 'border-line bg-surface'}`}>
             <div className="flex items-center justify-between">
               <div className="text-xs text-slate-500">{t('settings.tokens.currentBalance')}</div>
-              {low ? (
+              {critical ? (
+                <span className="inline-flex animate-pulse items-center gap-1 rounded-full border border-red-500/50 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-400">
+                  <TriangleAlert className="h-3 w-3" />
+                  {t('settings.tokens.criticalBadge')}
+                </span>
+              ) : low ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
                   <TriangleAlert className="h-3 w-3" />
                   {t('settings.tokens.lowBadge')}
                 </span>
               ) : null}
             </div>
-            <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-white" dir="ltr">{num(balance)}</div>
-            {low ? <div className="mt-1 text-xs leading-relaxed text-amber-400/90">{t('settings.tokens.lowNote')}</div> : null}
+            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${critical ? 'text-red-400' : 'text-white'}`} dir="ltr">{numM(balance)}</div>
+            <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.amountUnit')}</div>
+            {critical ? (
+              <div className="mt-1 text-xs font-medium leading-relaxed text-red-400">{t('settings.tokens.criticalNote')}</div>
+            ) : low ? (
+              <div className="mt-1 text-xs leading-relaxed text-amber-400/90">{t('settings.tokens.lowNote')}</div>
+            ) : null}
           </div>
         </div>
       </section>
