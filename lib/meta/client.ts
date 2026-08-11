@@ -273,7 +273,7 @@ export async function probeAdAccountAccess(): Promise<{ ok: boolean; message?: s
 export async function listCampaigns(): Promise<MetaCampaign[]> {
   const { adAccountId } = await creds()
   const res = await apiFetch<{ data: MetaCampaign[] }>(`/${adAccountId}/campaigns`, undefined, {
-    fields: 'id,name,status,objective,daily_budget,created_time,start_time,stop_time',
+    fields: 'id,name,status,effective_status,objective,daily_budget,created_time,start_time,stop_time,issues_info',
     limit: '100',
   })
   return res.data ?? []
@@ -341,7 +341,7 @@ export async function scanAdAccounts(): Promise<MetaAccountScan | null> {
 
 export async function getCampaign(campaignId: string): Promise<MetaCampaign> {
   return apiFetch<MetaCampaign>(`/${campaignId}`, undefined, {
-    fields: 'id,name,status,objective,daily_budget,created_time,start_time,stop_time',
+    fields: 'id,name,status,effective_status,objective,daily_budget,created_time,start_time,stop_time,issues_info',
   })
 }
 
@@ -1843,7 +1843,7 @@ export async function updateAdPlacementCreative(
 
 export async function listAds(adSetId: string): Promise<MetaAd[]> {
   const res = await apiFetch<{ data: MetaAd[] }>(`/${adSetId}/ads`, undefined, {
-    fields: 'id,name,status,effective_status,creative{id,name},issues_info',
+    fields: 'id,name,status,effective_status,creative{id,name},issues_info,ad_review_feedback',
   })
   return res.data ?? []
 }

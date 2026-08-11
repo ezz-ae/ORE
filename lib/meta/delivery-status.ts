@@ -28,11 +28,20 @@
  * Pure + client-safe. Runs in `pnpm guards`.
  */
 
-export type DeliveryState =
-  | 'inReview' | 'rejected' | 'billing' | 'issue'
-  | 'learning' | 'learningLimited' | 'delivering' | 'notDelivering'
-  | 'pausedByAdSet' | 'pausedByCampaign' | 'paused' | 'archived'
-  | 'finished' | 'unknown'
+/**
+ * Every state, ENUMERABLE. The screens render these through a computed key
+ * — t(`lm.machine.delivery.${state}`) — which `pnpm i18n` cannot see, so the
+ * list has to be walkable for dynamic-keys-test. The type is derived FROM
+ * the array: a new state cannot exist without appearing here.
+ */
+export const DELIVERY_STATES = [
+  'inReview', 'rejected', 'billing', 'issue',
+  'learning', 'learningLimited', 'delivering', 'notDelivering',
+  'pausedByAdSet', 'pausedByCampaign', 'paused', 'archived',
+  'finished', 'unknown',
+] as const
+
+export type DeliveryState = (typeof DELIVERY_STATES)[number]
 
 export type DeliveryTone = 'good' | 'working' | 'idle' | 'bad'
 

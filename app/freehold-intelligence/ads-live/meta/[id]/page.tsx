@@ -664,7 +664,26 @@ export default function CampaignCommandPage() {
               <span className={`h-2 w-2 rounded-full ${active ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]' : 'bg-slate-500'}`} />
               {active ? t('lm.cmd.live') : t('lm.cmd.paused')}
             </span>
-            <span className="mt-0.5 block text-[11px] text-slate-500">{active ? t('lm.cmd.statusHintLive') : t('lm.cmd.statusHintPaused')}</span>
+            {/* WHAT META IS ACTUALLY DOING, under what was asked for. A
+                campaign can read ACTIVE while Meta has it in review, held
+                with issues, or not delivering — the difference between "we
+                asked" and "it runs". */}
+            {(() => {
+              const d = deliveryOf({
+                status: c.status,
+                effectiveStatus: (c as { effective_status?: string }).effective_status,
+              })
+              const asked = active ? t('lm.cmd.statusHintLive') : t('lm.cmd.statusHintPaused')
+              // Only speak when Meta's answer differs from the plain reading;
+              // otherwise the hint stays what it always was.
+              const differs = !!(c as { effective_status?: string }).effective_status
+                && d.state !== 'delivering' && d.state !== 'paused'
+              return (
+                <span className={`mt-0.5 block text-[11px] ${differs && d.tone === 'bad' ? 'text-rose-300' : 'text-slate-500'}`}>
+                  {differs ? t(`lm.delivery.${d.state}`) : asked}
+                </span>
+              )
+            })()}
           </span>
         </button>
       </div>
@@ -878,11 +897,38 @@ export default function CampaignCommandPage() {
         // set — an ad-level targeting or policy fault leaves the ad set's own
         // issues_info empty, which is how an error visible in Ads Manager
         // stayed invisible here for a day.
-        const issues = data.adSets.flatMap((a) => [
-          ...(a.issues_info ?? []).map((i) => ({ where: a.name, text: i.error_summary || i.error_message || '' })),
-          ...((a as AdSetRow & { ads?: Array<{ name: string; issues_info?: Array<{ error_summary?: string; error_message?: string }> }> }).ads ?? [])
-            .flatMap((ad) => (ad.issues_info ?? []).map((i) => ({ where: ad.name, text: i.error_summary || i.error_message || '' }))),
-        ]).filter((x) => x.text)
+        // EVERY PLACE META KEEPS A FAULT, because they are different places:
+        //   campaign.issues_info   — campaign-level stops
+        //   adSet.issues_info      — delivery/targeting faults
+        //   ad.issues_info         — the same, one level down
+        //   ad.ad_review_feedback  — POLICY REJECTIONS, which live nowhere
+        //     else; a page reading only issues_info shows an empty error box
+        //     above an ad Meta has refused to run.
+        type AdLike = {
+          name: string
+          issues_info?: Array<{ error_summary?: string; error_message?: string }>
+          ad_review_feedback?: { global?: Record<string, string>; placement_specific?: Record<string, Record<string, string>> }
+        }
+        const reviewText = (ad: AdLike): string[] => {
+          const fb = ad.ad_review_feedback
+          if (!fb) return []
+          const out = Object.values(fb.global ?? {})
+          for (const byPlacement of Object.values(fb.placement_specific ?? {})) {
+            out.push(...Object.values(byPlacement ?? {}))
+          }
+          return out.filter((x) => typeof x === 'string' && x.trim())
+        }
+        const issues = [
+          ...((data.campaign as { issues_info?: Array<{ error_summary?: string; error_message?: string }> }).issues_info ?? [])
+            .map((i) => ({ where: data.campaign.name, text: i.error_summary || i.error_message || '' })),
+          ...data.adSets.flatMap((a) => [
+            ...(a.issues_info ?? []).map((i) => ({ where: a.name, text: i.error_summary || i.error_message || '' })),
+            ...((a as AdSetRow & { ads?: AdLike[] }).ads ?? []).flatMap((ad) => [
+              ...(ad.issues_info ?? []).map((i) => ({ where: ad.name, text: i.error_summary || i.error_message || '' })),
+              ...reviewText(ad).map((text) => ({ where: ad.name, text })),
+            ]),
+          ]),
+        ].filter((x) => x.text)
         if (issues.length === 0) return null
         return (
           <section className="mt-8 rounded-2xl border border-rose-400/40 bg-rose-400/[0.08] p-5">
