@@ -54,12 +54,17 @@
 
 /**
  * Where a piece of media came from. Ordered by how specific it is to THIS
- * campaign — a project photo is about the thing being sold, a library file is
- * about the account. The order is load-bearing: it decides which source owns
- * a tile when the same URL arrives twice, and it decides the sort.
+ * campaign — a campaign asset was put there for this campaign by a person, a
+ * project photo is about the thing being sold, a library file is about the
+ * account. The order is load-bearing: it decides which source owns a tile when
+ * the same URL arrives twice, and it decides the sort.
+ *
+ * 'campaign' outranks 'project' and 'library' because it is the only source
+ * that records a DECISION. The others are inventory; a campaign asset is
+ * somebody saying "this one, for this".
  */
-export type PoolSource = 'live' | 'project' | 'brochure' | 'library'
-export const POOL_SOURCES: PoolSource[] = ['live', 'project', 'brochure', 'library']
+export type PoolSource = 'live' | 'campaign' | 'project' | 'brochure' | 'library'
+export const POOL_SOURCES: PoolSource[] = ['live', 'campaign', 'project', 'brochure', 'library']
 
 /** What the file IS, which decides what can be done with it. See rule 3. */
 export type PoolKind = 'image' | 'video' | 'pdf'
@@ -81,6 +86,15 @@ export interface PoolItem {
   inUse?: boolean
   /** ISO date, when the source knows one. Sorts the library half. */
   createdAt?: string
+  /**
+   * The Library row behind this tile, when there is one.
+   *
+   * It is what makes a tile EDITABLE: the image and video editors open by
+   * library id, so a picture with no library row can be shown here and cannot
+   * be opened. A tile without one is offered "save to campaign" instead —
+   * which files it on the shelf and gives it exactly this.
+   */
+  libraryId?: string
 }
 
 /**
@@ -164,6 +178,10 @@ export function buildPool(items: PoolItem[]): PoolItem[] {
       inUse: existing.inUse || raw.inUse || undefined,
       imageHash: existing.imageHash || raw.imageHash,
       createdAt: existing.createdAt || raw.createdAt,
+      // Whichever copy of this file has a library row, the surviving tile
+      // keeps it — losing it would make an editable picture unopenable
+      // because a second, shelf-less copy of it happened to sort first.
+      libraryId: existing.libraryId || raw.libraryId,
     })
   }
 
