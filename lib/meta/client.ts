@@ -1820,7 +1820,7 @@ export async function updateAdPlacementCreative(
 
 export async function listAds(adSetId: string): Promise<MetaAd[]> {
   const res = await apiFetch<{ data: MetaAd[] }>(`/${adSetId}/ads`, undefined, {
-    fields: 'id,name,status,effective_status,creative{id,name}',
+    fields: 'id,name,status,effective_status,creative{id,name},issues_info',
   })
   return res.data ?? []
 }

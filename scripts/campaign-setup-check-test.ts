@@ -32,11 +32,13 @@ const good: AdSetForCheck = {
   optimization_goal: 'LEAD_GENERATION',
   ads: [{ id: 'ad1', status: 'ACTIVE', effective_status: 'ACTIVE' }],
   targeting: {
-    // `location_types` is part of what "correctly built" MEANS now. Omitting it
-    // is not neutral — Meta's default is home + recent, so an ad set without it
-    // is buying tourists, and this fixture would have been asserting that the
-    // product's own output raises nothing while doing exactly that.
-    geo_locations: { countries: ['AE'], location_types: ['home'] },
+    // `location_types` here is the ONLY value Meta still supports: home +
+    // recent, together. The first edition of this fixture pinned ['home'] —
+    // and Meta then deprecated it, flagging a real ad set with a validation
+    // error that silently blocked every edit. "Correctly built" means the
+    // supported pair now, and the residents precision lives in language and
+    // behaviour targeting instead.
+    geo_locations: { countries: ['AE'], location_types: ['home', 'recent'] },
     age_min: 30, age_max: 65,
     publisher_platforms: ['instagram'],
     instagram_positions: ['stream'],

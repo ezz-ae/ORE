@@ -91,23 +91,23 @@ function hasPropertyIntent(t?: Record<string, unknown> | null): boolean {
 }
 
 /**
- * Does this ad set buy people who LIVE in the targeted place, or everyone Meta
- * has recently seen there?
+ * Is this ad set's location type the one Meta still SUPPORTS?
  *
- * Read here rather than trusted from the launcher, because the answer for
- * every campaign launched before this check existed is "everyone" — the field
- * was never sent, so Meta's own default (`home` + `recent`) was in force and a
- * tourist on a five-day holiday was a valid target for a Dubai property ad.
+ * History, both directions: this product first sent no location_types (Meta's
+ * default bought tourists), then pinned ['home'] — which Meta then flagged as
+ * a DEPRECATED option. The flag does not stop delivery; it silently blocks
+ * every subsequent edit to the ad set until the location type is republished.
+ * The only supported value on new ad sets is home+recent, together.
  *
- * A statement about RESIDENCE. Not about origin, and it must never be read as
- * one: everyone who lives in the UAE is inside `home`, whoever they are.
+ * So the check flips: the fault is no longer "includes visitors" (that is
+ * now the only reality Meta sells) — the fault is a deprecated value holding
+ * the ad set's edits hostage.
  */
-const HOME_ONLY = ['home']
-function visitorsIncluded(t?: Record<string, unknown> | null): boolean {
+function deprecatedLocationType(t?: Record<string, unknown> | null): boolean {
   const raw = (t?.geo_locations as { location_types?: unknown } | undefined)?.location_types
-  // Absent is not neutral — absent IS home + recent.
-  if (!Array.isArray(raw) || raw.length === 0) return true
-  return raw.map(String).some((x) => !HOME_ONLY.includes(x))
+  // Absent = Meta's default = the supported pair. Fine.
+  if (!Array.isArray(raw) || raw.length === 0) return false
+  return raw.map(String).sort().join(',') !== 'home,recent'
 }
 
 function countriesOf(t?: Record<string, unknown> | null): string[] {
@@ -210,7 +210,7 @@ export function checkCampaignSetup(
     }
 
     if (countries.length > 0 || cities > 0) {
-      out.push(visitorsIncluded(t)
+      out.push(deprecatedLocationType(t)
         ? { level: 'wrong', key: 'visitors', adSet: where }
         : { level: 'ok', key: 'residents', adSet: where })
     }
