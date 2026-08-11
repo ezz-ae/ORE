@@ -30,6 +30,28 @@ const facts = (o: Partial<CampaignFacts> = {}): CampaignFacts => ({
 })
 const ids = (r: ReturnType<typeof recommendationsFor>) => r.map((x) => x.id)
 
+console.log('\n── a blocked ad silences every other suggestion ──')
+{
+  // The live failure: Ads Manager read "Not delivering · Delivery error"
+  // while this panel advised RAISING THE BUDGET. Money advice on an ad
+  // nobody can see is worse than silence — it sends the operator to spend
+  // more while the real fault sits untouched.
+  const blocked = recommendationsFor(facts({
+    deliveryBlocked: true,
+    // Every other trigger is also true here, so the suppression is real and
+    // not an accident of thin facts.
+    spendAed: 201, days: 30, costCapAed: 7.5, leads: 5, attributedLeads: 0,
+    creativeCount: 1, clicks: 20, impressions: 50_000,
+  }))
+  check('a blocked ad produces exactly one recommendation', blocked.length === 1, ids(blocked).join(' | '))
+  check('…and it is the block itself', blocked[0].id === 'delivery_blocked')
+  check('…as critical', blocked[0].priority === 'critical')
+  check('…pointing at Meta\'s own words, not at a spend control',
+    blocked[0].action.kind === 'open_campaign', blocked[0].action.kind)
+  check('NO budget advice reaches a dead ad',
+    !ids(blocked).includes('budget_for_learning') && !ids(blocked).includes('throttled_by_cap'))
+}
+
 console.log('\n── the throttle outranks everything ──')
 {
   // The real campaign that produced this module: AED 201 spent over 30 days

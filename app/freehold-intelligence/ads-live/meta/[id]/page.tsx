@@ -142,6 +142,10 @@ export default function CampaignCommandPage() {
       case 'rate_leads':
         router.push('/freehold-intelligence/crm')
         return
+      case 'open_campaign':
+        // Meta's words are already on this page, above everything else.
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
       case 'drop_placement':
         return
     }
@@ -1353,6 +1357,17 @@ export default function CampaignCommandPage() {
             creativeCount: data.adSets.reduce((n, a) => n + ((a as { ads?: unknown[] }).ads?.length ?? 0), 0),
             adSetCount: data.adSets.length,
             costCapAed: capFils ? Math.round(capFils / 100) : null,
+            // META'S OWN VERDICT, feeding the gate: any ad set or ad Meta has
+            // flagged, or a delivery state that cannot serve. A live account
+            // read "Not delivering · Delivery error" while this panel advised
+            // raising the budget — spending advice on an ad nobody can see.
+            deliveryBlocked: data.adSets.some((a) => {
+              const flagged = ((a.issues_info ?? []).length > 0)
+                || (((a as { ads?: Array<{ issues_info?: unknown[]; ad_review_feedback?: unknown }> }).ads ?? [])
+                  .some((ad) => (ad.issues_info ?? []).length > 0 || !!ad.ad_review_feedback))
+              const st = deliveryOf({ status: a.status, effectiveStatus: a.effective_status }).state
+              return flagged || st === 'rejected' || st === 'notDelivering' || st === 'issue'
+            }),
           })
           if (recs.length === 0) return null
           return (
