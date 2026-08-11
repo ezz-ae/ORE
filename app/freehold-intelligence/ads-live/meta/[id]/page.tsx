@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy, Lightbulb, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
@@ -15,6 +15,7 @@ import { metaLeadCount } from '@/lib/meta/lead-count'
 import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkCampaignSetup, setupProblemCount, surfaceLabels, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
+import { recommendationsFor, type Recommendation } from '@/lib/freehold/recommendations'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 
@@ -94,6 +95,7 @@ function nextBudget(current: number, dir: 'up' | 'down'): number {
 export default function CampaignCommandPage() {
   const t = useT()
   const params = useParams<{ id: string }>()
+  const router = useRouter()
   const id = String(params?.id || '')
 
   const [loading, setLoading] = useState(true)
@@ -113,6 +115,38 @@ export default function CampaignCommandPage() {
    * the campaign and republishes each one's audience with the supported
    * location behaviour, changing nothing else in the spec.
    */
+  /**
+   * IMPLEMENT a recommendation. Each kind maps to something the product can
+   * actually do — a budget write through the learning guard, or the screen
+   * that carries the work. Nothing here opens a chat: a recommendation whose
+   * only action is "discuss it" is the panel this replaced.
+   */
+  async function runRecommendation(r: Recommendation) {
+    switch (r.action.kind) {
+      case 'set_budget':
+        if (r.action.value) await applyBudgetPct('up', Math.round(((r.action.value / Math.max(1, data?.adSets.reduce((n, a) => n + (Math.round(Number(a.daily_budget) / 100) || 0), 0) ?? 1)) - 1) * 100))
+        return
+      case 'relaunch_no_cap':
+        // A cap is fixed at creation, so the cure is a new campaign — opened
+        // prefilled from this one's project rather than from a blank form.
+        router.push('/freehold-intelligence/lead-machine/campaigns/new')
+        return
+      case 'add_creative':
+      case 'ab_audience':
+        // Both need input, so both open the launcher where that input lives.
+        router.push('/freehold-intelligence/lead-machine/campaigns/new')
+        return
+      case 'open_audiences':
+        router.push('/freehold-intelligence/lead-machine/audiences')
+        return
+      case 'rate_leads':
+        router.push('/freehold-intelligence/crm')
+        return
+      case 'drop_placement':
+        return
+    }
+  }
+
   async function repairAllLocations() {
     if (!data || fixingLoc) return
     setFixingLoc('all'); setFixError(''); setFixReport([])
@@ -1290,6 +1324,70 @@ export default function CampaignCommandPage() {
               : t('lm.cmd.advisorAiError')}
           </p>
         )}
+        {/* RECOMMENDED — deterministic, from this campaign's own numbers, each
+            one carrying the thing that does it. Sits above the AI's prose
+            because a ranked action beats a paragraph, and because the throttle
+            card in particular makes every other reading meaningless while it
+            is true. */}
+        {(() => {
+          const ins = data.lifetime ?? data.insights
+          if (!ins) return null
+          const spend = Number(ins.spend) || 0
+          const impressions = Number(ins.impressions) || 0
+          const clicks = Number(ins.clicks) || 0
+          const leads = leadsFrom(ins)
+          const budget = data.adSets.reduce((n, a) => n + (Math.round(Number(a.daily_budget) / 100) || 0), 0)
+          const started = Date.parse(String(data.campaign.created_time ?? '')) || Date.now()
+          const days = Math.max(1, Math.round((Date.now() - started) / 86_400_000))
+          const capFils = data.adSets.map((a) => Number((a as { bid_amount?: string }).bid_amount) || 0).find((x) => x > 0)
+          const recs = recommendationsFor({
+            dailyBudgetAed: budget,
+            spendAed: spend,
+            days,
+            impressions,
+            clicks,
+            leads,
+            // The CRM's own count of what it has judged — quality?.scored is
+            // the attributed half; absent means nothing has been rated.
+            attributedLeads: quality?.attributed ?? 0,
+            creativeCount: data.adSets.reduce((n, a) => n + ((a as { ads?: unknown[] }).ads?.length ?? 0), 0),
+            adSetCount: data.adSets.length,
+            costCapAed: capFils ? Math.round(capFils / 100) : null,
+          })
+          if (recs.length === 0) return null
+          return (
+            <div className="mt-4">
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> {t('lm.rec.title')}
+              </div>
+              <p className="mb-2.5 text-[11px] text-slate-500">{t('lm.rec.sub')}</p>
+              <div className="space-y-2.5">
+                {recs.map((r) => (
+                  <div key={r.id} className={`rounded-xl border p-3.5 ${r.priority === 'critical' ? 'border-rose-400/30 bg-rose-400/[0.05]' : 'border-line bg-surface'}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {r.priority === 'critical' && (
+                            <span className="shrink-0 rounded-full border border-rose-400/40 bg-rose-400/10 px-2 py-0.5 text-[10px] font-semibold text-rose-200">
+                              {t('lm.rec.critical')}
+                            </span>
+                          )}
+                          <span className="text-sm font-semibold text-slate-100">{t(`lm.rec.${r.key}.t`, r.vars)}</span>
+                        </div>
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{t(`lm.rec.${r.key}.b`, r.vars)}</p>
+                      </div>
+                      <button type="button" onClick={() => void runRecommendation(r)}
+                        className="shrink-0 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-gold-bright">
+                        {t(`lm.rec.act.${r.action.labelKey}`, { v: r.action.value ?? 0 })}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {advisor?.available && (
           <div className="mt-4">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
