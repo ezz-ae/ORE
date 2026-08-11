@@ -72,11 +72,6 @@ const OPENING_TRAIL: TrailEntry[] = [
 ]
 
 const num = (v: number) => Math.round(v).toLocaleString('en-US')
-/** Balance display, in the same "M tokens" unit the sender uses — the small,
- *  readable magnitude is the point: it's what makes "critically low" legible
- *  against a nine-figure consumed total. */
-const numM = (v: number) =>
-  (v / SEND_UNIT).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 export default function AiTokenControlPage() {
   const t = useT()
@@ -189,8 +184,8 @@ export default function AiTokenControlPage() {
                 </span>
               ) : null}
             </div>
-            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${critical ? 'text-red-400' : 'text-white'}`} dir="ltr">{numM(balance)}</div>
-            <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.amountUnit')}</div>
+            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${critical ? 'text-red-400' : 'text-white'}`} dir="ltr">{num(balance)}</div>
+            <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.tokens')}</div>
             {critical ? (
               <div className="mt-1 text-xs font-medium leading-relaxed text-red-400">{t('settings.tokens.criticalNote')}</div>
             ) : low ? (
