@@ -44,6 +44,7 @@ export type RecActionKind =
   | 'drop_placement'    // narrow to the surfaces that earn their money
   | 'open_audiences'    // build/attach a better audience
   | 'rate_leads'        // the CRM half of lead quality
+  | 'open_campaign'     // read Meta's own error, stated where it lives
 
 export interface RecAction {
   kind: RecActionKind
@@ -81,6 +82,19 @@ export interface CampaignFacts {
   adSetCount: number
   /** A per-result cost cap in AED, when one was set at launch. */
   costCapAed: number | null
+  /**
+   * META IS REFUSING TO DELIVER — a delivery error, a rejection, an ad set
+   * that cannot serve. Not "it is quiet": Meta's own verdict that this will
+   * not run.
+   *
+   * This outranks every other reading, and suppresses the ones that assume
+   * delivery. A live account showed "Not delivering · Delivery error" in Ads
+   * Manager while this panel advised RAISING THE BUDGET — advice about
+   * spending, on an ad nobody can see. Money advice on a dead ad is worse
+   * than silence: it sends the operator to do something expensive and
+   * useless while the real fault sits untouched.
+   */
+  deliveryBlocked?: boolean
 }
 
 /**
@@ -103,6 +117,21 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
   const perDay = f.spendAed / days
   const pace = f.dailyBudgetAed > 0 ? perDay / f.dailyBudgetAed : 1
   const ctr = f.impressions > 0 ? f.clicks / f.impressions : 0
+
+  // ── 0. META WILL NOT DELIVER THIS ────────────────────────────────────────
+  // Everything below assumes an ad that can be seen. When Meta says it
+  // cannot, the only honest recommendation is the error itself — and the
+  // rest are actively harmful, because they send the operator to spend more
+  // on something nobody is being shown. Returns immediately: this is not the
+  // first item in a list, it is the whole list.
+  if (f.deliveryBlocked) {
+    return [{
+      id: 'delivery_blocked',
+      priority: 'critical',
+      key: 'deliveryBlocked',
+      action: { kind: 'open_campaign', labelKey: 'seeError' },
+    }]
+  }
 
   // ── 1. THROTTLED DELIVERY — the money is not moving ──────────────────────
   // Ranked first because everything else is unreadable while it is true: a
@@ -217,11 +246,12 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
 /** Every action kind, walkable — the labels are rendered through a computed
  *  key, which `pnpm i18n` cannot see. */
 export const REC_ACTION_LABELS = [
-  'relaunch', 'audiences', 'openCrm', 'addDesign', 'raiseBudget', 'testAudience',
+  'relaunch', 'audiences', 'openCrm', 'addDesign', 'raiseBudget', 'testAudience', 'seeError',
 ] as const
 
 /** Every recommendation key, walkable, for the same reason. */
 export const REC_KEYS = [
+  'deliveryBlocked',
   'throttledByCap', 'throttled', 'rateLeads', 'creativeDepth',
   'weakCtr', 'budgetForLearning', 'abAudience',
 ] as const

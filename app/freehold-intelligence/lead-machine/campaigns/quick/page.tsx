@@ -28,8 +28,21 @@ import { Loader2, Zap, Upload, CheckCircle2, ArrowRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { getBrandSiteUrl } from '@/lib/freehold/brand'
 import { READY_BUYERS } from '@/lib/freehold/ready-buyers'
+import {
+  composeVariant, ensureAdFonts, loadImage, missingPayFields, PALETTES,
+  type LayoutKey, type Overlay,
+} from '@/lib/freehold/ad-compose'
 
-interface Project { id: string; projectName: string; heroImage?: string | null }
+interface Project {
+  id: string
+  projectName: string
+  heroImage?: string | null
+  area?: string
+  developer?: string
+  startingPriceAED?: number | null
+  paymentPlan?: string | null
+  handoverYear?: number | null
+}
 interface FormLite { id: string; name: string; page_id?: string }
 
 const PRESET = 'allArabicUAE'
@@ -60,8 +73,15 @@ export default function QuickLaunchPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const items = Array.isArray(d?.properties) ? d.properties : []
-        setProjects(items.map((x: { id?: string; slug?: string; projectName?: string; name?: string; heroImage?: string }) => ({
-          id: String(x.id ?? x.slug ?? ''), projectName: String(x.projectName ?? x.name ?? ''), heroImage: x.heroImage ?? null,
+        setProjects(items.map((x: Record<string, unknown>) => ({
+          id: String(x.id ?? x.slug ?? ''),
+          projectName: String(x.projectName ?? x.name ?? ''),
+          heroImage: (x.heroImage as string) ?? null,
+          area: (x.area as string) ?? '',
+          developer: (x.developer as string) ?? '',
+          startingPriceAED: typeof x.startingPriceAED === 'number' ? x.startingPriceAED : null,
+          paymentPlan: (x.paymentPlan as string) ?? null,
+          handoverYear: typeof x.handoverYear === 'number' ? x.handoverYear : null,
         })).filter((p: Project) => p.id && p.projectName))
       }).catch(() => {})
     fetch('/api/meta/forms', { cache: 'no-store' })
@@ -95,6 +115,78 @@ export default function QuickLaunchPage() {
         body: JSON.stringify({ image: shrunk }),
       }).then((r) => (r.ok ? r.json() : null)).then((c) => { if (c?.headline) setCaption(c) }).catch(() => {})
     } catch { setError(t('lm.quick.uploadFailed')) } finally { setUploading(false) }
+  }
+
+  /**
+   * COMPOSE A REAL AD FROM THE PROJECT'S OWN FACTS.
+   *
+   * Rocket used to hand Meta the project's hero RENDER with a generic
+   * sentence over it. That is a stock photo and a caption — not an ad. It
+   * had no headline band, no price block, no terms, none of what makes a
+   * Dubai property ad stop a thumb.
+   *
+   * The composition engine for exactly this already existed and nothing
+   * called it: `composeVariant` with the payment-plan layouts, modelled on
+   * the ads running in this market — the finance hook read first, the total
+   * price the largest thing on the page, the down payment in a badge over
+   * the render.
+   *
+   * EVERY NUMBER COMES FROM THE PROJECT ROW. The layout is chosen by what
+   * the project can actually support: a project with no price cannot carry
+   * a price-led layout, so it gets the one that leads on the name and the
+   * place instead. Nothing is invented to fill a slot — the same rule as
+   * every other number this product prints.
+   */
+  async function composeProjectAd(p: Project): Promise<string | null> {
+    try {
+      await ensureAdFonts()
+      const img = p.heroImage ? await loadImage(p.heroImage, true).catch(() => null) : null
+      const price = p.startingPriceAED && p.startingPriceAED > 0
+        ? Math.round(p.startingPriceAED).toLocaleString()
+        : ''
+      const overlay: Overlay = {
+        eyebrow: [p.area, p.developer].filter(Boolean).join(' · '),
+        headline: p.projectName,
+        price: price ? `AED ${price}` : '',
+        priceUnit: price ? t('lm.quick.compose.from') : '',
+        footnote: p.handoverYear ? t('lm.quick.compose.handover', { y: p.handoverYear }) : '',
+        // The payment family's fields, filled only where the project has them.
+        financeHook: p.paymentPlan || '',
+        totalPrice: price,
+        totalLabel: t('lm.quick.compose.total'),
+        terms: p.paymentPlan || '',
+      }
+      // Price + a payment plan earns the terms-led layout; a price alone
+      // earns the price-led one; neither earns the name-led one. The engine
+      // refuses a pay layout with a blank where a number belongs, so the
+      // choice is checked rather than hoped.
+      const wantsPay = !!(price && p.paymentPlan)
+      const layout: LayoutKey = wantsPay && missingPayFields('payBands', { ...overlay, downPct: '' }).length === 0
+        ? 'payBands'
+        : price ? 'heroPrice' : 'frame'
+      const palette = PALETTES[wantsPay ? 6 : 3]
+      return composeVariant(img, layout, palette, overlay, 'square')
+    } catch {
+      return null
+    }
+  }
+
+  /** Compose from the project, upload it, and show it — the moment a project
+   *  is chosen, so the operator SEES the ad before pressing Run. */
+  async function buildFromProject(p: Project) {
+    setUploading(true); setError('')
+    try {
+      const dataUrl = await composeProjectAd(p)
+      if (!dataUrl) return
+      const res = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(d?.error || t('lm.quick.uploadFailed')); return }
+      designDataUrl.current = dataUrl
+      setImageHash(d.hash); setImagePreview(dataUrl)
+    } finally { setUploading(false) }
   }
 
   async function shrink(dataUrl: string): Promise<string> {
@@ -184,7 +276,13 @@ export default function QuickLaunchPage() {
       <div className="space-y-4 rounded-[20px] border border-line bg-surface-2 p-5">
         <div>
           <label className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">{t('lm.quick.project')}</label>
-          <select value={projectId} onChange={(e) => setProjectId(e.target.value)}
+          <select value={projectId} onChange={(e) => {
+            setProjectId(e.target.value)
+            const p = projects.find((x) => x.id === e.target.value)
+            // An uploaded design is the operator's own and outranks anything
+            // the system would compose.
+            if (p && !designDataUrl.current) void buildFromProject(p)
+          }}
             className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-white outline-none focus:border-gold/40">
             <option value="">{t('lm.quick.projectNone')}</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.projectName}</option>)}
@@ -199,7 +297,8 @@ export default function QuickLaunchPage() {
             ? <img src={imagePreview} alt="" className="max-h-40 rounded-lg" />
             : <Upload className="h-5 w-5 text-slate-500" />}
           <span className="text-[13px] font-medium text-slate-300">
-            {uploading ? t('lm.quick.uploading') : imageHash ? t('lm.quick.replaceDesign') : t('lm.quick.dropDesign')}
+            {uploading ? (projectId && !designDataUrl.current ? t('lm.quick.composing') : t('lm.quick.uploading'))
+              : imageHash ? t('lm.quick.replaceDesign') : t('lm.quick.dropDesign')}
           </span>
           {caption && <span className="text-[11px] text-gold">{t('lm.quick.captionRead')}</span>}
           <input type="file" accept="image/*" className="hidden" disabled={uploading}
