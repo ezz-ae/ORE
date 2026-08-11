@@ -21,6 +21,7 @@ import CreativePoolPanel from '@/components/freehold/creative-pool-panel'
 import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { deliveryOf } from '@/lib/meta/delivery-status'
+import { headlineInsights } from '@/lib/meta/insights-window'
 
 // The campaign read attaches each ad set's ads; MetaAdSet carries them now,
 // so there is one definition of an ad's status instead of two that drift.
@@ -288,7 +289,7 @@ export default function CampaignCommandPage() {
     //
     // Falls back to the rolling window when Meta returns no lifetime figure,
     // which is better than an empty tile and is still a real number.
-    const ins = data?.lifetime ?? data?.insights
+    const ins = headlineInsights(data?.lifetime, data?.insights)
     const spend = Number(ins?.spend) || 0
     const impressions = Number(ins?.impressions) || 0
     const clicks = Number(ins?.clicks) || 0
@@ -1398,7 +1399,7 @@ export default function CampaignCommandPage() {
             card in particular makes every other reading meaningless while it
             is true. */}
         {(() => {
-          const ins = data.lifetime ?? data.insights
+          const ins = headlineInsights(data.lifetime, data.insights)
           if (!ins) return null
           const spend = Number(ins.spend) || 0
           const impressions = Number(ins.impressions) || 0
