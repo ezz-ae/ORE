@@ -28,10 +28,7 @@ import { Loader2, Zap, Upload, CheckCircle2, ArrowRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { getBrandSiteUrl } from '@/lib/freehold/brand'
 import { READY_BUYERS } from '@/lib/freehold/ready-buyers'
-import {
-  composeVariant, ensureAdFonts, loadImage, missingPayFields, PALETTES,
-  type LayoutKey, type Overlay,
-} from '@/lib/freehold/ad-compose'
+import { composeProjectAd } from '@/lib/freehold/project-ad'
 
 interface Project {
   id: string
@@ -117,66 +114,19 @@ export default function QuickLaunchPage() {
     } catch { setError(t('lm.quick.uploadFailed')) } finally { setUploading(false) }
   }
 
-  /**
-   * COMPOSE A REAL AD FROM THE PROJECT'S OWN FACTS.
-   *
-   * Rocket used to hand Meta the project's hero RENDER with a generic
-   * sentence over it. That is a stock photo and a caption — not an ad. It
-   * had no headline band, no price block, no terms, none of what makes a
-   * Dubai property ad stop a thumb.
-   *
-   * The composition engine for exactly this already existed and nothing
-   * called it: `composeVariant` with the payment-plan layouts, modelled on
-   * the ads running in this market — the finance hook read first, the total
-   * price the largest thing on the page, the down payment in a badge over
-   * the render.
-   *
-   * EVERY NUMBER COMES FROM THE PROJECT ROW. The layout is chosen by what
-   * the project can actually support: a project with no price cannot carry
-   * a price-led layout, so it gets the one that leads on the name and the
-   * place instead. Nothing is invented to fill a slot — the same rule as
-   * every other number this product prints.
-   */
-  async function composeProjectAd(p: Project): Promise<string | null> {
-    try {
-      await ensureAdFonts()
-      const img = p.heroImage ? await loadImage(p.heroImage, true).catch(() => null) : null
-      const price = p.startingPriceAED && p.startingPriceAED > 0
-        ? Math.round(p.startingPriceAED).toLocaleString()
-        : ''
-      const overlay: Overlay = {
-        eyebrow: [p.area, p.developer].filter(Boolean).join(' · '),
-        headline: p.projectName,
-        price: price ? `AED ${price}` : '',
-        priceUnit: price ? t('lm.quick.compose.from') : '',
-        footnote: p.handoverYear ? t('lm.quick.compose.handover', { y: p.handoverYear }) : '',
-        // The payment family's fields, filled only where the project has them.
-        financeHook: p.paymentPlan || '',
-        totalPrice: price,
-        totalLabel: t('lm.quick.compose.total'),
-        terms: p.paymentPlan || '',
-      }
-      // Price + a payment plan earns the terms-led layout; a price alone
-      // earns the price-led one; neither earns the name-led one. The engine
-      // refuses a pay layout with a blank where a number belongs, so the
-      // choice is checked rather than hoped.
-      const wantsPay = !!(price && p.paymentPlan)
-      const layout: LayoutKey = wantsPay && missingPayFields('payBands', { ...overlay, downPct: '' }).length === 0
-        ? 'payBands'
-        : price ? 'heroPrice' : 'frame'
-      const palette = PALETTES[wantsPay ? 6 : 3]
-      return composeVariant(img, layout, palette, overlay, 'square')
-    } catch {
-      return null
-    }
-  }
-
   /** Compose from the project, upload it, and show it — the moment a project
-   *  is chosen, so the operator SEES the ad before pressing Run. */
+   *  is chosen, so the operator SEES the ad before pressing Run. The composer
+   *  itself is shared with the campaign page's creative pool (see
+   *  lib/freehold/project-ad.ts), so both screens build the same ad from the
+   *  same project rather than drifting apart. */
   async function buildFromProject(p: Project) {
     setUploading(true); setError('')
     try {
-      const dataUrl = await composeProjectAd(p)
+      const dataUrl = await composeProjectAd(p, {
+        from: t('lm.quick.compose.from'),
+        total: t('lm.quick.compose.total'),
+        handover: (y) => t('lm.quick.compose.handover', { y }),
+      })
       if (!dataUrl) return
       const res = await fetch('/api/meta/adimages', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },

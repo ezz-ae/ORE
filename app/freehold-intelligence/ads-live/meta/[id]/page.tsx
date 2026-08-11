@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy, Lightbulb, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy, Lightbulb, RefreshCw, ShieldCheck, AlertCircle, Images } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { computeOverlaps } from '@/lib/meta/audience-overlap'
@@ -17,6 +17,8 @@ import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkCampaignSetup, setupProblemCount, surfaceLabels, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
 import { recommendationsFor, type Recommendation } from '@/lib/freehold/recommendations'
 import CampaignTrend from '@/components/freehold/campaign-trend'
+import CreativePoolPanel from '@/components/freehold/creative-pool-panel'
+import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 
@@ -106,6 +108,13 @@ export default function CampaignCommandPage() {
   const [fixingLoc, setFixingLoc] = useState('')
   const [fixError, setFixError] = useState('')
   const [fixReport, setFixReport] = useState<string[]>([])
+  /**
+   * THE CREATIVE POOL — opened either from an ad set row ("add ads here") or
+   * from the recommendation that named an ad set. A string id means "aimed at
+   * that ad set"; the empty string means "open it and let me choose"; null is
+   * closed.
+   */
+  const [poolFor, setPoolFor] = useState<string | null>(null)
 
   /**
    * REPAIR EVERY AD SET'S LOCATION TARGETING.
@@ -132,9 +141,21 @@ export default function CampaignCommandPage() {
         // prefilled from this one's project rather than from a blank form.
         router.push('/freehold-intelligence/lead-machine/campaigns/new')
         return
+      case 'add_from_pool':
+        // The rule named the ad set carrying the spend; the pool opens aimed
+        // at it, so the new ads cannot land in the one that was switched off.
+        setPoolFor(r.action.targetId ?? '')
+        return
       case 'add_creative':
+        // Same advice without an ad set attached — the pool opens and asks.
+        // It is strictly better than the launcher here: it already holds this
+        // campaign's project photos, the Library and an upload tile, and it
+        // adds ads to the EXISTING ad set instead of starting a campaign
+        // nobody asked for.
+        setPoolFor('')
+        return
       case 'ab_audience':
-        // Both need input, so both open the launcher where that input lives.
+        // A second audience is a new ad set, which is the launcher's job.
         router.push('/freehold-intelligence/lead-machine/campaigns/new')
         return
       case 'open_audiences':
@@ -915,6 +936,21 @@ export default function CampaignCommandPage() {
                           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                         </button>
                       </div>
+                      {/* ADD ADS HERE — the pool, aimed at THIS ad set.
+                          Adding a design to an ad set that already works is
+                          the cheapest move on this page: it enters another
+                          auction at the same cost per thousand, and it is the
+                          only way an ad set short of a rotation stops showing
+                          one picture to the same people. It sits beside the
+                          on/off control because it is the same kind of thing —
+                          a change to what this ad set does, made here, rather
+                          than a trip to a launcher that would start a campaign
+                          nobody asked for. */}
+                      <button type="button" onClick={() => setPoolFor(a.id)}
+                        title={t('lm.cmd.addAdsHint', { target: MIN_ADS_FOR_ROTATION })}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-gold/40 hover:text-white">
+                        <Images className="h-3.5 w-3.5" /> {t('lm.cmd.addAds')}
+                      </button>
                       {/* THE CONTROL THAT WAS MISSING — turn this ad set on or off. */}
                       <button type="button"
                         onClick={() => setAdSetStatus(a, adSetLive ? 'PAUSED' : 'ACTIVE')}
@@ -1394,13 +1430,20 @@ export default function CampaignCommandPage() {
             // campaign total is an average of audiences that describes none
             // of them.
             adSets: data.adSets.map((a) => {
-              const m = (a as { spendAED?: number; impressions?: number; leads?: number })
+              const m = (a as { spendAED?: number; impressions?: number; leads?: number; ads?: Array<{ status?: string }> })
               return {
                 id: a.id,
                 name: a.name,
                 spendAed: Number(m.spendAED) || 0,
                 impressions: Number(m.impressions) || 0,
                 leads: Number(m.leads) || 0,
+                // ADS THAT CAN ACTUALLY BE SHOWN, not every ad that exists.
+                // The campaign-level count above includes paused ads and the
+                // ads under a switched-off ad set — which is exactly the
+                // miscount that let a campaign read "2 designs" while the ad
+                // set carrying the whole budget ran one.
+                liveAds: (m.ads ?? []).filter((ad) => ad.status === 'ACTIVE').length,
+                active: a.status === 'ACTIVE',
               }
             }),
           })
@@ -1589,6 +1632,25 @@ export default function CampaignCommandPage() {
           </button>
         )}
       </section>
+
+      {/* THE CREATIVE POOL. Opened from an ad set row or from the rule that
+          named one. Reloads the campaign on success so the new ads appear in
+          the ad set list they were just added to — a created ad that is not
+          visible on the screen that created it reads as nothing happening. */}
+      {poolFor !== null && data && (
+        <CreativePoolPanel
+          campaignId={id}
+          initialAdSetId={poolFor || undefined}
+          adSets={data.adSets.map((a) => ({
+            id: a.id,
+            name: a.name,
+            liveAds: (a.ads ?? []).filter((ad) => ad.status === 'ACTIVE').length,
+            active: a.status === 'ACTIVE',
+          }))}
+          onClose={() => setPoolFor(null)}
+          onCreated={() => void load({ silent: true })}
+        />
+      )}
     </div>
   )
 }

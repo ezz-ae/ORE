@@ -31,6 +31,7 @@
  *
  * Pure — no I/O, no model. Runs in `pnpm guards`.
  */
+import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 
 export type RecPriority = 'critical' | 'recommended'
 
@@ -39,7 +40,8 @@ export type RecPriority = 'critical' | 'recommended'
 export type RecActionKind =
   | 'set_budget'        // apply a specific daily budget (through safeBudgetStep)
   | 'relaunch_no_cap'   // open the launcher prefilled; the cap cannot be edited
-  | 'add_creative'      // form: upload another design into this ad set
+  | 'add_creative'      // open the creative pool for the campaign (no ad set picked)
+  | 'add_from_pool'     // open the creative pool AIMED at one ad set (targetId)
   | 'ab_audience'       // form: duplicate this campaign against a second audience
   | 'open_audiences'    // build/attach a better audience
   | 'rate_leads'        // the CRM half of lead quality
@@ -117,6 +119,18 @@ export interface CampaignFacts {
     spendAed: number
     impressions: number
     leads: number
+    /**
+     * ADS THAT CAN ACTUALLY BE SHOWN in this ad set — not every ad that exists
+     * under it. The campaign-level `creativeCount` counts paused ads and ads
+     * in switched-off ad sets, so a campaign whose losing ad set was just
+     * turned off still reads "2 designs" while the ad set carrying the entire
+     * budget has one. That miscount is the whole reason the rotation rule
+     * reads per ad set rather than per campaign.
+     */
+    liveAds?: number
+    /** False when the ad set itself is paused — a paused ad set is not where
+     *  new ads belong, however short of a rotation it is. */
+    active?: boolean
   }>
 }
 
@@ -196,12 +210,71 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
     })
   }
 
+  // ── 2b. THE WORKING AD SET IS SHORT OF A ROTATION ────────────────────────
+  //
+  // The live case this rule was written from. An operator switched off the ad
+  // set that was paying six times the price for nothing and moved its budget
+  // to the one that converts. That left the whole spend on ONE design, which
+  // is where a campaign stops finding new people: with nothing to choose
+  // between, Meta shows the same picture to the same audience until frequency
+  // climbs and the ad set stalls short of the fifty weekly events that end
+  // the learning phase.
+  //
+  // More budget does not fix that — the price was already good. More ads
+  // does: each one is another entry in the auction and another chance for
+  // someone to stop scrolling, at the same cost per thousand.
+  //
+  // READ PER AD SET, NEVER PER CAMPAIGN. Meta's learning phase is an ad-set
+  // property, and the campaign-level ad count includes the ads under the ad
+  // set that was just switched off. The rule aims at the ad set carrying the
+  // spend, and names it, because "add more designs" without saying where is
+  // how a new ad lands in the one that was stopped for good reason.
+  //
+  // Ranked above the two creative cards below and suppressing them, because
+  // it is the same advice with the ad set attached — and three cards saying
+  // "add a design" is how a panel stops being read.
+  const workers = (f.adSets ?? []).filter(
+    (a) => a.active !== false && typeof a.liveAds === 'number' && a.spendAed > 0,
+  )
+  const worker = workers.length > 0
+    ? workers.reduce((a, b) => (a.spendAed >= b.spendAed ? a : b))
+    : null
+  const workerWeeklyLeads = worker ? (worker.leads / days) * 7 : 0
+  const shortOfRotation = !!worker
+    && pace >= THROTTLED_PACE
+    && worker.impressions >= MIN_IMPRESSIONS_TO_JUDGE
+    && workerWeeklyLeads < LEARNING_EVENTS_WEEKLY
+    && (worker.liveAds ?? 0) < MIN_ADS_FOR_ROTATION
+
+  if (shortOfRotation && worker) {
+    const have = worker.liveAds ?? 0
+    out.push({
+      id: 'learning_needs_ads',
+      priority: 'recommended',
+      key: 'learningNeedsAds',
+      vars: {
+        adSet: worker.name,
+        ads: have,
+        add: MIN_ADS_FOR_ROTATION - have,
+        target: MIN_ADS_FOR_ROTATION,
+        perWeek: Math.round(workerWeeklyLeads),
+        need: LEARNING_EVENTS_WEEKLY,
+      },
+      action: {
+        kind: 'add_from_pool',
+        labelKey: 'openPool',
+        targetId: worker.id,
+        value: MIN_ADS_FOR_ROTATION - have,
+      },
+    })
+  }
+
   // ── 3. ONE CREATIVE CARRYING A NARROW AUDIENCE ───────────────────────────
   // Narrow targeting plus a single design is how CPM climbs and frequency
   // burns: Meta has one thing to show and no way to find a better fit. Only
   // said once there is enough delivery for the claim to be about this
   // campaign rather than about advertising in general.
-  if (f.creativeCount <= 1 && f.impressions >= MIN_IMPRESSIONS_TO_JUDGE) {
+  if (!shortOfRotation && f.creativeCount <= 1 && f.impressions >= MIN_IMPRESSIONS_TO_JUDGE) {
     out.push({
       id: 'creative_depth',
       priority: 'recommended',
@@ -216,7 +289,7 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
   // is the variable — not the audience, which is being reached and ignoring
   // it. Same action as depth, different reason, so it is stated separately
   // and only when the depth card is not already saying it.
-  if (ctr > 0 && ctr < 0.005 && f.impressions >= MIN_IMPRESSIONS_TO_JUDGE && f.creativeCount > 1) {
+  if (!shortOfRotation && ctr > 0 && ctr < 0.005 && f.impressions >= MIN_IMPRESSIONS_TO_JUDGE && f.creativeCount > 1) {
     out.push({
       id: 'weak_ctr',
       priority: 'recommended',
@@ -309,12 +382,12 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
  *  key, which `pnpm i18n` cannot see. */
 export const REC_ACTION_LABELS = [
   'relaunch', 'audiences', 'openCrm', 'addDesign', 'raiseBudget', 'testAudience', 'seeError',
-  'pauseAdSet',
+  'pauseAdSet', 'openPool',
 ] as const
 
 /** Every recommendation key, walkable, for the same reason. */
 export const REC_KEYS = [
   'deliveryBlocked', 'expensiveAdSet',
-  'throttledByCap', 'throttled', 'rateLeads', 'creativeDepth',
+  'throttledByCap', 'throttled', 'rateLeads', 'learningNeedsAds', 'creativeDepth',
   'weakCtr', 'budgetForLearning', 'abAudience',
 ] as const

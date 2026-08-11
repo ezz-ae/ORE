@@ -36,6 +36,28 @@ export async function recordCampaignProject(campaignId: string, projectSlug: str
   } catch { /* best-effort link */ }
 }
 
+/**
+ * The project a campaign belongs to — the same link table read backwards.
+ *
+ * The forward direction (project → campaigns) is what the router needed. The
+ * creative pool needs the other one: standing on a campaign page, which
+ * project's photographs, brochure and payment plan are the material for this
+ * campaign's next ad. Null for a campaign launched without a listing (form ads
+ * carry the reserved slug 'general', which is not a project).
+ */
+export async function getProjectSlugForCampaign(campaignId: string): Promise<string | null> {
+  if (!campaignId) return null
+  try {
+    await ensureOnce()
+    const rows = await query<{ project_slug: string }>(
+      `SELECT project_slug FROM meta_campaign_projects WHERE campaign_id = $1 LIMIT 1`,
+      [campaignId],
+    )
+    const slug = rows[0]?.project_slug ?? ''
+    return slug && slug !== 'general' ? slug : null
+  } catch { return null }
+}
+
 /** Campaign ids known to belong to a project. */
 export async function getCampaignIdsForProject(projectSlug: string): Promise<Set<string>> {
   const ids = new Set<string>()
