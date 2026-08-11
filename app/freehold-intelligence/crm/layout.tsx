@@ -12,6 +12,7 @@ import { useSession } from '@/lib/freehold/use-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
 import { AddLeadModal } from './_components/AddLeadModal'
+import PullFormsButton from './_components/PullFormsButton'
 
 // CRM sub-pages a broker may access (their own daily work). Everything else
 // (assignment, agents, reports, duplicates, pipeline, activity) is management-only.
@@ -141,6 +142,12 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          {/* Pull the instant-form leads Meta holds. In the LAYOUT, so every
+              CRM screen carries it — a lead sitting at Meta is invisible to
+              the board, the follow-up queue, the ratings that steer delivery
+              and the value write-back. It also runs itself once per session:
+              the webhook is the primary path and this is the net under it. */}
+          <PullFormsButton onDone={() => router.refresh()} />
           <button
             onClick={() => setAddLeadOpen(true)}
             className="flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:border-gold/30 hover:text-white"
