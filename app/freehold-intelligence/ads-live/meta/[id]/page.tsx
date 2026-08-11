@@ -16,6 +16,7 @@ import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { checkCampaignSetup, setupProblemCount, surfaceLabels, type AdSetForCheck } from '@/lib/freehold/campaign-setup-check'
 import { recommendationsFor, type Recommendation } from '@/lib/freehold/recommendations'
+import CampaignTrend from '@/components/freehold/campaign-trend'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 
@@ -145,8 +146,6 @@ export default function CampaignCommandPage() {
       case 'open_campaign':
         // Meta's words are already on this page, above everything else.
         window.scrollTo({ top: 0, behavior: 'smooth' })
-        return
-      case 'drop_placement':
         return
     }
   }
@@ -1040,6 +1039,10 @@ export default function CampaignCommandPage() {
           </section>
         )
       })()}
+
+      {/* THE SHAPE OVER TIME. Totals answer "how much" and hide "which way" —
+          the same average hides a campaign getting cheaper and one dying. */}
+      <CampaignTrend campaignId={id} />
 
       {/* WHO THIS REACHES — the live target read back from Meta, as facts in
           rows: place, residents or visitors, age, gender, the signals, the
