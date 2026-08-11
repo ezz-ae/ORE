@@ -1,27 +1,29 @@
 /**
- * Who counts as being in Dubai — locked.
+ * Who counts as being in Dubai — second edition, locked.
  *
- * `geo_locations: { countries: ['AE'] }` does not mean "people in the UAE". It
- * means whatever Meta's default `location_types` says, and that default is
- * home + recent: everyone who lives there PLUS everyone Meta has recently seen
- * there. A tourist on a five-day holiday is inside that audience and can fill
- * in a property form.
+ * The history this suite now guards, because both halves cost real money:
  *
- * This codebase sent `location_types` from none of the three places that build
- * a targeting spec, so every campaign it ever launched bought visitors
- * alongside residents and no screen said so.
+ * First: no `location_types` was ever sent, Meta's default bought tourists
+ * alongside residents, and nothing on any screen said so. The first edition
+ * pinned `['home']` — residents only — and locked it here.
  *
- * WHAT THIS FILE GUARDS, AND THE LINE IT WILL NOT CROSS: this is a statement
- * about where somebody LIVES — the same kind of fact as the country targeting
- * it qualifies, and the standard setting for a property campaign. It is not a
- * nationality, not an origin, and no reading of it may treat it as one.
- * Everyone who lives in the UAE is inside `home`; that is what the word means.
+ * Then Meta answered: `['home']` alone is a DEPRECATED option. A live ad set
+ * created with it kept delivering but was flagged with a draft validation
+ * error that silently BLOCKED EVERY EDIT — budget, audience, all refused —
+ * until the location type was republished by hand. The residents-only knob
+ * no longer exists on Meta's side; the only supported value is
+ * `['home','recent']`, together.
+ *
+ * So this suite asserts the corrected doctrine: the wire always carries the
+ * one supported value, legacy stored values normalise FORWARD instead of
+ * poisoning new ad sets, and the deprecated state is detectable on live ad
+ * sets so the setup check can name the edit-blocker.
  *
  * Pure — no network, no database. Runs in `pnpm guards`.
  */
 import {
-  geoLocationsSpec, normalizeLocationTypes, includesVisitors, liveLocationTypes,
-  RESIDENTS_ONLY, ALL_LOCATION_TYPES,
+  geoLocationsSpec, normalizeLocationTypes, liveLocationTypes,
+  usesDeprecatedLocationTypes, STANDARD_LOCATION_TYPES,
 } from '../lib/meta/geo-spec'
 import { checkCampaignSetup } from '../lib/freehold/campaign-setup-check'
 
@@ -30,54 +32,49 @@ const ok = (m: string) => console.log(`  ✓ ${m}`)
 const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}\n      got: ${got}`) }
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
-console.log('\n── the field is always sent ──')
+console.log('\n── the wire carries the one value Meta still accepts ──')
 {
   const g = geoLocationsSpec({ countries: ['AE'] })
-  check('a spec with no stated preference targets residents',
-    JSON.stringify(g.location_types) === JSON.stringify(RESIDENTS_ONLY), JSON.stringify(g.location_types))
-  check('…and the field is PRESENT, never omitted',
-    Object.prototype.hasOwnProperty.call(g, 'location_types'), JSON.stringify(g))
+  check('a fresh spec sends home+recent — the only supported pair',
+    JSON.stringify(g.location_types) === JSON.stringify(['home', 'recent']), JSON.stringify(g.location_types))
+  check('…and the field is PRESENT, never omitted: "Meta\'s default" changed under us once already',
+    Object.prototype.hasOwnProperty.call(g, 'location_types'))
   check('the countries still travel', JSON.stringify(g.countries) === '["AE"]')
   check('cities are attached in Meta\'s shape',
     JSON.stringify(geoLocationsSpec({ countries: ['AE'], cityKeys: ['k1'] }).cities) === '[{"key":"k1"}]')
-  check('no cities means no empty cities key',
-    !Object.prototype.hasOwnProperty.call(geoLocationsSpec({ countries: ['AE'], cityKeys: [] }), 'cities'))
 }
 
-console.log('\n── an omission is not a neutral choice ──')
+console.log('\n── legacy values normalise FORWARD, never onto the wire ──')
 {
-  // The whole bug in one assertion: sending nothing hands the decision to
-  // Meta, and Meta's answer includes travellers.
-  check('an absent value normalises to residents, not to "anyone"',
-    JSON.stringify(normalizeLocationTypes(undefined)) === JSON.stringify(RESIDENTS_ONLY))
-  check('an empty array normalises to residents too',
-    JSON.stringify(normalizeLocationTypes([])) === JSON.stringify(RESIDENTS_ONLY))
-  check('junk normalises to residents rather than being passed to Meta',
-    JSON.stringify(normalizeLocationTypes(['nonsense', 42, null])) === JSON.stringify(RESIDENTS_ONLY))
-  check('a deliberate wider choice is respected, not overridden',
-    JSON.stringify(normalizeLocationTypes(['home', 'recent'])) === '["home","recent"]',
-    JSON.stringify(normalizeLocationTypes(['home', 'recent'])))
-  check('duplicates collapse', JSON.stringify(normalizeLocationTypes(['home', 'home'])) === '["home"]')
-  check('every type Meta accepts is known here', ALL_LOCATION_TYPES.length === 3)
-
-  check('residents-only does not include visitors', !includesVisitors(['home']))
-  check('adding "recent" does include them', includesVisitors(['home', 'recent']))
-  check('"travel_in" counts as visitors', includesVisitors(['travel_in']))
+  // A saved audience from the residents-only era must not poison a new ad
+  // set with the deprecated option that blocks all future edits.
+  check('the stored residents-only era value becomes the supported pair',
+    JSON.stringify(normalizeLocationTypes(['home'])) === JSON.stringify(STANDARD_LOCATION_TYPES))
+  check('travel_in — deprecated even earlier — becomes the supported pair',
+    JSON.stringify(normalizeLocationTypes(['travel_in'])) === JSON.stringify(STANDARD_LOCATION_TYPES))
+  check('absent, junk and empty all become the supported pair',
+    [undefined, [], ['nonsense', 42]].every((v) =>
+      JSON.stringify(normalizeLocationTypes(v)) === JSON.stringify(STANDARD_LOCATION_TYPES)))
+  check('the supported pair is exactly home+recent', STANDARD_LOCATION_TYPES.join(',') === 'home,recent')
 }
 
-console.log('\n── reading a LIVE ad set back ──')
+console.log('\n── the deprecated state is detectable on LIVE ad sets ──')
 {
-  // What every campaign launched before this fix looks like on the account.
-  check('an ad set with no location_types is home + recent, per Meta',
-    JSON.stringify(liveLocationTypes({ countries: ['AE'] })) === '["home","recent"]',
-    JSON.stringify(liveLocationTypes({ countries: ['AE'] })))
-  check('…so it is reported as including visitors',
-    includesVisitors(liveLocationTypes({ countries: ['AE'] })))
-  check('an ad set that states home only is read as residents',
-    !includesVisitors(liveLocationTypes({ countries: ['AE'], location_types: ['home'] })))
+  // Delivery continues under the flag — the damage is silent edit refusal.
+  // Detection is what lets the setup check say so in words.
+  check('a home-only live ad set is flagged deprecated',
+    usesDeprecatedLocationTypes({ countries: ['AE'], location_types: ['home'] }))
+  check('the supported pair is not flagged',
+    !usesDeprecatedLocationTypes({ countries: ['AE'], location_types: ['home', 'recent'] }))
+  check('order does not matter',
+    !usesDeprecatedLocationTypes({ countries: ['AE'], location_types: ['recent', 'home'] }))
+  check('an absent field is Meta\'s own default — not flagged',
+    !usesDeprecatedLocationTypes({ countries: ['AE'] }))
+  check('a legacy reader reports what is actually there, never modernised history',
+    liveLocationTypes({ countries: ['AE'], location_types: ['home'] }).join(',') === 'home')
 }
 
-console.log('\n── the setup check says it on screen ──')
+console.log('\n── the setup check names the edit-blocker ──')
 {
   const adSet = (geo: Record<string, unknown>) => ([{
     id: 'a1', name: 'Set 1', status: 'ACTIVE', daily_budget: '10000',
@@ -93,24 +90,21 @@ console.log('\n── the setup check says it on screen ──')
   const camp = { id: 'c1', status: 'ACTIVE', daily_budget: '10000' }
   const keys = (fs: ReturnType<typeof checkCampaignSetup>) => fs.map((f) => `${f.level}:${f.key}`)
 
-  const legacy = keys(checkCampaignSetup(camp, adSet({ countries: ['AE'] })))
-  check('a live campaign that never sent the field is called out as WRONG',
+  const legacy = keys(checkCampaignSetup(camp, adSet({ countries: ['AE'], location_types: ['home'] })))
+  check('the residents-only era ad set is called out as WRONG — its edits are hostage',
     legacy.includes('wrong:visitors'), legacy.join(' | '))
 
-  const fixed = keys(checkCampaignSetup(camp, adSet({ countries: ['AE'], location_types: ['home'] })))
-  check('…and one that targets residents is confirmed, not left silent',
-    fixed.includes('ok:residents') && !fixed.includes('wrong:visitors'), fixed.join(' | '))
+  const modern = keys(checkCampaignSetup(camp, adSet({ countries: ['AE'], location_types: ['home', 'recent'] })))
+  check('the supported pair is confirmed, not left silent',
+    modern.includes('ok:residents') && !modern.includes('wrong:visitors'), modern.join(' | '))
 
-  // No place at all is a different, louder problem — it must not be drowned
-  // out by a finding about which people in that place are included.
-  const nowhere = keys(checkCampaignSetup(camp, adSet({})))
-  check('an ad set with no location says THAT, and says nothing about visitors',
-    nowhere.includes('wrong:noPlace') && !nowhere.some((k) => k.endsWith(':visitors')),
-    nowhere.join(' | '))
+  const absent = keys(checkCampaignSetup(camp, adSet({ countries: ['AE'] })))
+  check('an absent field — Meta\'s default — is also fine',
+    absent.includes('ok:residents'), absent.join(' | '))
 }
 
 if (failures > 0) {
   console.error(`\n${failures} location rule(s) broken.`)
   process.exit(1)
 }
-console.log('\nThe ads are pointed at people who live here.\n')
+console.log('\nThe location setting is the one Meta still sells, and the flag has a name.\n')

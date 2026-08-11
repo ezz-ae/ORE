@@ -872,9 +872,15 @@ export default function CampaignCommandPage() {
           calls a broken campaign healthy, which is exactly the complaint that
           added it: "the campaign has an error in Meta, not in the platform." */}
       {(() => {
-        const issues = data.adSets.flatMap((a) =>
-          (a.issues_info ?? []).map((i) => ({ where: a.name, text: i.error_summary || i.error_message || '' }))
-        ).filter((x) => x.text)
+        // Both levels: Meta hangs refusals on the AD as often as on the ad
+        // set — an ad-level targeting or policy fault leaves the ad set's own
+        // issues_info empty, which is how an error visible in Ads Manager
+        // stayed invisible here for a day.
+        const issues = data.adSets.flatMap((a) => [
+          ...(a.issues_info ?? []).map((i) => ({ where: a.name, text: i.error_summary || i.error_message || '' })),
+          ...((a as AdSetRow & { ads?: Array<{ name: string; issues_info?: Array<{ error_summary?: string; error_message?: string }> }> }).ads ?? [])
+            .flatMap((ad) => (ad.issues_info ?? []).map((i) => ({ where: ad.name, text: i.error_summary || i.error_message || '' }))),
+        ]).filter((x) => x.text)
         if (issues.length === 0) return null
         return (
           <section className="mt-8 rounded-2xl border border-rose-400/40 bg-rose-400/[0.08] p-5">

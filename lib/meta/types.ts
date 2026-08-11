@@ -128,6 +128,10 @@ export interface MetaAd {
   /** The status that decides whether this ad can actually be served. */
   effective_status?: string
   creative?: MetaAdCreative
+  /** Meta's own refusals on THIS ad — a rejection or targeting fault lives
+   *  here while status still reads ACTIVE. Same field, same reason, as on
+   *  the ad set. */
+  issues_info?: Array<{ error_code?: number; error_summary?: string; error_message?: string; level?: string }>
 }
 
 export interface MetaApiErrorDetail {
