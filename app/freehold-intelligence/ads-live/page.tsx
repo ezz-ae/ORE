@@ -51,10 +51,17 @@ export default function AdsLivePage() {
     let googleOk = false
     const today = todayGst()
 
-    // Meta
+    // Meta. The lead counts ride alongside rather than after: they come from
+    // OUR database, not Meta's, so there is no reason to make the screen wait
+    // for one before asking the other.
+    const [metaRes, countsRes] = await Promise.all([
+      fetch('/api/meta/campaigns', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/freehold/ads/lead-counts', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ])
+    const counts = (countsRes?.counts ?? {}) as Record<string, { attributed: number; rated: number }>
+
     try {
-      const r = await fetch('/api/meta/campaigns', { cache: 'no-store' })
-      const d = r.ok ? await r.json() : null
+      const d = metaRes
       if (d && !d.demo) {
         metaOk = true
         for (const c of (d.campaigns ?? [])) {
@@ -73,10 +80,13 @@ export default function AdsLivePage() {
               deliveryBlocked: Array.isArray(c?.issues_info) && c.issues_info.length > 0,
               spendAed: spend,
               leads,
-              // The cheap list read does not count these. NULL, never zero —
-              // a screen that cannot tell "none" from "not asked" invents
-              // faults on every row.
-              ratedLeads: null,
+              // A campaign PRESENT in the counts with zero rated leads is a
+              // measurement; one absent has not been counted, and stays null
+              // so the row makes no claim. The distinction is the whole
+              // reason ratedLeads is nullable.
+              ratedLeads: counts[String(c.id ?? '')]?.rated ?? null,
+              // Still null: counting live ads is a Graph call per campaign,
+              // and the zoom does it for the row an operator actually opens.
               liveAds: null,
               impressions,
               clicks: Number(ins?.clicks) || 0,

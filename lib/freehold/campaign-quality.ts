@@ -1,6 +1,7 @@
 import { query } from '@/lib/db'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { QUALIFIED_STATUSES, WON_STATUSES } from '@/lib/freehold/lead-stages'
+import { bucketLeadsByCampaign, type CampaignRef, type LeadCounts } from '@/lib/freehold/lead-attribution'
 
 /**
  * Live lead-QUALITY score for a Meta campaign — computed from OUR CRM funnel
@@ -211,4 +212,68 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     avgBehaviour, behaviourCount,
     valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
   }
+}
+
+/**
+ * LEAD COUNTS FOR A WHOLE LIST, IN ONE QUERY.
+ *
+ * getCampaignQuality above is the deep read: one campaign, its funnel, its
+ * duplicates, its behaviour scores, who the leads are. Right for a campaign
+ * page, wrong for a list — ten campaigns meant ten round trips, so the live
+ * screen never asked, and "2 leads, none rated" could not be said on the
+ * screen where an operator actually stands.
+ *
+ * This is the shallow read: how many leads, and how many of them a person has
+ * rated. One query for every campaign, bucketed by the rule in
+ * lib/freehold/lead-attribution.ts — the id wins over the name, and a lead
+ * belongs to exactly one campaign or to none.
+ *
+ * Returns an empty map rather than throwing: a live screen that loses its
+ * rating counts still shows delivery, spend and leads, and the signal that
+ * reads them is built to stay silent on an unknown rather than invent a fault.
+ */
+export async function getLeadCountsForCampaigns(
+  campaigns: CampaignRef[],
+): Promise<Map<string, LeadCounts>> {
+  if (campaigns.length === 0) return new Map()
+  const ids = campaigns.map((c) => String(c.id ?? '').trim()).filter(Boolean)
+  const names = campaigns.map((c) => String(c.name ?? '').trim().toLowerCase()).filter(Boolean)
+  if (ids.length === 0) return new Map()
+
+  type Row = { id: string; utm_id: string | null; utm_campaign: string | null; value_rating: number | null }
+  let rows: Row[] = []
+  try {
+    rows = await query<Row>(
+      `SELECT id, utm_id, utm_campaign, value_rating
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE
+          AND ( utm_id = ANY($1) OR lower(utm_campaign) = ANY($2) )`,
+      [ids, names],
+    )
+  } catch {
+    // value_rating is created lazily by the rating feature. Ensure it and
+    // retry once with the REAL data before degrading — the same failure that
+    // once made a tenant with rated leads report "nobody rated".
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
+    try {
+      rows = await query<Row>(
+        `SELECT id, utm_id, utm_campaign, value_rating
+           FROM freehold_site_leads
+          WHERE archived IS NOT TRUE
+            AND ( utm_id = ANY($1) OR lower(utm_campaign) = ANY($2) )`,
+        [ids, names],
+      )
+    } catch { return new Map() }
+  }
+
+  // Same integrity filter the deep read applies: a lead caught in a queue-purge
+  // burst carries an untrustworthy status and must not count as a judgment.
+  const untrusted = await getUntrustedLeadIds().catch(() => new Set<string>())
+
+  return bucketLeadsByCampaign(
+    rows
+      .filter((r) => !untrusted.has(r.id))
+      .map((r) => ({ id: r.id, utmId: r.utm_id, utmCampaign: r.utm_campaign, valueRating: r.value_rating })),
+    campaigns,
+  )
 }
