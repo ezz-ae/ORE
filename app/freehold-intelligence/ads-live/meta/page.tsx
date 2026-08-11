@@ -8,6 +8,36 @@ import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { deliveryOf } from '@/lib/meta/delivery-status'
+import { daysBetween, STALE_AFTER_DAYS } from '@/lib/freehold/live-signals'
+
+/**
+ * WHAT META IS DOING, not what somebody asked for.
+ *
+ * This table said "Active" or "Paused" and nothing else — so a campaign in
+ * review, one whose ad was rejected, one past its schedule and one Meta was
+ * refusing to deliver all read as Active, and everything that was not ACTIVE
+ * read as Paused. Same reading as the campaign page and the live screen, so
+ * one campaign cannot describe itself three ways in three places.
+ */
+function readOf(r: { active: boolean; effectiveStatus?: string; blocked: boolean; impressions: number }) {
+  if (r.blocked) return { state: 'issue' as const, tone: 'bad' as const }
+  return deliveryOf({
+    effectiveStatus: r.effectiveStatus,
+    status: r.active ? 'ACTIVE' : 'PAUSED',
+    impressions: r.impressions,
+  })
+}
+
+const TONE: Record<string, string> = {
+  good:    'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+  working: 'border-sky-400/30 bg-sky-400/10 text-sky-300',
+  bad:     'border-rose-400/30 bg-rose-400/10 text-rose-200',
+  idle:    'border-line-strong bg-surface-2 text-slate-400',
+}
+const DOT: Record<string, string> = {
+  good: 'bg-emerald-400', working: 'bg-sky-400', bad: 'bg-rose-400', idle: 'bg-slate-500',
+}
 
 const META_BLUE = '#1877F2'
 
@@ -19,9 +49,20 @@ const META_BLUE = '#1877F2'
 interface Row {
   id: string
   name: string
+  /** The switch somebody flipped. Used for the toggle and the filter — never
+   *  for the badge, which must say what META is doing. */
   active: boolean
+  /** Meta's own verdict, which is the one that decides whether it runs. */
+  effectiveStatus?: string
+  /** Meta has a fault on this campaign; it will not deliver until it clears. */
+  blocked: boolean
+  /** The last day Meta has numbers for. An ACTIVE campaign whose data stops
+   *  days ago is not delivering, whatever its badge says. */
+  dataThrough: string | null
   objective: string
-  dailyBudget: number // AED
+  /** Null when the budget lives on the AD SETS, which is where this product
+   *  puts it — see the budget cell for why a dash was the wrong answer. */
+  dailyBudget: number | null
   spend: number
   impressions: number
   clicks: number
@@ -38,12 +79,20 @@ function toRow(c: MetaCampaign & { insights?: MetaInsights | null }): Row {
   const impressions = Number(c.insights?.impressions) || 0
   const clicks = Number(c.insights?.clicks) || 0
   const leads = leadsFrom(c.insights)
+  const budgetFils = c.daily_budget ? Number(c.daily_budget) : 0
+  const issues = (c as { issues_info?: unknown[] }).issues_info
   return {
     id: c.id,
     name: c.name,
     active: c.status === 'ACTIVE',
+    effectiveStatus: (c as { effective_status?: string }).effective_status,
+    blocked: Array.isArray(issues) && issues.length > 0,
+    dataThrough: c.insights?.date_stop ?? null,
     objective: c.objective ?? '',
-    dailyBudget: c.daily_budget ? Math.round(Number(c.daily_budget) / 100) : 0,
+    // A campaign-level budget only exists under CBO. Every campaign this
+    // product launches budgets on the AD SET, so this is empty by design and
+    // NULL says "one level down" where 0 would have printed a dash.
+    dailyBudget: budgetFils > 0 ? Math.round(budgetFils / 100) : null,
     spend,
     impressions,
     clicks,
@@ -52,10 +101,26 @@ function toRow(c: MetaCampaign & { insights?: MetaInsights | null }): Row {
   }
 }
 
-type StatusFilter = 'All' | 'Active' | 'Paused'
+/**
+ * 'Trouble' is not a Meta status — it is every reading that means "money is
+ * set aside for this and nobody is seeing it": rejected, in review, refusing
+ * to deliver, or running with numbers that stopped days ago. Those used to
+ * hide inside "Active", which is the switch rather than the state.
+ */
+type StatusFilter = 'All' | 'Active' | 'Trouble' | 'Paused'
 type SortCol = 'spend' | 'leads' | 'cpl' | 'impressions'
 
 const fmtAED = (n: number) => `AED ${n.toLocaleString()}`
+
+/** How many days behind this row's numbers are, or null when they are current
+ *  (or when there are none to be behind). Today is read in the ad account's
+ *  own timezone: a browser elsewhere must not make yesterday look like today. */
+function staleDays(r: { dataThrough: string | null }): number | null {
+  if (!r.dataThrough) return null
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dubai' }).format(new Date())
+  const d = daysBetween(r.dataThrough, today)
+  return d !== null && d >= STALE_AFTER_DAYS ? d : null
+}
 
 export default function MetaAdsPage() {
   const t = useT()
@@ -125,7 +190,10 @@ export default function MetaAdsPage() {
   }, [rows])
 
   const visibleCampaigns = useMemo(() => {
-    const filtered = statusFilter === 'All' ? rows : rows.filter((c) => (statusFilter === 'Active' ? c.active : !c.active))
+    const filtered = statusFilter === 'All' ? rows : rows.filter((c) => {
+      if (statusFilter === 'Trouble') return readOf(c).tone === 'bad' || staleDays(c) !== null
+      return statusFilter === 'Active' ? c.active : !c.active
+    })
     return [...filtered].sort((a, b) => {
       const diff = a[sortCol] - b[sortCol]
       return sortAsc ? diff : -diff
@@ -143,9 +211,9 @@ export default function MetaAdsPage() {
     const lines = [
       `Meta Ads Campaign — ${r.name}`,
       `ID: ${r.id}`,
-      `Status: ${r.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}`,
+      `Status: ${t(`lm.delivery.${readOf(r).state}`)}`,
       r.objective ? `Objective: ${r.objective.replace(/_/g, ' ')}` : null,
-      `Daily budget: ${r.dailyBudget > 0 ? `AED ${r.dailyBudget}/day` : '—'}`,
+      `Daily budget: ${r.dailyBudget !== null ? `AED ${r.dailyBudget}/day` : 'set per ad set'}`,
       `Spend: ${r.spend > 0 ? fmtAED(r.spend) : '—'}`,
       `Impressions: ${r.impressions > 0 ? r.impressions.toLocaleString() : '—'}`,
       `Clicks: ${r.clicks > 0 ? r.clicks.toLocaleString() : '—'}`,
@@ -271,7 +339,7 @@ export default function MetaAdsPage() {
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.meta.section.campaigns')}</div>
           <div className="flex gap-1.5">
-            {(['All', 'Active', 'Paused'] as StatusFilter[]).map((f) => (
+            {(['All', 'Active', 'Trouble', 'Paused'] as StatusFilter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
@@ -282,7 +350,10 @@ export default function MetaAdsPage() {
                     : 'border border-line-strong text-slate-400 hover:text-slate-200',
                 ].join(' ')}
               >
-                {f === 'All' ? t('lm.meta.filter.all') : f === 'Active' ? t('lm.meta.filter.active') : t('lm.meta.filter.paused')}
+                {f === 'All' ? t('lm.meta.filter.all')
+                  : f === 'Active' ? t('lm.meta.filter.active')
+                  : f === 'Trouble' ? t('lm.meta.filter.trouble')
+                  : t('lm.meta.filter.paused')}
               </button>
             ))}
           </div>
@@ -308,12 +379,12 @@ export default function MetaAdsPage() {
               className="block rounded-2xl border border-line bg-surface-2 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[readOf(c).tone] ?? 'bg-slate-500'}`} />
                   <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className={`text-xs font-medium ${c.active ? 'text-emerald-300' : 'text-slate-500'}`}>
-                    {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
+                  <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${TONE[readOf(c).tone] ?? TONE.idle}`}>
+                    {t(`lm.delivery.${readOf(c).state}`)}
                   </span>
                   {/* LITE: the switch IS the daily control — pause/activate without leaving the list */}
                   <button
@@ -386,16 +457,28 @@ export default function MetaAdsPage() {
                   className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px_32px] gap-4 items-center px-5 py-4 transition hover:bg-white/[0.03]"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[readOf(c).tone] ?? 'bg-slate-500'}`} />
                     <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
+                    {/* A RUNNING CAMPAIGN WHOSE DATA STOPPED. Meta's reporting
+                        lags hours, never days, so this is not a slow report —
+                        it is a campaign that is not delivering while its badge
+                        still says so. */}
+                    {c.active && staleDays(c) !== null && (
+                      <span title={t('lm.live.fresh.behind', { days: staleDays(c)! })}
+                        className="shrink-0 rounded-full border border-rose-400/30 bg-rose-400/10 px-1.5 text-[10px] font-semibold text-rose-200">
+                        {staleDays(c)}d
+                      </span>
+                    )}
                   </div>
                   <div>
-                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${c.active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
-                      {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${TONE[readOf(c).tone] ?? TONE.idle}`}>
+                      {t(`lm.delivery.${readOf(c).state}`)}
                     </span>
                   </div>
                   <div className="text-xs text-slate-300">
-                    {c.dailyBudget > 0 ? `AED ${c.dailyBudget}/d` : '—'}
+                    {c.dailyBudget !== null
+                      ? `AED ${c.dailyBudget}/d`
+                      : <span className="text-slate-500">{t('lm.campaignList.budgetPerAudience')}</span>}
                   </div>
                   <div className="text-xs text-slate-300">
                     {c.spend > 0 ? fmtAED(c.spend) : '—'}

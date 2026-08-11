@@ -19,6 +19,8 @@
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
 import { deliveryOf, isSpending, LEARNING_TARGET } from '../lib/meta/delivery-status'
+import { readdirSync, readFileSync, type Dirent } from 'node:fs'
+import { join } from 'node:path'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -124,6 +126,49 @@ console.log('\n── which of these are spending money ──')
   check('…and nothing else is',
     !isSpending('paused') && !isSpending('inReview') && !isSpending('notDelivering') &&
     !isSpending('rejected') && !isSpending('archived'))
+}
+
+console.log('\n── one status vocabulary across the ads surfaces ──')
+{
+  // FOUR SCREENS INVENTED THEIR OWN. The campaigns list, the Meta table, the
+  // attribution list and the campaign-group arms each rendered a badge from
+  // `status === 'ACTIVE'` — the switch somebody flipped — so a campaign in
+  // review, one whose ad was rejected, one past its schedule and one Meta was
+  // refusing to deliver all read "Active", and everything else read "Paused".
+  //
+  // deliveryOf is the one reading. This scan is for the fifth copy: a badge
+  // built from a status ternary in a file that never asks deliveryOf what is
+  // actually happening.
+  const ADS_TREES = [
+    'app/freehold-intelligence/ads-live',
+    'app/freehold-intelligence/lead-machine/campaigns',
+    'components/freehold/lead-machine',
+  ]
+  const files: string[] = []
+  const walk = (d: string) => {
+    let entries: Dirent[] = []
+    try { entries = readdirSync(d, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      const full = join(d, e.name)
+      if (e.isDirectory()) walk(full)
+      else if (/\.tsx?$/.test(e.name)) files.push(full)
+    }
+  }
+  for (const tree of ADS_TREES) walk(join(process.cwd(), tree))
+  check('the ads screens were found at all — an empty scan passes vacuously', files.length > 5, String(files.length))
+
+  const offenders: string[] = []
+  for (const f of files) {
+    const src = readFileSync(f, { encoding: 'utf8' })
+    // The shape: a two-branch status test feeding a rendered label. Google's
+    // own pages are excluded by the trees above — Google has no
+    // effective_status and must not be made to fake one.
+    const invents = /\?\s*t\('lm\.[a-zA-Z.]*status\.[a-z]+'\)/.test(src)
+      || /status\.active'\)\s*:\s*t\(/.test(src)
+    if (invents && !/deliveryOf/.test(src)) offenders.push(f.replace(process.cwd() + '/', ''))
+  }
+  check('no ads screen builds its own Active/Paused badge instead of asking deliveryOf',
+    offenders.length === 0, offenders.join(', '))
 }
 
 if (failures > 0) {
