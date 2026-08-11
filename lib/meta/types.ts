@@ -49,13 +49,23 @@ export type AdDestination = 'landing' | 'form' | 'whatsapp' | 'phone'
 export interface MetaCampaign {
   id: string
   name: string
+  /** What was ASKED for. Not what Meta is doing — see effective_status. */
   status: MetaCampaignStatus
+  /**
+   * WHAT META IS ACTUALLY DOING. A campaign can be status ACTIVE while its
+   * effective_status says IN_PROCESS, WITH_ISSUES or CAMPAIGN_PAUSED — the
+   * difference between "we asked" and "it runs", which a header showing only
+   * `status` reports as a healthy green light.
+   */
+  effective_status?: string
   objective: MetaCampaignObjective
   /** In smallest currency unit (e.g. fils for AED). 50000 = AED 500 */
   daily_budget?: string
   created_time: string
   start_time?: string
   stop_time?: string
+  /** Meta's own faults at the CAMPAIGN level. */
+  issues_info?: Array<{ error_code?: number; error_summary?: string; error_message?: string; level?: string }>
 }
 
 export interface MetaInsightActions {
@@ -132,6 +142,13 @@ export interface MetaAd {
    *  here while status still reads ACTIVE. Same field, same reason, as on
    *  the ad set. */
   issues_info?: Array<{ error_code?: number; error_summary?: string; error_message?: string; level?: string }>
+  /**
+   * WHERE A POLICY REJECTION ACTUALLY LIVES. issues_info carries delivery
+   * faults; a rejected ad's REASON is here and nowhere else — which is why a
+   * page reading only issues_info shows an empty error box above an ad Meta
+   * has refused to run.
+   */
+  ad_review_feedback?: { global?: Record<string, string>; placement_specific?: Record<string, Record<string, string>> }
 }
 
 export interface MetaApiErrorDetail {
