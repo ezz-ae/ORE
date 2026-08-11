@@ -683,11 +683,29 @@ export async function fixAdSetLocationTypes(adSetId: string): Promise<{ changed:
   const spec = (res.targeting && typeof res.targeting === 'object' ? res.targeting : {}) as Record<string, unknown>
   const geo = (spec.geo_locations && typeof spec.geo_locations === 'object' ? spec.geo_locations : {}) as Record<string, unknown>
   const before = Array.isArray(geo.location_types) ? (geo.location_types as unknown[]).map(String) : []
-  if (before.slice().sort().join(',') === 'home,recent') return { changed: false, before }
-  await apiPost(`/${adSetId}`, {
-    targeting: { ...spec, geo_locations: { ...geo, location_types: ['home', 'recent'] } },
-  })
-  return { changed: true, before }
+
+  // ALWAYS REPUBLISH, even when the value already looks right. Meta's flag
+  // lives on the ad set's draft state, not on the value alone — an ad set can
+  // read home+recent and still refuse to publish until the audience is
+  // rewritten. A no-op republish is free; a skipped one leaves the operator
+  // pressing a button that reports success and changes nothing.
+  try {
+    await apiPost(`/${adSetId}`, {
+      targeting: { ...spec, geo_locations: { ...geo, location_types: ['home', 'recent'] } },
+    })
+    return { changed: true, before }
+  } catch (err) {
+    // Meta removed the individual options ("living in", "recently in",
+    // "traveling in") as SEPARATE choices. If it also refuses the explicit
+    // pair, the honest move is to stop naming the field at all and let Meta
+    // apply the one behaviour it still has — rather than fail with a message
+    // about a field the operator cannot set anywhere.
+    if (!(err instanceof MetaApiError)) throw err
+    const withoutField = { ...geo }
+    delete (withoutField as Record<string, unknown>).location_types
+    await apiPost(`/${adSetId}`, { targeting: { ...spec, geo_locations: withoutField } })
+    return { changed: true, before }
+  }
 }
 
 export async function deleteCampaign(campaignId: string): Promise<{ success: boolean }> {

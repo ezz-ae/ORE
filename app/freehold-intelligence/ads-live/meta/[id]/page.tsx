@@ -102,6 +102,32 @@ export default function CampaignCommandPage() {
   const [statusBusy, setStatusBusy] = useState(false)
   const [fixingLoc, setFixingLoc] = useState('')
   const [fixError, setFixError] = useState('')
+
+  /**
+   * REPAIR EVERY AD SET'S LOCATION TARGETING.
+   *
+   * Meta reports the removed-location-option fault at whichever level it
+   * likes, and sometimes only as a publish-time refusal our own reader never
+   * sees. So the repair is not tied to a finding: it walks every ad set in
+   * the campaign and republishes each one's audience with the supported
+   * location behaviour, changing nothing else in the spec.
+   */
+  async function repairAllLocations() {
+    if (!data || fixingLoc) return
+    setFixingLoc('all'); setFixError('')
+    const failures: string[] = []
+    try {
+      for (const a of data.adSets) {
+        const r = await fetch(`/api/meta/adsets/${encodeURIComponent(a.id)}/fix-location`, { method: 'POST' })
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}))
+          failures.push(`${a.name}: ${d?.error ?? r.status}`)
+        }
+      }
+      if (failures.length > 0) { setFixError(failures.join(' · ')); return }
+      window.location.reload()
+    } finally { setFixingLoc('') }
+  }
   // One id at a time: two simultaneous status writes to the same campaign is
   // a race whose loser silently reverts the winner.
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
@@ -943,6 +969,14 @@ export default function CampaignCommandPage() {
                 </div>
               ))}
             </div>
+            {/* The one fault this product can cure itself, offered where Meta
+                states it. Everything else Meta reports needs a human. */}
+            <button type="button" onClick={() => void repairAllLocations()} disabled={fixingLoc !== ''}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
+              {fixingLoc !== '' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {t('lm.metaIssues.repairLocation')}
+            </button>
+            {fixError && <p className="mt-2 text-[12px] text-rose-200">{fixError}</p>}
           </section>
         )
       })()}
@@ -1007,6 +1041,18 @@ export default function CampaignCommandPage() {
             <div className="text-xs text-slate-400">
               {setupProblems > 0 ? t('lm.setupCheck.problems', { n: setupProblems }) : t('lm.setupCheck.allGood')}
             </div>
+          </div>
+          {/* ALWAYS REACHABLE. Meta's removed-location-option flag can live
+              purely in an ad set's draft state — invisible to every field we
+              can read, and surfacing only as a refusal when someone tries to
+              publish. A cure that depends on our own detection would be
+              unreachable in exactly that case. */}
+          <div className="ms-auto">
+            <button type="button" onClick={() => void repairAllLocations()} disabled={fixingLoc !== ''}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3.5 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+              {fixingLoc !== '' && <Loader2 className="h-3 w-3 animate-spin" />}
+              {t('lm.metaIssues.repairLocation')}
+            </button>
           </div>
         </div>
         <div className="mt-4 space-y-1.5">
