@@ -276,6 +276,21 @@ export default function CampaignCommandPage() {
   }, [data])
 
   const overlaps = useMemo(() => (data ? computeOverlaps(data.adSets) : []), [data])
+  /**
+   * IS META REFUSING TO DELIVER THIS? One computation, read by every panel
+   * that would otherwise give advice about an ad nobody can see.
+   */
+  const deliveryBlocked = useMemo(() => {
+    if (!data) return false
+    return data.adSets.some((a) => {
+      const flagged = ((a.issues_info ?? []).length > 0)
+        || (((a as { ads?: Array<{ issues_info?: unknown[]; ad_review_feedback?: unknown }> }).ads ?? [])
+          .some((ad) => (ad.issues_info ?? []).length > 0 || !!ad.ad_review_feedback))
+      const st = deliveryOf({ status: a.status, effectiveStatus: a.effective_status }).state
+      return flagged || st === 'rejected' || st === 'notDelivering' || st === 'issue'
+    })
+  }, [data])
+
   const setup = useMemo(
     () => (data ? checkCampaignSetup(data.campaign, data.adSets as AdSetForCheck[]) : []),
     [data],
@@ -1328,6 +1343,11 @@ export default function CampaignCommandPage() {
               : t('lm.cmd.advisorAiError')}
           </p>
         )}
+        {/* META'S VERDICT GOVERNS BOTH PANELS. The engine below already
+            refuses to advise on a blocked ad; the AI's prose did not, and it
+            is the thing that told an operator to raise the budget on an ad
+            Meta had stopped. Generic advice is not merely unhelpful there —
+            it sends someone to spend money on something nobody can see. */}
         {/* RECOMMENDED — deterministic, from this campaign's own numbers, each
             one carrying the thing that does it. Sits above the AI's prose
             because a ranked action beats a paragraph, and because the throttle
@@ -1361,13 +1381,7 @@ export default function CampaignCommandPage() {
             // flagged, or a delivery state that cannot serve. A live account
             // read "Not delivering · Delivery error" while this panel advised
             // raising the budget — spending advice on an ad nobody can see.
-            deliveryBlocked: data.adSets.some((a) => {
-              const flagged = ((a.issues_info ?? []).length > 0)
-                || (((a as { ads?: Array<{ issues_info?: unknown[]; ad_review_feedback?: unknown }> }).ads ?? [])
-                  .some((ad) => (ad.issues_info ?? []).length > 0 || !!ad.ad_review_feedback))
-              const st = deliveryOf({ status: a.status, effectiveStatus: a.effective_status }).state
-              return flagged || st === 'rejected' || st === 'notDelivering' || st === 'issue'
-            }),
+            deliveryBlocked,
           })
           if (recs.length === 0) return null
           return (
@@ -1403,7 +1417,7 @@ export default function CampaignCommandPage() {
           )
         })()}
 
-        {advisor?.available && (
+        {advisor?.available && !deliveryBlocked && (
           <div className="mt-4">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
               <Lightbulb className="h-3.5 w-3.5 text-gold" /> {t('lm.cmd.advisorSuggestions')}
