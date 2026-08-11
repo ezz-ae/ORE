@@ -183,6 +183,76 @@ console.log('\n── the finding a campaign total cannot contain ──')
     !ids(recommendationsFor(facts({ adSets: [{ id: 'a1', name: 'only', spendAed: 408, impressions: 26_487, leads: 2 }] }))).includes('expensive_adset'))
 }
 
+console.log('\n── the ad set carrying the spend is short of a rotation ──')
+{
+  // The live campaign the moment after the operator acted on the card above:
+  // the expensive ad set is off, its budget moved to the one that converts,
+  // and that ad set is now running ONE design against the whole spend while
+  // still short of the 50 weekly events that end learning.
+  const r = recommendationsFor(facts({
+    dailyBudgetAed: 500, spendAed: 4000, days: 8, leads: 2, attributedLeads: 2,
+    impressions: 40_000, clicks: 400, creativeCount: 2, adSetCount: 2,
+    adSets: [
+      { id: 'a1', name: 'new audiences', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 1, active: true },
+      { id: 'a2', name: 'switched off',  spendAed: 93,   impressions: 946,    leads: 0, liveAds: 1, active: false },
+    ],
+  }))
+  const hit = r.find((x) => x.id === 'learning_needs_ads')
+  check('the working ad set being short of a rotation is named', !!hit, ids(r).join(' | '))
+  check('…naming THAT ad set, not the campaign',
+    hit?.vars?.adSet === 'new audiences', JSON.stringify(hit?.vars))
+  check('…with how many it has and how many to add',
+    hit?.vars?.ads === 1 && hit?.vars?.add === 2, JSON.stringify(hit?.vars))
+  check('…and the action opens the pool AIMED at that ad set',
+    hit?.action.kind === 'add_from_pool' && hit?.action.targetId === 'a1', JSON.stringify(hit?.action))
+
+  // The miscount this rule exists to avoid: the campaign has two ads, but one
+  // of them is under the ad set that was just switched off. A campaign-level
+  // count reads "2 designs" and says nothing.
+  check('the switched-off ad set is never where new ads are sent',
+    hit?.action.targetId !== 'a2', String(hit?.action.targetId))
+
+  check('…and it is recommended, not critical — the price was already good',
+    hit?.priority === 'recommended')
+
+  // Three cards all saying "add a design" is how a panel stops being read.
+  check('the campaign-wide creative cards go quiet while this one speaks',
+    !ids(r).includes('creative_depth') && !ids(r).includes('weak_ctr'), ids(r).join(' | '))
+
+  const stocked = recommendationsFor(facts({
+    spendAed: 4000, days: 8, leads: 2, attributedLeads: 2, impressions: 40_000,
+    adSets: [{ id: 'a1', name: 'w', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 3, active: true }],
+  }))
+  check('an ad set already at three designs is not asked for more',
+    !ids(stocked).includes('learning_needs_ads'), ids(stocked).join(' | '))
+
+  const paused = recommendationsFor(facts({
+    spendAed: 4000, days: 8, leads: 2, attributedLeads: 2, impressions: 40_000,
+    adSets: [{ id: 'a1', name: 'w', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 1, active: false }],
+  }))
+  check('a paused ad set is never told to add designs', !ids(paused).includes('learning_needs_ads'))
+
+  const thin = recommendationsFor(facts({
+    spendAed: 20, days: 8, leads: 0, impressions: 300,
+    adSets: [{ id: 'a1', name: 'w', spendAed: 20, impressions: 300, leads: 0, liveAds: 1, active: true }],
+  }))
+  check('an ad set with no delivery behind it is not judged on its ad count',
+    !ids(thin).includes('learning_needs_ads'), ids(thin).join(' | '))
+
+  const learned = recommendationsFor(facts({
+    spendAed: 4000, days: 7, leads: 60, attributedLeads: 60, impressions: 40_000,
+    adSets: [{ id: 'a1', name: 'w', spendAed: 4000, impressions: 40_000, leads: 60, liveAds: 1, active: true }],
+  }))
+  check('an ad set past the weekly learning floor is left alone',
+    !ids(learned).includes('learning_needs_ads'), ids(learned).join(' | '))
+
+  // Old facts, no per-ad-set ad counts: the rule must stay silent rather than
+  // assume a number it was not given.
+  check('no ad-count in the facts means no claim about the ad count',
+    !ids(recommendationsFor(facts({ spendAed: 4000, days: 8, leads: 2, impressions: 40_000 })))
+      .includes('learning_needs_ads'))
+}
+
 console.log('\n── the panel stays readable ──')
 {
   const everything = recommendationsFor(facts({
