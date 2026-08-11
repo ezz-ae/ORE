@@ -1,9 +1,10 @@
 /**
  * THE CREATIVE POOL, ASSEMBLED — and the one write that makes it worth having.
  *
- * GET  gathers everything this campaign could run from the three places it
- *      already lives: the project's own photographs and brochure, the account
- *      Library, and the images already on the campaign's ads.
+ * GET  gathers everything this campaign could run from the four places it
+ *      already lives: the campaign's OWN kit (see campaign-assets), the
+ *      project's photographs and brochure, the account Library, and the images
+ *      already on the campaign's ads.
  *
  * POST turns the chosen ones into REAL ADS in a named ad set.
  *
@@ -52,6 +53,7 @@ import { whyNotLaunchable, VIDEO_POLL_BUDGET_MS } from '@/lib/meta/video-ad'
 import { getProjectSlugForCampaign } from '@/lib/meta/campaign-structure'
 import { getProjectBySlug } from '@/lib/data'
 import { listLibrary } from '@/lib/freehold/library'
+import { listAssetIds } from '@/lib/freehold/campaign-assets'
 import { buildPool, poolReadiness, type PoolItem, type PoolKind } from '@/lib/freehold/creative-pool'
 import type { MetaCta } from '@/lib/meta/types'
 
@@ -139,15 +141,29 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  // ── The account's own shelf ──────────────────────────────────────────────
-  const library = await listLibrary(auth.user.email, auth.user.role).catch(() => [])
+  // ── The account's own shelf, and this campaign's OWN kit ─────────────────
+  //
+  // Both come from the Library — a campaign asset IS a library item, so the
+  // editors, folders and permissions are the Library's rather than a second
+  // set to rebuild. The attachment table only says which of them somebody
+  // chose for THIS campaign, which is why those tiles carry a source that
+  // outranks the shelf they share.
+  const [library, attached] = await Promise.all([
+    listLibrary(auth.user.email, auth.user.role).catch(() => []),
+    listAssetIds(id).catch(() => [] as string[]),
+  ])
+  const kit = new Set(attached)
   for (const it of library) {
     const kind = LIBRARY_KIND_TO_POOL[it.kind]
     const url = httpUrl(it.url)
     if (!kind || !url) continue
+    const mine = kit.has(it.id)
     raw.push({
-      id: `library:${it.id}`, source: 'library', kind, url,
-      title: it.title, createdAt: it.createdAt,
+      id: `${mine ? 'campaign' : 'library'}:${it.id}`,
+      source: mine ? 'campaign' : 'library',
+      kind, url, title: it.title, createdAt: it.createdAt,
+      // The handle that makes this tile openable in an editor.
+      libraryId: it.id,
     })
   }
 

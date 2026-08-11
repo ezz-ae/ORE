@@ -42,6 +42,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   X, Loader2, Upload, CheckCircle2, AlertTriangle, Wand2, Film, FileText, Images, Type,
+  Pencil, FolderPlus,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
@@ -107,6 +108,8 @@ export default function CreativePoolPanel({
    *  a blank field must never overwrite a caption with nothing. */
   const [caption, setCaption] = useState({ primaryText: '', headline: '' })
   const [captionOpen, setCaptionOpen] = useState(false)
+  /** Which tile is being filed onto the shelf right now. */
+  const [savingId, setSavingId] = useState('')
 
   // Default to the ad set that is actually running and carrying ads — never a
   // paused one, which is where a new ad would sit and do nothing.
@@ -224,7 +227,39 @@ export default function CreativePoolPanel({
       setPool((cur) => [item, ...(cur ?? [])])
       setReadiness((r) => (r ? { ...r, total: r.total + 1, fresh: r.fresh + 1 } : r))
       setPicked((cur) => (cur.length >= MAX_ADS_FOR_ROTATION ? cur : [...cur, item.id]))
+      // AND onto the shelf, under this campaign's folder. An upload that only
+      // reached Meta's ad account vanished the moment this panel closed and
+      // reappeared next week as "where did I put that" — the whole reason a
+      // campaign has a kit of its own.
+      void adopt(item)
     } catch { setError(t('lm.pool.uploadFailed')) } finally { setUploading(false) }
+  }
+
+  /**
+   * SAVE TO CAMPAIGN — file this picture on the Library shelf under the
+   * campaign's own folder and attach it.
+   *
+   * It is also what makes Edit possible: the editors open by library id, so a
+   * project photograph or an image lifted off a live ad can be SHOWN here and
+   * cannot be opened. Adopting it gives it the row it was missing, and from
+   * then on it is one click from the editor and exportable to any folder like
+   * everything else on the shelf.
+   */
+  async function adopt(item: PoolItem) {
+    if (item.libraryId || savingId) return
+    setSavingId(item.id); setError('')
+    try {
+      const res = await fetch(`/api/meta/campaigns/${encodeURIComponent(campaignId)}/assets`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: item.url, title: item.title }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d?.libraryId) { setError(d?.error || t('lm.pool.saveFailed')); return }
+      // The tile becomes a campaign asset in place — no reload, because the
+      // selection the operator has built up must survive saving one of them.
+      setPool((cur) => (cur ?? []).map((p) => p.id === item.id
+        ? { ...p, source: 'campaign', libraryId: String(d.libraryId) } : p))
+    } catch { setError(t('lm.pool.saveFailed')) } finally { setSavingId('') }
   }
 
   async function create() {
@@ -348,14 +383,38 @@ export default function CreativePoolPanel({
                         </span>
                       )}
                     </button>
-                    {/* A brochure is not a dead tile: it routes to the tool
-                        that reads its numbers into a design. */}
-                    {!isLaunchable(it) && (
-                      <Link href={`${FI}/creative-studio/ad-designer`}
-                        className="mt-1 block text-center text-[10px] text-gold underline-offset-2 hover:underline">
-                        {t('lm.pool.makeDesign')}
-                      </Link>
-                    )}
+                    {/* UNDER EVERY TILE, THE ONE ACTION IT CAN CARRY.
+                        A tile on the shelf opens in its editor — one click,
+                        and whatever comes back out exports to any folder,
+                        because that is the Library's own save. A tile that is
+                        NOT on the shelf yet cannot be opened at all (the
+                        editors resolve by library id), so it is offered the
+                        step that gives it one. */}
+                    <div className="mt-1 text-center text-[10px]">
+                      {it.libraryId ? (
+                        <Link
+                          href={`${FI}/creative-studio/${it.kind === 'video' ? 'video' : 'image'}/${encodeURIComponent(it.libraryId)}`}
+                          className="inline-flex items-center gap-1 text-gold underline-offset-2 hover:underline">
+                          <Pencil className="h-2.5 w-2.5" /> {t('lm.pool.edit')}
+                        </Link>
+                      ) : it.kind === 'pdf' ? (
+                        // A brochure is not a dead tile: it routes to the tool
+                        // that reads its numbers into a design.
+                        <Link href={`${FI}/creative-studio/ad-designer`}
+                          className="text-gold underline-offset-2 hover:underline">
+                          {t('lm.pool.makeDesign')}
+                        </Link>
+                      ) : (
+                        <button type="button" onClick={() => void adopt(it)} disabled={!!savingId}
+                          title={t('lm.pool.saveHint')}
+                          className="inline-flex items-center gap-1 text-slate-400 transition hover:text-white disabled:opacity-50">
+                          {savingId === it.id
+                            ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                            : <FolderPlus className="h-2.5 w-2.5" />}
+                          {t('lm.pool.save')}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               })}
