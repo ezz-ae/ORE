@@ -667,6 +667,29 @@ export async function getReachEstimate(
   }
 }
 
+/**
+ * REPUBLISH THE ONE FIELD META DEPRECATED, and nothing else.
+ *
+ * Meta's targeting field is replace-whole: posting a partial spec would
+ * silently DROP the narrowing layers, locales and exclusions — a worse
+ * outcome than the flag it fixes. So: read the live spec raw, change only
+ * geo_locations.location_types to the one supported pair, write the whole
+ * spec back verbatim. The republish clears the deprecated-option validation
+ * flag that blocks every other edit on the ad set.
+ */
+export async function fixAdSetLocationTypes(adSetId: string): Promise<{ changed: boolean; before: string[] }> {
+  const res = await apiFetch<{ targeting?: Record<string, unknown> }>(
+    `/${adSetId}`, undefined, { fields: 'targeting' })
+  const spec = (res.targeting && typeof res.targeting === 'object' ? res.targeting : {}) as Record<string, unknown>
+  const geo = (spec.geo_locations && typeof spec.geo_locations === 'object' ? spec.geo_locations : {}) as Record<string, unknown>
+  const before = Array.isArray(geo.location_types) ? (geo.location_types as unknown[]).map(String) : []
+  if (before.slice().sort().join(',') === 'home,recent') return { changed: false, before }
+  await apiPost(`/${adSetId}`, {
+    targeting: { ...spec, geo_locations: { ...geo, location_types: ['home', 'recent'] } },
+  })
+  return { changed: true, before }
+}
+
 export async function deleteCampaign(campaignId: string): Promise<{ success: boolean }> {
   return updateCampaignStatus(campaignId, 'DELETED')
 }
