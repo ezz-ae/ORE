@@ -10,6 +10,7 @@ import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { deliveryOf, type DeliveryState } from '@/lib/meta/delivery-status'
 
 // Attribution — REAL campaigns from the connected ad accounts, matched to the
 // REAL CRM leads they produced. No seed campaigns, no invented CPLs.
@@ -20,7 +21,11 @@ interface LiveCampaign {
   id: string
   name: string
   platform: 'meta' | 'google'
+  /** The switch. Kept for filters and sorting; never for the chip. */
   running: boolean
+  /** What the platform says is HAPPENING — the chip's only source. */
+  state: DeliveryState
+  tone: 'good' | 'working' | 'bad' | 'idle'
   spendAED: number
   leads: number
   cpl: number
@@ -63,14 +68,37 @@ export default function CampaignAttributionPage() {
         for (const c of meta.campaigns ?? []) {
           const spend = Number(c?.insights?.spend) || 0
           const leads = metaLeads(c?.insights)
-          rows.push({ id: c.id, name: c.name, platform: 'meta', running: c.status === 'ACTIVE', spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0 })
+          // META'S OWN VERDICT, not the switch. A campaign reads ACTIVE while
+          // Meta has it in review, has rejected its ad, or is refusing to
+          // deliver it — and this chip said "Active" for all of them.
+          const blocked = Array.isArray(c?.issues_info) && c.issues_info.length > 0
+          const d = blocked
+            ? { state: 'issue' as const, tone: 'bad' as const }
+            : deliveryOf({
+                effectiveStatus: c?.effective_status,
+                status: c?.status,
+                impressions: Number(c?.insights?.impressions) || 0,
+              })
+          rows.push({
+            id: c.id, name: c.name, platform: 'meta',
+            running: c.status === 'ACTIVE', state: d.state, tone: d.tone,
+            spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0,
+          })
         }
       }
       if (google && !google.demo) {
         for (const c of google.campaigns ?? []) {
           const spend = Number(c?.metrics?.costAed ?? c?.metrics?.cost) || 0
           const leads = Number(c?.metrics?.conversions ?? c?.metrics?.leads) || 0
-          rows.push({ id: c.id, name: c.name, platform: 'google', running: /enabled|active|running/i.test(String(c.status ?? '')), spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0 })
+          // Google has no equivalent of effective_status here, so its rows
+          // carry the plain on/off they actually know — never a delivery
+          // claim this reader cannot stand behind.
+          const on = /enabled|active|running/i.test(String(c.status ?? ''))
+          rows.push({
+            id: c.id, name: c.name, platform: 'google',
+            running: on, state: on ? 'delivering' : 'paused', tone: on ? 'good' : 'idle',
+            spendAED: spend, leads, cpl: leads > 0 ? spend / leads : 0,
+          })
         }
       }
       setConnected(Boolean((meta && !meta.demo) || (google && !google.demo)))
@@ -217,11 +245,15 @@ export default function CampaignAttributionPage() {
                     <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${plat.cls}`}>
                       {plat.label}
                     </span>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${campaign.running ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400' : 'border-white/15 bg-surface-2 text-slate-500'}`}>
-                      {campaign.running && (
+                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                      campaign.tone === 'good' ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400'
+                        : campaign.tone === 'bad' ? 'border-rose-400/30 bg-rose-400/10 text-rose-200'
+                        : campaign.tone === 'working' ? 'border-sky-400/30 bg-sky-400/10 text-sky-300'
+                        : 'border-white/15 bg-surface-2 text-slate-500'}`}>
+                      {campaign.tone === 'good' && (
                         <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                       )}
-                      {campaign.running ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
+                      {t(`lm.delivery.${campaign.state}`)}
                     </span>
                   </div>
                   <div className={`flex items-center gap-1 text-sm font-medium ${info.color}`}>

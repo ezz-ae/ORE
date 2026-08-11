@@ -9,6 +9,7 @@ import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
 import { metaLeadCount } from '@/lib/meta/lead-count'
+import { deliveryOf } from '@/lib/meta/delivery-status'
 
 // Run async work with a concurrency cap, so a big group doesn't fan out hundreds
 // of simultaneous Meta insight calls and trip the rate limiter.
@@ -28,7 +29,21 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type CampaignLite = { name: string; status: string; objective: string; insights: MetaInsights | null; insightsError: boolean }
+type CampaignLite = {
+  name: string
+  /** The switch somebody flipped. */
+  status: string
+  /** WHAT META IS DOING — the only honest source for an arm's badge. An arm
+   *  reads ACTIVE while Meta has it in review, has rejected its ad, or is
+   *  refusing to deliver it, and a group comparing arms on the wrong word
+   *  compares a running arm against one that never ran. */
+  effectiveStatus?: string
+  /** Meta's own faults on this arm. Any entry means it will not deliver. */
+  blocked: boolean
+  objective: string
+  insights: MetaInsights | null
+  insightsError: boolean
+}
 
 /**
  * Resolve every campaign the account can see (Meta live, else the local store)
@@ -49,7 +64,18 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
   const map = new Map<string, CampaignLite>()
   try {
     const campaigns = await listCampaigns()
-    for (const c of campaigns) map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null, insightsError: false })
+    for (const c of campaigns) {
+      const issues = (c as { issues_info?: unknown[] }).issues_info
+      map.set(c.id, {
+        name: c.name,
+        status: c.status,
+        effectiveStatus: (c as { effective_status?: string }).effective_status,
+        blocked: Array.isArray(issues) && issues.length > 0,
+        objective: c.objective,
+        insights: null,
+        insightsError: false,
+      })
+    }
     // A FAILED insights read is not "AED 0" — the arms render "—"
     // (unavailable) rather than fabricating a zero as a real number.
     // getAccountCampaignInsights swallows its own errors and returns an empty
@@ -65,7 +91,7 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
   } catch (err) {
     if (err instanceof MetaConfigError) {
       for (const c of await listLocalCampaigns()) {
-        map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null, insightsError: false })
+        map.set(c.id, { name: c.name, status: c.status, blocked: false, objective: c.objective, insights: null, insightsError: false })
       }
     }
   }
@@ -142,6 +168,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         name,
         status: c?.status || 'UNKNOWN',
         running: c?.status === 'ACTIVE',
+        // Meta's real state travels with the arm so the group's badge cannot
+        // say "running" about an arm Meta has stopped. A fault outranks the
+        // status word, because a fault is what explains a zero.
+        state: c?.blocked
+          ? 'issue'
+          : deliveryOf({
+              effectiveStatus: c?.effectiveStatus,
+              status: c?.status,
+              impressions: Number(c?.insights?.impressions) || 0,
+            }).state,
         spendAED, leads, cpl,
         metricsError: c?.insightsError ?? false, // true = Meta failure; show "—", not a real 0
         quality,

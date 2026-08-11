@@ -13,7 +13,12 @@ type AdRow = { id: string; name: string; status: string; spendAED: number; leads
 type AdSetRow = { id: string; name: string; status: string; dailyBudgetAED: number; spendAED: number; leads: number; cpl: number; ads: AdRow[] }
 type Member = {
   campaignId: string; label: string; objective: string; name: string
-  status: string; running: boolean; spendAED: number; leads: number; cpl: number; quality: Quality
+  status: string
+  /** The switch. Kept for sorting and the toggle; never for the badge. */
+  running: boolean
+  /** What META is doing — the badge's only source. See the route. */
+  state?: string
+  spendAED: number; leads: number; cpl: number; quality: Quality
   adSets?: AdSetRow[]; rollupError?: boolean; metricsError?: boolean
 }
 type GroupData = {
@@ -137,8 +142,15 @@ export default function GroupDetailClient({ id }: { id: string }) {
               </div>
 
               <div className="mt-1 flex items-center gap-2 text-[11px]">
-                <span className={`inline-flex items-center gap-1 ${m.running ? 'text-emerald-400' : 'text-slate-500'}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${m.running ? 'bg-emerald-400' : 'bg-slate-600'}`} /> {m.running ? t('cg.status.running') : t('cg.status.paused')}
+                <span className={`inline-flex items-center gap-1 ${
+                  m.state === 'delivering' ? 'text-emerald-400'
+                    : m.state === 'issue' || m.state === 'rejected' || m.state === 'notDelivering' ? 'text-rose-300'
+                    : m.state === 'inReview' ? 'text-sky-300' : 'text-slate-500'}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${
+                    m.state === 'delivering' ? 'bg-emerald-400'
+                      : m.state === 'issue' || m.state === 'rejected' || m.state === 'notDelivering' ? 'bg-rose-400'
+                      : m.state === 'inReview' ? 'bg-sky-400' : 'bg-slate-600'}`} />
+                  {m.state ? t(`lm.delivery.${m.state}`) : (m.running ? t('cg.status.running') : t('cg.status.paused'))}
                 </span>
               </div>
 
