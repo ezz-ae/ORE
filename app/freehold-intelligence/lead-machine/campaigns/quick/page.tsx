@@ -47,6 +47,13 @@ export default function QuickLaunchPage() {
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ campaignId: string } | null>(null)
   const designDataUrl = useRef('')
+  const [budgetOverride, setBudgetOverride] = useState<number | null>(null)
+
+  // The Rocket handoff from the ads home: the budget the operator set there.
+  useEffect(() => {
+    const b = Number(new URLSearchParams(window.location.search).get('budget'))
+    if (Number.isFinite(b) && b >= 50) setBudgetOverride(b)
+  }, [])
 
   useEffect(() => {
     fetch('/api/freehold/inventory', { cache: 'no-store' })
@@ -107,7 +114,10 @@ export default function QuickLaunchPage() {
   const project = projects.find((p) => p.id === projectId) ?? null
   const canRun = !!(project || imageHash)
   const band = READY_BUYERS.find((r) => r.id === PRESET)?.cplAed ?? [120, 250]
-  const budget = Math.max(150, Math.ceil((band[1] * 3) / 50) * 50)
+  // The derived budget — the audience's expected cost per lead, aimed at the
+  // ~3 leads/day that clear learning — unless Rocket Ad carried the operator's
+  // own number, which outranks the derivation because they chose it.
+  const budget = budgetOverride ?? Math.max(150, Math.ceil((band[1] * 3) / 50) * 50)
   const form = forms[0] ?? null
 
   async function run() {

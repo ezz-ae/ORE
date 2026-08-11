@@ -3,6 +3,8 @@ import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon, 
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
 import { MachinePulse } from '@/components/freehold/machine-pulse'
+import LiveCampaignsWidget from '@/components/freehold/lead-machine/live-campaigns-widget'
+import RocketAdWidget from '@/components/freehold/lead-machine/rocket-ad-widget'
 import { getServerT } from '@/lib/i18n/server'
 
 // The Lead Machine pipeline — LIVE data only. The mental model on this page:
@@ -99,6 +101,15 @@ export default async function LeadMachineOverviewPage() {
           score is. Useful, and not the subject: the subject is a machine
           spending money on decisions it can explain, and none of that was
           visible without clicking into an individual machine. */}
+      {/* THE WIDGETS. This is the ads home, so it opens with the two things
+          an operator comes here for: what the money is doing right now, and
+          the fastest way to start something new. Everything below is context
+          for those two. */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <LiveCampaignsWidget />
+        <RocketAdWidget />
+      </div>
+
       <MachinePulse />
 
       {/* Inventory readiness — still here, now below the machine. It answers
@@ -117,8 +128,8 @@ export default async function LeadMachineOverviewPage() {
       {matrix.length > 0 ? (
         <Section
           className="mt-8"
-          title={t('lm.hub.readinessMatrix')}
-          description={t('lm.hub.scoreByListing')}
+          title={t('lm.hub.readiness')}
+          description={t('lm.hub.readinessSub')}
           action={
             <Link href="/freehold-intelligence/inventory/projects" className="inline-flex items-center gap-1 text-xs text-gold/70 hover:text-gold">
               {t('nav.inventory')} <ArrowUpRight className="h-3 w-3" />
@@ -126,21 +137,28 @@ export default async function LeadMachineOverviewPage() {
           }
         >
           <Panel>
-            <div className="grid grid-cols-[1fr_90px_90px_110px] gap-4 border-b border-line px-6 py-3">
+            <div className="grid grid-cols-[1fr_90px_90px_90px_110px] gap-4 border-b border-line px-6 py-3">
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('lm.hub.col.project')}</div>
-              {[t('lm.hub.col.data'), t('lm.hub.col.ads')].map((h) => (
+              {[t('lm.hub.col.data'), t('lm.hub.col.ads'), t('lm.hub.col.signals')].map((h) => (
                 <div key={h} className="text-center text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{h}</div>
               ))}
               <div className="text-center text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('lm.hub.col.landing')}</div>
             </div>
             <div className="divide-y divide-line">
               {matrix.map((p) => (
-                <div key={p.id} className="grid grid-cols-[1fr_90px_90px_110px] items-center gap-4 px-6 py-4">
+                <div key={p.id} className="grid grid-cols-[1fr_90px_90px_90px_110px] items-center gap-4 px-6 py-4">
                   <div className="min-w-0">
                     <Link href={`/freehold-intelligence/inventory/${p.id}`} className="truncate text-sm font-semibold text-white transition hover:text-gold">
                       {p.name}
                     </Link>
-                    <div className="mt-0.5 truncate text-sm text-slate-500">{p.area}</div>
+                    {/* The signals a launch actually depends on, from the
+                        project's own record: where it is, what it starts at,
+                        who builds it. A score with no facts under it is a
+                        number nobody can act on. */}
+                    <div className="mt-0.5 truncate text-[12px] text-slate-500">
+                      {[p.area, p.developer, p.startingPriceAED ? `AED ${Math.round(p.startingPriceAED).toLocaleString()}+` : null]
+                        .filter(Boolean).join(' · ')}
+                    </div>
                   </div>
                   {[p.dataQuality, p.adReadiness].map((score, i) => (
                     <div key={i} className="flex flex-col items-center gap-1.5">
@@ -150,6 +168,20 @@ export default async function LeadMachineOverviewPage() {
                       </div>
                     </div>
                   ))}
+                  {/* PERMIT · PHOTO · BROCHURE — present or absent, because
+                      each one is a real gate: no permit stops a compliant
+                      launch, no photo means the ad has nothing to show, no
+                      brochure means no source for the copy. */}
+                  <div className="flex items-center justify-center gap-1">
+                    {([
+                      [!!p.permitNumber, t('lm.hub.sig.permit')],
+                      [p.hasImages, t('lm.hub.sig.photo')],
+                      [!!p.brochureUrl, t('lm.hub.sig.brochure')],
+                    ] as Array<[boolean, string]>).map(([on, label]) => (
+                      <span key={label} title={label}
+                        className={`h-1.5 w-1.5 rounded-full ${on ? 'bg-gold' : 'bg-slate-700'}`} />
+                    ))}
+                  </div>
                   <div className="text-center">
                     <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium capitalize ${landingTone(p.landingStatus)}`}>
                       {p.landingStatus}
