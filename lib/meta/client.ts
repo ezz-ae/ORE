@@ -400,6 +400,40 @@ export async function getAccountEventCosts(): Promise<EventCosts> {
   }
 }
 
+/**
+ * DAY BY DAY — the shape a total cannot show.
+ *
+ * A campaign's lifetime spend and lead count answer "how much" and hide
+ * "which way". Rising cost per lead and falling cost per lead produce the
+ * same average; a campaign that stopped delivering four days ago and one
+ * that never started read identically as a single number. The daily series
+ * is the difference between a figure and a trend.
+ *
+ * Returns [] rather than throwing — a page that cannot draw a chart still
+ * has its numbers, and an empty series renders as "not enough days yet"
+ * instead of an error.
+ */
+export async function getCampaignDailySeries(campaignId: string): Promise<Array<{
+  date: string; spend: number; leads: number; impressions: number; clicks: number
+}>> {
+  try {
+    const res = await apiFetch<{ data?: MetaInsights[] }>(`/${campaignId}/insights`, undefined, {
+      fields: 'spend,impressions,clicks,actions',
+      date_preset: 'last_30d',
+      time_increment: '1',
+    })
+    return (res.data ?? []).map((row) => ({
+      date: String(row.date_start ?? ''),
+      spend: Number(row.spend) || 0,
+      leads: metaLeadCount(row.actions),
+      impressions: Number(row.impressions) || 0,
+      clicks: Number(row.clicks) || 0,
+    })).filter((r) => r.date)
+  } catch {
+    return []
+  }
+}
+
 export async function getCampaignInsights(campaignId: string): Promise<MetaInsights | null> {
   const res = await apiFetch<{ data: MetaInsights[] }>(`/${campaignId}/insights`, undefined, {
     // frequency/reach are what make creative fatigue detectable at all —

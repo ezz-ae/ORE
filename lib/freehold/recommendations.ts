@@ -41,7 +41,6 @@ export type RecActionKind =
   | 'relaunch_no_cap'   // open the launcher prefilled; the cap cannot be edited
   | 'add_creative'      // form: upload another design into this ad set
   | 'ab_audience'       // form: duplicate this campaign against a second audience
-  | 'drop_placement'    // narrow to the surfaces that earn their money
   | 'open_audiences'    // build/attach a better audience
   | 'rate_leads'        // the CRM half of lead quality
   | 'open_campaign'     // read Meta's own error, stated where it lives
