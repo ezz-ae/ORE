@@ -16,13 +16,20 @@
  *    because selecting it produces a duplicate ad and a frequency problem
  *    made worse by the thing meant to fix it.
  *
- *  · Offer to launch a video. Meta video ads need /advideos, an encoding poll
- *    and a thumbnail, none of which this client has. The tile routes to the
- *    reel maker, which is the tool that can actually use it.
+ *  · Offer to launch a brochure. A PDF is not a creative in any ad system —
+ *    it is where a design's numbers come from. That tile routes to the ad
+ *    designer instead.
  *
  *  · Switch new ads on. They are created PAUSED unless the operator says
  *    otherwise on this screen. Three new ads going live inside an ad set that
  *    is mid-learning is a spending decision, and it stays theirs.
+ *
+ * VIDEOS DO LAUNCH, and the screen says what that costs before the press: Meta
+ * has to receive the file, transcode it and produce a cover frame before the ad
+ * exists, which is a wait measured in tens of seconds rather than the instant
+ * an image takes. Saying so first is the difference between a slow action and
+ * one that looks broken. `Design them` does not apply to a video — there is no
+ * canvas to compose over — so a picked video is sent as it is.
  *
  * THE GENERATIVE HALF is `Design them`: each chosen photograph is composed
  * into a real ad — headline band, price block, terms — from the PROJECT'S OWN
@@ -40,7 +47,7 @@ import { useT } from '@/lib/i18n/provider'
 import { adImageSrc } from '@/lib/meta/ad-image-src'
 import { composeProjectAd } from '@/lib/freehold/project-ad'
 import {
-  isLaunchable, adsToAdd, MAX_ADS_FOR_ROTATION, MIN_ADS_FOR_ROTATION,
+  isLaunchable, needsProcessing, adsToAdd, MAX_ADS_FOR_ROTATION, MIN_ADS_FOR_ROTATION,
   type PoolItem, type PoolReadiness,
 } from '@/lib/freehold/creative-pool'
 
@@ -106,7 +113,11 @@ export default function CreativePoolPanel({
 
   // How many this ad set is actually short. Shown next to the button so the
   // number is a reason, not a limit that appears from nowhere.
-  const short = target ? adsToAdd(target.liveAds, readiness?.freshImages ?? 0) : 0
+  const short = target ? adsToAdd(target.liveAds, readiness?.fresh ?? 0) : 0
+  // A video in the batch means Meta has to receive, transcode and cover-frame
+  // it before the ad exists. Said BEFORE the press, so a slow action is not
+  // mistaken for a broken one.
+  const videoPicked = picked.some((id) => { const it = byId(id); return !!it && needsProcessing(it) })
 
   function toggle(item: PoolItem) {
     if (item.inUse || !isLaunchable(item)) return
@@ -127,7 +138,8 @@ export default function CreativePoolPanel({
     const next: Record<string, string> = {}
     for (const [i, id] of ids.entries()) {
       const it = byId(id)
-      if (!it) continue
+      // A video has no canvas to compose over — it is sent as it is.
+      if (!it || needsProcessing(it)) continue
       const url = await composeProjectAd(
         {
           projectName: project.name, area: project.area, developer: project.developer,
@@ -172,7 +184,7 @@ export default function CreativePoolPanel({
         url: dataUrl, imageHash: String(d.hash), title: file.name,
       }
       setPool((cur) => [item, ...(cur ?? [])])
-      setReadiness((r) => (r ? { ...r, total: r.total + 1, freshImages: r.freshImages + 1 } : r))
+      setReadiness((r) => (r ? { ...r, total: r.total + 1, fresh: r.fresh + 1 } : r))
       setPicked((cur) => (cur.length >= MAX_ADS_FOR_ROTATION ? cur : [...cur, item.id]))
     } catch { setError(t('lm.pool.uploadFailed')) } finally { setUploading(false) }
   }
@@ -183,10 +195,13 @@ export default function CreativePoolPanel({
     try {
       // A designed variant is uploaded first so the ad carries a native hash;
       // an undesigned pick rides its own hash or hosted URL.
-      const ads: Array<{ imageHash?: string; imageUrl?: string; name?: string }> = []
+      const ads: Array<{ imageHash?: string; imageUrl?: string; videoUrl?: string; name?: string }> = []
       for (const id of picked) {
         const it = byId(id)
         if (!it) continue
+        // A video travels as a URL Meta fetches itself — the server never
+        // holds the file, and the transcode wait happens there.
+        if (needsProcessing(it)) { ads.push({ videoUrl: it.url, name: it.title }); continue }
         const composed = previews[id]
         if (composed) {
           const res = await fetch('/api/meta/adimages', {
@@ -225,7 +240,7 @@ export default function CreativePoolPanel({
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               {readiness
-                ? t('lm.pool.sub', { fresh: readiness.freshImages, used: readiness.inUse, sources: readiness.sources })
+                ? t('lm.pool.sub', { fresh: readiness.fresh, used: readiness.inUse, sources: readiness.sources })
                 : t('lm.pool.loading')}
             </p>
           </div>
@@ -287,15 +302,12 @@ export default function CreativePoolPanel({
                         </span>
                       )}
                     </button>
-                    {/* A source is not a dead tile: it routes to the tool that
-                        can turn it into something launchable. */}
+                    {/* A brochure is not a dead tile: it routes to the tool
+                        that reads its numbers into a design. */}
                     {!isLaunchable(it) && (
-                      <Link
-                        href={it.kind === 'video'
-                          ? `${FI}/creative-studio/reel${project ? `?project=${encodeURIComponent(project.slug)}` : ''}`
-                          : `${FI}/creative-studio/ad-designer`}
+                      <Link href={`${FI}/creative-studio/ad-designer`}
                         className="mt-1 block text-center text-[10px] text-gold underline-offset-2 hover:underline">
-                        {it.kind === 'video' ? t('lm.pool.makeReel') : t('lm.pool.makeDesign')}
+                        {t('lm.pool.makeDesign')}
                       </Link>
                     )}
                   </div>
@@ -356,6 +368,13 @@ export default function CreativePoolPanel({
               {t('lm.pool.goLive')}
             </label>
           </div>
+
+          {/* The cost of a video, before the press rather than after it. */}
+          {videoPicked && (
+            <p className="mt-3 flex items-start gap-1.5 text-[11px] text-slate-400">
+              <Film className="mt-0.5 h-3 w-3 shrink-0 text-slate-500" /> {t('lm.pool.videoWait')}
+            </p>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-[11px] text-slate-500">

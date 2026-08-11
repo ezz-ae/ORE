@@ -38,6 +38,10 @@ import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
 import { geoLocationsSpec } from './geo-spec'
+import {
+  callToActionSpec, isVideoUrl, pickThumbnail, videoDataSpec, videoStatusOf,
+  whyNotLaunchable, VIDEO_POLL_DELAYS_MS, type VideoStatus, type VideoThumbnail,
+} from './video-ad'
 import type { EventCosts } from '@/lib/freehold/learning-phase'
 import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
@@ -1373,18 +1377,18 @@ export async function createAdCreative(params: {
   // CTA shaping per destination. The instant form rides ON the CTA
   // (lead_gen_form_id) — this is the wiring that makes a picked Meta form
   // actually reach the launched ad.
-  let callToAction: Record<string, unknown>
-  if (params.destination === 'form' && params.leadFormId) {
-    const formCta = params.creative.cta === 'WHATSAPP_MESSAGE' || params.creative.cta === 'CALL_NOW'
-      ? 'SIGN_UP' : params.creative.cta
-    callToAction = { type: formCta, value: { lead_gen_form_id: params.leadFormId } }
-  } else if (params.destination === 'whatsapp') {
-    callToAction = { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } }
-  } else if (params.destination === 'phone' && params.destinationPhone) {
-    callToAction = { type: 'CALL_NOW', value: { link: `tel:${params.destinationPhone.replace(/\s+/g, '')}` } }
-  } else {
-    callToAction = { type: params.creative.cta, value: { link: params.creative.landingUrl } }
-  }
+  //
+  // Shared with the VIDEO path (createVideoAdCreative) through one pure
+  // function, because an image ad and a video ad in the same ad set must point
+  // at the same place. Two copies of this rule is how a video variant quietly
+  // becomes a link click in a form campaign.
+  const callToAction: Record<string, unknown> = callToActionSpec({
+    destination: params.destination,
+    cta: params.creative.cta,
+    landingUrl: params.creative.landingUrl,
+    leadFormId: params.leadFormId,
+    destinationPhone: params.destinationPhone,
+  })
 
   // Placement-customized creative via asset_feed_spec is only used for the
   // plain landing-click case. Lead-form ads DO get per-placement creative,
@@ -1582,6 +1586,140 @@ export async function getAdImageBytes(
     body: await img.arrayBuffer(),
     contentType: img.headers.get('content-type') || 'image/jpeg',
   }
+}
+
+// ─── Video ads ────────────────────────────────────────────────────────────────
+// The four-step negotiation described in lib/meta/video-ad.ts. The rules live
+// there so they can be asserted; this half is the I/O they describe.
+
+export interface AdVideo {
+  id: string
+  status: VideoStatus
+  /** The cover frame Meta picked. Null until one exists — and null means NOT
+   *  launchable, never "launch it without a cover". */
+  thumbnailUrl: string | null
+}
+
+/**
+ * Push a video into the ad account and return its id — WITHOUT waiting.
+ *
+ * `file_url` is Meta fetching the file itself, which is the right shape here:
+ * every video this product would launch is already hosted (the Library, the
+ * reel maker's export, a project's media). Forwarding the bytes through this
+ * server would mean holding a 200 MB file in memory to hand Meta a URL it can
+ * reach on its own.
+ *
+ * The returned id is real and the video is NOT yet playable. Callers must go
+ * through waitForAdVideo before building a creative on it.
+ */
+export async function uploadAdVideoFromUrl(fileUrl: string, name?: string): Promise<{ id: string }> {
+  const { adAccountId } = await creds()
+  if (!isVideoUrl(fileUrl)) {
+    throw new MetaApiError('That file is not a video Meta can read (mp4, mov, m4v, webm).', 0, 'unsupported')
+  }
+  return apiPost(`/${adAccountId}/advideos`, {
+    file_url: fileUrl,
+    ...(name ? { name: name.slice(0, 100) } : {}),
+  })
+}
+
+/** One read of a video's transcode state and cover frame. */
+export async function getAdVideo(videoId: string): Promise<AdVideo> {
+  const raw = await apiFetch<Record<string, unknown>>(`/${videoId}`, undefined, {
+    fields: 'id,status,thumbnails{uri,is_preferred,width,height}',
+  })
+  const thumbs = (raw?.thumbnails as { data?: VideoThumbnail[] } | undefined)?.data
+  return {
+    id: String(raw?.id ?? videoId),
+    status: videoStatusOf(raw),
+    thumbnailUrl: pickThumbnail(thumbs),
+  }
+}
+
+/**
+ * Poll until the video is playable and has a cover frame, or give up.
+ *
+ * Giving up RETURNS the last state rather than throwing: the video id is
+ * valuable — the upload succeeded and Meta is still working — so the caller
+ * can report "still processing, try again in a minute" instead of losing a
+ * 200 MB upload to an exception. The schedule is a fixed array (see
+ * VIDEO_POLL_DELAYS_MS) so the total wait is a number a person can read.
+ */
+export async function waitForAdVideo(videoId: string): Promise<AdVideo> {
+  let last: AdVideo = { id: videoId, status: 'processing', thumbnailUrl: null }
+  for (const delay of VIDEO_POLL_DELAYS_MS) {
+    last = await getAdVideo(videoId).catch(() => last)
+    // A thumbnail can lag a ready status by a poll or two, so both are waited
+    // for — an ad launched in that gap is a black rectangle in the feed.
+    if (last.status === 'error') return last
+    if (last.status === 'ready' && last.thumbnailUrl) return last
+    await new Promise((r) => setTimeout(r, delay))
+  }
+  return await getAdVideo(videoId).catch(() => last)
+}
+
+/**
+ * A video ad creative. Deliberately a separate function from createAdCreative
+ * rather than a branch inside it: `video_data` and `link_data` share no field
+ * names, and the per-placement / multi-text asset_feed_spec paths there do not
+ * apply to a video ad at all. One function per object shape keeps both honest.
+ *
+ * The CTA comes from the SHARED callToActionSpec, so a video ad dropped into a
+ * lead-form ad set carries the same lead_gen_form_id as its image siblings.
+ */
+export async function createVideoAdCreative(params: {
+  name: string
+  videoId: string
+  thumbnailUrl?: string | null
+  thumbnailHash?: string | null
+  creative: CampaignCreative
+  destination?: AdDestination
+  leadFormId?: string
+  destinationPhone?: string
+  pageId?: string
+  instagramUserId?: string
+}): Promise<{ id: string }> {
+  const { adAccountId, pageId: configuredPageId } = await creds()
+  const pageId = params.pageId || configuredPageId
+  const igActor = params.instagramUserId ? { instagram_user_id: params.instagramUserId } : {}
+
+  const blocked = whyNotLaunchable({
+    status: 'ready',
+    thumbnailUrl: params.thumbnailUrl,
+    thumbnailHash: params.thumbnailHash,
+  })
+  if (blocked === 'noThumbnail') {
+    throw new MetaApiError(
+      'Meta has not produced a cover frame for this video yet. Without one the ad shows a black rectangle, so it is not launched.',
+      0, 'unsupported',
+    )
+  }
+
+  return apiPost(`/${adAccountId}/adcreatives`, {
+    name: params.name,
+    object_story_spec: {
+      page_id: pageId,
+      ...igActor,
+      video_data: videoDataSpec({
+        videoId:          params.videoId,
+        primaryText:      params.creative.primaryText,
+        headline:         params.creative.headline,
+        description:      params.creative.description,
+        landingUrl:       params.creative.landingUrl,
+        cta:              params.creative.cta,
+        destination:      params.destination,
+        leadFormId:       params.leadFormId,
+        destinationPhone: params.destinationPhone,
+        thumbnailUrl:     params.thumbnailUrl,
+        thumbnailHash:    params.thumbnailHash,
+      }),
+    },
+    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
+    // Same reason as the image path: omitting this block means the ad
+    // ACCOUNT's default applies, and on most accounts that default recolours,
+    // re-crops and adds music to a video someone already approved.
+    degrees_of_freedom_spec: { ...CREATIVE_ENHANCEMENTS_OFF },
+  })
 }
 
 export async function createAd(params: {
