@@ -29,6 +29,7 @@ import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
 import { personaIds } from '../lib/freehold/persona-audience'
 import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { DELIVERY_STATES } from '../lib/meta/delivery-status'
+import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -103,6 +104,15 @@ console.log('\n── launcher audience markets ──')
   // lm_core is a different shard than lm_ads, hence the explicit dict — the
   // family helper does not care which shard, only that words exist.
   family('lm.newCampaign.s2.market', 'lm.newCampaign.s2.market.', ['uae', 'gulf', 'world'], lm_core)
+}
+
+console.log('\n── recommendations ──')
+{
+  // The Recommended panel renders t(`lm.rec.${key}.t`), `.b`, and
+  // t(`lm.rec.act.${labelKey}`) — three computed families off one catalog.
+  family('lm.rec.*.t', 'lm.rec.', REC_KEYS.map((k) => `${k}.t`))
+  family('lm.rec.*.b', 'lm.rec.', REC_KEYS.map((k) => `${k}.b`))
+  family('lm.rec.act', 'lm.rec.act.', REC_ACTION_LABELS)
 }
 
 console.log('\n── delivery states ──')
