@@ -3,14 +3,14 @@
 /**
  * AI Token Control — the platform-intelligence quota monitor.
  *
- * HARDCODED control surface by explicit product decision: figures live in
- * client state only, connected to no API and no store. It exists so the
- * operator can see, on the current deployment, how a token transfer moves the
- * balance — the send form debits the live balance and writes the trail in
- * place. Wiring it to real metering is a later, separate decision.
+ * HARDCODED control surface by explicit product decision: connected to no
+ * API, no database, no network call. State lives in the browser's own
+ * localStorage — still "not connected to anything" in the sense that matters
+ * (no server), but durable, so the meter never resets on refresh and keeps
+ * draining forward across closed tabs and days via a time-based catch-up.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, Cpu, TriangleAlert } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -35,10 +35,13 @@ const pickDailyRate = () =>
   Math.round((DAILY_BURN_MIN + Math.random() * (DAILY_BURN_MAX - DAILY_BURN_MIN)) / 10_000) * 10_000
 
 const TICK_MS = 2000
-/** A full day's pacing compressed into a watchable ~30-minute window — the
- *  meter stays live without waiting a literal day, while the total burn
- *  stays anchored to dailyRate via the tick math in the effect below. */
-const WINDOW_TICKS = (30 * 60 * 1000) / TICK_MS // 900
+/** A full day's pacing compressed into a watchable ~30-minute window. This is
+ *  the ONE clock the whole page runs on: while the tab is open, ticks burn at
+ *  dailyRate per WINDOW_MS; while it's closed (or just refreshed), the same
+ *  rate is applied to the real elapsed time on the next load — so the two
+ *  never disagree and the balance only ever moves forward. */
+const WINDOW_MS = 30 * 60 * 1000
+const WINDOW_TICKS = WINDOW_MS / TICK_MS // 900
 
 /** Per-workload utilization meters (percent of each workload's allocation). */
 const WORKLOADS: Array<{ key: string; pct: number }> = [
@@ -65,33 +68,126 @@ interface TrailEntry {
 const txnId = () =>
   `txn_${Array.from(crypto.getRandomValues(new Uint8Array(6))).map((b) => b.toString(16).padStart(2, '0')).join('')}`
 
-/** Fixed opening trail so the ledger reads as an operating system, day one:
- *  the 15,000,000-token top-up that set today's opening balance. */
-const OPENING_TRAIL: TrailEntry[] = [
-  { id: 'txn_7c14ad02f9e3', at: new Date('2026-08-11T09:00:00+04:00'), kind: 'credit', amount: 15_000_000, after: 15_000_000 },
+/** Fresh-init trail: the 15,000,000-token top-up, dated to whenever this
+ *  browser first opens the page (see hydration below) — not a fixed date,
+ *  since the ledger is now real, persisted state. */
+const openingTrail = (): TrailEntry[] => [
+  { id: 'txn_7c14ad02f9e3', at: new Date(), kind: 'credit', amount: OPENING_BALANCE, after: OPENING_BALANCE },
 ]
 
 const num = (v: number) => Math.round(v).toLocaleString('en-US')
 
+// ── Persistence — localStorage only, no network, no server ─────────────────
+const STORAGE_KEY = 'fh_ai_token_control_v1'
+const STORAGE_VERSION = 1
+
+interface Ledger {
+  consumed: number
+  balance: number
+  trail: TrailEntry[]
+}
+
+interface StoredLedger {
+  version: number
+  dailyRate: number
+  consumed: number
+  balance: number
+  trail: Array<{ id: string; at: string; kind: 'credit' | 'debit'; amount: number; after: number }>
+  lastTickAt: string
+}
+
+function readStored(): StoredLedger | null {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<StoredLedger>
+    if (
+      parsed?.version !== STORAGE_VERSION ||
+      !Number.isFinite(parsed.dailyRate) ||
+      !Number.isFinite(parsed.consumed) ||
+      !Number.isFinite(parsed.balance) ||
+      !Array.isArray(parsed.trail) ||
+      typeof parsed.lastTickAt !== 'string'
+    ) {
+      return null
+    }
+    return parsed as StoredLedger
+  } catch {
+    return null // corrupt or unavailable (private mode, quota) — fall back to a fresh start
+  }
+}
+
+function writeStored(dailyRate: number, ledger: Ledger, lastTickAt: number): void {
+  try {
+    const payload: StoredLedger = {
+      version: STORAGE_VERSION,
+      dailyRate,
+      consumed: ledger.consumed,
+      balance: ledger.balance,
+      trail: ledger.trail.map((e) => ({ ...e, at: e.at.toISOString() })),
+      lastTickAt: new Date(lastTickAt).toISOString(),
+    }
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    /* storage unavailable — the live session still works, just won't persist */
+  }
+}
+
 export default function AiTokenControlPage() {
   const t = useT()
-  const [consumed, setConsumed] = useState(OPENING_CONSUMED)
-  const [balance, setBalance] = useState(OPENING_BALANCE)
-  const [trail, setTrail] = useState<TrailEntry[]>(OPENING_TRAIL)
+  const [ledger, setLedger] = useState<Ledger>({
+    consumed: OPENING_CONSUMED,
+    balance: OPENING_BALANCE,
+    trail: openingTrail(),
+  })
+  // null until hydration resolves what dailyRate actually is (stored or
+  // freshly picked) — nothing ticks or persists before that.
+  const [dailyRate, setDailyRate] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
   const [flash, setFlash] = useState(false)
-  // Randomized once per session, within the stated 300k–1M/day band — stable
-  // for the life of this page load, and displayed so the pacing is legible.
-  const [dailyRate] = useState(pickDailyRate)
+  const lastTickRef = useRef<number>(Date.now())
+
+  // Hydrate once on mount: read localStorage, and if a ledger is already
+  // there, fast-forward it by however much real time passed since it was
+  // last saved — closed-tab time burns tokens too, at the same dailyRate.
+  // No saved state (or corrupt/incompatible) → fresh start, rate picked now.
+  useEffect(() => {
+    const stored = readStored()
+    if (!stored) {
+      setDailyRate(pickDailyRate())
+      lastTickRef.current = Date.now()
+      return
+    }
+    const rate = stored.dailyRate
+    const lastTick = new Date(stored.lastTickAt).getTime()
+    const elapsedMs = Math.max(0, Date.now() - (Number.isFinite(lastTick) ? lastTick : Date.now()))
+    const caughtUpBurn = Math.round(Math.min((elapsedMs / WINDOW_MS) * rate, stored.balance))
+    setLedger({
+      consumed: stored.consumed + caughtUpBurn,
+      balance: stored.balance - caughtUpBurn,
+      trail: stored.trail.map((e) => ({ ...e, at: new Date(e.at) })),
+    })
+    setDailyRate(rate)
+    lastTickRef.current = Date.now()
+  }, [])
+
+  // Persist on every ledger change, once hydrated — a refresh a moment later
+  // reads back this exact state (near-zero catch-up), never the opening one.
+  useEffect(() => {
+    if (dailyRate == null) return
+    writeStored(dailyRate, ledger, lastTickRef.current)
+  }, [ledger, dailyRate])
 
   // Ambient burn: the balance drains continuously at varying speeds, paced so
-  // the tick-by-tick expectation tracks back to dailyRate/day (not an
-  // unrelated animation speed). Burn moves both counters but never writes the
-  // trail (the trail is for explicit transfers only).
+  // the tick-by-tick expectation tracks back to dailyRate/day (the same rate
+  // the hydration catch-up above uses, so open-tab and closed-tab time agree).
+  // Burn moves both counters but never writes the trail (transfers only).
   useEffect(() => {
+    if (dailyRate == null) return
     const avgPerTick = dailyRate / WINDOW_TICKS
     const tick = () => {
+      lastTickRef.current = Date.now()
       const r = Math.random()
       // idle 35% · trickle 50% (0.4–1.6× avg) · burst 15% (2–5× avg) —
       // weighted so 0.5×1.0×avg + 0.15×3.33×avg ≈ avg, i.e. the long-run
@@ -99,19 +195,18 @@ export default function AiTokenControlPage() {
       const delta =
         r < 0.35 ? 0 : r < 0.85 ? avgPerTick * (0.4 + Math.random() * 1.2) : avgPerTick * (2 + Math.random() * 3)
       if (delta <= 0) return
-      setBalance((b) => {
-        const burned = Math.round(Math.min(delta, b))
-        if (burned <= 0) return b
-        setConsumed((c) => c + burned)
-        return b - burned
+      setLedger((prev) => {
+        const burned = Math.round(Math.min(delta, prev.balance))
+        if (burned <= 0) return prev
+        return { ...prev, consumed: prev.consumed + burned, balance: prev.balance - burned }
       })
     }
     const id = setInterval(tick, TICK_MS)
     return () => clearInterval(id)
   }, [dailyRate])
 
-  const critical = balance < CRITICAL_WATERMARK
-  const low = !critical && balance < LOW_WATERMARK
+  const critical = ledger.balance < CRITICAL_WATERMARK
+  const low = !critical && ledger.balance < LOW_WATERMARK
   // Sender input is in MILLIONS of tokens.
   const parsed = useMemo(() => {
     const n = Number.parseFloat(amount)
@@ -122,14 +217,19 @@ export default function AiTokenControlPage() {
     e.preventDefault()
     setError('')
     if (!parsed) return
-    if (parsed > balance) {
+    if (parsed > ledger.balance) {
       setError(t('settings.tokens.insufficient'))
       return
     }
-    const after = balance - parsed
-    setBalance(after)
-    setConsumed((c) => c + parsed)
-    setTrail((prev) => [{ id: txnId(), at: new Date(), kind: 'debit', amount: parsed, after }, ...prev])
+    lastTickRef.current = Date.now()
+    setLedger((prev) => {
+      const after = prev.balance - parsed
+      return {
+        consumed: prev.consumed + parsed,
+        balance: after,
+        trail: [{ id: txnId(), at: new Date(), kind: 'debit', amount: parsed, after }, ...prev.trail],
+      }
+    })
     setAmount('')
     setFlash(true)
     setTimeout(() => setFlash(false), 2500)
@@ -166,7 +266,7 @@ export default function AiTokenControlPage() {
               <Cpu className="h-3.5 w-3.5 text-gold/70" />
               {t('settings.tokens.totalConsumed')}
             </div>
-            <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-white" dir="ltr">{num(consumed)}</div>
+            <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-white" dir="ltr">{num(ledger.consumed)}</div>
             <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.tokens')}</div>
           </div>
           <div className={`rounded-[14px] border p-4 ${critical ? 'border-red-500/40 bg-red-500/[0.06]' : low ? 'border-amber-500/30 bg-amber-500/[0.04]' : 'border-line bg-surface'}`}>
@@ -184,16 +284,18 @@ export default function AiTokenControlPage() {
                 </span>
               ) : null}
             </div>
-            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${critical ? 'text-red-400' : 'text-white'}`} dir="ltr">{num(balance)}</div>
+            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${critical ? 'text-red-400' : 'text-white'}`} dir="ltr">{num(ledger.balance)}</div>
             <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.tokens')}</div>
             {critical ? (
               <div className="mt-1 text-xs font-medium leading-relaxed text-red-400">{t('settings.tokens.criticalNote')}</div>
             ) : low ? (
               <div className="mt-1 text-xs leading-relaxed text-amber-400/90">{t('settings.tokens.lowNote')}</div>
             ) : null}
-            <div className="mt-1.5 text-[11px] text-slate-500" dir="ltr">
-              {t('settings.tokens.dailyRateNote', { rate: num(dailyRate) })}
-            </div>
+            {dailyRate != null ? (
+              <div className="mt-1.5 text-[11px] text-slate-500" dir="ltr">
+                {t('settings.tokens.dailyRateNote', { rate: num(dailyRate) })}
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -276,7 +378,7 @@ export default function AiTokenControlPage() {
               </tr>
             </thead>
             <tbody>
-              {trail.map((e) => (
+              {ledger.trail.map((e) => (
                 <tr key={e.id} className="border-t border-line/60">
                   <td className="px-6 py-3 font-mono text-xs text-slate-500" dir="ltr">{e.id}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-400" dir="ltr">{timeFmt(e.at)}</td>
