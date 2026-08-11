@@ -14,11 +14,32 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, Cpu, TriangleAlert } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-const OPENING_CONSUMED = 2_003_320_000
-const OPENING_BALANCE = 87_400_000
-const LOW_WATERMARK = 500_000_000
-/** Under this, the amber LOW state escalates to a critical EXTREMELY LOW alert. */
-const CRITICAL_WATERMARK = 100_000_000
+/** A fresh top-up: consumption starts at zero against a 15,000,000-token credit. */
+const OPENING_CONSUMED = 0
+const OPENING_BALANCE = 15_000_000
+/** Alert thresholds are PROPORTIONAL to the credit pool (30% / 10%), not an
+ *  absolute figure — so LOW / EXTREMELY LOW reflect genuine depletion of
+ *  THIS balance as it drains, rather than a fixed line left over from a
+ *  different scale. */
+const LOW_WATERMARK = Math.round(OPENING_BALANCE * 0.3) // 4,500,000
+const CRITICAL_WATERMARK = Math.round(OPENING_BALANCE * 0.1) // 1,500,000
+
+/** Daily consumption rate — randomized once per session within the stated
+ *  300k–1M/day band, then rounded to a clean figure so it reads as a
+ *  deliberately-set budget, not a jittery float. Every tick's burn size is
+ *  DERIVED from this rate (see the effect below), so the live meter always
+ *  ties back to a calculated, displayed number rather than an arbitrary one. */
+const DAILY_BURN_MIN = 300_000
+const DAILY_BURN_MAX = 1_000_000
+const pickDailyRate = () =>
+  Math.round((DAILY_BURN_MIN + Math.random() * (DAILY_BURN_MAX - DAILY_BURN_MIN)) / 10_000) * 10_000
+
+const TICK_MS = 2000
+/** A full day's pacing compressed into a watchable ~30-minute window — the
+ *  meter stays live without waiting a literal day, while the total burn
+ *  stays anchored to dailyRate via the tick math in the effect below. */
+const WINDOW_TICKS = (30 * 60 * 1000) / TICK_MS // 900
+
 /** Per-workload utilization meters (percent of each workload's allocation). */
 const WORKLOADS: Array<{ key: string; pct: number }> = [
   { key: 'settings.tokens.usageDev', pct: 85 },
@@ -36,6 +57,7 @@ const SEND_UNIT = 1_000_000
 interface TrailEntry {
   id: string
   at: Date
+  kind: 'credit' | 'debit'
   amount: number
   after: number
 }
@@ -43,12 +65,10 @@ interface TrailEntry {
 const txnId = () =>
   `txn_${Array.from(crypto.getRandomValues(new Uint8Array(6))).map((b) => b.toString(16).padStart(2, '0')).join('')}`
 
-/** Fixed opening trail so the ledger reads as an operating system, day one.
- *  Balance-after chain is coherent: each row's after = next row's after + amount. */
+/** Fixed opening trail so the ledger reads as an operating system, day one:
+ *  the 15,000,000-token top-up that set today's opening balance. */
 const OPENING_TRAIL: TrailEntry[] = [
-  { id: 'txn_9f41c02a77d1', at: new Date('2026-08-10T10:15:00+04:00'), amount: 750_000_000, after: 87_400_000 },
-  { id: 'txn_5b8e33f19c04', at: new Date('2026-08-09T18:40:00+04:00'), amount: 1_250_000_000, after: 837_400_000 },
-  { id: 'txn_c27a90d45e18', at: new Date('2026-08-09T09:05:00+04:00'), amount: 2_000_000_000, after: 2_087_400_000 },
+  { id: 'txn_7c14ad02f9e3', at: new Date('2026-08-11T09:00:00+04:00'), kind: 'credit', amount: 15_000_000, after: 15_000_000 },
 ]
 
 const num = (v: number) => Math.round(v).toLocaleString('en-US')
@@ -66,17 +86,24 @@ export default function AiTokenControlPage() {
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
   const [flash, setFlash] = useState(false)
+  // Randomized once per session, within the stated 300k–1M/day band — stable
+  // for the life of this page load, and displayed so the pacing is legible.
+  const [dailyRate] = useState(pickDailyRate)
 
-  // Ambient burn: the balance drains continuously at varying speeds — mostly a
-  // slow trickle, occasional heavier pulls — so the meter reads as live
-  // consumption. Burn is ambient usage, so it moves both counters but never
-  // writes the trail (the trail is for explicit transfers only).
+  // Ambient burn: the balance drains continuously at varying speeds, paced so
+  // the tick-by-tick expectation tracks back to dailyRate/day (not an
+  // unrelated animation speed). Burn moves both counters but never writes the
+  // trail (the trail is for explicit transfers only).
   useEffect(() => {
+    const avgPerTick = dailyRate / WINDOW_TICKS
     const tick = () => {
       const r = Math.random()
-      // ~25% idle · ~60% trickle · ~15% burst
-      const delta = r < 0.25 ? 0 : r < 0.85 ? 20_000 + Math.random() * 70_000 : 150_000 + Math.random() * 300_000
-      if (delta === 0) return
+      // idle 35% · trickle 50% (0.4–1.6× avg) · burst 15% (2–5× avg) —
+      // weighted so 0.5×1.0×avg + 0.15×3.33×avg ≈ avg, i.e. the long-run
+      // burn rate converges on the displayed dailyRate.
+      const delta =
+        r < 0.35 ? 0 : r < 0.85 ? avgPerTick * (0.4 + Math.random() * 1.2) : avgPerTick * (2 + Math.random() * 3)
+      if (delta <= 0) return
       setBalance((b) => {
         const burned = Math.round(Math.min(delta, b))
         if (burned <= 0) return b
@@ -84,9 +111,9 @@ export default function AiTokenControlPage() {
         return b - burned
       })
     }
-    const id = setInterval(tick, 2000)
+    const id = setInterval(tick, TICK_MS)
     return () => clearInterval(id)
-  }, [])
+  }, [dailyRate])
 
   const critical = balance < CRITICAL_WATERMARK
   const low = !critical && balance < LOW_WATERMARK
@@ -107,7 +134,7 @@ export default function AiTokenControlPage() {
     const after = balance - parsed
     setBalance(after)
     setConsumed((c) => c + parsed)
-    setTrail((prev) => [{ id: txnId(), at: new Date(), amount: parsed, after }, ...prev])
+    setTrail((prev) => [{ id: txnId(), at: new Date(), kind: 'debit', amount: parsed, after }, ...prev])
     setAmount('')
     setFlash(true)
     setTimeout(() => setFlash(false), 2500)
@@ -169,6 +196,9 @@ export default function AiTokenControlPage() {
             ) : low ? (
               <div className="mt-1 text-xs leading-relaxed text-amber-400/90">{t('settings.tokens.lowNote')}</div>
             ) : null}
+            <div className="mt-1.5 text-[11px] text-slate-500" dir="ltr">
+              {t('settings.tokens.dailyRateNote', { rate: num(dailyRate) })}
+            </div>
           </div>
         </div>
       </section>
@@ -255,8 +285,15 @@ export default function AiTokenControlPage() {
                 <tr key={e.id} className="border-t border-line/60">
                   <td className="px-6 py-3 font-mono text-xs text-slate-500" dir="ltr">{e.id}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-400" dir="ltr">{timeFmt(e.at)}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-300">{t('settings.tokens.recipientDev')}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right font-mono text-xs tabular-nums text-white" dir="ltr">−{num(e.amount)}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-300">
+                    {t(e.kind === 'credit' ? 'settings.tokens.creditSource' : 'settings.tokens.recipientDev')}
+                  </td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-3 text-right font-mono text-xs tabular-nums ${e.kind === 'credit' ? 'text-emerald-400' : 'text-white'}`}
+                    dir="ltr"
+                  >
+                    {e.kind === 'credit' ? '+' : '−'}{num(e.amount)}
+                  </td>
                   <td className="whitespace-nowrap px-3 py-3 text-right font-mono text-xs tabular-nums text-slate-300" dir="ltr">{num(e.after)}</td>
                   <td className="whitespace-nowrap px-6 py-3 text-right">
                     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
