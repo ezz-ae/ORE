@@ -1647,6 +1647,10 @@ export default function CampaignCommandPage() {
             name: a.name,
             liveAds: (a.ads ?? []).filter((ad) => ad.status === 'ACTIVE').length,
             active: a.status === 'ACTIVE',
+            // The ad set's OWN placement spec travels with it. Placement is
+            // fixed at the ad set in Meta, so the pool reads the surfaces
+            // rather than offering a choice Meta would reject at publish time.
+            targeting: a.targeting,
           }))}
           onClose={() => setPoolFor(null)}
           onCreated={() => void load({ silent: true })}

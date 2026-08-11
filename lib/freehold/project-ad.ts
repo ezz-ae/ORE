@@ -70,6 +70,9 @@ export async function composeProjectAd(
   opts: {
     /** Override the photograph — the pool passes the tile the operator picked. */
     image?: string | null
+    /** The shape to render at. The creative pool passes the one the target ad
+     *  set's own surfaces can actually use — never a 9:16 for a feed-only ad
+     *  set, which would be letterboxed everywhere it ran. */
     format?: FormatKey
     /** Which design in a batch this is. See rule 2. */
     variant?: number
