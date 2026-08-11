@@ -102,6 +102,7 @@ export default function CampaignCommandPage() {
   const [statusBusy, setStatusBusy] = useState(false)
   const [fixingLoc, setFixingLoc] = useState('')
   const [fixError, setFixError] = useState('')
+  const [fixReport, setFixReport] = useState<string[]>([])
 
   /**
    * REPAIR EVERY AD SET'S LOCATION TARGETING.
@@ -114,18 +115,24 @@ export default function CampaignCommandPage() {
    */
   async function repairAllLocations() {
     if (!data || fixingLoc) return
-    setFixingLoc('all'); setFixError('')
-    const failures: string[] = []
+    setFixingLoc('all'); setFixError(''); setFixReport([])
+    const lines: string[] = []
     try {
       for (const a of data.adSets) {
         const r = await fetch(`/api/meta/adsets/${encodeURIComponent(a.id)}/fix-location`, { method: 'POST' })
-        if (!r.ok) {
-          const d = await r.json().catch(() => ({}))
-          failures.push(`${a.name}: ${d?.error ?? r.status}`)
-        }
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok) { lines.push(`${a.name}: ${d?.error ?? r.status}`); continue }
+        // REPORT WHAT META NOW HOLDS, not that a request returned 200. The
+        // previous version reloaded the page on success, which is
+        // indistinguishable from doing nothing when the stored value did not
+        // move — and that is exactly what an operator saw.
+        const before = Array.isArray(d.before) && d.before.length ? d.before.join('+') : '—'
+        const after = Array.isArray(d.after) && d.after.length ? d.after.join('+') : t('lm.metaIssues.metaDefault')
+        lines.push(d.changed
+          ? t('lm.metaIssues.moved', { where: a.name, before, after })
+          : t('lm.metaIssues.unmoved', { where: a.name, after }))
       }
-      if (failures.length > 0) { setFixError(failures.join(' · ')); return }
-      window.location.reload()
+      setFixReport(lines)
     } finally { setFixingLoc('') }
   }
   // One id at a time: two simultaneous status writes to the same campaign is
@@ -1053,6 +1060,12 @@ export default function CampaignCommandPage() {
               {fixingLoc !== '' && <Loader2 className="h-3 w-3 animate-spin" />}
               {t('lm.metaIssues.repairLocation')}
             </button>
+            {fixReport.length > 0 && (
+              <div className="mt-2 max-w-md rounded-lg border border-line bg-surface px-3 py-2 text-[11px] leading-relaxed text-slate-300">
+                {fixReport.map((l, i) => <div key={i}>{l}</div>)}
+                <div className="mt-1.5 text-slate-500">{t('lm.metaIssues.thenPublish')}</div>
+              </div>
+            )}
           </div>
         </div>
         <div className="mt-4 space-y-1.5">
