@@ -38,6 +38,7 @@ import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
 import { geoLocationsSpec } from './geo-spec'
+import { HEADLINE_WINDOW, indexInsightsByCampaign, type CampaignInsightRow } from './insights-window'
 import {
   callToActionSpec, isVideoUrl, pickThumbnail, videoDataSpec, videoStatusOf,
   whyNotLaunchable, VIDEO_POLL_DELAYS_MS, type VideoStatus, type VideoThumbnail,
@@ -435,6 +436,35 @@ export async function getCampaignDailySeries(campaignId: string): Promise<Array<
     })).filter((r) => r.date)
   } catch {
     return []
+  }
+}
+
+/**
+ * EVERY CAMPAIGN'S LIFETIME NUMBERS, IN ONE CALL.
+ *
+ * The campaigns list used to ask per campaign, and only for the ones whose
+ * status was ACTIVE — so a paused campaign that had spent AED 400 and brought
+ * two leads printed AED 0 and zero on the home screen. The account-level
+ * insights edge answers for all of them at once, at the same lifetime window
+ * the campaign page's headline numbers use, so the two screens cannot
+ * disagree. One Graph call rather than one per campaign.
+ *
+ * Returns an empty map rather than throwing: a list that loses its numbers is
+ * still a usable list, and every consumer already renders a missing row as
+ * "never delivered".
+ */
+export async function getAccountCampaignInsights(): Promise<Map<string, MetaInsights>> {
+  try {
+    const { adAccountId } = await creds()
+    const res = await apiFetch<{ data: CampaignInsightRow[] }>(`/${adAccountId}/insights`, undefined, {
+      fields: 'campaign_id,impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm,frequency,reach',
+      level: 'campaign',
+      date_preset: HEADLINE_WINDOW,
+      limit: '200',
+    })
+    return indexInsightsByCampaign(res.data)
+  } catch {
+    return new Map()
   }
 }
 

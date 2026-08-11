@@ -10,6 +10,15 @@
  * Numbers arrive from the campaigns endpoint that already exists; nothing is
  * computed here that the campaign page would compute differently — a home
  * widget that disagrees with the detail screen is worse than no widget.
+ *
+ * THAT SENTENCE WAS FALSE FOR A WHILE, and the screen showed it: this widget
+ * read one campaign at AED 204 and one lead while the campaign page read
+ * AED 501 and two, and every paused campaign below it printed zeros. Neither
+ * screen was computing anything wrong — the ENDPOINT was answering a different
+ * question (rolling 30 days, ACTIVE campaigns only) than the detail page asks.
+ * Fixed at the source: /api/meta/campaigns now returns the lifetime window for
+ * every campaign, which is what a report owes and what `headlineInsights`
+ * names. A comment claiming agreement is not agreement; the shared function is.
  */
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
