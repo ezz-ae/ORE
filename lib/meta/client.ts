@@ -677,7 +677,13 @@ export async function getReachEstimate(
  * spec back verbatim. The republish clears the deprecated-option validation
  * flag that blocks every other edit on the ad set.
  */
-export async function fixAdSetLocationTypes(adSetId: string): Promise<{ changed: boolean; before: string[] }> {
+export async function fixAdSetLocationTypes(adSetId: string): Promise<{
+  changed: boolean
+  before: string[]
+  after: string[]
+  /** What we managed to send: the supported pair, or the field omitted. */
+  attempted: string
+}> {
   const res = await apiFetch<{ targeting?: Record<string, unknown> }>(
     `/${adSetId}`, undefined, { fields: 'targeting' })
   const spec = (res.targeting && typeof res.targeting === 'object' ? res.targeting : {}) as Record<string, unknown>
@@ -689,22 +695,40 @@ export async function fixAdSetLocationTypes(adSetId: string): Promise<{ changed:
   // read home+recent and still refuse to publish until the audience is
   // rewritten. A no-op republish is free; a skipped one leaves the operator
   // pressing a button that reports success and changes nothing.
+  let attempted: string
   try {
     await apiPost(`/${adSetId}`, {
       targeting: { ...spec, geo_locations: { ...geo, location_types: ['home', 'recent'] } },
     })
-    return { changed: true, before }
+    attempted = 'home,recent'
   } catch (err) {
     // Meta removed the individual options ("living in", "recently in",
     // "traveling in") as SEPARATE choices. If it also refuses the explicit
-    // pair, the honest move is to stop naming the field at all and let Meta
-    // apply the one behaviour it still has — rather than fail with a message
-    // about a field the operator cannot set anywhere.
+    // pair, stop naming the field at all and let Meta apply the one behaviour
+    // it still has — better than failing over a field nobody can set.
     if (!(err instanceof MetaApiError)) throw err
     const withoutField = { ...geo }
     delete (withoutField as Record<string, unknown>).location_types
     await apiPost(`/${adSetId}`, { targeting: { ...spec, geo_locations: withoutField } })
-    return { changed: true, before }
+    attempted = 'omitted'
+  }
+
+  // READ IT BACK. A 200 from Meta means the write was accepted, NOT that the
+  // stored value changed — and a button that reloads the page on a 200 is a
+  // black box that reports success to an operator watching nothing happen.
+  // The truth is whatever Meta holds after the write, so we go and ask.
+  const verify = await apiFetch<{ targeting?: Record<string, unknown> }>(
+    `/${adSetId}`, undefined, { fields: 'targeting' }).catch(() => null)
+  const vGeo = (verify?.targeting?.geo_locations && typeof verify.targeting.geo_locations === 'object'
+    ? verify.targeting.geo_locations : {}) as Record<string, unknown>
+  const after = Array.isArray(vGeo.location_types) ? (vGeo.location_types as unknown[]).map(String) : []
+
+  return {
+    before,
+    after,
+    attempted,
+    // Honest: did the STORED value actually move?
+    changed: before.slice().sort().join(',') !== after.slice().sort().join(','),
   }
 }
 
