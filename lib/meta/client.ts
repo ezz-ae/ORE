@@ -249,6 +249,42 @@ export async function ingestImageFromUrl(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * THE TRACKING TAGS ON EVERY AD WE CREATE — and the one parameter the whole
+ * CRM hangs on.
+ *
+ * Meta appends these at click time, substituting its own macros. The critical
+ * one is utm_id.
+ *
+ * THE BUG THIS FIXES, live since these tags were written: the string set
+ * `utm_campaign={{campaign.id}}` and no utm_id at all. Every reader of
+ * attribution in this product — bucketLeadsByCampaign, getCampaignQuality, the
+ * form analysis, the audience snapshot, the CRM's source column — matches a
+ * lead to a campaign on `utm_id`, falling back to `utm_campaign` compared
+ * against the campaign NAME.
+ *
+ * So a landing-page lead stored the campaign ID in the NAME column and left
+ * the ID column empty, and BOTH matches missed: the id match had nothing to
+ * read, and the name match compared a seventeen-digit number against a human
+ * campaign name. Every landing-page lead this account ever bought was
+ * unattributed. That is the 571 CRM rows reading "General enquiry" — the money
+ * was spent, the leads arrived, and no per-campaign number downstream was
+ * standing on anything.
+ *
+ * Instant-form leads were unaffected: meta-lead-sync stamps utm_id itself at
+ * sync time, which is why the machine's Google-versus-Meta comparisons looked
+ * plausible while half the evidence was missing.
+ *
+ * Now the id goes in the id column and the name goes in the name column. ONE
+ * definition, so the four creative-building paths cannot drift apart again.
+ */
+const AD_URL_TAGS =
+  'utm_source=meta&utm_medium=paid' +
+  '&utm_id={{campaign.id}}' +
+  '&utm_campaign={{campaign.name}}' +
+  '&utm_term={{adset.id}}&utm_content={{ad.id}}' +
+  '&fh_placement={{placement}}&fh_site={{site_source_name}}'
+
 // ─── Campaigns ───────────────────────────────────────────────────────────────
 
 /**
@@ -1484,7 +1520,7 @@ export async function createAdCreative(params: {
       name:              params.name,
       object_story_spec: { page_id: pageId, ...igActor },
       asset_feed_spec:   assetFeedSpec,
-      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
+      url_tags: AD_URL_TAGS,
     })
   }
 
@@ -1513,7 +1549,7 @@ export async function createAdCreative(params: {
       name:              params.name,
       object_story_spec: { page_id: pageId, ...igActor },
       asset_feed_spec:   assetFeedSpec,
-      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
+      url_tags: AD_URL_TAGS,
     })
   }
 
@@ -1538,7 +1574,7 @@ export async function createAdCreative(params: {
     object_story_spec:  { page_id: pageId, ...igActor, link_data: linkData },
     // Dynamic UTMs close the attribution loop: the lead that lands on the
     // page carries the REAL campaign/adset/ad ids into the CRM automatically.
-    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
+    url_tags: AD_URL_TAGS,
     // Advantage+ creative OFF. Omitting this block does not mean "off" — it
     // means the ad ACCOUNT's default applies, and on most accounts that
     // default rewords the headline, recolours the image and adds music to a
@@ -1783,7 +1819,7 @@ export async function createVideoAdCreative(params: {
         thumbnailHash:    params.thumbnailHash,
       }),
     },
-    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&fh_placement={{placement}}&fh_site={{site_source_name}}',
+    url_tags: AD_URL_TAGS,
     // Same reason as the image path: omitting this block means the ad
     // ACCOUNT's default applies, and on most accounts that default recolours,
     // re-crops and adds music to a video someone already approved.

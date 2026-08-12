@@ -20,6 +20,14 @@
  * both would double it, and this product's whole claim is that a number traces
  * back to one thing.
  *
+ * AND THE ID SOMETIMES ARRIVED IN THE NAME. The Meta launcher wrote
+ * `utm_campaign={{campaign.id}}` with no utm_id at all, so every landing-page
+ * lead this account bought stored its campaign id in the name column — where
+ * the id match could not see it and the name match compared it against a human
+ * campaign name. Those leads are real and the money was spent; a third,
+ * last-resort branch recovers them without letting anything overrule a genuine
+ * match. The tags themselves are fixed in lib/meta/client.ts (AD_URL_TAGS).
+ *
  * A LEAD BELONGS TO EXACTLY ONE CAMPAIGN, or to none. Never two.
  *
  * Pure — no I/O. Runs in `pnpm guards`.
@@ -45,6 +53,17 @@ export interface LeadCounts {
 }
 
 const norm = (v: unknown): string => String(v ?? '').trim().toLowerCase()
+
+/**
+ * A platform campaign id, as it appears in a tracking parameter.
+ *
+ * Meta ids are around seventeen digits and Google's around ten; nine is a
+ * floor no human campaign NAME reaches by accident. It matters that this is
+ * strict: the whole point of the rule below is to recover leads whose id
+ * landed in the name column, and a loose test would start matching a campaign
+ * somebody genuinely called "2024" against every lead tagged with that year.
+ */
+const looksLikeCampaignId = (v: string): boolean => /^\d{9,}$/.test(v)
 
 /**
  * Split a set of leads across a set of campaigns.
@@ -76,7 +95,22 @@ export function bucketLeadsByCampaign(
   for (const lead of Array.isArray(leads) ? leads : []) {
     // THE ID WINS. See the header — a name match is only consulted when the
     // lead carries no id we recognise.
-    const owner = byId.get(norm(lead?.utmId)) ?? byName.get(norm(lead?.utmCampaign)) ?? null
+    //
+    // THE THIRD BRANCH IS A RECOVERY, not a new rule. Until this was fixed the
+    // launcher wrote `utm_campaign={{campaign.id}}` and no utm_id at all, so
+    // every landing-page lead this account ever bought stored the campaign ID
+    // in the NAME column and left the ID column empty — and both matches above
+    // missed it. Those rows are still in the database and still real; the
+    // money was spent on them.
+    //
+    // Consulted LAST, and only for a value shaped like a platform id, so it
+    // can never overrule a genuine id or a genuine name match. It fires
+    // exactly where the previous two returned nothing.
+    const utmCampaign = norm(lead?.utmCampaign)
+    const owner = byId.get(norm(lead?.utmId))
+      ?? byName.get(utmCampaign)
+      ?? (looksLikeCampaignId(utmCampaign) ? byId.get(utmCampaign) : undefined)
+      ?? null
     if (!owner) continue
     const bucket = out.get(owner)
     if (!bucket) continue
