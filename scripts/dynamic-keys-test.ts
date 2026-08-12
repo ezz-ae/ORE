@@ -35,6 +35,7 @@ import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
+import { SEED_SIGNALS, AVOID_SIGNALS } from '../lib/freehold/seed-cohort'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -149,6 +150,12 @@ console.log('\n── recommendations ──')
   // screen that tells a team whether their ten seconds a lead is working.
   family('loop.step', 'loop.step.', LOOP_STEPS)
   family('loop.said', 'loop.said.', LOOP_STEPS.flatMap((id) => LOOP_STATES.map((st) => `${id}.${st}`)))
+
+  // …and the makeup line under the seeded step: t(`loop.sig.${signal}`) for
+  // every reason a person is in a cohort. This is the half that proves the
+  // seed is not just the rating column reshaped, so a wordless signal breaks
+  // the exact claim the line exists to make.
+  family('loop.sig', 'loop.sig.', [...SEED_SIGNALS, ...AVOID_SIGNALS])
 }
 
 console.log('\n── delivery states ──')

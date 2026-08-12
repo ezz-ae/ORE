@@ -18,8 +18,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
-import { query } from '@/lib/db'
-import { splitCohorts, seedReadiness, seedUpload, type SeedLead } from '@/lib/freehold/seed-cohort'
+import { splitCohorts, seedReadiness, seedUpload } from '@/lib/freehold/seed-cohort'
+import { loadLeadEvidence } from '@/lib/freehold/lead-evidence'
 import {
   createCustomAudience, addWeightedBuyers, addHashedBuyers, createLookalikeAudience,
 } from '@/lib/meta/client'
@@ -30,27 +30,12 @@ export const maxDuration = 120
 
 const WRITE_ROLES: Role[] = [...MANAGEMENT_ROLES, 'marketing']
 
-async function loadLeads(): Promise<SeedLead[]> {
-  const base = `id, email, phone, status, blocked,
-                value_rating AS "valueRating",
-                behaviour_score AS "behaviourScore"`
-  try {
-    return await query<SeedLead>(
-      `SELECT ${base}, deal_value_aed AS "dealValueAed"
-         FROM freehold_site_leads WHERE archived IS NOT TRUE`,
-    )
-  } catch {
-    // deal_value_aed is created lazily by the deals feature. Retry without it
-    // rather than lose every lead — a seed with no deal weights is still a
-    // seed, and returning [] here would read as "you have no buyers".
-    try {
-      return await query<SeedLead>(
-        `SELECT ${base}, NULL::numeric AS "dealValueAed"
-           FROM freehold_site_leads WHERE archived IS NOT TRUE`,
-      )
-    } catch { return [] }
-  }
-}
+// The read lives in lead-evidence.ts, shared with the automatic loop. It used
+// to be a private copy here, which meant this screen and the loop could give
+// different answers about the same funnel — and this copy never applied the
+// training-integrity filter, so a lead caught in a queue-purge burst could be
+// seeded off a terminal status nobody meant.
+const loadLeads = loadLeadEvidence
 
 export async function GET() {
   const auth = await requireSession(WRITE_ROLES)

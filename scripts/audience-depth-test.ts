@@ -14,9 +14,10 @@
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
 import {
-  scoreLead, splitCohorts, seedReadiness, seedUpload,
+  scoreLead, splitCohorts, seedReadiness, seedUpload, cohortEvidence,
   META_MIN_MATCHED, SEED_QUALITY_FLOOR, type SeedLead,
 } from '../lib/freehold/seed-cohort'
+import { VALUABLE_RATING, PERFECT_RATING, DEAL_RATING } from '../lib/freehold/lead-stages'
 import {
   auditStack, levels, orDominance, auditGroupBalance, assessLevelOrder, touchDepth,
   mirrorOf, LEVEL_LABEL, LEVEL_ROLE, LEVEL_WEIGHT, INCLUSION_ORDER, EXCLUSION_ORDER,
@@ -105,6 +106,73 @@ console.log('\n── the exclusion cohort is PROVEN bad, never merely unproven 
   const unmatched = splitCohorts([lead({ id: 'x', status: 'closed', email: null, phone: null })])
   check('a closed buyer Meta cannot match is kept OUT of the seed',
     unmatched.seed.length === 0, JSON.stringify(unmatched.seed.map((l) => l.id)))
+}
+
+console.log('\n── the house rating scale, which is not evenly spaced ──')
+{
+  // 0–2 stop buying · 3–5 neither · 6–7 good · 8–9 exactly what we want ·
+  // 10 "this became a deal". Code that treats these as a flat 0–10 puts the
+  // wrong people in the seed, so the scale is asserted rather than assumed.
+  const five = scoreLead(lead({ status: 'new', valueRating: 5 }))
+  const six = scoreLead(lead({ status: 'new', valueRating: VALUABLE_RATING }))
+  check('five is not good — it reaches no rung and stays out of the seed',
+    five.quality < 40, String(five.quality))
+  check(`${VALUABLE_RATING} is good, and a broker's judgment reaches the qualified rung`,
+    six.quality >= 40, String(six.quality))
+
+  // THE FAULT THIS CLOSES: splitCohorts admitted only closed and qualified
+  // STATUSES, so a lead a broker judged perfect on the first call could not
+  // enter the seed until somebody also dragged a card — while lead-stages.ts
+  // was already telling Meta that same lead was qualified. One system, two
+  // opinions about one person on one day.
+  const judged = splitCohorts([lead({ id: 'judged', status: 'new', valueRating: PERFECT_RATING })])
+  check('a lead judged perfect is in the seed before the CRM card catches up',
+    judged.seed.map((l) => l.id).join(',') === 'judged', JSON.stringify(judged))
+
+  const deal = scoreLead(lead({ status: 'new', valueRating: DEAL_RATING }))
+  const perfect = scoreLead(lead({ status: 'new', valueRating: PERFECT_RATING }))
+  check('a ten is a claim about an outcome and outranks a nine',
+    deal.quality > perfect.quality, `${deal.quality} vs ${perfect.quality}`)
+
+  // A TAP IS NEVER REPORTED AS A SALE. The ten scores on the closed rung, but
+  // the makeup line must still call it a rating — 'closed' is what the deal
+  // record says and nothing else may print it.
+  check('…but the makeup line calls it a rating, never a sale',
+    deal.signals.includes('rated_perfect') && !deal.signals.includes('closed'),
+    deal.signals.join(','))
+
+  check('8–9 and 6–7 are told apart, because the team means different things by them',
+    perfect.signals.includes('rated_perfect') && six.signals.includes('rated_well'),
+    `${perfect.signals.join(',')} | ${six.signals.join(',')}`)
+}
+
+console.log('\n── what fed a cohort is countable, not parsed out of prose ──')
+{
+  const c = splitCohorts([
+    lead({ id: 'bought', status: 'closed' }),
+    lead({ id: 'bought2', status: 'closed', valueRating: 9 }),
+    lead({ id: 'qual', status: 'qualified' }),
+    lead({ id: 'judged', status: 'new', valueRating: 7 }),
+    lead({ id: 'blocked', status: 'qualified', blocked: true }),
+    lead({ id: 'junk', status: 'contacted', valueRating: 1 }),
+  ])
+  const e = cohortEvidence(c)
+  check('the seed makeup counts each signal', e.seed.closed === 2 && e.seed.qualified === 1,
+    JSON.stringify(e.seed))
+  check('one person can carry two agreeing signals and is counted under both',
+    e.seed.rated_perfect === 1 && e.seed.rated_well === 1, JSON.stringify(e.seed))
+  check('the avoid makeup names the two different faults',
+    e.avoid.blocked === 1 && e.avoid.rated_junk === 1, JSON.stringify(e.avoid))
+
+  // A blocked lead who once qualified is BLOCKED. Leaving 'qualified' on the
+  // row would count them into the seed's makeup while they sit in the
+  // exclusion, which is the makeup line quietly overstating the seed.
+  check('a disqualified lead carries only its disqualification',
+    e.seed.qualified === 1, JSON.stringify(e.seed))
+
+  // THE NUMBER THAT ANSWERS "is this seed just our ratings reshaped".
+  check('the seed members no rating found are counted',
+    e.seedBeyondRatings === 2, String(e.seedBeyondRatings))
 }
 
 console.log('\n── readiness is measured in matched people, not rows ──')

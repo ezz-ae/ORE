@@ -19,28 +19,44 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
 import { query } from '@/lib/db'
 import { isMetaConfigured, listAdSets, listCampaigns } from '@/lib/meta/client'
-import { VALUABLE_RATING } from '@/lib/freehold/lead-stages'
-import { AVOID_RATING, loopStepsFor, loopHeadline, type RatingLoopFacts } from '@/lib/freehold/rating-loop'
-import { ratingAudienceState, syncRatingAudiences } from '@/lib/freehold/rating-audiences'
+import { VALUABLE_RATING, AVOID_RATING, QUALIFIED_STATUSES } from '@/lib/freehold/lead-stages'
+import { loopStepsFor, loopHeadline, type RatingLoopFacts } from '@/lib/freehold/rating-loop'
+import { ratingAudienceState, syncRatingAudiences, currentCohorts } from '@/lib/freehold/rating-audiences'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const WRITE_ROLES: Role[] = [...MANAGEMENT_ROLES, 'marketing']
 
-/** The rating counts, in one query. */
+/**
+ * The counts, in one query.
+ *
+ * `earned` and `sent` are the pair that matters, and both were wrong before.
+ *
+ *   EARNED counted only rated >= 6, so a lead that reached "negotiation" or
+ *   closed without anybody rating it was not counted as owing Meta an event —
+ *   which meant the step could read "all sent" while the best leads in the
+ *   account had never been mentioned. The denominator is the same rule
+ *   writeBackFor() applies: rated well, OR qualified-or-deeper.
+ *
+ *   SENT counted only the 'qualified' stage. A lead that went straight to
+ *   closed sends 'won' and never 'qualified', so every closed buyer read as
+ *   unsent forever — a permanent red step nothing could clear.
+ */
 async function counts() {
+  const qualified = [...QUALIFIED_STATUSES]
   try {
-    const rows = await query<{ total: number; rated: number; valuable: number; avoid: number; sent: number }>(
+    const rows = await query<{ total: number; rated: number; valuable: number; avoid: number; earned: number; sent: number }>(
       `SELECT
          COUNT(*)::int AS total,
          COUNT(value_rating)::int AS rated,
          COUNT(*) FILTER (WHERE value_rating >= $1)::int AS valuable,
          COUNT(*) FILTER (WHERE value_rating <= $2)::int AS avoid,
-         COUNT(*) FILTER (WHERE 'qualified' = ANY(coalesce(meta_reported_stages, '{}')))::int AS sent
+         COUNT(*) FILTER (WHERE value_rating >= $1 OR status = ANY($3))::int AS earned,
+         COUNT(*) FILTER (WHERE coalesce(meta_reported_stages, ARRAY[]::text[]) && ARRAY['qualified','won']::text[])::int AS sent
        FROM freehold_site_leads
        WHERE archived IS NOT TRUE`,
-      [VALUABLE_RATING, AVOID_RATING],
+      [VALUABLE_RATING, AVOID_RATING, qualified],
     )
     const r = rows[0]
     return {
@@ -48,12 +64,13 @@ async function counts() {
       rated: Number(r?.rated) || 0,
       valuable: Number(r?.valuable) || 0,
       avoid: Number(r?.avoid) || 0,
+      earned: Number(r?.earned) || 0,
       sent: Number(r?.sent) || 0,
     }
   } catch {
     // meta_reported_stages is created lazily by the write-back. A database
     // without it has sent nothing, which is a true answer.
-    return { total: 0, rated: 0, valuable: 0, avoid: 0, sent: 0 }
+    return { total: 0, rated: 0, valuable: 0, avoid: 0, earned: 0, sent: 0 }
   }
 }
 
@@ -84,8 +101,12 @@ export async function GET() {
   const auth = await requireSession()
   if ('res' in auth) return auth.res
 
-  const [c, metaConnected, audiences] = await Promise.all([
+  // The cohorts are computed LIVE, not read back from the last sync. The
+  // screen has to be able to say "31 people qualify for the seed" before
+  // anybody presses Build — that number is the argument for pressing it.
+  const [c, metaConnected, audiences, live] = await Promise.all([
     counts(), isMetaConfigured(), ratingAudienceState(),
+    currentCohorts().catch(() => null),
   ])
 
   const ids = [audiences.seed?.lookalikeId, audiences.avoid?.audienceId].filter(Boolean) as string[]
@@ -93,6 +114,9 @@ export async function GET() {
 
   const facts: RatingLoopFacts = {
     ...c,
+    seedRows: live?.cohorts.seed.length ?? 0,
+    seedBeyondRatings: live?.evidence.seedBeyondRatings ?? 0,
+    excludeRows: live?.cohorts.exclude.length ?? 0,
     seedMatched: audiences.seed?.matched ?? null,
     lookalikeExists: !!audiences.seed?.lookalikeId,
     suppressionMatched: audiences.avoid?.matched ?? null,
@@ -100,7 +124,12 @@ export async function GET() {
     metaConnected,
   }
   const steps = loopStepsFor(facts)
-  return NextResponse.json({ facts, steps, headline: loopHeadline(steps) })
+  return NextResponse.json({
+    facts, steps, headline: loopHeadline(steps),
+    // What put people in each cohort, so the screen can show the makeup
+    // rather than a bare total. Counts only — no identifiers.
+    evidence: live?.evidence ?? null,
+  })
 }
 
 export async function POST() {

@@ -28,7 +28,8 @@ const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
 const facts = (o: Partial<RatingLoopFacts> = {}): RatingLoopFacts => ({
-  total: 571, rated: 40, valuable: 12, avoid: 9, sent: 12,
+  total: 571, rated: 40, valuable: 12, avoid: 9, earned: 12, sent: 12,
+  seedRows: 12, seedBeyondRatings: 0, excludeRows: 9,
   seedMatched: 0, lookalikeExists: false, suppressionMatched: 0,
   attached: false, metaConnected: true, ...o,
 })
@@ -88,7 +89,8 @@ console.log('\n── the negative half, which is not symmetrical ──')
   check(`suppression is useful at ${SUPPRESSION_MIN_SEED}, far below the lookalike floor`,
     SUPPRESSION_MIN_SEED < LOOKALIKE_MIN_SEED)
 
-  const onlyBad = facts({ valuable: 0, sent: 0, avoid: 30, suppressionMatched: 25 })
+  const onlyBad = facts({ valuable: 0, earned: 0, sent: 0, avoid: 30,
+    seedRows: 0, excludeRows: 30, suppressionMatched: 25 })
   check('a workspace that has only rated BAD leads still has something to press',
     stateOf(onlyBad, 'seeded').action === 'sync', stateOf(onlyBad, 'seeded').action)
   check('…and its exclusion alone is enough to reach the targeting step',
@@ -96,9 +98,45 @@ console.log('\n── the negative half, which is not symmetrical ──')
   check('…which then offers the attach',
     stateOf(onlyBad, 'targeted').action === 'attach')
 
-  const tinyBad = facts({ valuable: 0, sent: 0, avoid: 3, suppressionMatched: 3 })
+  const tinyBad = facts({ valuable: 0, earned: 0, sent: 0, avoid: 3,
+    seedRows: 0, excludeRows: 3, suppressionMatched: 3 })
   check('three bad ratings is not an exclusion list',
     stateOf(tinyBad, 'targeted').state === 'idle', stateOf(tinyBad, 'targeted').state)
+}
+
+console.log('\n── the seed is the FUNNEL, not the rating column ──')
+{
+  // THE BUG THIS LOCKS OUT: the loop shipped building its seed from
+  // `value_rating >= 6` alone, so an account that closed forty deals and rated
+  // nothing was told to go and rate something before anything could be built —
+  // while the forty buyers, the most valuable rows it owns, sat in no audience.
+  const closersOnly = facts({ rated: 0, valuable: 0, avoid: 0, earned: 40, sent: 40,
+    seedRows: 40, seedBeyondRatings: 40, excludeRows: 0 })
+  const seeded = stateOf(closersOnly, 'seeded')
+  check('an account that closed deals but rated nothing still has a seed to build',
+    seeded.state === 'waiting' && seeded.action === 'sync', `${seeded.state}/${seeded.action}`)
+  check('…and the screen carries how many the ratings never found',
+    seeded.vars.beyond === 40, JSON.stringify(seeded.vars))
+
+  // The mirror: nothing has happened at all. Not a fault, and not a nag —
+  // there is genuinely nothing to build.
+  const nothing = facts({ rated: 0, valuable: 0, avoid: 0, earned: 0, sent: 0,
+    seedRows: 0, seedBeyondRatings: 0, excludeRows: 0 })
+  check('an empty funnel is idle with nothing to press',
+    stateOf(nothing, 'seeded').state === 'idle' && stateOf(nothing, 'seeded').action === 'none')
+}
+
+console.log('\n── the send is measured against what EARNED an event ──')
+{
+  // THE SECOND BUG: `sent` was measured against the rating count, so a lead
+  // that reached negotiation or closed without anybody rating it was never
+  // counted as owing Meta an event — and the step read "all sent" while the
+  // best leads in the account had never been mentioned.
+  const stageOnly = facts({ valuable: 3, earned: 20, sent: 3 })
+  check('twenty earned an event and three were sent — that is waiting, not done',
+    stateOf(stageOnly, 'told').state === 'waiting', stateOf(stageOnly, 'told').state)
+  check('…and the shortfall is stated against EARNED, never against the ratings',
+    stateOf(stageOnly, 'told').vars.earned === 20, JSON.stringify(stateOf(stageOnly, 'told').vars))
 }
 
 console.log('\n── an audience nothing points at changes no delivery ──')
@@ -119,31 +157,33 @@ console.log('\n── the shortfall between earned and sent is visible ──')
 {
   // A lead with no email and no phone earns an event Meta cannot match, and a
   // failed write-back leaves the same gap. Both are worth seeing.
-  const gap = stateOf(facts({ valuable: 12, sent: 9 }), 'told')
+  const gap = stateOf(facts({ valuable: 12, earned: 12, sent: 9 }), 'told')
   check('nine sent against twelve earned is waiting, not done', gap.state === 'waiting', gap.state)
-  check('…with both numbers on the card', gap.vars.sent === 9 && gap.vars.valuable === 12,
+  check('…with both numbers on the card', gap.vars.sent === 9 && gap.vars.earned === 12,
     JSON.stringify(gap.vars))
-  check('all sent is done', stateOf(facts({ valuable: 12, sent: 12 }), 'told').state === 'done')
-  check('nothing valuable yet is IDLE, not a fault',
-    stateOf(facts({ valuable: 0, sent: 0 }), 'told').state === 'idle')
+  check('all sent is done', stateOf(facts({ valuable: 12, earned: 12, sent: 12 }), 'told').state === 'done')
+  check('nothing has earned an event yet is IDLE, not a fault',
+    stateOf(facts({ valuable: 0, earned: 0, sent: 0 }), 'told').state === 'idle')
   check('the send is automatic — never a button, because it fires on the rating write',
     stateOf(facts(), 'told').action === 'none')
 }
 
 console.log('\n── the headline names what to press ──')
 {
-  check('a workspace with no ratings at all points at rating',
-    loopHeadline(loopStepsFor(facts({ rated: 0, valuable: 0, avoid: 0, sent: 0 }))).id === 'rated')
+  const empty = facts({ rated: 0, valuable: 0, avoid: 0, earned: 0, sent: 0,
+    seedRows: 0, seedBeyondRatings: 0, excludeRows: 0 })
+  check('a workspace with nothing in it at all points at rating',
+    loopHeadline(loopStepsFor(empty)).id === 'rated')
   check('…and a disconnected one points at the block first',
     loopHeadline(loopStepsFor(facts({ metaConnected: false }))).state === 'blocked')
 
   // Every step and state must be reachable, or the screen carries dead copy.
   const seen = new Set<string>()
   const cases = [
-    facts(), facts({ rated: 0, valuable: 0, avoid: 0, sent: 0 }), facts({ metaConnected: false }),
-    facts({ valuable: 140, sent: 140, seedMatched: 120, lookalikeExists: true }),
-    facts({ valuable: 140, sent: 140, seedMatched: 120, lookalikeExists: true, attached: true }),
-    facts({ valuable: 12, sent: 9 }),
+    facts(), empty, facts({ metaConnected: false }),
+    facts({ valuable: 140, earned: 140, sent: 140, seedRows: 140, seedMatched: 120, lookalikeExists: true }),
+    facts({ valuable: 140, earned: 140, sent: 140, seedRows: 140, seedMatched: 120, lookalikeExists: true, attached: true }),
+    facts({ valuable: 12, earned: 12, sent: 9 }),
   ]
   for (const c of cases) for (const s of loopStepsFor(c)) seen.add(s.state)
   const missing = LOOP_STATES.filter((s) => !seen.has(s))
