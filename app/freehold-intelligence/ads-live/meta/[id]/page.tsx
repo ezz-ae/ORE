@@ -906,10 +906,20 @@ export default function CampaignCommandPage() {
                   {t(`lm.place.verdict.${r.verdict}`)}
                 </span>
                 <span className="min-w-0 flex-1 truncate font-medium text-slate-200">{r.name}</span>
-                <span className="shrink-0 text-slate-400">{Math.round(r.impressionShare * 100)}% {t('lm.place.ofImpressions')}</span>
-                <span className="shrink-0 text-slate-400">{Math.round(r.spendShare * 100)}% {t('lm.place.ofSpend')}</span>
-                <span className="shrink-0 text-slate-500">{r.cpm !== null ? `CPM ${r.cpm.toFixed(2)}` : '—'}</span>
-                <span className="shrink-0 text-slate-300">{r.lpm !== null ? `${Math.round(r.lpm)}/M` : '—'}</span>
+                {/* THE NUMBER THE VERDICT IS MADE ON, FIRST. This row used to
+                    read: 56% of impressions · 21% of spend · CPM 12.54 · 108/M
+                    — four numbers, and the only one the "Draining" badge is
+                    computed from was last, smallest and grey. Instagram feed
+                    converting twenty times better than Facebook reels was in
+                    that last column and nobody could see it.
+                    Impression share and CPM are gone: neither changes what
+                    anybody does about this row. */}
+                <span className={`shrink-0 tabular-nums ${
+                  r.verdict === 'strong' ? 'text-emerald-200'
+                  : r.verdict === 'drain' ? 'text-red-300' : 'text-slate-300'}`}>
+                  {r.lpm !== null ? t('lm.place.perM', { n: Math.round(r.lpm) }) : '—'}
+                </span>
+                <span className="shrink-0 text-slate-500">{Math.round(r.spendShare * 100)}% {t('lm.place.ofSpend')}</span>
               </div>
             ))}
           </div>
@@ -920,9 +930,15 @@ export default function CampaignCommandPage() {
               ))}
             </ul>
           )}
-          {/* Read-only by design: excluding a placement is a real spend
-              decision and stays an explicit act in the ad set. */}
+          {/* THE ADVICE USED TO END WITH NO BUTTON, and never said why.
+              "Exclude facebook feed, facebook reels — together 46% of spend"
+              reads as a fix somebody forgot to build. It is not: excluding a
+              placement mid-flight resets the ad set's learning phase and
+              silently changes the spec the operator approved, which is why
+              placement-memory.ts acts at the LAUNCH instead. Saying that turns
+              a dead end into a thing already being handled. */}
           <p className="mt-3 text-xs leading-relaxed text-slate-400">{placements.recommendation}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.place.whyNoButton')}</p>
         </section>
       )}
       {!placementsAvailable && (
