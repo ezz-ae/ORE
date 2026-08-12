@@ -41,6 +41,10 @@ export type ActivityKind =
   /** The machine as a whole cannot make progress — nothing live, or real spend
    *  with zero leads anywhere. Needs a human; the rotation cannot fix it. */
   | 'machine_stalled'
+  /** Search queries that took money and returned nothing, blocked without
+   *  being asked. The one thing this machine changes on a live account
+   *  unattended, because a negative only ever STOPS spend. */
+  | 'search_harvest'
   /** A trial's creative is worn out (high frequency). Reported, never
    *  auto-swapped — replacing a known winner's ad is a human decision. */
   | 'creative_fatigue'
@@ -359,6 +363,42 @@ export async function logActivityOnce(params: {
   }
   await logActivity({ ...params, detail })
   return true
+}
+
+/**
+ * Has this machine done a particular thing recently?
+ *
+ * logActivityOnce cannot answer this: it dedups on the EXACT detail text, and
+ * a step that reports real numbers writes a different sentence every run. So
+ * an account-level step that must happen at most once a day needs a throttle
+ * keyed on what the step IS, not on what it said.
+ *
+ * Matched on a detail PREFIX, which is why every throttled step writes its
+ * marker first and its numbers after.
+ *
+ * Fails OPEN — an unreadable activity table returns false, so the step runs.
+ * For a step that only ever stops wasted spend that is the safe direction; a
+ * throttle that fails closed would silently switch the machine off.
+ */
+export async function didRecently(
+  machineId: string,
+  kind: ActivityKind,
+  detailPrefix: string,
+  withinHours: number,
+): Promise<boolean> {
+  try {
+    await ensure()
+    const rows = await query<{ id: string }>(
+      `SELECT id FROM freehold_site_ads_machine_activity
+        WHERE machine_id = $1 AND kind = $2 AND detail LIKE $3 || '%'
+          AND created_at > now() - ($4 || ' hours')::interval
+        LIMIT 1`,
+      [machineId, kind, detailPrefix, String(Math.max(1, Math.round(withinHours)))],
+    )
+    return rows.length > 0
+  } catch {
+    return false
+  }
 }
 
 export async function listActivity(machineId: string, limit = 100): Promise<MachineActivity[]> {

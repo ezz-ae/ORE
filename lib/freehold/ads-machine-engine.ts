@@ -68,6 +68,20 @@ import type { AdDestination, CreativeAngle } from '@/lib/meta/types'
 import { shouldMintCreativeArm, nextAngle, CREATIVE_ANGLE_FALLBACK } from '@/lib/freehold/creative-explore'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
 import { createLocalCampaign } from '@/lib/google/local-store'
+import { gatherHarvest, applyHarvestNegatives } from '@/lib/google/harvest-run'
+
+/**
+ * The search harvest runs at most this often.
+ *
+ * The report reads a 30-day window, so a second run an hour later re-reads the
+ * same evidence, proposes the same nothing, and spends API quota to do it.
+ * Twenty hours rather than twenty-four so a daily cron that drifts by a few
+ * minutes never skips a whole day.
+ */
+const HARVEST_EVERY_HOURS = 20
+/** Written FIRST in every harvest log line — didRecently throttles on the
+ *  prefix, and this step reports different numbers every run. */
+const HARVEST_MARKER = 'Search harvest:'
 import {
   getMachine,
   setMachineStatus,
@@ -82,6 +96,7 @@ import {
   insertLeadVerdictRequests,
   getVerdictStats,
   logActivityOnce,
+  didRecently,
   type AdsMachine,
   type MachineCampaign,
   type MachineChannel,
@@ -165,6 +180,13 @@ export interface CycleResult {
    *  with performance — these were holding budget without running. */
   deliveryStopped: string[]
   googleDraftsPrepared: string[]
+  /** Search queries blocked this cycle because they took money and returned
+   *  nothing, and the AED that was going into them. */
+  searchTermsBlocked: number
+  searchWasteStoppedAed: number
+  /** Converting queries worth buying, waiting for a person. Never applied
+   *  unattended — a new keyword STARTS spend on a forecast. */
+  searchKeywordsWaiting: number
   observed: number
   verdictRequestsCreated: number
   paused: string[]
@@ -253,6 +275,7 @@ async function setPlatformStatus(row: MachineCampaign, running: boolean): Promis
 const emptyResult = (machineId: string, status: AdsMachine['status'], ran: boolean): CycleResult => ({
   machineId, status, ran,
   launched: [], capSkipped: [], permitBlocked: [], permitStopped: [], deliveryStopped: [], googleDraftsPrepared: [],
+  searchTermsBlocked: 0, searchWasteStoppedAed: 0, searchKeywordsWaiting: 0,
   observed: 0, verdictRequestsCreated: 0,
   paused: [], budgetShifts: [], errors: [],
 })
@@ -948,6 +971,76 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         campaignId: row.campaignId,
         data: { projectSlug: row.projectSlug, state: d.state, spendTodayAed: d.spendTodayAed ?? null, drift: 'serving_while_stopped' },
       })
+    }
+  }
+
+  // ── SEARCH HARVEST (running only, once a day) ─────────────────────────────
+  //
+  // The one thing this machine changes on a live account without being asked.
+  //
+  // Google names every real query that triggered an ad. A phrase either
+  // brought a lead at a price this company can pay, or it took money and
+  // brought nothing — arithmetic, with no creative judgement in it, which is
+  // exactly why Search can be run unattended where Meta cannot.
+  //
+  // ONLY THE BLOCKING HALF IS AUTOMATIC. A negative STOPS spend: the worst
+  // case is a query that might have converted later stops showing, which is
+  // bounded, visible and reversible in one click. A new keyword STARTS spend
+  // on a term whose future is a forecast, so proven queries are counted and
+  // left for a person. Automating both equally would not be braver.
+  //
+  // RUNNING ONLY. A paused machine observes; it does not reach into the live
+  // account. And ONCE A DAY: the report reads a 30-day window, so a second run
+  // an hour later re-reads the same evidence, proposes the same nothing, and
+  // spends API quota to do it.
+  if (machine.status === 'running') {
+    const already = await didRecently(machineId, 'search_harvest', HARVEST_MARKER, HARVEST_EVERY_HOURS)
+      .catch(() => false)
+    if (!already) {
+      try {
+        const run = await gatherHarvest('30d')
+        result.searchKeywordsWaiting = run.result.adds.length
+
+        // With no target cost per lead nothing can be called too expensive,
+        // and gatherHarvest returns no negatives at all in that state. Logged
+        // so the silence is explained rather than read as "nothing to do".
+        if (run.ctx.targetCplAed === null) {
+          await logActivityOnce({
+            machineId, kind: 'search_harvest', withinHours: HARVEST_EVERY_HOURS,
+            detail: `${HARVEST_MARKER} read ${run.termsRead} searches but has no cost-per-lead to measure against yet, so nothing was blocked. Google needs to be recording conversions first.`,
+            data: { termsRead: run.termsRead, targetCplAed: null },
+          })
+        } else if (run.result.negatives.length > 0 && run.campaignId) {
+          const { blocked, wasteStoppedAed } = await applyHarvestNegatives(run)
+          result.searchTermsBlocked = blocked
+          result.searchWasteStoppedAed = wasteStoppedAed
+          await logActivity({
+            machineId, kind: 'search_harvest',
+            // The marker first, the numbers after: didRecently throttles on
+            // the prefix, and a step that reports real numbers writes a
+            // different sentence every run.
+            detail: `${HARVEST_MARKER} blocked ${blocked} searches that took AED ${wasteStoppedAed} and returned nothing. ${run.result.adds.length} converting searches are waiting for someone to buy.`,
+            data: {
+              blocked, wasteStoppedAed, targetCplAed: run.ctx.targetCplAed,
+              waiting: run.result.adds.map((a) => a.term),
+              terms: run.result.negatives.slice(0, 20).map((n) => n.term),
+            },
+          })
+        } else {
+          await logActivityOnce({
+            machineId, kind: 'search_harvest', withinHours: HARVEST_EVERY_HOURS,
+            detail: `${HARVEST_MARKER} read ${run.termsRead} searches and found nothing wasteful enough to block.`,
+            data: { termsRead: run.termsRead, waiting: run.result.adds.length },
+          })
+        }
+      } catch (e) {
+        // Google being unreadable must never stop a cycle: every other branch
+        // here is about money already committed, and this one is about money
+        // not yet spent.
+        if (!(e instanceof GoogleConfigError)) {
+          result.errors.push(`searchHarvest:${errMsg(e)}`)
+        }
+      }
     }
   }
 

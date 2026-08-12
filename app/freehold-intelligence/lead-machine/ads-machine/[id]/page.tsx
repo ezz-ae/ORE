@@ -18,6 +18,7 @@ import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowLeftRight, ArrowUpRight, Bell,
   Check, Eye, FileText, ListChecks, Loader2, Pause, Pencil, Play, RefreshCw,
   Rocket, Shield, ShieldAlert, Square, X, EyeOff,
+  Search,
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
 import { MachinePlanPreview } from '@/components/freehold/machine-plan-preview'
@@ -119,6 +120,7 @@ const KIND_META: Record<ActivityKind, { Icon: typeof Rocket; color: string; bg: 
   error:                 { Icon: AlertTriangle,  color: 'text-red-300',    bg: 'bg-red-400/10',    labelKey: 'lm.machine.kind.error' },
   google_draft_prepared: { Icon: FileText,       color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.google_draft_prepared' },
   planned:               { Icon: ListChecks,     color: 'text-slate-400',  bg: 'bg-surface-2',     labelKey: 'lm.machine.kind.planned' },
+  search_harvest:        { Icon: Search,         color: 'text-emerald-300', bg: 'bg-emerald-400/10', labelKey: 'lm.machine.kind.search_harvest' },
 }
 
 const RTF_UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
