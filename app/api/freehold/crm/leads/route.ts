@@ -90,6 +90,8 @@ function dbLeadToCRM(
    *  campaigns between them. */
   campaignNames: Map<string, string> = new Map(),
   campaignProjects: Map<string, string> = new Map(),
+  /** lower(slug) → verified project name — see resolveProjectSlugNames. */
+  projectSlugNames: Map<string, string> = new Map(),
 ) {
   const stage = (row.status as string | null) ?? 'new'
   const stageMap: Record<string, string> = {
@@ -130,7 +132,12 @@ function dbLeadToCRM(
     budgetAED: leadBudgetLabel(row.budget_aed) ?? '',
     projectInterest: leadSubject({
       interest: row.interest,
-      projectName: campaignProjects.get(String(row.utm_id ?? '')) ?? row.project_slug,
+      // Never the raw column — only a slug that actually names a project in
+      // freehold_site_projects earns the bold "project" line. An unverified
+      // string (an ad set's name, a stray import value) falls through to the
+      // campaign name below instead of being shown as a fact it isn't.
+      projectName: campaignProjects.get(String(row.utm_id ?? ''))
+        ?? projectSlugNames.get((row.project_slug ?? '').trim().toLowerCase()),
       campaignName: campaignNames.get(String(row.utm_id ?? '')) ?? row.utm_campaign,
     })?.label ?? '',
     intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : temperature === 'warm' ? 55 : 30,
@@ -201,6 +208,33 @@ async function resolveCampaignLabels(): Promise<{
   return { campaignNames, campaignProjects }
 }
 
+/**
+ * `freehold_site_leads.project_slug` is written by whatever ingestion path
+ * created the lead — a webhook, an import, a landing page — and nothing has
+ * ever checked that the string sitting in it names a REAL project. A row
+ * showed it anyway, bold and unqualified, as "the project" — which is how an
+ * ad set's name (or any other stray string that ended up in that column)
+ * could sit in a lead row wearing the same weight as a verified fact.
+ *
+ * One batched query validates every distinct slug on the page against
+ * `freehold_site_projects` and returns only the ones that are real. A slug
+ * with no match contributes nothing — the row falls through to the campaign
+ * name or says nothing, per the same rule the rest of this file follows.
+ */
+async function resolveProjectSlugNames(slugs: Array<string | null>): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  const unique = [...new Set(slugs.map((s) => (s ?? '').trim().toLowerCase()).filter(Boolean))]
+  if (!unique.length) return map
+  try {
+    const rows = await query<{ slug: string; name: string }>(
+      `SELECT slug, name FROM freehold_site_projects WHERE lower(slug) = ANY($1)`,
+      [unique],
+    )
+    for (const r of rows) if (r.name) map.set(r.slug.toLowerCase(), r.name)
+  } catch { /* a CRM that cannot validate a slug still works — it just says less */ }
+  return map
+}
+
 export async function GET() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
@@ -237,15 +271,20 @@ export async function GET() {
     sql += ` ORDER BY created_at DESC LIMIT ${LEAD_LIST_LIMIT}`
 
     const rows = await query<DbLead>(sql, params)
-    const dupPhones = await duplicatePhoneSet()
 
     // WHAT THE ROW ALREADY KNEW AND NEVER SAID. Every synced Meta lead carries
     // the campaign id in utm_id; meta_campaign_projects maps that campaign to
     // its project. Two cheap reads answer for the whole page, so "General
     // enquiry" becomes the campaign or the project that actually brought them.
     // Both fail soft: a lead with an unresolvable campaign simply says less,
-    // never something untrue.
-    const { campaignNames, campaignProjects } = await resolveCampaignLabels()
+    // never something untrue. projectSlugNames validates the raw project_slug
+    // column the same way, so an unverified string never wears the project
+    // line's confidence.
+    const [dupPhones, { campaignNames, campaignProjects }, projectSlugNames] = await Promise.all([
+      duplicatePhoneSet(),
+      resolveCampaignLabels(),
+      resolveProjectSlugNames(rows.map((r) => r.project_slug)),
+    ])
 
     // The true count under the SAME filter the list used, so a broker's total
     // matches a broker's list rather than the whole company's.
@@ -274,7 +313,7 @@ export async function GET() {
       unassigned = Number(c?.n) || 0
     }
     return NextResponse.json({
-      leads: rows.map((r) => dbLeadToCRM(r, dupPhones, campaignNames, campaignProjects)),
+      leads: rows.map((r) => dbLeadToCRM(r, dupPhones, campaignNames, campaignProjects, projectSlugNames)),
       source: 'db',
       unassigned,
       total,
