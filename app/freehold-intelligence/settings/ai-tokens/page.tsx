@@ -35,13 +35,14 @@ const pickDailyRate = () =>
   Math.round((DAILY_BURN_MIN + Math.random() * (DAILY_BURN_MAX - DAILY_BURN_MIN)) / 10_000) * 10_000
 
 const TICK_MS = 2000
-/** A full day's pacing compressed into a watchable ~30-minute window. This is
- *  the ONE clock the whole page runs on: while the tab is open, ticks burn at
- *  dailyRate per WINDOW_MS; while it's closed (or just refreshed), the same
- *  rate is applied to the real elapsed time on the next load — so the two
- *  never disagree and the balance only ever moves forward. */
-const WINDOW_MS = 30 * 60 * 1000
-const WINDOW_TICKS = WINDOW_MS / TICK_MS // 900
+/** dailyRate means a REAL calendar day — no compression. This is the ONE
+ *  clock the whole page runs on: while the tab is open, ticks burn at
+ *  dailyRate per 24 real hours; while it's closed (or just refreshed), the
+ *  same rate is applied to the real elapsed time on the next load — so
+ *  "300k–1M every day" is literally true, live viewing and offline catch-up
+ *  never disagree, and an overnight gap burns roughly one day, not several. */
+const WINDOW_MS = 24 * 60 * 60 * 1000
+const WINDOW_TICKS = WINDOW_MS / TICK_MS // 43,200
 
 /** Per-workload utilization meters (percent of each workload's allocation). */
 const WORKLOADS: Array<{ key: string; pct: number }> = [
@@ -79,7 +80,12 @@ const num = (v: number) => Math.round(v).toLocaleString('en-US')
 
 // ── Persistence — localStorage only, no network, no server ─────────────────
 const STORAGE_KEY = 'fh_ai_token_control_v1'
-const STORAGE_VERSION = 1
+// v1 → v2: the catch-up window was wrongly compressed to 30 minutes, so an
+// overnight gap burned many simulated "days" instead of one real day (a 15M
+// balance could fall to ~4M by morning). Bumping the version discards any v1
+// ledger already sitting in a browser's localStorage — everyone gets a clean
+// 15,000,000 restart under the corrected real-day model on next load.
+const STORAGE_VERSION = 2
 
 interface Ledger {
   consumed: number
