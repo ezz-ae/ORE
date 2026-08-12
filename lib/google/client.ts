@@ -434,6 +434,41 @@ export async function addKeywords(
     .filter(Boolean)
 }
 
+/**
+ * Add CAMPAIGN-level negative keywords.
+ *
+ * Campaign level, not ad group: a query that wastes money in one ad group
+ * wastes it in every other group of the same campaign, and a negative added
+ * only where it was noticed leaves the leak open everywhere else.
+ *
+ * PHRASE by default, never BROAD. A broad negative for 'rent' also blocks
+ * "current" and every other query containing the letters — and a wrongly
+ * blocked query is invisible forever, because no report can show what a query
+ * that never ran would have brought.
+ *
+ * Idempotent from the caller's side is NOT assumed: Google errors on an exact
+ * duplicate, so the harvest filters against listNegativeKeywords first.
+ */
+export async function addNegativeKeywords(
+  campaignId: string,
+  keywords: { text: string; matchType?: GoogleKeywordMatchType }[],
+): Promise<number> {
+  if (keywords.length === 0) return 0
+  const { customerId } = await creds()
+  const id = gid(campaignId)
+  const ops = keywords.map((kw) => ({
+    campaignCriterionOperation: {
+      create: {
+        campaign: `customers/${customerId}/campaigns/${id}`,
+        negative: true,
+        keyword: { text: kw.text, matchType: kw.matchType ?? 'PHRASE' },
+      },
+    },
+  }))
+  const result = await mutate(ops) as { mutateOperationResponses?: unknown[] }
+  return (result?.mutateOperationResponses ?? []).length
+}
+
 /** Remove a keyword by its ad_group_criterion resource name. */
 export async function removeKeyword(criterionResourceName: string): Promise<void> {
   if (!/^customers\/\d+\/adGroupCriteria\/[\d~]+$/.test(criterionResourceName)) {

@@ -16,6 +16,7 @@ import {
 import type { GoogleKeyword, NegativeKeyword, GoogleKeywordMatchType } from '@/lib/google/types'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
 import KeywordPlanPanel from '@/components/freehold/keyword-plan-panel'
+import SearchHarvestPanel from '@/components/freehold/search-harvest-panel'
 import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -529,6 +530,13 @@ export default function GoogleKeywordsPage() {
               forty phrases in every account, and this is the plan that knows
               which projects exist, which are worth money, and which have a
               page to send a click to. */}
+          {/* What the account already learned, before what it should try next:
+              a query that is wasting money today outranks a phrase that might
+              work tomorrow. */}
+          <section className="mt-12">
+            <SearchHarvestPanel />
+          </section>
+
           <section className="mt-12">
             <KeywordPlanPanel />
           </section>
