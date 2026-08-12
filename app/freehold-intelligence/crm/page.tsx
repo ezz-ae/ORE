@@ -407,16 +407,30 @@ export default function FreeholdCrmPage() {
                     </span>
                   </div>
 
-                  {/* Project + budget + where it came from */}
+                  {/* WHAT THIS LEAD IS ABOUT, and nothing where there is
+                      nothing. The column used to print "General enquiry" and
+                      "Unknown" on all 571 rows — words that appear on every
+                      row are furniture the eye stops reading, and on the day a
+                      real budget appears it gets skipped too. Empty renders
+                      empty; the space goes to what is real. */}
                   <div className="hidden min-w-0 lg:block">
-                    <div className="truncate text-xs text-slate-400">{lead.projectInterest}</div>
-                    <div className="text-xs font-medium text-gold/65">{lead.budgetAED}</div>
+                    {lead.projectInterest && (
+                      <div className="truncate text-xs text-slate-300">{lead.projectInterest}</div>
+                    )}
+                    {lead.budgetAED && (
+                      <div className="text-xs font-medium text-gold/65">{lead.budgetAED}</div>
+                    )}
                     <div className="truncate text-[11px] text-slate-500">{sourceLabel(lead.source)}</div>
                   </div>
 
-                  {/* Agent */}
-                  <div className="hidden truncate text-xs text-slate-500 lg:block">
-                    {lead.assignedAgent}
+                  {/* WHO OWNS IT. Unassigned is not missing data — it is a
+                      state, and an urgent one: a lead nobody owns is a lead
+                      nobody is calling. Named so it can be acted on rather
+                      than scrolled past as an em-dash. */}
+                  <div className="hidden truncate text-xs lg:block">
+                    {lead.assignedAgent
+                      ? <span className="text-slate-400">{lead.assignedAgent}</span>
+                      : <span className="text-amber-300/80">{t('crm.unassigned')}</span>}
                   </div>
 
                   {/* Last contact */}

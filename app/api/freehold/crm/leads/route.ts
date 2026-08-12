@@ -1,3 +1,7 @@
+import { leadSubject, leadBudgetLabel } from '@/lib/freehold/lead-display'
+import { listCampaigns, isMetaConfigured } from '@/lib/meta/client'
+import { getProjectSlugForCampaign } from '@/lib/meta/campaign-structure'
+import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { randomUUID } from 'node:crypto'
@@ -77,7 +81,15 @@ interface DbLead {
   blocked: boolean | null
 }
 
-function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
+function dbLeadToCRM(
+  row: DbLead,
+  dupPhones?: Set<string>,
+  /** campaign id → campaign name, and campaign id → project name. Resolved
+   *  once per request rather than per row — 571 leads share a handful of
+   *  campaigns between them. */
+  campaignNames: Map<string, string> = new Map(),
+  campaignProjects: Map<string, string> = new Map(),
+) {
   const stage = (row.status as string | null) ?? 'new'
   const stageMap: Record<string, string> = {
     new: 'new', contacted: 'contacted', qualified: 'qualified',
@@ -101,8 +113,16 @@ function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
     stage: stage.charAt(0).toUpperCase() + stage.slice(1),
     pipelineStage: stageMap[stage] ?? 'new',
     temperature,
-    budgetAED: row.budget_aed ? `AED ${row.budget_aed.toLocaleString()}` : 'Unknown',
-    projectInterest: row.interest ?? row.project_slug ?? 'General enquiry',
+    // THE MOST SPECIFIC TRUE THING, never a category. Every one of these
+    // leads arrived on a named campaign for a named project, and the row used
+    // to print "General enquiry" 571 times because nothing resolved the id it
+    // was already carrying. See lib/freehold/lead-display.ts.
+    budgetAED: leadBudgetLabel(row.budget_aed) ?? '',
+    projectInterest: leadSubject({
+      interest: row.interest,
+      projectName: campaignProjects.get(String(row.utm_id ?? '')) ?? row.project_slug,
+      campaignName: campaignNames.get(String(row.utm_id ?? '')) ?? row.utm_campaign,
+    })?.label ?? '',
     intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : temperature === 'warm' ? 55 : 30,
     urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
     // REAL now, not hardcoded false. The follow-up queue renders risk badges
@@ -138,6 +158,37 @@ function dbLeadToCRM(row: DbLead, dupPhones?: Set<string>) {
     archived: row.archived === true,
     blocked: row.blocked === true,
   }
+}
+
+/**
+ * campaign id → its name, and campaign id → its project's name.
+ *
+ * Meta for the names (one list call, the same one every other screen makes)
+ * and our own link table for the projects, which Meta has no concept of.
+ * Returns empty maps rather than throwing: a CRM that cannot reach Meta is
+ * still a working CRM, and a row that says less is not a row that lies.
+ */
+async function resolveCampaignLabels(): Promise<{
+  campaignNames: Map<string, string>
+  campaignProjects: Map<string, string>
+}> {
+  const campaignNames = new Map<string, string>()
+  const campaignProjects = new Map<string, string>()
+  try {
+    if (!(await isMetaConfigured())) return { campaignNames, campaignProjects }
+    const campaigns = await listCampaigns()
+    for (const c of campaigns) {
+      const id = String(c.id ?? '')
+      if (!id) continue
+      if (c.name) campaignNames.set(id, String(c.name))
+      const slug = await getProjectSlugForCampaign(id).catch(() => null)
+      if (slug) {
+        const p = await getInventoryPropertyBySlug(slug).catch(() => null)
+        if (p?.name) campaignProjects.set(id, p.name)
+      }
+    }
+  } catch { /* a CRM that cannot reach Meta is still a working CRM */ }
+  return { campaignNames, campaignProjects }
 }
 
 export async function GET() {
@@ -178,6 +229,14 @@ export async function GET() {
     const rows = await query<DbLead>(sql, params)
     const dupPhones = await duplicatePhoneSet()
 
+    // WHAT THE ROW ALREADY KNEW AND NEVER SAID. Every synced Meta lead carries
+    // the campaign id in utm_id; meta_campaign_projects maps that campaign to
+    // its project. Two cheap reads answer for the whole page, so "General
+    // enquiry" becomes the campaign or the project that actually brought them.
+    // Both fail soft: a lead with an unresolvable campaign simply says less,
+    // never something untrue.
+    const { campaignNames, campaignProjects } = await resolveCampaignLabels()
+
     // The true count under the SAME filter the list used, so a broker's total
     // matches a broker's list rather than the whole company's.
     let total = rows.length
@@ -205,7 +264,7 @@ export async function GET() {
       unassigned = Number(c?.n) || 0
     }
     return NextResponse.json({
-      leads: rows.map((r) => dbLeadToCRM(r, dupPhones)),
+      leads: rows.map((r) => dbLeadToCRM(r, dupPhones, campaignNames, campaignProjects)),
       source: 'db',
       unassigned,
       total,
