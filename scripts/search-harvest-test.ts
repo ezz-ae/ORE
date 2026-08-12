@@ -20,6 +20,8 @@ import {
   MAX_ADDS_PER_RUN, MIN_LEADS_FOR_TARGET,
   type SearchTerm, type HarvestContext,
 } from '../lib/google/search-harvest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -189,6 +191,40 @@ console.log('\n── every verdict is reachable ──')
   ]) seen.add(r.verdict)
   const missing = HARVEST_VERDICTS.filter((v) => !seen.has(v))
   check('every verdict this module can reach has a case', missing.length === 0, missing.join(','))
+}
+
+console.log('\n── the machine may block, and may not buy ──')
+{
+  // THE HARVEST IS THE ONE THING THIS MACHINE CHANGES ON A LIVE ACCOUNT
+  // WITHOUT BEING ASKED. Three properties make that defensible, and all three
+  // live in the cycle rather than in the pure module above — so they are
+  // asserted against the source, not against a return value.
+  const engine = readFileSync(join(process.cwd(), 'lib/freehold/ads-machine-engine.ts'), { encoding: 'utf8' })
+
+  const start = engine.indexOf('── SEARCH HARVEST')
+  check('the harvest step is actually wired into the cycle', start > 0, String(start))
+  const block = engine.slice(start, engine.indexOf('── EVALUATE', start))
+
+  // 1. RUNNING ONLY. A paused machine observes; it does not reach into a live
+  // account. Pausing is what an operator does when they want it to stop.
+  check('it only runs when the machine is running',
+    /machine\.status === 'running'/.test(block))
+
+  // 2. ONCE A DAY. The report reads a 30-day window, so a second run an hour
+  // later re-reads the same evidence and spends API quota to propose nothing.
+  check('…and at most once a day', /didRecently\(/.test(block))
+
+  // 3. NEGATIVES ONLY. applyHarvestNegatives is the only writer it may call.
+  // addKeywords in this block would mean the machine started spend on a
+  // forecast, unattended, which is the line this whole design draws.
+  check('…and it may only BLOCK, never buy',
+    /applyHarvestNegatives\(/.test(block) && !/addKeywords\(/.test(block),
+    block.includes('addKeywords(') ? 'the cycle can add keywords unattended' : 'ok')
+
+  // A Google outage must not stop a cycle: every other branch in it is about
+  // money already committed, and this one is about money not yet spent.
+  check('a Google failure is caught rather than allowed to end the cycle',
+    /catch \(e\)/.test(block) && /result\.errors\.push/.test(block))
 }
 
 if (failures > 0) {
