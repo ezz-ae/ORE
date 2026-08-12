@@ -9,12 +9,18 @@
  * doing it inside a week — which costs the single strongest signal this
  * product has.
  *
- * So the four steps are drawn, each with the number it stands on:
+ * Four steps, one line each, numbers doing the talking:
  *
- *   Rated       40 of 571 · 12 worth having · 9 junk
- *   Told Meta   12 of 12 sent
- *   Seeded      74 of 100 matched
- *   Targeting   nothing attached yet          [Attach]
+ *   Rated            40 of 571 · 12 good · 9 junk
+ *   Sent to Meta     12 of 12
+ *   Audience         74 of 100 matched              [Build]
+ *   In campaigns     Nothing to attach
+ *
+ * IT USED TO EXPLAIN ITSELF THREE TIMES. A subtitle about our own methodology,
+ * a step label that was a full sentence, and a line under it restating that
+ * sentence in longer words — then three more stacked lines repeating the
+ * counts. Nobody reads a panel that talks that much, and an unread panel
+ * protects nothing. Two words and a count carry every row.
  *
  * NO STEP IS GREEN WITHOUT ITS EVIDENCE. A lookalike built from a dozen people
  * reads WAITING, not done — Meta accepts that request and produces something
@@ -78,10 +84,12 @@ export default function RatingLoopWidget() {
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-5">
+      {/* NO SUBTITLE. It used to explain the panel's own methodology — "every
+          step below is counted, not estimated" — which is a sentence about us,
+          not about their leads, and nobody reads it twice. */}
       <h2 className="text-sm font-semibold text-white">{t('loop.title')}</h2>
-      <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{t('loop.sub')}</p>
 
-      <div className="mt-4 space-y-2.5">
+      <div className="mt-3 space-y-1.5">
         {steps.map((s) => (
           <div key={s.id} className="flex flex-wrap items-start gap-2.5">
             <span className={`mt-0.5 shrink-0 ${TONE[s.state]}`}>
@@ -90,28 +98,28 @@ export default function RatingLoopWidget() {
                 : s.state === 'waiting' ? <ArrowRight className="h-3.5 w-3.5" />
                 : <CircleDashed className="h-3.5 w-3.5" />}
             </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] text-slate-200">{t(`loop.step.${s.id}`)}</div>
-              {/* The numbers the state stands on — never a claim without them. */}
-              <div className={`text-[11px] leading-snug ${TONE[s.state]}`}>
+            {/* ONE LINE: the step, then its numbers. The label used to be a
+                sentence ("The ones who were worth it become an audience to
+                copy — the rest become a list to avoid") and the line under it
+                said the same thing again in longer words. Two words and a
+                count carry it. */}
+            <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
+              <span className="text-[13px] text-slate-200">{t(`loop.step.${s.id}`)}</span>
+              <span className={`text-[11px] tabular-nums ${TONE[s.state]}`}>
                 {t(`loop.said.${s.id}.${s.state}`, s.vars as Record<string, string | number>)}
-              </div>
-              {/* WHAT PUT PEOPLE THERE. A cohort size on its own is compatible
-                  with the list being built from nothing; the makeup is the
-                  proof. It also answers the question the size hides — how much
-                  of this the ratings actually found, which is usually less
-                  than half, because closed and qualified leads arrive here
-                  whether or not anybody got round to judging them. */}
+              </span>
+              {/* The makeup, on the SAME line — and it is the proof the seed
+                  is not just the rating column reshaped. It used to be three stacked
+                  lines under the step, which restated the counts already
+                  above them. */}
               {s.id === 'seeded' && evidence && (
-                <div className="mt-1 space-y-0.5">
+                <span className="flex flex-wrap items-baseline gap-x-2 text-[10px] text-slate-500">
                   <SignalLine label={t('loop.made.seed')} counts={evidence.seed} keys={SEED_SIGNALS} t={t} />
                   <SignalLine label={t('loop.made.avoid')} counts={evidence.avoid} keys={AVOID_SIGNALS} t={t} />
                   {evidence.seedBeyondRatings > 0 && (
-                    <div className="text-[11px] text-slate-500">
-                      {t('loop.made.beyond', { n: evidence.seedBeyondRatings })}
-                    </div>
+                    <span>{t('loop.made.beyond', { n: evidence.seedBeyondRatings })}</span>
                   )}
-                </div>
+                </span>
               )}
             </div>
             {s.action === 'sync' && (
@@ -147,15 +155,15 @@ function SignalLine({ label, counts, keys, t }: {
   const present = keys.filter((k) => (counts[k] ?? 0) > 0)
   if (present.length === 0) return null
   return (
-    <div className="text-[11px] text-slate-400">
-      <span className="text-slate-500">{label}</span>{' '}
+    <span>
+      <span className="text-slate-600">{label}</span>{' '}
       {present.map((k, i) => (
         <span key={k}>
-          {i > 0 && <span className="text-slate-600"> · </span>}
-          <span className="text-slate-300">{counts[k]}</span> {t(`loop.sig.${k}`)}
+          {i > 0 && <span className="text-slate-700">·</span>}
+          <span className="text-slate-400">{counts[k]}</span> {t(`loop.sig.${k}`)}{' '}
         </span>
       ))}
-    </div>
+    </span>
   )
 }
 
