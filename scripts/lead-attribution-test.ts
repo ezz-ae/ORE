@@ -18,6 +18,8 @@
  * Pure — no database. Runs in `pnpm guards`.
  */
 import { bucketLeadsByCampaign, type AttributableLead, type CampaignRef } from '../lib/freehold/lead-attribution'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -107,6 +109,85 @@ console.log('\n── the count never exceeds the leads ──')
     [...m.values()].every((c) => c.rated <= c.attributed), j(m))
   check('junk input does not throw',
     bucketLeadsByCampaign(null as unknown as AttributableLead[], camps).size === 2)
+}
+
+console.log('\n── the id that arrived in the name column ──')
+{
+  // THE DEFECT THIS RECOVERS FROM, and it was live for the whole account:
+  // lib/meta/client.ts wrote `utm_campaign={{campaign.id}}` with no utm_id at
+  // all. Every landing-page lead this account bought stored its campaign id in
+  // the NAME column — invisible to the id match, and compared by the name
+  // match against a human campaign name. Both missed. 571 CRM rows read
+  // "General enquiry", and every per-campaign number was standing on nothing.
+  const camps: CampaignRef[] = [
+    { id: '120210000000001', name: 'Venice — buyers' },
+    { id: '120210000000002', name: 'Marina — investors' },
+  ]
+  const recovered = bucketLeadsByCampaign(
+    [{ id: 'l1', utmId: null, utmCampaign: '120210000000001' }],
+    camps,
+  )
+  check('a lead whose id landed in the name column is recovered',
+    recovered.get('120210000000001')?.attributed === 1, j(recovered))
+  check('…and is not counted against any other campaign',
+    recovered.get('120210000000002')?.attributed === 0)
+
+  // IT MAY NEVER OVERRULE A GENUINE MATCH. Consulted last, and only for a
+  // value shaped like a platform id.
+  const both = bucketLeadsByCampaign(
+    [{ id: 'l2', utmId: '120210000000002', utmCampaign: '120210000000001' }],
+    camps,
+  )
+  check('a real utm_id still wins over an id sitting in the name column',
+    both.get('120210000000002')?.attributed === 1 && both.get('120210000000001')?.attributed === 0,
+    j(both))
+
+  const named = bucketLeadsByCampaign(
+    [{ id: 'l3', utmId: null, utmCampaign: 'Venice — buyers' }],
+    camps,
+  )
+  check('a real campaign NAME still matches as it always did',
+    named.get('120210000000001')?.attributed === 1, j(named))
+
+  // THE FALSE POSITIVE A LOOSE TEST WOULD CREATE. A campaign somebody named
+  // "2024" must not swallow every lead tagged with that year.
+  const shortCamps: CampaignRef[] = [{ id: '2024', name: 'Spring push' }]
+  const notAnId = bucketLeadsByCampaign(
+    [{ id: 'l4', utmId: null, utmCampaign: '2024' }],
+    shortCamps,
+  )
+  check('a short number is not treated as a platform id',
+    notAnId.get('2024')?.attributed === 0, j(notAnId))
+
+  // And a lead tagged with an id no campaign in this list owns stays
+  // unattributed rather than being pushed into the nearest bucket.
+  const stranger = bucketLeadsByCampaign(
+    [{ id: 'l5', utmId: null, utmCampaign: '999999999999999' }],
+    camps,
+  )
+  check('an unknown id in the name column belongs to nobody',
+    [...stranger.values()].every((c) => c.attributed === 0), j(stranger))
+}
+
+console.log('\n── the launcher writes the id into the id ──')
+{
+  // The recovery above exists because of one string. This asserts the string,
+  // so the recovery never has to grow a second generation of leads to rescue.
+  const client = readFileSync(join(process.cwd(), 'lib/meta/client.ts'), { encoding: 'utf8' })
+  // Read the CONSTANT, not the file. The header above it describes the bug in
+  // prose, and a whole-file scan matched its own explanation — a guard that
+  // fails on the sentence explaining why it exists is worse than no guard.
+  const decl = client.slice(client.indexOf('const AD_URL_TAGS'))
+  const tags = decl.slice(0, decl.indexOf('\n\n'))
+  check('the tags constant exists to read', tags.includes('utm_source=meta'), tags.slice(0, 60))
+  check('every ad we create carries utm_id={{campaign.id}}',
+    tags.includes('utm_id={{campaign.id}}'), tags)
+  check('…and utm_campaign carries the NAME, not the id again',
+    tags.includes('utm_campaign={{campaign.name}}') && !tags.includes('utm_campaign={{campaign.id}}'),
+    tags)
+  check('…from ONE definition, so the creative paths cannot drift apart',
+    (client.match(/url_tags: AD_URL_TAGS/g) ?? []).length >= 4,
+    String((client.match(/url_tags:/g) ?? []).length))
 }
 
 if (failures > 0) {

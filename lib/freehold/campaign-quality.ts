@@ -11,10 +11,18 @@ import { bucketLeadsByCampaign, type CampaignRef, type LeadCounts } from '@/lib/
  * delivering junk, and only the downstream funnel reveals it.
  *
  * Attribution: when a campaign is launched its landing links carry
- * utm_campaign=<name> / utm_id=<id>, and Meta instant-form leads carry the
+ * utm_id=<id> / utm_campaign=<name>, and Meta instant-form leads carry the
  * Graph lead's campaign_id stored as utm_id at sync time. We match either
  * (case-insensitive). No attribution → score is null (honest "not enough
  * signal yet", never a fabricated number).
+ *
+ * THE THIRD MATCH, `utm_campaign = <id>`, IS A RECOVERY. Until it was fixed
+ * the launcher wrote `utm_campaign={{campaign.id}}` and no utm_id at all, so
+ * every landing-page lead this account bought put its campaign id in the NAME
+ * column — invisible to the id match, and compared by the name match against a
+ * human campaign name. Those rows are real and were paid for. Matched exactly
+ * (not lowered) because an id is not case-bearing, and listed after the two
+ * genuine matches so it can never displace one.
  */
 
 export interface CampaignQuality {
@@ -65,7 +73,9 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
       `SELECT id, status, blocked, phone, behaviour_score, value_rating
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
-          AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
+          AND ( ($1 <> '' AND utm_id = $1)
+                OR ($1 <> '' AND utm_campaign = $1)
+                OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
       [campaignId || '', campaignName || ''],
     )
   } catch {
@@ -82,7 +92,9 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
         `SELECT id, status, blocked, phone, behaviour_score, value_rating
            FROM freehold_site_leads
           WHERE archived IS NOT TRUE
-            AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
+            AND ( ($1 <> '' AND utm_id = $1)
+                OR ($1 <> '' AND utm_campaign = $1)
+                OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
         [campaignId || '', campaignName || ''],
       )
     } catch {
@@ -91,7 +103,9 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
           `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating
              FROM freehold_site_leads
             WHERE archived IS NOT TRUE
-              AND ( ($1 <> '' AND utm_id = $1) OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
+              AND ( ($1 <> '' AND utm_id = $1)
+                OR ($1 <> '' AND utm_campaign = $1)
+                OR ($2 <> '' AND lower(utm_campaign) = lower($2)) )`,
           [campaignId || '', campaignName || ''],
         )
       } catch { rows = [] }
@@ -247,7 +261,7 @@ export async function getLeadCountsForCampaigns(
       `SELECT id, utm_id, utm_campaign, value_rating
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
-          AND ( utm_id = ANY($1) OR lower(utm_campaign) = ANY($2) )`,
+          AND ( utm_id = ANY($1) OR utm_campaign = ANY($1) OR lower(utm_campaign) = ANY($2) )`,
       [ids, names],
     )
   } catch {
@@ -260,7 +274,7 @@ export async function getLeadCountsForCampaigns(
         `SELECT id, utm_id, utm_campaign, value_rating
            FROM freehold_site_leads
           WHERE archived IS NOT TRUE
-            AND ( utm_id = ANY($1) OR lower(utm_campaign) = ANY($2) )`,
+            AND ( utm_id = ANY($1) OR utm_campaign = ANY($1) OR lower(utm_campaign) = ANY($2) )`,
         [ids, names],
       )
     } catch { return new Map() }
