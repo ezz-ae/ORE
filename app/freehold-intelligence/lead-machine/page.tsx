@@ -5,6 +5,7 @@ import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/
 import { MachinePulse } from '@/components/freehold/machine-pulse'
 import LiveCampaignsWidget from '@/components/freehold/lead-machine/live-campaigns-widget'
 import RocketAdWidget from '@/components/freehold/lead-machine/rocket-ad-widget'
+import RatingLoopWidget from '@/components/freehold/rating-loop-widget'
 import { getServerT } from '@/lib/i18n/server'
 
 // The Lead Machine pipeline — LIVE data only. The mental model on this page:
@@ -108,6 +109,12 @@ export default async function LeadMachineOverviewPage() {
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <LiveCampaignsWidget />
         <RocketAdWidget />
+        {/* WHAT THE TEAM'S RATINGS ARE DOING. It sits on the ads home rather
+            than in the CRM on purpose: the people who need to see that the
+            ratings are working are the ones spending the money, and a team
+            that cannot see the effect stops rating within a week — which
+            costs the single strongest signal this product has. */}
+        <RatingLoopWidget />
       </div>
 
       <MachinePulse />
