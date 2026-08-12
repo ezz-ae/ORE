@@ -48,7 +48,7 @@ const en: Dict = {
   // The report that lets Search run itself. Waste first: it is the one line an
   // operator can act on without reading anything else.
   'gsh.title': 'What people actually typed',
-  'gsh.sub': '{terms} real searches that triggered your ads. Every verdict below is arithmetic \u2014 what a phrase brought, and what it cost.',
+  'gsh.sub': '{terms} real searches that showed your ads.',
   'gsh.block': 'Block {n}',
   'gsh.wasting': 'AED {aed} spent on searches that brought nothing',
   'gsh.spent': 'AED {aed} \u00b7 {clicks} clicks',
@@ -62,7 +62,7 @@ const en: Dict = {
   'gsh.quiet': 'Nothing to act on. No search has wasted enough to block, and none has converted cheaply enough to buy.',
 
   'gkw.title': 'What to buy, from your own projects',
-  'gkw.sub': 'Ranked by opportunity score. One tight ad group per intent, each pointed at that project\u2019s own page \u2014 which is what makes the clicks cheap.',
+  'gkw.sub': 'Your strongest projects, and the exact searches worth buying for each.',
   'gkw.empty': 'No project has a published landing page and a valid permit yet, so there is nothing honest to bid on.',
   'gkw.totals': '{projects} projects \u00b7 {groups} ad groups \u00b7 {keywords} keywords',
   'gkw.groupCount': '{groups} groups \u00b7 {keywords} keywords',
@@ -101,7 +101,7 @@ const en: Dict = {
   'gcomp.verdict.losingToBoth': 'You are losing to both: {rank}% outbid and {budget}% out of money. Doing one alone will barely move it — the budget goes first, then the bid.',
   'gcomp.verdict.thin': 'Only {impressions} impressions so far. Below about {need} these percentages are noise, so no read yet.',
   'gcomp.verdict.unknown': 'Google has not reported auction share for this yet.',
-  'gcomp.note': 'Google does not expose the competitor-domain report through its API to anyone — not this tool, not any other. These are your own auction numbers, which is the half that names what to change.',
+  'gcomp.note': 'Google does not give the competitor-domain report to any tool. These are your own auction numbers.',
 
   'gdel.state.delivering': 'Serving',
   'gdel.state.learning': 'Learning',
@@ -245,7 +245,7 @@ const ar: Dict = {
   'padsg.thConv': 'التحويلات',
 
   'gsh.title': 'ما كتبه الناس فعلاً',
-  'gsh.sub': '{terms} عملية بحث حقيقية شغّلت إعلاناتك. كل حكم أدناه حساب بسيط — ماذا جلبت العبارة وكم كلّفت.',
+  'gsh.sub': '{terms} عملية بحث حقيقية ظهرت فيها إعلاناتك.',
   'gsh.block': 'احجب {n}',
   'gsh.wasting': '{aed} درهم أُنفقت على عمليات بحث لم تجلب شيئًا',
   'gsh.spent': '{aed} درهم · {clicks} نقرة',
@@ -259,7 +259,7 @@ const ar: Dict = {
   'gsh.quiet': 'لا شيء يستدعي إجراءً. لا بحث أهدر ما يكفي للحجب، ولا بحث حوّل بسعر يستحق الشراء.',
 
   'gkw.title': 'ماذا تشتري، من مشاريعك أنت',
-  'gkw.sub': 'مرتّبة بدرجة الفرصة. مجموعة إعلانية مركّزة لكل نيّة، كل واحدة موجّهة إلى صفحة المشروع نفسه — وهذا ما يجعل النقرات رخيصة.',
+  'gkw.sub': 'أقوى مشاريعك، والعبارات التي تستحق الشراء لكل منها.',
   'gkw.empty': 'لا يوجد مشروع بصفحة هبوط منشورة وتصريح ساري بعد، فلا شيء يمكن المزايدة عليه بصدق.',
   'gkw.totals': '{projects} مشاريع · {groups} مجموعات إعلانية · {keywords} كلمة مفتاحية',
   'gkw.groupCount': '{groups} مجموعات · {keywords} كلمة',
@@ -298,7 +298,7 @@ const ar: Dict = {
   'gcomp.verdict.losingToBoth': 'تخسر من الجهتين: {rank}% تفوّق سعري و{budget}% نفاد ميزانية. معالجة واحدة فقط لن تغيّر الكثير — الميزانية أولًا ثم العرض.',
   'gcomp.verdict.thin': 'لديك {impressions} ظهور فقط حتى الآن. تحت {need} تقريبًا تكون هذه النسب ضجيجًا، فلا قراءة بعد.',
   'gcomp.verdict.unknown': 'لم تُبلّغ جوجل بعد عن حصة المزاد لهذا.',
-  'gcomp.note': 'لا تتيح جوجل تقرير نطاقات المنافسين عبر واجهتها البرمجية لأي أداة — لا هذه ولا غيرها. هذه أرقام مزادك أنت، وهي النصف الذي يحدد ما يجب تغييره.',
+  'gcomp.note': 'لا تعطي جوجل تقرير نطاقات المنافسين لأي أداة. هذه أرقام مزادك أنت.',
 
   'gdel.state.delivering': 'تعمل',
   'gdel.state.learning': 'تتعلّم',
@@ -442,7 +442,7 @@ const ru: Dict = {
   'padsg.thConv': 'Конв.',
 
   'gsh.title': 'Что люди на самом деле набирали',
-  'gsh.sub': '{terms} реальных запросов, показавших ваши объявления. Каждый вывод ниже — арифметика: что фраза принесла и сколько стоила.',
+  'gsh.sub': 'Реальных запросов, показавших ваши объявления: {terms}.',
   'gsh.block': 'Заблокировать {n}',
   'gsh.wasting': '{aed} AED потрачено на запросы, которые ничего не принесли',
   'gsh.spent': '{aed} AED · кликов: {clicks}',
@@ -456,7 +456,7 @@ const ru: Dict = {
   'gsh.quiet': 'Действовать не по чему. Ни один запрос не потратил достаточно для блокировки и ни один не сконвертировал достаточно дёшево для покупки.',
 
   'gkw.title': 'Что покупать — из ваших собственных проектов',
-  'gkw.sub': 'Ранжировано по оценке возможности. Одна узкая группа объявлений на каждое намерение, каждая ведёт на страницу самого проекта — именно это делает клики дешёвыми.',
+  'gkw.sub': 'Ваши сильнейшие проекты и запросы, которые стоит купить под каждый.',
   'gkw.empty': 'Пока ни у одного проекта нет опубликованной посадочной страницы и действующего разрешения, поэтому честно ставить не на что.',
   'gkw.totals': 'проектов: {projects} · групп: {groups} · ключевых слов: {keywords}',
   'gkw.groupCount': 'групп: {groups} · слов: {keywords}',
@@ -495,7 +495,7 @@ const ru: Dict = {
   'gcomp.verdict.losingToBoth': 'Теряете с обеих сторон: {rank}% перебитая ставка и {budget}% нехватка денег. Одно действие почти ничего не изменит — сначала бюджет, затем ставка.',
   'gcomp.verdict.thin': 'Пока только {impressions} показов. Ниже примерно {need} эти проценты — шум, поэтому вывода нет.',
   'gcomp.verdict.unknown': 'Google пока не сообщил долю аукционов для этого.',
-  'gcomp.note': 'Google не отдаёт отчёт по доменам конкурентов через свой API никому — ни этому инструменту, ни любому другому. Это ваши собственные аукционные показатели, и именно они говорят, что менять.',
+  'gcomp.note': 'Google не отдаёт отчёт по доменам конкурентов ни одному инструменту. Это ваши собственные показатели аукциона.',
 
   'gdel.state.delivering': 'Показывается',
   'gdel.state.learning': 'Обучается',
