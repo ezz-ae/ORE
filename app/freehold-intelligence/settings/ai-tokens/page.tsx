@@ -25,14 +25,14 @@ const LOW_WATERMARK = Math.round(OPENING_BALANCE * 0.3) // 4,500,000
 const CRITICAL_WATERMARK = Math.round(OPENING_BALANCE * 0.1) // 1,500,000
 
 /** Daily consumption rate — randomized once per session within the stated
- *  300k–1M/day band, then rounded to a clean figure so it reads as a
+ *  10k–50k/day band, then rounded to a clean figure so it reads as a
  *  deliberately-set budget, not a jittery float. Every tick's burn size is
  *  DERIVED from this rate (see the effect below), so the live meter always
  *  ties back to a calculated, displayed number rather than an arbitrary one. */
-const DAILY_BURN_MIN = 300_000
-const DAILY_BURN_MAX = 1_000_000
+const DAILY_BURN_MIN = 10_000
+const DAILY_BURN_MAX = 50_000
 const pickDailyRate = () =>
-  Math.round((DAILY_BURN_MIN + Math.random() * (DAILY_BURN_MAX - DAILY_BURN_MIN)) / 10_000) * 10_000
+  Math.round((DAILY_BURN_MIN + Math.random() * (DAILY_BURN_MAX - DAILY_BURN_MIN)) / 1_000) * 1_000
 
 const TICK_MS = 2000
 /** dailyRate means a REAL calendar day — no compression. This is the ONE
@@ -81,11 +81,13 @@ const num = (v: number) => Math.round(v).toLocaleString('en-US')
 // ── Persistence — localStorage only, no network, no server ─────────────────
 const STORAGE_KEY = 'fh_ai_token_control_v1'
 // v1 → v2: the catch-up window was wrongly compressed to 30 minutes, so an
-// overnight gap burned many simulated "days" instead of one real day (a 15M
-// balance could fall to ~4M by morning). Bumping the version discards any v1
-// ledger already sitting in a browser's localStorage — everyone gets a clean
-// 15,000,000 restart under the corrected real-day model on next load.
-const STORAGE_VERSION = 2
+// overnight gap burned many simulated "days" instead of one real day.
+// v2 → v3: the daily rate band dropped from 300k–1M to 10k–50k — a v2 ledger
+// carries an old dailyRate outside the new band, so it's discarded too.
+// Bumping the version always means the same thing: any incompatible ledger
+// already in a browser's localStorage is discarded and the page restarts
+// clean at 15,000,000, once, under the current model.
+const STORAGE_VERSION = 3
 
 interface Ledger {
   consumed: number
@@ -149,6 +151,11 @@ export default function AiTokenControlPage() {
   // null until hydration resolves what dailyRate actually is (stored or
   // freshly picked) — nothing ticks or persists before that.
   const [dailyRate, setDailyRate] = useState<number | null>(null)
+  // False for the first render on every mount — including a plain refresh.
+  // The page MUST NOT show OPENING_BALANCE/OPENING_CONSUMED before the real
+  // stored balance is known, or that default flashes on screen for a beat
+  // and reads exactly like a reset even though nothing was actually touched.
+  const [hydrated, setHydrated] = useState(false)
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
   const [flash, setFlash] = useState(false)
@@ -163,6 +170,7 @@ export default function AiTokenControlPage() {
     if (!stored) {
       setDailyRate(pickDailyRate())
       lastTickRef.current = Date.now()
+      setHydrated(true)
       return
     }
     const rate = stored.dailyRate
@@ -176,6 +184,7 @@ export default function AiTokenControlPage() {
     })
     setDailyRate(rate)
     lastTickRef.current = Date.now()
+    setHydrated(true)
   }, [])
 
   // Persist on every ledger change, once hydrated — a refresh a moment later
@@ -272,32 +281,36 @@ export default function AiTokenControlPage() {
               <Cpu className="h-3.5 w-3.5 text-gold/70" />
               {t('settings.tokens.totalConsumed')}
             </div>
-            <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-white" dir="ltr">{num(ledger.consumed)}</div>
+            <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-white" dir="ltr">
+              {hydrated ? num(ledger.consumed) : '—'}
+            </div>
             <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.tokens')}</div>
           </div>
-          <div className={`rounded-[14px] border p-4 ${critical ? 'border-red-500/40 bg-red-500/[0.06]' : low ? 'border-amber-500/30 bg-amber-500/[0.04]' : 'border-line bg-surface'}`}>
+          <div className={`rounded-[14px] border p-4 ${hydrated && critical ? 'border-red-500/40 bg-red-500/[0.06]' : hydrated && low ? 'border-amber-500/30 bg-amber-500/[0.04]' : 'border-line bg-surface'}`}>
             <div className="flex items-center justify-between">
               <div className="text-xs text-slate-500">{t('settings.tokens.currentBalance')}</div>
-              {critical ? (
+              {hydrated && critical ? (
                 <span className="inline-flex animate-pulse items-center gap-1 rounded-full border border-red-500/50 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-400">
                   <TriangleAlert className="h-3 w-3" />
                   {t('settings.tokens.criticalBadge')}
                 </span>
-              ) : low ? (
+              ) : hydrated && low ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
                   <TriangleAlert className="h-3 w-3" />
                   {t('settings.tokens.lowBadge')}
                 </span>
               ) : null}
             </div>
-            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${critical ? 'text-red-400' : 'text-white'}`} dir="ltr">{num(ledger.balance)}</div>
+            <div className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${hydrated && critical ? 'text-red-400' : 'text-white'}`} dir="ltr">
+              {hydrated ? num(ledger.balance) : '—'}
+            </div>
             <div className="mt-0.5 text-xs text-slate-500">{t('settings.tokens.tokens')}</div>
-            {critical ? (
+            {hydrated && critical ? (
               <div className="mt-1 text-xs font-medium leading-relaxed text-red-400">{t('settings.tokens.criticalNote')}</div>
-            ) : low ? (
+            ) : hydrated && low ? (
               <div className="mt-1 text-xs leading-relaxed text-amber-400/90">{t('settings.tokens.lowNote')}</div>
             ) : null}
-            {dailyRate != null ? (
+            {hydrated && dailyRate != null ? (
               <div className="mt-1.5 text-[11px] text-slate-500" dir="ltr">
                 {t('settings.tokens.dailyRateNote', { rate: num(dailyRate) })}
               </div>
@@ -384,7 +397,7 @@ export default function AiTokenControlPage() {
               </tr>
             </thead>
             <tbody>
-              {ledger.trail.map((e) => (
+              {hydrated && ledger.trail.map((e) => (
                 <tr key={e.id} className="border-t border-line/60">
                   <td className="px-6 py-3 font-mono text-xs text-slate-500" dir="ltr">{e.id}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-400" dir="ltr">{timeFmt(e.at)}</td>
