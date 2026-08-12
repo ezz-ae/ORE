@@ -144,8 +144,8 @@ console.log('\n── the finding a campaign total cannot contain ──')
   const r = recommendationsFor(facts({
     spendAed: 501, leads: 2, attributedLeads: 2, impressions: 27_433, adSetCount: 2,
     adSets: [
-      { id: 'a1', name: 'adset 1', spendAed: 408, impressions: 26_487, leads: 2 },
-      { id: 'a2', name: 'adset 2', spendAed: 93, impressions: 946, leads: 0 },
+      { id: 'a1', live: true, name: 'adset 1', spendAed: 408, impressions: 26_487, leads: 2 },
+      { id: 'a2', live: true, name: 'adset 2', spendAed: 93, impressions: 946, leads: 0 },
     ],
   }))
   const hit = r.find((x) => x.id === 'expensive_adset')
@@ -162,8 +162,8 @@ console.log('\n── the finding a campaign total cannot contain ──')
   // are worth it, and stopping it is the costly error.
   const converting = recommendationsFor(facts({
     adSets: [
-      { id: 'a1', name: 'cheap', spendAed: 408, impressions: 26_487, leads: 2 },
-      { id: 'a2', name: 'dear but working', spendAed: 300, impressions: 950, leads: 3 },
+      { id: 'a1', live: true, name: 'cheap', spendAed: 408, impressions: 26_487, leads: 2 },
+      { id: 'a2', live: true, name: 'dear but working', spendAed: 300, impressions: 950, leads: 3 },
     ],
   }))
   check('an expensive ad set that CONVERTS is never told to stop',
@@ -173,14 +173,14 @@ console.log('\n── the finding a campaign total cannot contain ──')
   // rounding artefact, not an audience verdict.
   const noise = recommendationsFor(facts({
     adSets: [
-      { id: 'a1', name: 'cheap', spendAed: 408, impressions: 26_487, leads: 2 },
-      { id: 'a2', name: 'barely ran', spendAed: 4, impressions: 20, leads: 0 },
+      { id: 'a1', live: true, name: 'cheap', spendAed: 408, impressions: 26_487, leads: 2 },
+      { id: 'a2', live: true, name: 'barely ran', spendAed: 4, impressions: 20, leads: 0 },
     ],
   }))
   check('an ad set that barely ran is not judged', !ids(noise).includes('expensive_adset'))
 
   check('one ad set alone has nothing to compare against',
-    !ids(recommendationsFor(facts({ adSets: [{ id: 'a1', name: 'only', spendAed: 408, impressions: 26_487, leads: 2 }] }))).includes('expensive_adset'))
+    !ids(recommendationsFor(facts({ adSets: [{ id: 'a1', live: true, name: 'only', spendAed: 408, impressions: 26_487, leads: 2 }] }))).includes('expensive_adset'))
 }
 
 console.log('\n── the ad set carrying the spend is short of a rotation ──')
@@ -193,8 +193,8 @@ console.log('\n── the ad set carrying the spend is short of a rotation ─�
     dailyBudgetAed: 500, spendAed: 4000, days: 8, leads: 2, attributedLeads: 2,
     impressions: 40_000, clicks: 400, creativeCount: 2, adSetCount: 2,
     adSets: [
-      { id: 'a1', name: 'new audiences', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 1, active: true },
-      { id: 'a2', name: 'switched off',  spendAed: 93,   impressions: 946,    leads: 0, liveAds: 1, active: false },
+      { id: 'a1', live: true, name: 'new audiences', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 1, active: true },
+      { id: 'a2', live: true, name: 'switched off',  spendAed: 93,   impressions: 946,    leads: 0, liveAds: 1, active: false },
     ],
   }))
   const hit = r.find((x) => x.id === 'learning_needs_ads')
@@ -221,27 +221,27 @@ console.log('\n── the ad set carrying the spend is short of a rotation ─�
 
   const stocked = recommendationsFor(facts({
     spendAed: 4000, days: 8, leads: 2, attributedLeads: 2, impressions: 40_000,
-    adSets: [{ id: 'a1', name: 'w', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 3, active: true }],
+    adSets: [{ id: 'a1', live: true, name: 'w', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 3, active: true }],
   }))
   check('an ad set already at three designs is not asked for more',
     !ids(stocked).includes('learning_needs_ads'), ids(stocked).join(' | '))
 
   const paused = recommendationsFor(facts({
     spendAed: 4000, days: 8, leads: 2, attributedLeads: 2, impressions: 40_000,
-    adSets: [{ id: 'a1', name: 'w', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 1, active: false }],
+    adSets: [{ id: 'a1', live: true, name: 'w', spendAed: 4000, impressions: 40_000, leads: 2, liveAds: 1, active: false }],
   }))
   check('a paused ad set is never told to add designs', !ids(paused).includes('learning_needs_ads'))
 
   const thin = recommendationsFor(facts({
     spendAed: 20, days: 8, leads: 0, impressions: 300,
-    adSets: [{ id: 'a1', name: 'w', spendAed: 20, impressions: 300, leads: 0, liveAds: 1, active: true }],
+    adSets: [{ id: 'a1', live: true, name: 'w', spendAed: 20, impressions: 300, leads: 0, liveAds: 1, active: true }],
   }))
   check('an ad set with no delivery behind it is not judged on its ad count',
     !ids(thin).includes('learning_needs_ads'), ids(thin).join(' | '))
 
   const learned = recommendationsFor(facts({
     spendAed: 4000, days: 7, leads: 60, attributedLeads: 60, impressions: 40_000,
-    adSets: [{ id: 'a1', name: 'w', spendAed: 4000, impressions: 40_000, leads: 60, liveAds: 1, active: true }],
+    adSets: [{ id: 'a1', live: true, name: 'w', spendAed: 4000, impressions: 40_000, leads: 60, liveAds: 1, active: true }],
   }))
   check('an ad set past the weekly learning floor is left alone',
     !ids(learned).includes('learning_needs_ads'), ids(learned).join(' | '))
@@ -272,6 +272,49 @@ console.log('\n── the panel stays readable ──')
     everything.every((x) => keys.has(x.key)), everything.map((x) => x.key).join(','))
   check('every produced action label is too',
     everything.every((x) => labels.has(x.action.labelKey)), everything.map((x) => x.action.labelKey).join(','))
+}
+
+console.log('\n── advice is never about something that is not running ──')
+{
+  // THE SCREENSHOT THIS COMES FROM: the page told an operator to "turn off"
+  // an ad set while the setup check three inches below correctly said
+  // "Paused — this one is not running". A recommendation about something that
+  // is not running is worse than none — it is obviously wrong to the person
+  // reading it, and it makes the panels that ARE right look like guesses.
+  const dearPaused = recommendationsFor({
+    ...facts(),
+    adSets: [
+      { id: 'cheap', name: 'adset 1', live: true, spendAed: 300, impressions: 10_000, leads: 5 },
+      { id: 'dear', name: 'adset 2', live: false, spendAed: 300, impressions: 1_000, leads: 0 },
+    ],
+  })
+  check('a PAUSED ad set is never called out as expensive',
+    !dearPaused.some((r) => r.key === 'expensiveAdSet'),
+    dearPaused.map((r) => r.key).join(','))
+
+  // …and the same numbers with it live DO raise it, so the rule still works.
+  const dearLive = recommendationsFor({
+    ...facts(),
+    adSets: [
+      { id: 'cheap', name: 'adset 1', live: true, spendAed: 300, impressions: 10_000, leads: 5 },
+      { id: 'dear', name: 'adset 2', live: true, spendAed: 300, impressions: 1_000, leads: 0 },
+    ],
+  })
+  check('…while the identical numbers on a LIVE one still do',
+    dearLive.some((r) => r.key === 'expensiveAdSet'), dearLive.map((r) => r.key).join(','))
+
+  // A PAUSED AD SET ON THE CHEAP SIDE is the subtler half: it would make a
+  // live ad set look expensive against a price nobody is currently getting.
+  const cheapPaused = recommendationsFor({
+    ...facts(),
+    adSets: [
+      { id: 'cheap', name: 'adset 1', live: false, spendAed: 300, impressions: 10_000, leads: 5 },
+      { id: 'dear', name: 'adset 2', live: true, spendAed: 300, impressions: 1_000, leads: 0 },
+    ],
+  })
+  check('…and a paused ad set never sets the price a live one is judged against',
+    !cheapPaused.some((r) => r.key === 'expensiveAdSet'),
+    cheapPaused.map((r) => r.key).join(','))
 }
 
 if (failures > 0) {
