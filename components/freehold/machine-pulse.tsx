@@ -35,6 +35,11 @@ type Pulse = {
   spend: { committedAed: number; capAed: number; liveCampaigns: number }
   lastActivityAt: string | null
   decisions: Entry[]
+  /** Plans waiting on somebody pressing start. Kept apart from decisions:
+   *  one is a record of what happened, the other is a to-do. */
+  pending?: Entry[]
+  /** The honest state of the layer — see lib/freehold/machine-activity.ts. */
+  state?: 'working' | 'onButIdle' | 'stopped' | 'none'
   alarms: Entry[]
   /** Duplicate alarm rows folded away on the server. */
   alarmsSuppressed?: number
@@ -215,11 +220,19 @@ export function MachinePulse() {
             live ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
                  : 'border-line-strong bg-surface text-slate-400'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${live ? 'animate-pulse bg-emerald-400' : 'bg-slate-600'}`} />
-            {live ? t('lm.pulse.running', { n: p.machines.running }) : t('lm.pulse.idle')}
+            {/* THE SWITCH IS NOT THE STATE. This read "1 running" beside
+                "0 live campaigns · AED 0" — three facts on one line, the first
+                contradicting the other two. Same fault as "Active" on a Meta
+                campaign badge, which this product has already had to fix
+                twice. A machine that is on and has launched nothing is on and
+                idle, which is a real state with its own answer. */}
+            {t(`lm.pulse.state.${p.state ?? (live ? 'working' : 'stopped')}`, { n: p.machines.running })}
           </span>
-          <span className="text-xs text-slate-400">
-            {t('lm.pulse.liveCampaigns', { n: p.spend.liveCampaigns })}
-          </span>
+          {p.spend.liveCampaigns > 0 && (
+            <span className="text-xs text-slate-400">
+              {t('lm.pulse.liveCampaigns', { n: p.spend.liveCampaigns })}
+            </span>
+          )}
           {p.lastActivityAt && (
             <span className="text-xs text-slate-500">{t('lm.pulse.lastCycle', { when: ago(p.lastActivityAt, t) })}</span>
           )}
@@ -253,6 +266,23 @@ export function MachinePulse() {
           <Link href="/freehold-intelligence/lead-machine/ads-machine"
             className="text-[11px] text-gold/70 transition hover:text-gold">{t('lm.pulse.openMachine')}</Link>
         </div>
+
+        {/* A PLAN IS NOT A DECISION. It used to sit in the list below as
+            though it were work; its own last sentence says nothing launched.
+            Here it is a to-do with the button that resolves it, and it stops
+            being shown once it is stale — repeating a ten-day-old plan every
+            morning does not make anybody press start. */}
+        {p.pending && p.pending.length > 0 && (
+          <div className="mt-3 rounded-xl border border-gold/20 bg-gold/[0.04] p-3">
+            {p.pending.map((d) => (
+              <p key={d.id} className="text-[11px] leading-relaxed text-slate-300">{d.detail}</p>
+            ))}
+            <Link href="/freehold-intelligence/lead-machine/ads-machine"
+              className="mt-1.5 inline-block text-[11px] font-semibold text-gold">
+              {t('lm.pulse.startIt')}
+            </Link>
+          </div>
+        )}
 
         {p.decisions.length === 0 ? (
           <p className="mt-3 text-xs leading-relaxed text-slate-500">{t('lm.pulse.noDecisions')}</p>

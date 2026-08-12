@@ -18,6 +18,9 @@ import {
   listMachines, listActivity, listMachineCampaigns, activeSpendAed,
   type ActivityKind, type MachineActivity,
 } from '@/lib/freehold/ads-machine'
+import {
+  ACTION_KINDS, INTENT_KINDS, intentIsFresh, pulseState,
+} from '@/lib/freehold/machine-activity'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,9 +32,16 @@ const ROLES: Role[] = [...MANAGEMENT_ROLES, 'marketing']
  * entries worth showing on a hub, because each one is the machine spending or
  * withholding money and saying why.
  */
-const DECISIONS: ReadonlySet<ActivityKind> = new Set<ActivityKind>([
-  'launched', 'budget_shift', 'trial_paused', 'trial_resumed', 'planned', 'google_draft_prepared',
-])
+/**
+ * WHAT IT DID — see lib/freehold/machine-activity.ts.
+ *
+ * 'planned' and 'google_draft_prepared' used to be in this set, and the hub
+ * showed a ten-day-old "Planned 3 Meta trials … nothing launches until the
+ * machine is started" as though it were work the machine had done. A panel
+ * that shows intent as achievement cannot be trusted about achievement, so the
+ * entries that ARE real stopped being read.
+ */
+const DECISIONS: ReadonlySet<ActivityKind> = new Set<ActivityKind>(ACTION_KINDS)
 
 /**
  * Things the machine CANNOT fix by itself. Separated from decisions because
@@ -76,6 +86,14 @@ export async function GET() {
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 
     const decisions = all.filter((a) => DECISIONS.has(a.kind)).slice(0, 12)
+
+    // A STANDING INTENTION, kept apart from the record of what happened.
+    // Shown only while it is still actionable: "start the machine and this
+    // happens" is a live to-do this morning and a fact about a decision nobody
+    // took ten days later, and repeating it daily does not make it likelier.
+    const pending = all
+      .filter((a) => INTENT_KINDS.includes(a.kind) && intentIsFresh(a.createdAt))
+      .slice(0, 3)
 
     // ONE PROBLEM IS ONE ALARM, however many cycles have re-reported it.
     //
@@ -125,6 +143,17 @@ export async function GET() {
       decisions: decisions.map((a) => ({
         id: a.id, kind: a.kind, detail: a.detail, at: a.createdAt, machine: a.machineName,
       })),
+      /** Plans waiting on somebody pressing start. Never mixed into decisions:
+       *  one is a record, the other is a to-do. */
+      pending: pending.map((a) => ({
+        id: a.id, kind: a.kind, detail: a.detail, at: a.createdAt, machine: a.machineName,
+      })),
+      /** The honest state of the whole layer — "1 running" was the switch, and
+       *  it was being printed beside "0 live campaigns · AED 0". */
+      state: pulseState({
+        total: machines.length, running: running.length,
+        liveCampaigns, committedAed: Math.round(committedAed),
+      }),
       alarms: alarms.map((a) => ({
         id: a.id, kind: a.kind, detail: a.detail, at: a.createdAt, machine: a.machineName,
         /** How many times this same alarm has been logged. 1 means it has been

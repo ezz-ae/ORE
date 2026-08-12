@@ -41,6 +41,7 @@ import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
 import { SEED_SIGNALS, AVOID_SIGNALS } from '../lib/freehold/seed-cohort'
 import { DESTINATION_KINDS, ATTRIBUTION_STATES } from '../lib/freehold/campaign-destination'
 import { READINESS_CHECKS, REACHABLE } from '../lib/freehold/launch-readiness'
+import { PULSE_STATES } from '../lib/freehold/machine-activity'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -176,6 +177,11 @@ console.log('\n── recommendations ──')
   // never 'ok', which needs no sentence. Walking the full 8x4 cross product
   // would demand two dozen strings that can never appear, and dead copy is
   // how a dictionary stops being trustworthy.
+  // The hub badge renders t(`lm.pulse.state.${state}`). It used to print
+  // "1 running" from the switch beside "0 live campaigns · AED 0"; a wordless
+  // state here would blank the first thing anybody reads on that page.
+  family('lm.pulse.state', 'lm.pulse.state.', PULSE_STATES, lm_core)
+
   family('ready.check', 'ready.check.', READINESS_CHECKS)
   family('ready.said', 'ready.said.',
     READINESS_CHECKS.flatMap((c) => REACHABLE[c].map((st) => `${c}.${st}`)))
