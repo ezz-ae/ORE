@@ -59,6 +59,10 @@ export interface GoogleCampaign {
    *  words. The most useful field on the whole resource and it was never
    *  asked for; see lib/google/delivery.ts. */
   primaryStatusReasons?: string[]
+  /** The impression-share family for the same window as `metrics`. Absent on
+   *  a locally-drafted campaign and on non-Search types, where the concept
+   *  does not apply. */
+  competition?: GoogleCompetitionMetrics
   type: GoogleCampaignType
   biddingStrategyType: GoogleBiddingStrategy
   /** Micros (1 AED = 1_000_000 micros) */
@@ -238,13 +242,29 @@ export interface SearchTermRow {
   status: 'NONE' | 'ADDED' | 'EXCLUDED' | 'ADDED_EXCLUDED'
 }
 
-export interface AuctionInsightRow {
-  domain: string
-  impressionShare: number
-  overlapRate: number
-  positionAboveRate: number
-  topOfPageRate: number
-  absoluteTopRate: number
+/**
+ * WHAT THE AUCTION DID TO US. Every field 0-1, and null when Google reported
+ * nothing — never 0, because "we showed in none of the auctions" and "we do
+ * not know" are different sentences and only one of them is true.
+ *
+ * This replaces an `AuctionInsightRow[]` that was hardcoded to `[]` at every
+ * call site since it was written. Not an unfinished feature: the Auction
+ * Insights report (competitor domains, overlap rate, position-above rate) is
+ * NOT exposed by the Google Ads API at all — it is UI-only — so that field was
+ * a promise this product could never keep. The impression-share family below
+ * IS available, was never asked for, and answers the more useful question:
+ * not who else was in the auction, but how much of it we got and which of the
+ * two OPPOSITE causes lost us the rest. See lib/google/competition.ts.
+ */
+export interface GoogleCompetitionMetrics {
+  impressionShare: number | null
+  /** Lost because we were OUTRANKED — bid or quality. Fix: bid, ad, page. */
+  rankLost: number | null
+  /** Lost because we RAN OUT OF MONEY. Fix: budget. A bid rise makes this
+   *  strictly worse, which is why the two are never merged. */
+  budgetLost: number | null
+  topShare: number | null
+  absoluteTopShare: number | null
 }
 
 export interface GoogleReportSummary {
@@ -256,7 +276,6 @@ export interface GoogleReportSummary {
   avgCtr: number
   avgCpcMicros: number
   searchTerms: SearchTermRow[]
-  auctionInsights: AuctionInsightRow[]
   byDay: { date: string; impressions: number; clicks: number; costMicros: number; conversions: number }[]
   byDevice: { device: 'DESKTOP' | 'MOBILE' | 'TABLET'; impressions: number; clicks: number; conversions: number; costMicros: number }[]
   byCampaign: { campaignId: string; name: string; type: GoogleCampaignType; impressions: number; clicks: number; conversions: number; costMicros: number }[]

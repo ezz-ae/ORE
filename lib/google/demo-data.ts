@@ -17,6 +17,5 @@ export function emptyReport(range: '7d' | '30d' | '90d'): GoogleReportSummary {
     byDevice: [],
     byCampaign: [],
     searchTerms: [],
-    auctionInsights: [],
   }
 }

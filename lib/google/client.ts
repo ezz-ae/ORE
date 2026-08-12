@@ -210,7 +210,16 @@ export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> 
       metrics.conversions,
       metrics.conversions_value,
       metrics.ctr,
-      metrics.average_cpc
+      metrics.average_cpc,
+      -- THE COMPETITION READ. How much of the auction we got, and which of the
+      -- two opposite causes lost the rest: outranked, or out of money. Never
+      -- queried before; see lib/google/competition.ts for why they matter and
+      -- why Google's 0.9 / 0.0999 clamps are carried as bounds.
+      metrics.search_impression_share,
+      metrics.search_rank_lost_impression_share,
+      metrics.search_budget_lost_impression_share,
+      metrics.search_top_impression_share,
+      metrics.search_absolute_top_impression_share
     FROM campaign
     WHERE campaign.status != 'REMOVED'${dateFilter}
     ORDER BY metrics.cost_micros DESC
@@ -240,7 +249,22 @@ export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> 
       ctr:              Number(r.metrics?.ctr ?? 0),
       averageCpcMicros: Number(r.metrics?.average_cpc ?? 0),
     },
+    // null, never 0, when Google reported nothing: "you showed in 0% of
+    // auctions" and "we do not know" are different sentences and only one of
+    // them is true. competitionOf depends on the difference.
+    competition: {
+      impressionShare:  num(r.metrics?.search_impression_share),
+      rankLost:         num(r.metrics?.search_rank_lost_impression_share),
+      budgetLost:       num(r.metrics?.search_budget_lost_impression_share),
+      topShare:         num(r.metrics?.search_top_impression_share),
+      absoluteTopShare: num(r.metrics?.search_absolute_top_impression_share),
+    },
   }))
+}
+
+/** A Google metric that may legitimately be absent. Absent stays null. */
+function num(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
 }
 
 /**
@@ -734,7 +758,6 @@ export async function getReportSummary(dateRange: '7d' | '30d' | '90d'): Promise
       conversions:  Number(r.metrics?.conversions ?? 0),
       status:       String(r.search_term_view?.status ?? 'NONE') as GoogleReportSummary['searchTerms'][0]['status'],
     })),
-    auctionInsights: [],
     byDay: dayRows.map((r) => ({
       date:        String(r.segments?.date ?? ''),
       impressions: Number(r.metrics?.impressions ?? 0),
