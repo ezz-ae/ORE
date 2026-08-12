@@ -27,6 +27,7 @@ import type {
 import { useT } from '@/lib/i18n/provider'
 import GoogleDeliveryChip from '@/components/freehold/google-delivery-chip'
 import { googleDeliveryOf } from '@/lib/google/delivery'
+import GoogleCompetitionPanel from '@/components/freehold/google-competition-panel'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -609,6 +610,26 @@ export default function GoogleCampaignDetailPage({
                     <span className="text-slate-300">{campaign.targetRoas}x</span>
                   </span>
                 )}
+              </div>
+            )}
+
+            {/* ── The auction ──────────────────────────────────────────────
+                Search's most decisive read, and the one nobody opens: how
+                much of the auction this campaign got, and which of the two
+                OPPOSITE causes lost the rest. Only on Search — impression
+                share does not describe a Performance Max campaign. */}
+            {campaign.type === 'SEARCH' && (
+              <div className="mt-6">
+                <GoogleCompetitionPanel
+                  input={{
+                    impressions: m?.impressions ?? 0,
+                    impressionShare: campaign.competition?.impressionShare,
+                    rankLost: campaign.competition?.rankLost,
+                    budgetLost: campaign.competition?.budgetLost,
+                    topShare: campaign.competition?.topShare,
+                    absoluteTopShare: campaign.competition?.absoluteTopShare,
+                  }}
+                />
               </div>
             )}
           </section>

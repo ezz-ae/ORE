@@ -30,6 +30,7 @@ import { personaIds } from '../lib/freehold/persona-audience'
 import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { DELIVERY_STATES } from '../lib/meta/delivery-status'
 import { GOOGLE_DELIVERY_STATES, GOOGLE_BLOCKERS } from '../lib/google/delivery'
+import { COMPETITION_VERDICTS } from '../lib/google/competition'
 import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
@@ -175,6 +176,11 @@ console.log('\n── delivery states ──')
   // that tells an operator why a live campaign is not running.
   family('gdel.state', 'gdel.state.', GOOGLE_DELIVERY_STATES, p_ads_google)
   family('gdel.block', 'gdel.block.', GOOGLE_BLOCKERS, p_ads_google)
+
+  // The auction panel renders t(`gcomp.verdict.${v}`) — the sentence that
+  // names WHICH lever to pull. A missing one prints its own key in the place
+  // where the product either saves the budget or wastes it.
+  family('gcomp.verdict', 'gcomp.verdict.', COMPETITION_VERDICTS, p_ads_google)
 }
 
 console.log('\n── warm audience rungs ──')

@@ -9,6 +9,8 @@ import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 import GoogleDeliveryChip from '@/components/freehold/google-delivery-chip'
 import { googleDeliveryOf, isServing } from '@/lib/google/delivery'
+import GoogleCompetitionPanel from '@/components/freehold/google-competition-panel'
+import { rollUpCompetition } from '@/lib/google/competition'
 
 const GOOGLE_BLUE = '#4285F4'
 
@@ -353,6 +355,27 @@ export default function GoogleAdsPage() {
           {report && report.byDay.length > 0 && (
             <div className="mt-6">
               <DailySpendChart days={report.byDay} />
+            </div>
+          )}
+
+          {/* THE AUCTION, ACCOUNT-WIDE. Weighted by impressions, not averaged
+              across campaigns — otherwise the smallest campaign in the account
+              sets the headline. Search only: impression share does not
+              describe a Performance Max campaign. */}
+          {sorted.some((c) => c.type === 'SEARCH') && (
+            <div className="mt-10">
+              <GoogleCompetitionPanel
+                input={rollUpCompetition(
+                  sorted.filter((c) => c.type === 'SEARCH').map((c) => ({
+                    impressions: c.metrics?.impressions ?? 0,
+                    impressionShare: c.competition?.impressionShare,
+                    rankLost: c.competition?.rankLost,
+                    budgetLost: c.competition?.budgetLost,
+                    topShare: c.competition?.topShare,
+                    absoluteTopShare: c.competition?.absoluteTopShare,
+                  })),
+                )}
+              />
             </div>
           )}
 
