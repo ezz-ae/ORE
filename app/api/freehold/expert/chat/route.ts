@@ -22,6 +22,7 @@ import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
 import { APP_ROUTES } from '@/lib/freehold/app-routes.generated'
 import { auditFigures, evidenceLine, METRIC_SHAPED, type EvidenceReport } from '@/lib/freehold/evidence'
+import { unknownCampaigns } from '@/lib/freehold/answer-grounding'
 
 export const runtime = 'nodejs'
 
@@ -680,9 +681,50 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     // ungrounded. One ungrounded figure withholds the whole report. A withheld
     // true number costs a follow-up question; an invented one costs trust in
     // every number after it.
+    // ── A CAMPAIGN THAT DOES NOT EXIST ───────────────────────────────────
+    //
+    // The live failure this was written from: asked about "the Zada Tower
+    // campaign", the assistant answered at length about its automation rules,
+    // its lead quality score of 45, its 50 leads, its ad copy and its
+    // placements. There is no Zada Tower — not in the ad account, not in the
+    // inventory, nowhere in this product. Every figure audit in the world
+    // would have passed a sentence with no figures in it.
+    //
+    // So the ENTITY is checked too, against the campaign names this workspace
+    // actually holds. Narrow by design (see answer-grounding): only the shape
+    // "<Name> campaign", only against a known list, and silent when there is no
+    // list to check against — an accusation with nothing behind it is its own
+    // kind of lie.
+    const knownCampaignNames = ((): string[] => {
+      const c = (fullContext as { campaigns?: unknown }).campaigns
+      if (!Array.isArray(c)) return []
+      return c.map((x) => String((x as { name?: unknown })?.name ?? '')).filter(Boolean)
+    })()
+    if (knownCampaignNames.length > 0) {
+      const invented = unknownCampaigns(blocksToText(blocks), knownCampaignNames)
+      if (invented.length > 0) {
+        console.error('[expert] invented campaign name(s):', invented.join(', '))
+        blocks = [{
+          type: 'text',
+          content:
+            `I have to correct myself — there is no campaign called "${invented[0]}" in this account, `
+            + `so everything I just said about it was invented rather than looked up. `
+            + `What you actually have: ${knownCampaignNames.slice(0, 6).join(', ')}`
+            + `${knownCampaignNames.length > 6 ? ` and ${knownCampaignNames.length - 6} more` : ''}. `
+            + `Ask me about one of those and I will answer from the real numbers.`,
+        }]
+      }
+    }
+
     let evidence: EvidenceReport | null = null
     const replyJson = JSON.stringify(blocks)
-    if (tools.length > 0 && METRIC_SHAPED.test(replyJson)) {
+    // NOT GATED ON HOLDING TOOLS ANY MORE. It was, and that was the hole the
+    // Zada Tower answer walked through: a session whose role carries no tools
+    // was audited by nothing at all — and that is precisely the session most
+    // likely to fabricate, because the model has no way to fetch and fills the
+    // gap from itself. Grounding is a property of the CONTEXT, which every
+    // session has, not of the toolbelt.
+    if (METRIC_SHAPED.test(replyJson)) {
       evidence = auditFigures(replyJson, [toolResultsText, JSON.stringify(fullContext)])
       if (evidence.verdict === 'fabricated' || evidence.verdict === 'tainted') {
         const untraceable = evidence.figures.filter((f) => f.status === 'ungrounded').map((f) => f.value)
