@@ -77,6 +77,7 @@ interface DbLead {
   utm_id: string | null
   utm_campaign: string | null
   value_rating: number | null
+  meta_ad_id?: string | null
   archived: boolean | null
   blocked: boolean | null
 }
@@ -110,6 +111,15 @@ function dbLeadToCRM(
     // utm_id carries the ad platform's campaign id (meta-lead-sync writes it on
     // every instant-form lead) — the join key Attribution and quality reads use.
     campaignId: row.utm_id ?? row.utm_campaign ?? '',
+    // THE CAMPAIGN'S NAME, not an ad set's and not an id. A broker reading a
+    // row wants to know which campaign brought this person, and the id is a
+    // number nobody recognises.
+    campaignName: campaignNames.get(String(row.utm_id ?? '')) ?? String(row.utm_campaign ?? ''),
+    // WHICH AD THEY ACTUALLY SAW. meta-lead-sync has stored this on every
+    // instant-form lead since it existed (freehold_site_leads.meta_ad_id) and
+    // nothing has ever surfaced it — so "what did this person see before they
+    // gave us their number" was unanswerable from the CRM.
+    adId: row.meta_ad_id ?? '',
     stage: stage.charAt(0).toUpperCase() + stage.slice(1),
     pipelineStage: stageMap[stage] ?? 'new',
     temperature,
@@ -209,7 +219,7 @@ export async function GET() {
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
                       snooze_until::text, lead_code, duplicate_dismissed_at::text,
-                      utm_id, utm_campaign, value_rating, archived, blocked
+                      utm_id, utm_campaign, value_rating, meta_ad_id, archived, blocked
                FROM freehold_site_leads`
 
     if (isBroker && ownerKeys.length) {
