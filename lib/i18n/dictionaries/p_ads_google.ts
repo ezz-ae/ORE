@@ -44,6 +44,23 @@ const en: Dict = {
   // The two losses have OPPOSITE fixes, so the verdict names one and only one
   // action. Operator words: nobody says "impression share" out loud.
   // ── The buy, written from this company's own records ─────────────────────
+  // ── What people actually typed ───────────────────────────────────────────
+  // The report that lets Search run itself. Waste first: it is the one line an
+  // operator can act on without reading anything else.
+  'gsh.title': 'What people actually typed',
+  'gsh.sub': '{terms} real searches that triggered your ads. Every verdict below is arithmetic \u2014 what a phrase brought, and what it cost.',
+  'gsh.block': 'Block {n}',
+  'gsh.wasting': 'AED {aed} spent on searches that brought nothing',
+  'gsh.spent': 'AED {aed} \u00b7 {clicks} clicks',
+  'gsh.worthBuying': 'Searches worth buying',
+  'gsh.converted': '{n} leads at AED {aed}',
+  'gsh.capped': '{n} more converting searches are waiting \u2014 a few a week keeps the account readable.',
+  'gsh.addsWait': 'These wait for you. Blocking a search stops spend and undoes in a click; adding one starts spend on a forecast.',
+  'gsh.applied': 'Blocked {n} searches that were costing AED {aed}.',
+  'gsh.failed': 'Google would not take the change.',
+  'gsh.noTarget': 'No lead cost to measure against yet \u2014 so nothing is called too expensive and nothing is blocked. It needs a few conversions first.',
+  'gsh.quiet': 'Nothing to act on. No search has wasted enough to block, and none has converted cheaply enough to buy.',
+
   'gkw.title': 'What to buy, from your own projects',
   'gkw.sub': 'Ranked by opportunity score. One tight ad group per intent, each pointed at that project\u2019s own page \u2014 which is what makes the clicks cheap.',
   'gkw.empty': 'No project has a published landing page and a valid permit yet, so there is nothing honest to bid on.',
@@ -227,6 +244,20 @@ const ar: Dict = {
   'padsg.thClicks': 'النقرات',
   'padsg.thConv': 'التحويلات',
 
+  'gsh.title': 'ما كتبه الناس فعلاً',
+  'gsh.sub': '{terms} عملية بحث حقيقية شغّلت إعلاناتك. كل حكم أدناه حساب بسيط — ماذا جلبت العبارة وكم كلّفت.',
+  'gsh.block': 'احجب {n}',
+  'gsh.wasting': '{aed} درهم أُنفقت على عمليات بحث لم تجلب شيئًا',
+  'gsh.spent': '{aed} درهم · {clicks} نقرة',
+  'gsh.worthBuying': 'عمليات بحث تستحق الشراء',
+  'gsh.converted': '{n} عميل بـ {aed} درهم',
+  'gsh.capped': '{n} عملية بحث محوِّلة أخرى تنتظر — بضع في الأسبوع تُبقي الحساب مقروءًا.',
+  'gsh.addsWait': 'هذه تنتظرك. حجب بحث يوقف الإنفاق ويُلغى بنقرة؛ إضافة بحث تبدأ إنفاقًا على توقّع.',
+  'gsh.applied': 'حُجبت {n} عملية بحث كانت تكلّف {aed} درهم.',
+  'gsh.failed': 'لم تقبل جوجل التغيير.',
+  'gsh.noTarget': 'لا توجد بعد تكلفة عميل نقيس عليها — فلا شيء يُوصف بالغالي ولا شيء يُحجب. تحتاج بضع تحويلات أولًا.',
+  'gsh.quiet': 'لا شيء يستدعي إجراءً. لا بحث أهدر ما يكفي للحجب، ولا بحث حوّل بسعر يستحق الشراء.',
+
   'gkw.title': 'ماذا تشتري، من مشاريعك أنت',
   'gkw.sub': 'مرتّبة بدرجة الفرصة. مجموعة إعلانية مركّزة لكل نيّة، كل واحدة موجّهة إلى صفحة المشروع نفسه — وهذا ما يجعل النقرات رخيصة.',
   'gkw.empty': 'لا يوجد مشروع بصفحة هبوط منشورة وتصريح ساري بعد، فلا شيء يمكن المزايدة عليه بصدق.',
@@ -409,6 +440,20 @@ const ru: Dict = {
   'padsg.thImpr': 'Показы',
   'padsg.thClicks': 'Клики',
   'padsg.thConv': 'Конв.',
+
+  'gsh.title': 'Что люди на самом деле набирали',
+  'gsh.sub': '{terms} реальных запросов, показавших ваши объявления. Каждый вывод ниже — арифметика: что фраза принесла и сколько стоила.',
+  'gsh.block': 'Заблокировать {n}',
+  'gsh.wasting': '{aed} AED потрачено на запросы, которые ничего не принесли',
+  'gsh.spent': '{aed} AED · кликов: {clicks}',
+  'gsh.worthBuying': 'Запросы, которые стоит покупать',
+  'gsh.converted': 'лидов: {n} по {aed} AED',
+  'gsh.capped': 'Ещё {n} конвертирующих запросов ждут — по несколько в неделю, чтобы аккаунт оставался читаемым.',
+  'gsh.addsWait': 'Эти ждут вас. Блокировка запроса останавливает расход и отменяется в один клик; добавление начинает расход по прогнозу.',
+  'gsh.applied': 'Заблокировано запросов: {n}, они стоили {aed} AED.',
+  'gsh.failed': 'Google не принял изменение.',
+  'gsh.noTarget': 'Пока не с чем сравнивать стоимость лида — поэтому ничего не считается дорогим и ничего не блокируется. Сначала нужно несколько конверсий.',
+  'gsh.quiet': 'Действовать не по чему. Ни один запрос не потратил достаточно для блокировки и ни один не сконвертировал достаточно дёшево для покупки.',
 
   'gkw.title': 'Что покупать — из ваших собственных проектов',
   'gkw.sub': 'Ранжировано по оценке возможности. Одна узкая группа объявлений на каждое намерение, каждая ведёт на страницу самого проекта — именно это делает клики дешёвыми.',
