@@ -33,7 +33,7 @@ import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
-import { LAB_LAYOUTS, LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
+import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -135,7 +135,9 @@ console.log('\n── recommendations ──')
   // is withheld and the verdict on each recipe — four computed families off
   // four catalogs the types derive from. A layout with no word behind it is a
   // greyed-out row whose reason renders as its own key.
-  family('lab.layout', 'lab.layout.', LAB_LAYOUTS)
+  // NOT lab.layout.*: the lab shows each design as a RENDER rather than as a
+  // name, which is the whole point of the rebuild — "payBands" meant nothing
+  // to anyone who had not written it.
   family('lab.angle', 'lab.angle.', LAB_ANGLES)
   family('lab.why', 'lab.why.', WITHHELD_REASONS)
   family('lab.verdict', 'lab.verdict.', RECIPE_VERDICTS)

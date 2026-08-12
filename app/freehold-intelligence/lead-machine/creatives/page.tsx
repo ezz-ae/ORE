@@ -1,41 +1,51 @@
 'use client'
 
 /**
- * THE CREATIVE LAB.
+ * THE CREATIVE LAB — you look at it, you do not read it.
  *
- * What stood here was a gallery: every ad creative in the account, newest
- * first, fifty cards, most of them blank grey squares because Meta returns no
- * thumbnail for a creative built from an image hash. No project, no result, no
- * memory — so it could not answer either question a creative screen exists
- * for, and nothing on it changed what the next ad would look like.
+ * The first version of this screen was correct and useless. It named designs
+ * instead of showing them: "payBands", "Price first", "Arguments it can make",
+ * and a word — "uniform" — that nobody in this business says out loud. An
+ * operator opened it and could not tell what any of it meant, which is the
+ * same failure as the gallery it replaced wearing better vocabulary.
  *
- * A lab is three things about ONE project:
+ * A THUMBNAIL IS THE ONLY HONEST LABEL FOR A DESIGN. So every design this
+ * project can make is RENDERED here, from its own photo, price and terms,
+ * using the same engine that builds the real ad. What you see is what would
+ * run. Nothing is described.
  *
- *   UNIFORM   what its ads may look like and may claim — and, for everything
- *             withheld, which fact its row is missing. The answer to "why
- *             can't I make that ad" belongs on the screen.
- *   HISTORY   every recipe it has run, with what that recipe did, and the
- *             honest word for each: proven, poor, or not tested enough.
- *   NEXT      the one recipe to make now, and the button that makes it.
+ * The three things on this screen, in the order somebody actually needs them:
  *
- * THE PALETTE IS THE PROJECT'S, FOR AS LONG AS IT EXISTS. Derived from the
- * slug, never random — a development becomes a name people recognise through
- * repeated exposure to a consistent mark, and re-rolling its colours weekly
- * throws that away.
+ *   1. WHAT ITS ADS LOOK LIKE — rendered. Greyed cards for the ones this
+ *      project cannot make, each saying which fact is missing, because "why is
+ *      that one grey" must be answerable without asking anyone.
+ *   2. WHAT WORKED — only once real delivery can carry the claim, and only if
+ *      anything has run.
+ *   3. MAKE THIS NEXT — one design, rendered large, with the button.
+ *
+ * The palette is the project's own and does not change between visits. That is
+ * not decoration: a development becomes a name people recognise by looking the
+ * same every week.
  */
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { FlaskConical, Loader2, ArrowUpRight, Sparkles, Check, Minus } from 'lucide-react'
+import { FlaskConical, Loader2, ArrowUpRight, Sparkles, Lock } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { PageHeader } from '@/components/freehold/ui'
-import { PALETTES } from '@/lib/freehold/ad-compose'
-import type { ProjectUniform, RankedRecipe, Recipe } from '@/lib/freehold/creative-lab'
+import { composeProjectAd } from '@/lib/freehold/project-ad'
+import type { LayoutKey } from '@/lib/freehold/ad-compose'
+import type { ProjectUniform, RankedRecipe, Recipe, LabLayout } from '@/lib/freehold/creative-lab'
 
 const FI = '/freehold-intelligence'
 
 interface Project { id: string; name: string }
+interface Facts {
+  slug: string; name: string; area?: string | null
+  startingPriceAED?: number | null; paymentPlan?: string | null; handoverYear?: number | null
+}
 interface Lab {
   project: { slug: string; name: string; heroImage?: string | null; area?: string | null }
+  facts: Facts
   uniform: ProjectUniform
   ranked: RankedRecipe[]
   next: Recipe | null
@@ -54,18 +64,18 @@ export default function CreativeLabPage() {
   const [slug, setSlug] = useState('')
   const [lab, setLab] = useState<Lab | null>(null)
   const [loading, setLoading] = useState(false)
+  /** layout → rendered data URL. The whole point of the screen. */
+  const [shots, setShots] = useState<Record<string, string>>({})
+  const [drawing, setDrawing] = useState(false)
 
   useEffect(() => {
     fetch('/api/freehold/inventory', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        const items = Array.isArray(d?.properties) ? d.properties : []
-        const list = items
+        const list = (Array.isArray(d?.properties) ? d.properties : [])
           .map((x: Record<string, unknown>) => ({ id: String(x.id ?? x.slug ?? ''), name: String(x.name ?? '') }))
           .filter((p: Project) => p.id && p.name)
         setProjects(list)
-        // Open on the first project rather than on an empty screen — a lab with
-        // nothing selected is the gallery again.
         if (list.length > 0) setSlug(list[0].id)
       })
       .catch(() => {})
@@ -73,7 +83,7 @@ export default function CreativeLabPage() {
 
   const load = useCallback(async (s: string) => {
     if (!s) return
-    setLoading(true)
+    setLoading(true); setShots({})
     try {
       const d = await fetch(`/api/freehold/ads/creative-lab?project=${encodeURIComponent(s)}`, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null)).catch(() => null)
@@ -83,7 +93,50 @@ export default function CreativeLabPage() {
 
   useEffect(() => { void load(slug) }, [slug, load])
 
-  const palette = lab ? PALETTES[lab.uniform.palette % PALETTES.length] : null
+  /**
+   * Draw every design this project can make, at its own palette, from its own
+   * photo and numbers. One render per allowed layout — the same call the real
+   * ad uses, so the thumbnail is not an impression of the ad, it IS the ad.
+   */
+  useEffect(() => {
+    if (!lab) return
+    let cancelled = false
+    setDrawing(true)
+    ;(async () => {
+      const out: Record<string, string> = {}
+      const labels = {
+        from: t('lm.pool.compose.from'),
+        total: t('lm.pool.compose.total'),
+        handover: (y: number) => t('lm.pool.compose.handover', { y }),
+      }
+      for (const layout of lab.uniform.layouts) {
+        if (cancelled) return
+        const url = await composeProjectAd(
+          {
+            projectName: lab.project.name,
+            area: lab.facts.area,
+            heroImage: lab.project.heroImage,
+            startingPriceAED: lab.facts.startingPriceAED,
+            paymentPlan: lab.facts.paymentPlan,
+            handoverYear: lab.facts.handoverYear,
+          },
+          labels,
+          { layout: layout as LayoutKey, palette: lab.uniform.palette, format: 'square' },
+        )
+        if (url) out[layout] = url
+      }
+      if (!cancelled) { setShots(out); setDrawing(false) }
+    })()
+    return () => { cancelled = true }
+  }, [lab, t])
+
+  const verdictOf = (layout: LabLayout) => {
+    const rows = (lab?.ranked ?? []).filter((r) => r.layout === layout)
+    if (rows.length === 0) return null
+    if (rows.some((r) => r.verdict === 'proven')) return 'proven'
+    if (rows.every((r) => r.verdict === 'poor')) return 'poor'
+    return 'undecided'
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -99,8 +152,6 @@ export default function CreativeLabPage() {
         }
       />
 
-      {/* THE ONLY INPUT: which project. Everything below is derived from its
-          own row and its own ads — there is nothing else to configure. */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-xs text-slate-400">
           {t('lab.project')}
@@ -110,101 +161,115 @@ export default function CreativeLabPage() {
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </label>
-        {loading && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
+        {(loading || drawing) && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
       </div>
 
-      {!loading && !lab && slug && (
-        <p className="mt-8 text-sm text-slate-500">{t('lab.notFound')}</p>
-      )}
+      {!loading && !lab && slug && <p className="mt-8 text-sm text-slate-500">{t('lab.notFound')}</p>}
 
       {lab && (
         <>
-          {/* ── THE UNIFORM ─────────────────────────────────────────────── */}
-          <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-white">{t('lab.uniform.title')}</h2>
-              {palette && (
-                <div className="flex items-center gap-1.5" title={t('lab.uniform.paletteHint')}>
-                  {[palette.bg, palette.bg2, palette.accent, palette.ink].map((c, i) => (
-                    <span key={i} className="h-4 w-4 rounded border border-white/10" style={{ backgroundColor: c }} />
-                  ))}
-                </div>
-              )}
-            </div>
-            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lab.uniform.sub')}</p>
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Group title={t('lab.uniform.layouts')}
-                allowed={lab.uniform.layouts.map((l) => t(`lab.layout.${l}`))}
-                withheld={lab.uniform.withheldLayouts.map((w) => ({
-                  label: t(`lab.layout.${w.key}`), why: t(`lab.why.${w.reason}`),
-                }))} />
-              <Group title={t('lab.uniform.angles')}
-                allowed={lab.uniform.angles.map((a) => t(`lab.angle.${a}`))}
-                withheld={lab.uniform.withheldAngles.map((w) => ({
-                  label: t(`lab.angle.${w.key}`), why: t(`lab.why.${w.reason}`),
-                }))} />
-            </div>
-          </section>
-
-          {/* ── WHAT TO MAKE NEXT ───────────────────────────────────────── */}
-          <section className="mt-5 rounded-2xl border border-gold/25 bg-gold/[0.05] p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Sparkles className="h-4 w-4 text-gold" /> {t('lab.next.title')}
-            </h2>
-            {lab.next ? (
-              <>
+          {/* ── MAKE THIS NEXT ──────────────────────────────────────────────
+              First, not last: it is the only thing on the screen that is a
+              decision. Everything below it is context for this one card. */}
+          {!lab.next && (
+            <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Sparkles className="h-4 w-4 text-slate-500" /> {t('lab.next.title')}
+              </h2>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-slate-400">{t('lab.next.none')}</p>
+            </section>
+          )}
+          {lab.next && (
+            <section className="mt-8 flex flex-wrap items-center gap-5 rounded-2xl border border-gold/25 bg-gold/[0.05] p-5">
+              <div className="w-40 shrink-0 overflow-hidden rounded-xl border border-line bg-surface">
+                {shots[lab.next.layout]
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={shots[lab.next.layout]} alt="" className="block w-full" />
+                  : <div className="grid aspect-square place-items-center text-slate-600"><Loader2 className="h-4 w-4 animate-spin" /></div>}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <Sparkles className="h-4 w-4 text-gold" /> {t('lab.next.title')}
+                </h2>
                 <p className="mt-1.5 text-[13px] text-slate-200">
-                  {t('lab.next.line', {
-                    layout: t(`lab.layout.${lab.next.layout}`),
-                    angle: t(`lab.angle.${lab.next.angle}`),
-                  })}
+                  {t('lab.next.says', { angle: t(`lab.angle.${lab.next.angle}`) })}
                 </p>
                 <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
-                  {lab.ranked.some((r) => r.verdict === 'proven')
-                    ? t('lab.next.whyWinner')
-                    : t('lab.next.whyExplore')}
+                  {lab.ranked.some((r) => r.verdict === 'proven') ? t('lab.next.whyWinner') : t('lab.next.whyExplore')}
                 </p>
-                {/* The door: the quick launcher builds this project's ad, and
-                    the recipe travels with it so the lesson is recorded. */}
                 <Link
                   href={`${FI}/lead-machine/campaigns/quick?project=${encodeURIComponent(lab.project.slug)}&layout=${lab.next.layout}&angle=${lab.next.angle}`}
                   className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gold px-3.5 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright">
                   {t('lab.next.make')} <ArrowUpRight className="h-3 w-3" />
                 </Link>
-              </>
-            ) : (
-              <p className="mt-1.5 text-[13px] text-slate-400">{t('lab.next.none')}</p>
-            )}
+              </div>
+            </section>
+          )}
+
+          {/* ── WHAT ITS ADS LOOK LIKE ──────────────────────────────────────
+              Rendered, never described. A design named "payBands" means
+              nothing; a picture of it means everything. */}
+          <section className="mt-8">
+            <h2 className="text-sm font-semibold text-white">{t('lab.designs.title')}</h2>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{t('lab.designs.sub')}</p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {lab.uniform.layouts.map((layout) => {
+                const v = verdictOf(layout)
+                return (
+                  <div key={layout} className="overflow-hidden rounded-xl border border-line bg-surface-2">
+                    {shots[layout]
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={shots[layout]} alt="" className="block w-full" />
+                      : <div className="grid aspect-square place-items-center text-slate-700"><Loader2 className="h-4 w-4 animate-spin" /></div>}
+                    {/* The verdict sits ON the picture it judges — a table of
+                        results elsewhere makes you hold two things in mind. */}
+                    {v && (
+                      <div className="px-2.5 py-2">
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${VERDICT_TONE[v]}`}>
+                          {t(`lab.verdict.${v}`)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* LOCKED, WITH THE REASON. "Why is that one grey" has to be
+                  answerable without asking anybody. */}
+              {lab.uniform.withheldLayouts.map((w) => (
+                <div key={w.key} title={t('lab.designs.lockedHint')}
+                  className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line px-3 text-center">
+                  <Lock className="h-4 w-4 text-slate-700" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-700">{t('lab.designs.locked')}</span>
+                  <span className="text-[11px] leading-snug text-slate-600">{t(`lab.why.${w.reason}`)}</span>
+                </div>
+              ))}
+            </div>
           </section>
 
-          {/* ── WHAT IT HAS RUN ─────────────────────────────────────────── */}
-          <section className="mt-5">
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          {/* ── WHAT WORKED ────────────────────────────────────────────────
+              Only when there is something to say. An empty results table on a
+              project that has run nothing is furniture. */}
+          {lab.ranked.length > 0 && (
+            <section className="mt-8">
               <h2 className="text-sm font-semibold text-white">{t('lab.history.title')}</h2>
-              <span className="text-[11px] text-slate-500">
-                {t('lab.history.count', { n: lab.recorded })}
-              </span>
-            </div>
-
-            {lab.ranked.length === 0 ? (
-              // A project that HAS run ads still shows nothing here until the
-              // lab could watch them being made. Said plainly rather than left
-              // to look like a failure.
-              <p className="rounded-2xl border border-line bg-surface-2 px-5 py-8 text-center text-[13px] leading-relaxed text-slate-500">
-                {t('lab.history.empty')}
-              </p>
-            ) : (
-              <div className="space-y-2">
+              <div className="mt-3 space-y-2">
                 {lab.ranked.map((r) => (
                   <div key={`${r.layout}-${r.angle}`}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium text-slate-100">
-                        {t(`lab.layout.${r.layout}`)} · {t(`lab.angle.${r.angle}`)}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-slate-500">
-                        {t('lab.history.runs', { n: r.runs, impressions: r.impressions.toLocaleString() })}
+                    <div className="flex min-w-0 items-center gap-3">
+                      {shots[r.layout] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={shots[r.layout]} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-medium text-slate-100">
+                          {t('lab.next.says', { angle: t(`lab.angle.${r.angle}`) })}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-slate-500">
+                          {t('lab.history.runs', { n: r.runs, impressions: r.impressions.toLocaleString() })}
+                        </div>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-4 text-end">
@@ -227,39 +292,14 @@ export default function CreativeLabPage() {
                   </div>
                 ))}
               </div>
-            )}
-          </section>
+            </section>
+          )}
+
+          {lab.ranked.length === 0 && (
+            <p className="mt-6 text-[11px] leading-relaxed text-slate-600">{t('lab.history.empty')}</p>
+          )}
         </>
       )}
-    </div>
-  )
-}
-
-/** Allowed on the left with a tick; withheld on the right with the fact the
- *  project row is missing. Both halves matter — a list of what you CAN make,
- *  with no account of what you cannot, is where "why is that greyed out" comes
- *  from. */
-function Group({ title, allowed, withheld }: {
-  title: string
-  allowed: string[]
-  withheld: { label: string; why: string }[]
-}) {
-  return (
-    <div className="rounded-xl border border-line bg-surface p-3.5">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{title}</div>
-      <div className="mt-2 space-y-1">
-        {allowed.map((a) => (
-          <div key={a} className="flex items-center gap-1.5 text-[12px] text-slate-200">
-            <Check className="h-3 w-3 shrink-0 text-emerald-400" /> {a}
-          </div>
-        ))}
-        {withheld.map((w) => (
-          <div key={w.label} className="flex items-start gap-1.5 text-[12px] text-slate-600">
-            <Minus className="mt-0.5 h-3 w-3 shrink-0" />
-            <span>{w.label} <span className="text-slate-700">— {w.why}</span></span>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
