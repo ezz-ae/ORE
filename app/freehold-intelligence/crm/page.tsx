@@ -12,6 +12,12 @@ import {
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { useSession } from '@/lib/freehold/use-session'
+import { LeadRate, LeadAssign, LeadSource } from '@/components/freehold/lead-row-actions'
+
+/** Who may hand a lead to someone else. Same list the lead profile enforces —
+ *  a second copy of a permission is how two screens start disagreeing. */
+const ASSIGN_ROLES = ['admin', 'sales_manager', 'director', 'ceo']
 import { LeadValueBadge } from '@/components/freehold/lead-value-chips'
 import { useT } from '@/lib/i18n/provider'
 import { loadCrmView, saveCrmView } from './_lib/view-prefs'
@@ -83,7 +89,41 @@ function sourceLabel(raw: string): string {
 
 export default function FreeholdCrmPage() {
   const t = useT()
-  const { leads, loading: leadsLoading, unassigned, total: leadTotal, truncated } = useLiveLeads()
+  const { leads: liveLeads, loading: leadsLoading, unassigned, total: leadTotal, truncated } = useLiveLeads()
+
+  /**
+   * WHAT WE JUST WROTE, held over the live list.
+   *
+   * The leads come from a hook that refetches; a rating tapped a second ago
+   * would flicker back to its old value until the next fetch landed. Each
+   * entry here is a value the SERVER CONFIRMED with a 200 — so it is not an
+   * optimistic guess, it is the truth arriving before the list catches up.
+   */
+  const [edits, setEdits] = useState<Record<string, Partial<CRMLeadIntelligence>>>({})
+  const applyEdit = (id: string, patch: Partial<CRMLeadIntelligence>) =>
+    setEdits((cur) => ({ ...cur, [id]: { ...cur[id], ...patch } }))
+  const leads = useMemo(
+    () => liveLeads.map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l)),
+    [liveLeads, edits],
+  )
+
+  // WHO MAY HAND A LEAD TO SOMEONE ELSE. The same roster the lead profile
+  // uses, loaded once for the whole table rather than per row.
+  const { user } = useSession()
+  const canAssign = ASSIGN_ROLES.includes(user?.role ?? '')
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    if (!canAssign) return
+    fetch('/api/freehold/crm/agents', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const list = Array.isArray(d?.agents) ? d.agents : Array.isArray(d) ? d : []
+        setAgents(list.map((a: Record<string, unknown>) => ({
+          id: String(a.id ?? a.email ?? ''), name: String(a.name ?? a.email ?? ''),
+        })).filter((a: { id: string; name: string }) => a.id && a.name))
+      })
+      .catch(() => {})
+  }, [canAssign])
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Rank by VALUE, most unqualified first — the deliberate inversion. The
@@ -349,13 +389,14 @@ export default function FreeholdCrmPage() {
             {/* Desktop header row */}
             <div
               className="hidden items-center gap-4 border-b border-line px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-slate-500 lg:grid"
-              style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
+              style={{ gridTemplateColumns: '1fr 110px 122px 1fr 128px 60px 62px 52px' }}
             >
               <div>{t('crm.colLead')}</div>
               <div>{t('crm.colTemperature')}</div>
               <div>{t('crm.colStage')}</div>
               <div>{t('crm.colProjectBudget')}</div>
               <div>{t('crm.colAgent')}</div>
+              <div className="text-end">{t('crm.colValue')}</div>
               <div>{t('crm.colLast')}</div>
               <div />
             </div>
@@ -373,7 +414,7 @@ export default function FreeholdCrmPage() {
                 <div
                   key={lead.id}
                   className="flex items-center gap-3 border-b border-line px-4 py-3 transition last:border-0 hover:bg-surface-2 lg:grid lg:gap-4"
-                  style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
+                  style={{ gridTemplateColumns: '1fr 110px 122px 1fr 128px 60px 62px 52px' }}
                 >
                   {/* Avatar + name (+ the value judgment at a glance) */}
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -412,7 +453,13 @@ export default function FreeholdCrmPage() {
                       "Unknown" on all 571 rows — words that appear on every
                       row are furniture the eye stops reading, and on the day a
                       real budget appears it gets skipped too. Empty renders
-                      empty; the space goes to what is real. */}
+                      empty; the space goes to what is real.
+
+                      Under it: SEE AD and the CAMPAIGN'S NAME. Not the ad
+                      set's — a broker wants to know which campaign brought
+                      this person, and an ad set is an implementation detail of
+                      one. The ad opens in place because the question is asked
+                      while reading the row. */}
                   <div className="hidden min-w-0 lg:block">
                     {lead.projectInterest && (
                       <div className="truncate text-xs text-slate-300">{lead.projectInterest}</div>
@@ -420,17 +467,40 @@ export default function FreeholdCrmPage() {
                     {lead.budgetAED && (
                       <div className="text-xs font-medium text-gold/65">{lead.budgetAED}</div>
                     )}
-                    <div className="truncate text-[11px] text-slate-500">{sourceLabel(lead.source)}</div>
+                    <LeadSource
+                      campaignId={lead.campaignId ?? ''}
+                      campaignName={lead.campaignName ?? ''}
+                      adId={lead.adId ?? ''}
+                    />
                   </div>
 
-                  {/* WHO OWNS IT. Unassigned is not missing data — it is a
-                      state, and an urgent one: a lead nobody owns is a lead
-                      nobody is calling. Named so it can be acted on rather
-                      than scrolled past as an em-dash. */}
-                  <div className="hidden truncate text-xs lg:block">
-                    {lead.assignedAgent
-                      ? <span className="text-slate-400">{lead.assignedAgent}</span>
-                      : <span className="text-amber-300/80">{t('crm.unassigned')}</span>}
+                  {/* WHO OWNS IT — and for whoever may assign, the list is
+                      right here. A lead nobody owns is a lead nobody is
+                      calling, and the person who can fix that should not have
+                      to leave the list to do it. A broker sees the name and no
+                      control: offering a button that will be refused is worse
+                      than offering none. */}
+                  <div className="hidden min-w-0 lg:block">
+                    <LeadAssign
+                      leadId={lead.id}
+                      agent={lead.assignedAgent}
+                      canAssign={canAssign}
+                      agents={agents}
+                      onAssigned={(id) => applyEdit(lead.id, { assignedAgent: id })}
+                    />
+                  </div>
+
+                  {/* RATE, ON THE ROW. The single highest-value action in this
+                      product: a rated lead teaches Meta which kind of person to
+                      find more of, an unrated one teaches it nothing. With 571
+                      rows in front of you, "open it, rate it, come back" is not
+                      a workflow. */}
+                  <div className="hidden lg:flex lg:justify-end">
+                    <LeadRate
+                      leadId={lead.id}
+                      value={lead.valueRating ?? null}
+                      onRated={(v) => applyEdit(lead.id, { valueRating: v })}
+                    />
                   </div>
 
                   {/* Last contact */}

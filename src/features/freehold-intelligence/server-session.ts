@@ -88,6 +88,15 @@ export type CRMLeadIntelligence = {
   source: string
   landingId: string
   campaignId: string
+  /** The campaign's NAME, resolved server-side. A broker reading a row wants
+   *  to know which campaign brought this person; the id is a number nobody
+   *  recognises, and an ad set's name is an implementation detail of one. */
+  campaignName?: string
+  /** The ad this lead actually saw — stored on every synced Meta lead since
+   *  the sync existed (freehold_site_leads.meta_ad_id) and never surfaced, so
+   *  "what did they see before they gave us their number" was unanswerable
+   *  from the CRM. */
+  adId?: string
   stage: string
   pipelineStage: PipelineStage
   temperature: LeadTemperature
