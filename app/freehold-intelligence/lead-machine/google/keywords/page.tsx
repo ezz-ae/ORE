@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import type { GoogleKeyword, NegativeKeyword, GoogleKeywordMatchType } from '@/lib/google/types'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
+import KeywordPlanPanel from '@/components/freehold/keyword-plan-panel'
 import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -522,6 +523,15 @@ export default function GoogleKeywordsPage() {
               )}
             </section>
           )}
+
+          {/* ── The buy, from this company's own records ────────────────────
+              Above the generic library on purpose: the library is the same
+              forty phrases in every account, and this is the plan that knows
+              which projects exist, which are worth money, and which have a
+              page to send a click to. */}
+          <section className="mt-12">
+            <KeywordPlanPanel />
+          </section>
 
           {/* ── Keyword Themes ── */}
           <section className="mt-12">

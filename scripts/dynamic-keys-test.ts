@@ -31,6 +31,7 @@ import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { DELIVERY_STATES } from '../lib/meta/delivery-status'
 import { GOOGLE_DELIVERY_STATES, GOOGLE_BLOCKERS } from '../lib/google/delivery'
 import { COMPETITION_VERDICTS } from '../lib/google/competition'
+import { AD_GROUP_KINDS, PLAN_WITHHELD } from '../lib/google/keyword-plan'
 import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
@@ -181,6 +182,13 @@ console.log('\n── delivery states ──')
   // names WHICH lever to pull. A missing one prints its own key in the place
   // where the product either saves the budget or wastes it.
   family('gcomp.verdict', 'gcomp.verdict.', COMPETITION_VERDICTS, p_ads_google)
+
+  // The keyword plan names every ad group it built — t(`gkw.kind.${kind}`) —
+  // and every group it did NOT, with the reason: t(`gkw.why.${why}`). The
+  // second family is the one that matters: a wordless reason turns "one blank
+  // field away from being bought" into a line of punctuation.
+  family('gkw.kind', 'gkw.kind.', AD_GROUP_KINDS, p_ads_google)
+  family('gkw.why', 'gkw.why.', PLAN_WITHHELD, p_ads_google)
 }
 
 console.log('\n── warm audience rungs ──')
