@@ -11,6 +11,9 @@ import { getCampaignRequest, markRequestLaunched } from '@/lib/freehold/campaign
 import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { adEndTimeForPermit, endTimeHasPassed } from '@/lib/freehold/permit-schedule'
+import { getLandingPublishState } from '@/lib/landing-pages'
+import { BRAND } from '@/lib/freehold/brand'
+import { preflightLanding, landingSlugOf, blocksLaunch } from '@/lib/freehold/landing-preflight'
 import { avoidAudienceId } from '@/lib/freehold/rating-audiences'
 import { crmExclusionAudienceId } from '@/lib/freehold/crm-exclusion'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
@@ -268,6 +271,44 @@ export async function POST(req: NextRequest) {
   // launch proceeds unchanged. Under full autopilot, a redundant duplicate
   // launched during the learning phase is silently HELD (the identical campaign
   // is already working; a competitor would just burn credits in the same auction).
+  // ── IS ANYTHING ACTUALLY THERE ──────────────────────────────────────────
+  //
+  // The only check on the landing URL was that it EXISTED as a string. But
+  // app/lp/[slug] returns a 404 to anonymous visitors outside the publish
+  // window, and every paid click is an anonymous visitor — so a campaign could
+  // be launched, approved by Meta, and spend its whole daily budget delivering
+  // people to a 404, with no symptom anywhere except that no leads arrive.
+  // Which reads exactly like a bad audience, and gets debugged as one.
+  //
+  // Same shape as the permit gate below: a permit NUMBER says nothing about
+  // today, and a page's STATUS says nothing about tomorrow.
+  //
+  // Refused only where the click CANNOT work. A page closing mid-flight, or a
+  // destination that is not ours at all, are real choices somebody may be
+  // making deliberately — those come back as warnings on a successful launch.
+  const landingWarnings: string[] = []
+  {
+    const slug = landingSlugOf(body.creative.landingUrl, BRAND.domain)
+    const state = slug ? await getLandingPublishState(slug).catch(() => null) : null
+    const pre = preflightLanding(body.creative.landingUrl, state, { domain: BRAND.domain })
+    if (blocksLaunch(pre.verdict)) {
+      return NextResponse.json({
+        error: pre.verdict === 'noSuchPage'
+          ? `There is no landing page at /lp/${pre.slug}. Every click on this campaign would land on a 404.`
+          : pre.verdict === 'windowClosed'
+            ? `The landing page /lp/${pre.slug} stopped publishing on ${String(pre.closesOn).slice(0, 10)}. Publish it again before spending on it.`
+            : `The landing page /lp/${pre.slug} is not published, so every paid click would land on a 404.`,
+        type: 'validation',
+      }, { status: 400 })
+    }
+    if (pre.verdict === 'closesSoon') {
+      landingWarnings.push(`The landing page /lp/${pre.slug} stops publishing on ${String(pre.closesOn).slice(0, 10)} — this campaign will still be running.`)
+    }
+    if (pre.verdict === 'notOurs') {
+      landingWarnings.push('This campaign points off our own site, so its leads cannot reach the CRM and will not appear against it.')
+    }
+  }
+
   // ── THE PERMIT WINDOW IS THE AD'S WINDOW ────────────────────────────────
   //
   // trakheesi.ts states the rule: an ad running past its permit is as
@@ -473,7 +514,13 @@ export async function POST(req: NextRequest) {
       console.error('[meta/launch] post-launch bookkeeping failed', bookkeepingErr)
     }
 
-    return NextResponse.json({ ...result, brokerId, decision }, { status: 201 })
+    // Warnings ride WITH the success, never instead of it. A launch that
+    // worked and has a caveat is not a failure, and refusing it would train
+    // people to route around this route.
+    return NextResponse.json(
+      { ...result, brokerId, decision, ...(landingWarnings.length ? { warnings: landingWarnings } : {}) },
+      { status: 201 },
+    )
   } catch (err) {
     if (err instanceof MetaConfigError) {
       // Not connected → persist a local campaign (mirrors the Google flow) so

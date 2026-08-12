@@ -858,6 +858,51 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
   }
 }
 
+/**
+ * A page's PUBLISH WINDOW, for anything that has to decide before the fact.
+ *
+ * getLandingPageBySlug answers "can I render this now", which is the right
+ * question for a request and the wrong one for a LAUNCH: a campaign that
+ * starts today runs for weeks, and `publish_to` is a real field with real
+ * dates in it. A page that is live this minute and closes on Friday sends a
+ * live campaign into a 404 on Saturday, while the campaign, the budget and the
+ * ad all stay perfectly healthy.
+ *
+ * So this returns the window itself rather than a yes/no, and the judgement
+ * lives in lib/freehold/landing-preflight.ts where it can be tested without a
+ * database. Returns null when no such page exists — which for a launch is a
+ * refusal, not an unknown.
+ */
+export async function getLandingPublishState(slug: string): Promise<{
+  slug: string
+  status: string
+  publishFrom: string | null
+  publishTo: string | null
+} | null> {
+  await ensureLandingPagesSchemaOnce()
+  const rows = await query<LandingPageRow>(
+    `SELECT slug, status, publish_status, publish_from, publish_to
+       FROM freehold_site_project_landing_pages
+      WHERE lower(slug) = $1
+      LIMIT 1`,
+    [slug.trim().toLowerCase()],
+  )
+  const row = rows[0]
+  if (!row) return null
+  const iso = (v: unknown): string | null => {
+    const d = toDate(v)
+    return d ? d.toISOString() : null
+  }
+  return {
+    slug: pickString(row.slug) || slug,
+    // Normalised through the same helper the renderer uses, so "live" and
+    // "active" cannot mean published here and draft there.
+    status: normalizeLandingStatus(pickString(row.status, row.publish_status)) ?? '',
+    publishFrom: iso(row.publish_from),
+    publishTo: iso(row.publish_to),
+  }
+}
+
 export async function getLandingPageBySlug(
   slug: string,
   options?: { includeDraft?: boolean },
