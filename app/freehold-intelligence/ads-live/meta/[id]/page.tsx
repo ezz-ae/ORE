@@ -18,6 +18,7 @@ import { checkCampaignSetup, setupProblemCount, surfaceLabels, type AdSetForChec
 import { recommendationsFor, type Recommendation } from '@/lib/freehold/recommendations'
 import CampaignTrend from '@/components/freehold/campaign-trend'
 import CreativePoolPanel from '@/components/freehold/creative-pool-panel'
+import CampaignDestinationPanel from '@/components/freehold/campaign-destination-panel'
 import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { deliveryOf } from '@/lib/meta/delivery-status'
@@ -1639,6 +1640,14 @@ export default function CampaignCommandPage() {
             <Plus className="h-3.5 w-3.5 text-gold" /> {t('lm.rule.add')}
           </button>
         )}
+      </section>
+
+      {/* WHERE THE LEADS GO. Placed among the campaign's own sections rather
+          than in a tab: it decides whether every number above it means
+          anything, and a fault it finds invalidates the cost per lead this
+          page prints in large type. */}
+      <section className="mt-8">
+        <CampaignDestinationPanel campaignId={id} />
       </section>
 
       {/* THE CREATIVE POOL. Opened from an ad set row or from the rule that

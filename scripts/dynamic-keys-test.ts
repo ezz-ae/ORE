@@ -39,6 +39,7 @@ import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
 import { SEED_SIGNALS, AVOID_SIGNALS } from '../lib/freehold/seed-cohort'
+import { DESTINATION_KINDS, ATTRIBUTION_STATES } from '../lib/freehold/campaign-destination'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -160,6 +161,14 @@ console.log('\n── recommendations ──')
   // seed is not just the rating column reshaped, so a wordless signal breaks
   // the exact claim the line exists to make.
   family('loop.sig', 'loop.sig.', [...SEED_SIGNALS, ...AVOID_SIGNALS])
+
+  // The campaign page's "where the leads go" card renders three computed
+  // families: the destination kind, the per-row sentence, and the headline
+  // sentence. The headline is the one that says a campaign's cost per lead is
+  // wrong — a missing word there prints a key where the warning should be.
+  family('dest.kind', 'dest.kind.', DESTINATION_KINDS)
+  family('dest.row', 'dest.row.', ATTRIBUTION_STATES)
+  family('dest.said', 'dest.said.', ATTRIBUTION_STATES)
 }
 
 console.log('\n── delivery states ──')
