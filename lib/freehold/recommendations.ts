@@ -116,6 +116,22 @@ export interface CampaignFacts {
   adSets?: Array<{
     id: string
     name: string
+    /**
+     * IS THIS AD SET ACTUALLY DELIVERING.
+     *
+     * Required, and not optional, because the failure it prevents was a live
+     * screen telling an operator to "turn off" an ad set that had been paused
+     * for days — while the setup check three inches below correctly said
+     * "Paused — this one is not running". A recommendation about something
+     * that is not running is worse than none: it is obviously wrong to the
+     * person reading it, and it makes the panels that ARE right look like
+     * guesses.
+     *
+     * Read from effective_status, not the ad set's own switch: a
+     * campaign-level pause, a rejection or an ended schedule all stop delivery
+     * while status still says ACTIVE.
+     */
+    live: boolean
     spendAed: number
     impressions: number
     leads: number
@@ -332,7 +348,11 @@ export function recommendationsFor(f: CampaignFacts): Recommendation[] {
   // stopping it would be the expensive mistake in the other direction.
   if ((f.adSets?.length ?? 0) >= 2) {
     const withCpm = f.adSets!
-      .filter((a) => a.impressions >= 100 && a.spendAed > 0)
+      // LIVE ONLY, on both sides of the comparison. A paused ad set is not
+      // "paying 3x for nothing" — it is paying nothing — and a paused one on
+      // the CHEAP side would make a live ad set look expensive against a price
+      // nobody is currently getting.
+      .filter((a) => a.live && a.impressions >= 100 && a.spendAed > 0)
       .map((a) => ({ ...a, cpm: (a.spendAed / a.impressions) * 1000 }))
     if (withCpm.length >= 2) {
       const cheapest = withCpm.reduce((a, b) => (a.cpm <= b.cpm ? a : b))

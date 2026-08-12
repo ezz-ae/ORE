@@ -309,7 +309,44 @@ export default function CampaignCommandPage() {
     }
   }, [data])
 
-  const overlaps = useMemo(() => (data ? computeOverlaps(data.adSets) : []), [data])
+  /**
+   * THE AD SETS ADVICE IS ALLOWED TO BE ABOUT.
+   *
+   * Every panel below read data.adSets — the whole list, paused ones included
+   * — and the page told an operator to "turn off" an ad set that was already
+   * off, warned that it had no location set, and reported a 60% audience
+   * overlap between one live ad set and one that had been paused for days.
+   *
+   * A recommendation about something that is not running is worse than no
+   * recommendation: it is spent attention, it is obviously wrong to the person
+   * reading it, and it makes the panels that ARE right look like guesses. That
+   * is exactly the "I can't trust this" reaction.
+   *
+   * Judged on effective_status, not status: a campaign-level pause, a
+   * rejection or a schedule that has ended all stop delivery while the ad
+   * set's own switch still reads ACTIVE.
+   */
+  const liveAdSets = useMemo(
+    () => (data ? data.adSets.filter((a) => {
+      const eff = String((a as { effective_status?: string }).effective_status ?? a.status ?? '').toUpperCase()
+      return eff === 'ACTIVE'
+    }) : []),
+    [data],
+  )
+
+  /**
+   * OVERLAP IS ABOUT COMPETITION, so it needs two ad sets that can compete.
+   *
+   * Two ad sets cannot bid against each other when one of them is not
+   * bidding. Reporting 60% overlap between a live ad set and a paused one
+   * describes a race with one runner — and the shared-interest chips under it
+   * then read as "this campaign targets Facebook interests and nothing else",
+   * which is not what the targeting says either.
+   */
+  const overlaps = useMemo(
+    () => (liveAdSets.length >= 2 ? computeOverlaps(liveAdSets) : []),
+    [liveAdSets],
+  )
   /**
    * IS META REFUSING TO DELIVER THIS? One computation, read by every panel
    * that would otherwise give advice about an ad nobody can see.
@@ -326,8 +363,11 @@ export default function CampaignCommandPage() {
   }, [data])
 
   const setup = useMemo(
-    () => (data ? checkCampaignSetup(data.campaign, data.adSets as AdSetForCheck[]) : []),
-    [data],
+    // Live ad sets only. "No location set" on an ad set that has been paused
+    // for a week is a repair nobody needs to make, and it pushed the findings
+    // that DO matter off the top of the list.
+    () => (data ? checkCampaignSetup(data.campaign, liveAdSets as AdSetForCheck[]) : []),
+    [data, liveAdSets],
   )
   const setupProblems = setupProblemCount(setup)
 
@@ -1318,6 +1358,21 @@ export default function CampaignCommandPage() {
               ))}
             </div>
           </>
+        ) : quality && quality.attributed > 0 ? (
+          /* LEADS ARRIVED AND NOBODY HAS WORKED THEM. Not a bad campaign — an
+             untouched queue, and the score is withheld rather than printing a
+             small red number that reads as a verdict on the buy. The link goes
+             to the leads themselves, because working them is the only thing
+             that turns this into a score. */
+          <div className="mt-4">
+            <p className="text-sm text-slate-300">
+              {t('lm.cmd.qualityUnworked', { n: quality.attributed })}
+            </p>
+            <Link href="/freehold-intelligence/crm"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold transition hover:text-gold-bright">
+              {t('lm.cmd.qualityOpenCrm')} <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
         ) : (
           <p className="mt-4 text-sm text-slate-400">{t('lm.cmd.qualityNone')}</p>
         )}
@@ -1443,6 +1498,8 @@ export default function CampaignCommandPage() {
               return {
                 id: a.id,
                 name: a.name,
+                // effective_status, not the switch — see RecommendationFacts.
+                live: String((a as { effective_status?: string }).effective_status ?? a.status ?? '').toUpperCase() === 'ACTIVE',
                 spendAed: Number(m.spendAED) || 0,
                 impressions: Number(m.impressions) || 0,
                 leads: Number(m.leads) || 0,

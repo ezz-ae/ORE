@@ -35,8 +35,18 @@ export interface CampaignQuality {
   /** Attributed leads that repeat an earlier lead's phone — the same person
    *  delivered more than once, i.e. spend paid twice. Included in `junk`. */
   duplicates: number
-  /** 0–100, or null when there is no attributed lead yet. */
+  /**
+   * 0–100, or null when there is nothing to score — no attributed lead, OR no
+   * attributed lead that anybody has moved past 'new'.
+   *
+   * The second case is the one that mattered: the formula is built out of
+   * funnel progression, so an unworked funnel produced a small number that
+   * read as a verdict on the campaign when it was a verdict on the queue.
+   */
   score: number | null
+  /** Attributed leads that have moved at all — reached, qualified, won or
+   *  judged junk. Zero means the score is withheld and the card says why. */
+  worked: number
   funnel: { key: 'reached' | 'qualified' | 'won' | 'junk'; count: number; pct: number }[]
   /** Landing-session behaviour (leading signal): average 0–100 score over the
    *  attributed leads that HAVE one, and how many that is. null/0 when none. */
@@ -185,9 +195,25 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     ? ((avgValue - 5) / 5) * 15
     : 0
 
-  // Weighted toward the real objective event (won), then qualification, then
-  // basic reachability; junk drags it down. Clamped 0–100.
-  const score = attributed === 0 ? null : Math.max(0, Math.min(100, Math.round(
+  // NOBODY HAS TOUCHED THESE LEADS YET, so there is nothing to score.
+  //
+  // The formula below is built almost entirely out of FUNNEL PROGRESSION, and
+  // when nothing has progressed every one of those terms is zero. What came
+  // out was a small number — a 7 — printed in large red type next to "25
+  // attributed leads", which reads as "this campaign is terrible".
+  //
+  // It is not. Twenty-five leads that nobody has moved past 'new' is a CRM
+  // backlog, and scoring it blames the campaign for the team's queue. On the
+  // same screen the advisor was already saying "only 31 of 576 leads have been
+  // rated, indicating a significant backlog" — the page was contradicting
+  // itself in two boxes an inch apart.
+  //
+  // So a funnel with no progression at all returns null, exactly as an empty
+  // one does. Withheld, not zero: min-evidence.ts states the rule for every
+  // other number in this product facing a threshold, and a score is the most
+  // consequential number on this page.
+  const worked = reached + qualified + won + junk
+  const score = attributed === 0 || worked === 0 ? null : Math.max(0, Math.min(100, Math.round(
     rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20 + behaviourAdj + valueAdj,
   )))
 
@@ -222,7 +248,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   ]
 
   return {
-    campaignId, attributed, reached, qualified, won, junk, duplicates, score, funnel,
+    campaignId, attributed, reached, qualified, won, junk, duplicates, score, worked, funnel,
     avgBehaviour, behaviourCount,
     valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
   }
