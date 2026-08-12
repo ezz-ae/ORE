@@ -30,7 +30,7 @@
  * Client-only: it draws on a canvas. Not importable from a route.
  */
 import {
-  composeVariant, ensureAdFonts, loadImage, missingPayFields, PALETTES,
+  composeVariant, ensureAdFonts, isPayLayout, loadImage, missingPayFields, PALETTES,
   type FormatKey, type LayoutKey, type Overlay,
 } from '@/lib/freehold/ad-compose'
 
@@ -76,6 +76,19 @@ export async function composeProjectAd(
     format?: FormatKey
     /** Which design in a batch this is. See rule 2. */
     variant?: number
+    /**
+     * Force a specific layout and palette instead of deriving them.
+     *
+     * The creative lab needs this: it shows a project's designs as REAL
+     * RENDERS rather than as the words "payBands" and "heroPrice", which mean
+     * nothing to anyone who did not write them. A thumbnail is the only
+     * honest label for a design.
+     *
+     * Still checked, never forced blindly — a pay layout whose figures are
+     * missing falls back rather than shipping a blank where a number belongs.
+     */
+    layout?: LayoutKey
+    palette?: number
   } = {},
 ): Promise<string | null> {
   try {
@@ -109,17 +122,24 @@ export async function composeProjectAd(
 
     // The first design in a batch leads with the strongest fact the project
     // has; later ones walk to a different family so the set is a real set.
-    const layout: LayoutKey = wantsPay && variant === 0
+    const derived: LayoutKey = wantsPay && variant === 0
       ? 'payBands'
       : price
         ? PRICE_LAYOUTS[variant % PRICE_LAYOUTS.length]
         : PLAIN_LAYOUTS[variant % PLAIN_LAYOUTS.length]
+    // An asked-for pay layout still has to pass the same fields check — the
+    // caller may ask, but the project's facts decide.
+    const asked = opts.layout
+    const askedOk = !asked || !isPayLayout(asked) || wantsPay
+    const layout: LayoutKey = asked && askedOk ? asked : derived
 
     // Palette walks alongside, offset so two designs never land on the same
     // pair. The payment family keeps its own darker palette on the first.
-    const palette = wantsPay && variant === 0
-      ? PALETTES[6]
-      : PALETTES[(3 + variant) % PALETTES.length]
+    const palette = opts.palette !== undefined
+      ? PALETTES[Math.abs(Math.round(opts.palette)) % PALETTES.length]
+      : wantsPay && variant === 0
+        ? PALETTES[6]
+        : PALETTES[(3 + variant) % PALETTES.length]
 
     return composeVariant(img, layout, palette, overlay, opts.format ?? 'square')
   } catch {
