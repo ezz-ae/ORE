@@ -2818,9 +2818,16 @@ export interface AdResult {
 }
 
 /**
- * Every ad (design) in a campaign with its own spend and leads, rolling 30
- * days — the answer to "which design brings the leads". Numbers come from
- * Meta or the row shows zeros; nothing is invented.
+ * Every ad (design) in a campaign with its own spend and leads — the answer to
+ * "which design brings the leads". Numbers come from Meta or the row shows
+ * zeros; nothing is invented.
+ *
+ * LIFETIME, NOT A ROLLING WINDOW. This read was the last copy of the window
+ * bug: the designs panel showed "9 leads" on a winning design while the CRM
+ * held 20 from the same campaign, because a rolling 30 days silently drops
+ * everything older. A design that brought a lead in March did not stop having
+ * brought it in April, and a panel that judges which creative wins must count
+ * every lead it ever won or it will retire the wrong one.
  */
 export async function getAdResults(campaignId: string): Promise<AdResult[]> {
   const res = await apiFetch<{ data?: Array<{
@@ -2828,7 +2835,7 @@ export async function getAdResults(campaignId: string): Promise<AdResult[]> {
     creative?: { thumbnail_url?: string }
     insights?: { data?: Array<{ spend?: string; actions?: Array<{ action_type: string; value: string }> }> }
   }> }>(`/${campaignId}/ads`, undefined, {
-    fields: 'id,name,status,creative{thumbnail_url},insights.date_preset(last_30d){spend,actions}',
+    fields: `id,name,status,creative{thumbnail_url},insights.date_preset(${HEADLINE_WINDOW}){spend,actions}`,
     limit: '50',
   })
   return (res.data ?? [])
