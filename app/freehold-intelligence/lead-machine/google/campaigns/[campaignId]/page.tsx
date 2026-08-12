@@ -25,6 +25,8 @@ import type {
   GoogleKeywordMatchType,
 } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
+import GoogleDeliveryChip from '@/components/freehold/google-delivery-chip'
+import { googleDeliveryOf } from '@/lib/google/delivery'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -300,7 +302,9 @@ export default function GoogleCampaignDetailPage({
     lines.push(`Google Ads Campaign — ${campaign.name}`)
     lines.push(`ID: ${campaign.id}`)
     lines.push(`Type: ${campaign.type.replace(/_/g, ' ')}`)
-    lines.push(`Status: ${campaign.status}`)
+    // Google's serving state, not our switch — this dump is pasted into an
+    // AI conversation and a wrong "ENABLED" there produces a wrong answer.
+    lines.push(`Status: ${googleDeliveryOf({ status: campaign.status, primaryStatus: campaign.primaryStatus, reasons: campaign.primaryStatusReasons }).state}`)
     lines.push(`Bidding strategy: ${campaign.biddingStrategyType.replace(/_/g, ' ')}`)
     lines.push(`Daily budget: AED ${Math.round(campaign.dailyBudgetMicros / 1_000_000).toLocaleString()}`)
     if (campaign.startDate) lines.push(`Started: ${campaign.startDate}`)
@@ -418,15 +422,11 @@ export default function GoogleCampaignDetailPage({
                   >
                     {campaign.type.replace(/_/g, ' ')}
                   </span>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                      isEnabled
-                        ? 'border-gold/25 bg-gold/10 text-gold'
-                        : 'border-line bg-surface-2 text-slate-500'
-                    }`}
-                  >
-                    {campaign.status}
-                  </span>
+                  {/* Google's serving state and, when it is not serving, the
+                      named blockers — each linking to the screen that fixes
+                      it. This badge used to print campaign.status, which is
+                      the switch we set and says nothing about serving. */}
+                  <GoogleDeliveryChip campaign={campaign} />
                 </div>
 
                 {/* Name */}
