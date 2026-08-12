@@ -10,15 +10,22 @@
  * THE FOUR STEPS.
  *
  *   1. RATED      a person judged this lead 0–10.
- *   2. TOLD       a lead rated >= VALUABLE_RATING sends Meta a QualifiedLead
- *                 event, once, deduplicated by a deterministic id
- *                 (lead-writeback). This half already worked.
- *   3. SEEDED     the rated-well leads become a custom audience, and that
- *                 audience becomes a value-based LOOKALIKE — which is the
- *                 only mechanism by which "find me more people like this"
- *                 actually reaches Meta's delivery.
- *   4. TARGETED   the lookalike is attached to a campaign, and the rated-badly
+ *   2. TOLD       a lead that earned it — rated >= VALUABLE_RATING, or moved
+ *                 to qualified or deeper, or closed — sends Meta an event,
+ *                 once, deduplicated by a deterministic id (lead-writeback).
+ *   3. SEEDED     the people the funnel PROVES were worth having become a
+ *                 weighted custom audience, and that audience becomes a
+ *                 value-based LOOKALIKE — the only mechanism by which "find
+ *                 me more people like this" reaches Meta's delivery.
+ *   4. TARGETED   the lookalike is attached to a campaign, and the proven-bad
  *                 leads are attached as an EXCLUSION.
+ *
+ * STEP 3 IS NOT THE RATING COLUMN. It is splitCohorts() in seed-cohort.ts,
+ * over loadLeadEvidence() — status, deal value, blocked, phone, behaviour and
+ * rating together. It shipped reading `value_rating` alone, which meant a lead
+ * who BOUGHT and whom nobody rated was in no audience at all, and a lead rated
+ * 9 who was later blocked stayed in the seed. Outcomes outrank opinions; the
+ * weight says by how much.
  *
  * THE HALF THAT WAS MISSING, and why it is not symmetrical.
  *
@@ -37,11 +44,13 @@
  *
  * Pure — no I/O, no clock. Runs in `pnpm guards`.
  */
-import { VALUABLE_RATING } from '@/lib/freehold/lead-stages'
+import { VALUABLE_RATING, AVOID_RATING } from '@/lib/freehold/lead-stages'
 
 /** A rating at or below this is "stop buying this" — the same band the CRM
- *  chip, the campaign-quality score and the row control already use. */
-export const AVOID_RATING = 2
+ *  chip, the campaign-quality score and the row control already use. Defined
+ *  next to VALUABLE_RATING in lead-stages; re-exported here because this is
+ *  where callers reading about the loop expect to find it. */
+export { AVOID_RATING }
 
 /**
  * Meta's own working floor for a value-based lookalike source.
@@ -87,11 +96,34 @@ export interface RatingLoopFacts {
   /** Of those, rated <= AVOID_RATING. */
   avoid: number
   /**
-   * QualifiedLead events actually sent (meta_reported_stages), not events we
-   * believe should have been sent. The difference between those two is the
-   * whole reason this module exists.
+   * Leads that EARNED an event by any route — rated well, or moved to
+   * qualified or deeper in the CRM, or closed.
+   *
+   * This is the denominator, and it is not the rating count. A lead that
+   * reached "negotiation" earned an event whether or not anybody got round to
+   * rating it, and measuring the send against the rating column alone reported
+   * "all sent" while closed buyers had never been mentioned to Meta.
+   */
+  earned: number
+  /**
+   * QualifiedLead / Purchase events actually sent (meta_reported_stages), not
+   * events we believe should have been sent. The difference between those two
+   * is the whole reason this module exists.
    */
   sent: number
+  /**
+   * People splitCohorts() puts in the seed — the funnel's judgment, not the
+   * rating column's. Closed and qualified leads are in here whether or not
+   * anyone rated them; a lead rated 9 who was later blocked is not.
+   */
+  seedRows: number
+  /**
+   * Of those, how many no rating found. The honest answer to "is this seed
+   * just our ratings in a different shape" — and usually the larger half.
+   */
+  seedBeyondRatings: number
+  /** People proven not worth buying: blocked, unreachable, or rated junk. */
+  excludeRows: number
   /**
    * People MATCHED in the value seed audience, as Meta reported it — never the
    * number uploaded. Uploading a hundred contacts commonly matches sixty, and
@@ -133,32 +165,38 @@ export function loopStepsFor(f: RatingLoopFacts): LoopStep[] {
   }
 
   // ── 2. TOLD ──────────────────────────────────────────────────────────────
-  // Sent events versus leads that earned one. A shortfall is real and worth
-  // seeing: it means a write-back failed, or a lead has no email and no phone
-  // for Meta to match on.
+  // Sent events versus leads that EARNED one — by rating, by CRM stage, or by
+  // closing. A shortfall is real and worth seeing: it means a write-back
+  // failed, or a lead has no email and no phone for Meta to match on.
   steps.push({
     id: 'told',
-    state: f.valuable === 0 ? 'idle' : f.sent >= f.valuable ? 'done' : 'waiting',
-    vars: { sent: f.sent, valuable: f.valuable },
-    action: 'none',   // automatic — it fires on the rating write itself
+    state: f.earned === 0 ? 'idle' : f.sent >= f.earned ? 'done' : 'waiting',
+    vars: { sent: f.sent, earned: f.earned, valuable: f.valuable },
+    action: 'none',   // automatic — it fires on the rating and status writes
   })
 
   // ── 3. SEEDED ────────────────────────────────────────────────────────────
   // The step that was missing. MATCHED people, not uploaded ones, and against
   // Meta's real floor — a lookalike from a dozen people is a broad audience
   // wearing a precise name.
+  //
+  // Note what gates this step now: the SEED, not the rating count. An account
+  // whose brokers never rated anything but which closed forty deals has a real
+  // seed, and gating on ratings told it to go and rate something first.
   const matched = f.seedMatched ?? 0
+  const canBuild = f.seedRows > 0 || f.excludeRows >= SUPPRESSION_MIN_SEED
   steps.push({
     id: 'seeded',
-    state: f.valuable === 0 ? 'idle'
+    state: !canBuild ? 'idle'
       : f.lookalikeExists && matched >= LOOKALIKE_MIN_SEED ? 'done'
       : 'waiting',
     vars: { matched, need: LOOKALIKE_MIN_SEED, valuable: f.valuable, avoid: f.avoid,
+            seedRows: f.seedRows, beyond: f.seedBeyondRatings, excludeRows: f.excludeRows,
             suppression: f.suppressionMatched ?? 0, suppressionNeed: SUPPRESSION_MIN_SEED },
-    // Sync is worth pressing whenever there are ratings not yet in an
+    // Sync is worth pressing whenever there is evidence not yet in an
     // audience — including when only the avoid list can be built, because
     // exclusion pays off long before a lookalike does.
-    action: (f.valuable > 0 || f.avoid >= SUPPRESSION_MIN_SEED) ? 'sync' : 'none',
+    action: canBuild ? 'sync' : 'none',
   })
 
   // ── 4. TARGETED ──────────────────────────────────────────────────────────

@@ -26,6 +26,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Check, ArrowRight, CircleDashed, AlertTriangle } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { LoopStep, LoopStepId } from '@/lib/freehold/rating-loop'
+import { SEED_SIGNALS, AVOID_SIGNALS, type CohortEvidence } from '@/lib/freehold/seed-cohort'
 
 const TONE: Record<string, string> = {
   done: 'text-emerald-300',
@@ -37,6 +38,7 @@ const TONE: Record<string, string> = {
 export default function RatingLoopWidget() {
   const t = useT()
   const [steps, setSteps] = useState<LoopStep[] | null>(null)
+  const [evidence, setEvidence] = useState<CohortEvidence | null>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
 
@@ -44,6 +46,7 @@ export default function RatingLoopWidget() {
     const d = await fetch('/api/freehold/ads/rating-loop', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null)).catch(() => null)
     setSteps(Array.isArray(d?.steps) ? d.steps : [])
+    setEvidence((d?.evidence as CohortEvidence | null) ?? null)
   }, [])
 
   useEffect(() => { void load() }, [load])
@@ -93,6 +96,23 @@ export default function RatingLoopWidget() {
               <div className={`text-[11px] leading-snug ${TONE[s.state]}`}>
                 {t(`loop.said.${s.id}.${s.state}`, s.vars as Record<string, string | number>)}
               </div>
+              {/* WHAT PUT PEOPLE THERE. A cohort size on its own is compatible
+                  with the list being built from nothing; the makeup is the
+                  proof. It also answers the question the size hides — how much
+                  of this the ratings actually found, which is usually less
+                  than half, because closed and qualified leads arrive here
+                  whether or not anybody got round to judging them. */}
+              {s.id === 'seeded' && evidence && (
+                <div className="mt-1 space-y-0.5">
+                  <SignalLine label={t('loop.made.seed')} counts={evidence.seed} keys={SEED_SIGNALS} t={t} />
+                  <SignalLine label={t('loop.made.avoid')} counts={evidence.avoid} keys={AVOID_SIGNALS} t={t} />
+                  {evidence.seedBeyondRatings > 0 && (
+                    <div className="text-[11px] text-slate-500">
+                      {t('loop.made.beyond', { n: evidence.seedBeyondRatings })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             {s.action === 'sync' && (
               <button type="button" onClick={() => void sync()} disabled={busy}
@@ -111,6 +131,30 @@ export default function RatingLoopWidget() {
       </div>
 
       {note && <p className="mt-3 text-[11px] text-slate-400">{note}</p>}
+    </div>
+  )
+}
+
+/** One cohort's makeup — only the signals that actually have somebody behind
+ *  them. A zero is printed nowhere: "0 blocked" is noise on a busy screen and
+ *  a row of zeroes reads as a broken panel. */
+function SignalLine({ label, counts, keys, t }: {
+  label: string
+  counts: Record<string, number>
+  keys: readonly string[]
+  t: (k: string, v?: Record<string, string | number>) => string
+}) {
+  const present = keys.filter((k) => (counts[k] ?? 0) > 0)
+  if (present.length === 0) return null
+  return (
+    <div className="text-[11px] text-slate-400">
+      <span className="text-slate-500">{label}</span>{' '}
+      {present.map((k, i) => (
+        <span key={k}>
+          {i > 0 && <span className="text-slate-600"> · </span>}
+          <span className="text-slate-300">{counts[k]}</span> {t(`loop.sig.${k}`)}
+        </span>
+      ))}
     </div>
   )
 }

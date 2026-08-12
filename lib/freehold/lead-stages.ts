@@ -42,6 +42,37 @@ export const WON_STATUSES = new Set(['converted', 'closed'])
  */
 export const VALUABLE_RATING = 6
 
+/**
+ * The other end of the same scale: at or below this, a broker said "stop
+ * buying this". It lives here beside VALUABLE_RATING because the two bands are
+ * one decision — a seed that admits 6+ and an exclusion that admits 0–2 must
+ * never be able to drift into overlapping or leaving a silent gap.
+ */
+export const AVOID_RATING = 2
+
+/**
+ * THE HOUSE SCALE, as this team actually uses it — stated because the numbers
+ * are not a generic 0–10 and code that treats them as evenly spaced gets the
+ * seed wrong.
+ *
+ *   0–2   stop buying this            (AVOID_RATING — the exclusion list)
+ *   3–5   neither                     (no audience, no event)
+ *   6–7   good                        (VALUABLE_RATING — "above 5 is good")
+ *   8–9   exactly the lead we want    (PERFECT_RATING)
+ *   10    the broker is saying this one became a deal
+ *
+ * A ten is a claim about an OUTCOME, not a stronger opinion, and the seed
+ * scores it on the closed rung for that reason (see seed-cohort.ts).
+ *
+ * It does NOT send Meta a Purchase event, and that asymmetry is deliberate: a
+ * seed is reversible — worst case we copy the wrong people for a week — while
+ * a Purchase event cannot be retracted at all, and a mistapped ten would teach
+ * the account permanently that a sale happened. The irreversible claim waits
+ * for the deal record; the reversible one can take the broker's word.
+ */
+export const PERFECT_RATING = 8
+export const DEAL_RATING = 10
+
 export type WriteBackStage = 'qualified' | 'won'
 
 export interface WriteBackDecision {
