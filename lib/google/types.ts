@@ -48,7 +48,17 @@ export interface GoogleCampaign {
   id: string
   resourceName: string
   name: string
+  /** The switch WE set. It is not a statement about whether Google is
+   *  serving — read primaryStatus for that, through googleDeliveryOf. */
   status: GoogleCampaignStatus
+  /** campaign.primary_status — what Google is actually doing (ELIGIBLE /
+   *  LIMITED / PENDING / NOT_ELIGIBLE / MISCONFIGURED / ENDED). null on a
+   *  locally-drafted campaign, or an API surface that does not carry it. */
+  primaryStatus?: string | null
+  /** campaign.primary_status_reasons — why it is not serving, in Google's own
+   *  words. The most useful field on the whole resource and it was never
+   *  asked for; see lib/google/delivery.ts. */
+  primaryStatusReasons?: string[]
   type: GoogleCampaignType
   biddingStrategyType: GoogleBiddingStrategy
   /** Micros (1 AED = 1_000_000 micros) */

@@ -29,6 +29,7 @@ import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
 import { personaIds } from '../lib/freehold/persona-audience'
 import { WARM_AUDIENCES } from '../lib/freehold/warm-audiences'
 import { DELIVERY_STATES } from '../lib/meta/delivery-status'
+import { GOOGLE_DELIVERY_STATES, GOOGLE_BLOCKERS } from '../lib/google/delivery'
 import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
@@ -39,6 +40,7 @@ import { SEED_SIGNALS, AVOID_SIGNALS } from '../lib/freehold/seed-cohort'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
+import { p_ads_google } from '../lib/i18n/dictionaries/p_ads_google'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -166,6 +168,13 @@ console.log('\n── delivery states ──')
   // partial `lm.machine.delivery.*` set used by the Ads Machine screen with
   // its own snake_case vocabulary; this family is the one DeliveryState feeds.)
   family('lm.delivery', 'lm.delivery.', DELIVERY_STATES)
+
+  // Google's own two families, off the same kind of walkable catalog. The
+  // chip renders t(`gdel.state.${state}`) and t(`gdel.block.${blocker}`) — a
+  // wordless blocker is a link labelled with its own key, sitting on the badge
+  // that tells an operator why a live campaign is not running.
+  family('gdel.state', 'gdel.state.', GOOGLE_DELIVERY_STATES, p_ads_google)
+  family('gdel.block', 'gdel.block.', GOOGLE_BLOCKERS, p_ads_google)
 }
 
 console.log('\n── warm audience rungs ──')

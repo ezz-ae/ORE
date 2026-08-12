@@ -172,11 +172,17 @@ async function mutate(operations: unknown[]): Promise<unknown> {
 
 // ─── Campaigns ───────────────────────────────────────────────────────────────
 
-// `during` scopes the metrics to a Google date range (e.g. 'THIS_MONTH',
-// 'LAST_30_DAYS'). Without it the metrics are LIFETIME — fine for the ads-live
-// overview, but the Ads Machine passes 'THIS_MONTH' so Google spend/leads are
-// like-for-like with the Meta side (which reads this_month), instead of
-// comparing a Google campaign's lifetime cost against a Meta this-month cost.
+// `during` scopes the metrics to a Google date range. Without it the metrics
+// are LIFETIME, which is the right read for a LIST — a report of what a
+// campaign brought must never go down, and a rolling window drains to zero
+// thirty days after a campaign is switched off, as though it never ran. The
+// Ads Machine passes 'LAST_30_DAYS' instead, because a JUDGEMENT is made on
+// recent behaviour and that is the same rolling window the Meta side reads
+// (RECENT_WINDOW in lib/meta/insights-window.ts).
+//
+// NOT 'THIS_MONTH', on either channel: a calendar window erases every
+// campaign's history at midnight on the 1st, which froze the machine for the
+// first days of every month and made the product read as "everything is dead".
 const GOOGLE_DATE_RANGES = new Set(['TODAY', 'YESTERDAY', 'LAST_7_DAYS', 'LAST_14_DAYS', 'LAST_30_DAYS', 'THIS_MONTH', 'LAST_MONTH'])
 export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> {
   const dateFilter = during && GOOGLE_DATE_RANGES.has(during) ? ` AND segments.date DURING ${during}` : ''
@@ -186,6 +192,11 @@ export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> 
       campaign.resource_name,
       campaign.name,
       campaign.status,
+      -- What Google is ACTUALLY doing with it, and why not when it is not.
+      -- Selected on the LIST, not only per-campaign: every Google screen used
+      -- to paint its badge from campaign.status, which is the switch we set.
+      campaign.primary_status,
+      campaign.primary_status_reasons,
       campaign.advertising_channel_type,
       campaign.bidding_strategy_type,
       campaign_budget.amount_micros,
@@ -211,6 +222,9 @@ export async function listCampaigns(during?: string): Promise<GoogleCampaign[]> 
     resourceName:         String(r.campaign?.resource_name ?? ''),
     name:                 String(r.campaign?.name ?? ''),
     status:               String(r.campaign?.status ?? 'PAUSED') as GoogleCampaign['status'],
+    primaryStatus:        r.campaign?.primary_status ? String(r.campaign.primary_status) : null,
+    primaryStatusReasons: Array.isArray(r.campaign?.primary_status_reasons)
+      ? (r.campaign.primary_status_reasons as unknown[]).map(String) : [],
     type:                 String(r.campaign?.advertising_channel_type ?? 'SEARCH') as GoogleCampaign['type'],
     biddingStrategyType:  String(r.campaign?.bidding_strategy_type ?? 'MAXIMIZE_CONVERSIONS') as GoogleCampaign['biddingStrategyType'],
     dailyBudgetMicros:    Number(r.campaign_budget?.amount_micros ?? 0),

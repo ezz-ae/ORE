@@ -12,6 +12,7 @@
 import { getCampaignDelivery as metaDelivery, getCampaignSpendToday as metaSpendToday, MetaConfigError, type MetaCampaignDelivery } from '@/lib/meta/client'
 import { getCampaignDelivery as googleDelivery, getCampaignSpendToday as googleSpendToday, type GoogleCampaignDelivery } from '@/lib/google/client'
 import { GoogleConfigError } from '@/lib/google/types'
+import { googleDeliveryOf, type GoogleDeliveryState } from '@/lib/google/delivery'
 import type { MachineCampaign } from '@/lib/freehold/ads-machine'
 
 export type DeliveryState =
@@ -63,17 +64,27 @@ function mapMeta(raw: MetaCampaignDelivery): CampaignDelivery {
   return { state: 'unknown' }
 }
 
+/** Google's states → this module's cross-channel vocabulary. The READING of
+ *  Google's own fields is not repeated here: googleDeliveryOf is the single
+ *  definition, shared with the screens, so the machine and the operator can
+ *  never be looking at two different opinions of one campaign. */
+const GOOGLE_STATE_MAP: Record<GoogleDeliveryState, DeliveryState> = {
+  delivering: 'delivering',
+  limited: 'limited',
+  learning: 'learning',
+  inReview: 'in_review',
+  misconfigured: 'not_delivering',
+  notDelivering: 'not_delivering',
+  paused: 'paused',
+  ended: 'ended',
+  unknown: 'unknown',
+}
+
 function mapGoogle(raw: GoogleCampaignDelivery): CampaignDelivery {
-  const detail = raw.reasons.length ? raw.reasons.slice(0, 2).join(', ') : undefined
-  switch (raw.primaryStatus) {
-    case 'ELIGIBLE':     return { state: 'delivering' }
-    case 'LIMITED':      return { state: 'limited', detail }
-    case 'PENDING':      return { state: 'in_review', detail }
-    case 'PAUSED':       return { state: 'paused' }
-    case 'ENDED':        return { state: 'ended' }
-    case 'REMOVED':      return { state: 'ended' }
-    case 'NOT_ELIGIBLE': return { state: 'not_delivering', detail }
-    default: break
+  const d = googleDeliveryOf(raw)
+  const detail = d.rawReasons.length ? d.rawReasons.slice(0, 2).join(', ') : undefined
+  if (d.state !== 'unknown') {
+    return { state: GOOGLE_STATE_MAP[d.state], ...(detail ? { detail } : {}) }
   }
   // No primary_status — fall back to the plain campaign status.
   if (raw.status === 'ENABLED') return { state: 'delivering' }

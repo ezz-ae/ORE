@@ -19,6 +19,9 @@
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
 import { deliveryOf, isSpending, LEARNING_TARGET } from '../lib/meta/delivery-status'
+import {
+  googleDeliveryOf, isServing, fixRouteFor, GOOGLE_BLOCKERS, BLOCKER_FIX,
+} from '../lib/google/delivery'
 import { readdirSync, readFileSync, type Dirent } from 'node:fs'
 import { join } from 'node:path'
 
@@ -142,6 +145,7 @@ console.log('\n── one status vocabulary across the ads surfaces ──')
   const ADS_TREES = [
     'app/freehold-intelligence/ads-live',
     'app/freehold-intelligence/lead-machine/campaigns',
+    'app/freehold-intelligence/lead-machine/google',
     'components/freehold/lead-machine',
   ]
   const files: string[] = []
@@ -160,15 +164,75 @@ console.log('\n── one status vocabulary across the ads surfaces ──')
   const offenders: string[] = []
   for (const f of files) {
     const src = readFileSync(f, { encoding: 'utf8' })
-    // The shape: a two-branch status test feeding a rendered label. Google's
-    // own pages are excluded by the trees above — Google has no
-    // effective_status and must not be made to fake one.
+    // The shape: a two-branch status test feeding a rendered label.
+    //
+    // THE GOOGLE TREE USED TO BE EXCLUDED HERE, on the stated grounds that
+    // "Google has no effective_status and must not be made to fake one". That
+    // was wrong, and it cost three more screens. Google's equivalent is
+    // BETTER than Meta's — campaign.primary_status says whether it is serving
+    // and primary_status_reasons says exactly why not — it simply was never
+    // selected in the list query. googleDeliveryOf reads it now, so the Google
+    // pages are in scope like everything else.
     const invents = /\?\s*t\('lm\.[a-zA-Z.]*status\.[a-z]+'\)/.test(src)
       || /status\.active'\)\s*:\s*t\(/.test(src)
-    if (invents && !/deliveryOf/.test(src)) offenders.push(f.replace(process.cwd() + '/', ''))
+      || /t\('padsg\.statusActive'\)/.test(src)
+    if (invents && !/deliveryOf/i.test(src)) offenders.push(f.replace(process.cwd() + '/', ''))
   }
   check('no ads screen builds its own Active/Paused badge instead of asking deliveryOf',
     offenders.length === 0, offenders.join(', '))
+}
+
+console.log('\n── Google says whether it is serving, and why not ──')
+{
+  // THE DEFECT: every Google screen drew a green dot from campaign.status —
+  // the switch WE set. A campaign with no keywords, every ad disapproved, or
+  // a budget gone by noon read exactly like one that was working.
+  check('the switch alone is never reported as serving',
+    googleDeliveryOf({ status: 'ENABLED' }).state === 'unknown',
+    googleDeliveryOf({ status: 'ENABLED' }).state)
+  check('…and Google saying ELIGIBLE is',
+    googleDeliveryOf({ status: 'ENABLED', primaryStatus: 'ELIGIBLE' }).state === 'delivering')
+
+  // CAPPED IS THE MOST COMMON REAL STATE IN A LIVE SEARCH ACCOUNT: running,
+  // and losing every auction after the budget is gone. Neither green nor red.
+  const capped = googleDeliveryOf({
+    status: 'ENABLED', primaryStatus: 'LIMITED', reasons: ['BUDGET_CONSTRAINED'],
+  })
+  check('a budget-capped campaign is limited, not delivering', capped.state === 'limited', capped.state)
+  check('…and it still counts as serving, because it IS spending', isServing(capped.state))
+  check('…and it names the blocker', capped.blockers.join(',') === 'budget', capped.blockers.join(','))
+  check('…which carries a route to the screen that fixes it',
+    fixRouteFor('budget', '123').includes('/google/campaigns/123'), fixRouteFor('budget', '123'))
+
+  // LEARNING is a reason on an eligible campaign, not a status of its own —
+  // and a bid strategy still learning must not have its CPL judged.
+  check('learning is read off the reason, not invented',
+    googleDeliveryOf({ primaryStatus: 'ELIGIBLE', reasons: ['BIDDING_STRATEGY_LEARNING'] }).state === 'learning')
+
+  const dead = googleDeliveryOf({
+    status: 'ENABLED', primaryStatus: 'NOT_ELIGIBLE',
+    reasons: ['NO_KEYWORDS', 'AD_GROUP_ADS_PAUSED'],
+  })
+  check('a campaign Google refuses to run says so however the switch is set',
+    dead.state === 'notDelivering' && !isServing(dead.state), dead.state)
+  check('…and names every blocker it was given, in order',
+    dead.blockers.join(',') === 'noKeywords,adsPaused', dead.blockers.join(','))
+
+  // GOOGLE ADDS REASONS BETWEEN API VERSIONS. A switch over exact enum values
+  // drops the new ones silently, which reads on screen as "stopped, no reason
+  // given" — so the match is by substring and the raw list is always kept.
+  const future = googleDeliveryOf({
+    primaryStatus: 'NOT_ELIGIBLE', reasons: ['SOME_BRAND_NEW_REASON_2027'],
+  })
+  check('an unrecognised reason still reports the state', future.state === 'notDelivering')
+  check('…and is never silently dropped', future.rawReasons.length === 1, JSON.stringify(future.rawReasons))
+  check('…without inventing a blocker for it', future.blockers.length === 0, future.blockers.join(','))
+
+  // Every state and blocker must be reachable and have somewhere to go, or
+  // the chip renders its own key.
+  check('every blocker has a fix route',
+    GOOGLE_BLOCKERS.every((b) => BLOCKER_FIX[b]?.startsWith('/freehold-intelligence/')),
+    GOOGLE_BLOCKERS.filter((b) => !BLOCKER_FIX[b]).join(','))
 }
 
 if (failures > 0) {

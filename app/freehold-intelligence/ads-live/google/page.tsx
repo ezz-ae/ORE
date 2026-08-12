@@ -7,6 +7,8 @@ import { ArrowUpRight, RefreshCw, AlertCircle, Zap, Copy, Pencil, Check, X } fro
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
+import GoogleDeliveryChip from '@/components/freehold/google-delivery-chip'
+import { googleDeliveryOf, isServing } from '@/lib/google/delivery'
 
 const GOOGLE_BLUE = '#4285F4'
 
@@ -227,7 +229,9 @@ export default function GoogleAdsPage() {
       `Google Ads Campaign — ${c.name}`,
       `ID: ${c.id}`,
       `Type: ${c.type.replace('_', ' ')}`,
-      `Status: ${c.status === 'ENABLED' ? t('padsg.statusActive') : t('padsg.statusPaused')}`,
+      // The copied line goes into a WhatsApp message and outlives the screen,
+      // so it carries Google's serving state rather than our switch.
+      `Status: ${t(`gdel.state.${googleDeliveryOf({ status: c.status, primaryStatus: c.primaryStatus, reasons: c.primaryStatusReasons }).state}`)}`,
       `Spend: ${fmtMicros(m?.costMicros ?? 0)}`,
       `Impressions: ${(m?.impressions ?? 0).toLocaleString()}`,
       `Clicks: ${(m?.clicks ?? 0).toLocaleString()}`,
@@ -396,7 +400,10 @@ export default function GoogleAdsPage() {
                           href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
                           className="flex items-center gap-2 min-w-0 hover:text-white transition"
                         >
-                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-surface-3'}`} />
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                            isServing(googleDeliveryOf({ status: c.status, primaryStatus: c.primaryStatus, reasons: c.primaryStatusReasons }).state)
+                              ? 'bg-emerald-400' : 'bg-surface-3'
+                          }`} />
                           <span className="truncate text-sm font-medium text-slate-300">{c.name}</span>
                         </Link>
                         <span
@@ -405,13 +412,12 @@ export default function GoogleAdsPage() {
                         >
                           {c.type.replace('_', ' ')}
                         </span>
-                        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
-                          c.status === 'ENABLED'
-                            ? 'border-gold/20 bg-gold/10 text-gold'
-                            : 'border-line-strong bg-surface-2 text-slate-500'
-                        }`}>
-                          {c.status === 'ENABLED' ? t('padsg.statusActive') : t('padsg.statusPaused')}
-                        </span>
+                        {/* Google's serving state, not our switch. The pill
+                            here used to read "Active" for a campaign Google
+                            was refusing to run — see lib/google/delivery.ts.
+                            Blockers are hidden in the row (the fix links live
+                            on the campaign page) so the grid stays one line. */}
+                        <GoogleDeliveryChip campaign={c} showBlockers={false} />
                         <BudgetCell
                           campaign={c}
                           onSaved={(micros) =>

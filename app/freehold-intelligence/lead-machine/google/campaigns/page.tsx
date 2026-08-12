@@ -15,6 +15,7 @@ import {
 import type { GoogleCampaign, GoogleCampaignType } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
 import { DemoNotice } from '@/components/freehold/demo-badge'
+import GoogleDeliveryChip from '@/components/freehold/google-delivery-chip'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -331,12 +332,10 @@ export default function GoogleCampaignsPage() {
                         {campaign.name}
                       </Link>
 
-                      <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${
-                          isEnabled ? 'bg-gold' : 'bg-white/20'
-                        }`}
-                        title={isEnabled ? t('lm.google.common.active') : t('lm.google.common.paused')}
-                      />
+                      {/* Google's own serving state, not the switch we set.
+                          A dot drawn from campaign.status showed a campaign
+                          with no keywords exactly like one that was working. */}
+                      <GoogleDeliveryChip campaign={campaign} />
                     </div>
 
                     {/* Row 2: budget + metrics */}
