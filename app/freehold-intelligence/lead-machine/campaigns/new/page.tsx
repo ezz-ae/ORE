@@ -20,6 +20,8 @@ import {
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
+import LaunchReadinessStrip from '@/components/freehold/launch-readiness-strip'
+
 interface WizardListing {
   id: string
   projectId: string
@@ -1827,7 +1829,28 @@ export default function NewCampaignPage() {
         })}
       </div>
 
-      <div className="mt-10 rounded-[24px] border border-line bg-surface p-6 sm:p-8">
+      {/* WHAT WOULD STOP THIS LAUNCH — above the steps, not after them.
+          Every check here already existed and every one of them fired on the
+          LAST click, inside the launch route, after all this work was done.
+          A wizard that fails at the end teaches people to fear the button. */}
+      <div className="mt-8">
+        <LaunchReadinessStrip
+          listingId={form.listingId}
+          landingUrl={form.landingUrl}
+          draft={{
+            projectSlug: form.listingId || null,
+            // The objective decides the destination — a lead-generation
+            // campaign opens an instant form, which has no page to 404.
+            usesInstantForm: activeObjective.dest === 'form',
+            hasCreative: !!form.imageUrl,
+            hasCopy: !!form.primaryText.trim() && !!(form.headlines[0] ?? '').trim(),
+            dailyBudgetAed: form.dailyBudgetAED || null,
+            hasAudience: form.interestIds.length > 0 || form.strategy !== 'custom',
+          }}
+        />
+      </div>
+
+      <div className="mt-6 rounded-[24px] border border-line bg-surface p-6 sm:p-8">
 
         {/* ── Step 1: Campaign ──────────────────────────────────────────── */}
         {step === 1 && (

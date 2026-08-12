@@ -40,6 +40,7 @@ import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/c
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
 import { SEED_SIGNALS, AVOID_SIGNALS } from '../lib/freehold/seed-cohort'
 import { DESTINATION_KINDS, ATTRIBUTION_STATES } from '../lib/freehold/campaign-destination'
+import { READINESS_CHECKS, REACHABLE } from '../lib/freehold/launch-readiness'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -169,6 +170,15 @@ console.log('\n── recommendations ──')
   family('dest.kind', 'dest.kind.', DESTINATION_KINDS)
   family('dest.row', 'dest.row.', ATTRIBUTION_STATES)
   family('dest.said', 'dest.said.', ATTRIBUTION_STATES)
+
+  // The launcher's readiness strip: a label per check, and a sentence per
+  // check PER STATE — but only the states each check can actually reach, and
+  // never 'ok', which needs no sentence. Walking the full 8x4 cross product
+  // would demand two dozen strings that can never appear, and dead copy is
+  // how a dictionary stops being trustworthy.
+  family('ready.check', 'ready.check.', READINESS_CHECKS)
+  family('ready.said', 'ready.said.',
+    READINESS_CHECKS.flatMap((c) => REACHABLE[c].map((st) => `${c}.${st}`)))
 }
 
 console.log('\n── delivery states ──')
