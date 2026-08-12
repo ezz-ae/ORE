@@ -11,6 +11,7 @@ import { getCampaignRequest, markRequestLaunched } from '@/lib/freehold/campaign
 import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { adEndTimeForPermit, endTimeHasPassed } from '@/lib/freehold/permit-schedule'
+import { avoidAudienceId } from '@/lib/freehold/rating-audiences'
 import { crmExclusionAudienceId } from '@/lib/freehold/crm-exclusion'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
 import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
@@ -311,6 +312,19 @@ export async function POST(req: NextRequest) {
     if (id) excludeAudienceIds = [id]
     // No audience built yet ⇒ no exclusion, and no pretending there was one.
   }
+  // THE OTHER EXCLUSION, and the one a broker's own judgment built.
+  //
+  // Always applied, not opt-in: it is the list of people this company's own
+  // brokers rated worthless, and there is no campaign for which "show it to
+  // the people we already called junk" is the right answer. It rides ALONGSIDE
+  // the CRM exclusion rather than instead of it — that one stops paying twice
+  // for somebody you already have, this one stops paying at all for the ones
+  // you did not want.
+  //
+  // Meta has no negative event to receive (see rating-audiences), so this list
+  // IS the negative half of the rating loop.
+  const avoidId = await avoidAudienceId().catch(() => null)
+  if (avoidId && !excludeAudienceIds.includes(avoidId)) excludeAudienceIds.push(avoidId)
 
   // Attribution key. A form ad launched without a listing still needs a
   // stable non-empty slug for the ledger, the router and the audience memory

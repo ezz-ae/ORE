@@ -34,6 +34,7 @@ import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
+import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -141,6 +142,13 @@ console.log('\n── recommendations ──')
   family('lab.angle', 'lab.angle.', LAB_ANGLES)
   family('lab.why', 'lab.why.', WITHHELD_REASONS)
   family('lab.verdict', 'lab.verdict.', RECIPE_VERDICTS)
+
+  // The rating-loop widget renders t(`loop.step.${id}`) and — the wide one —
+  // t(`loop.said.${id}.${state}`), a sentence per step PER STATE. Sixteen
+  // computed keys off two catalogs; one missing renders as its own key on the
+  // screen that tells a team whether their ten seconds a lead is working.
+  family('loop.step', 'loop.step.', LOOP_STEPS)
+  family('loop.said', 'loop.said.', LOOP_STEPS.flatMap((id) => LOOP_STATES.map((st) => `${id}.${st}`)))
 }
 
 console.log('\n── delivery states ──')
