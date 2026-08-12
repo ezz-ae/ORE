@@ -21,6 +21,7 @@ import CreativePoolPanel from '@/components/freehold/creative-pool-panel'
 import CampaignDestinationPanel from '@/components/freehold/campaign-destination-panel'
 import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
+import { barsFor } from '@/lib/freehold/placement-bars'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 import { headlineInsights } from '@/lib/meta/insights-window'
 
@@ -343,6 +344,16 @@ export default function CampaignCommandPage() {
    * then read as "this campaign targets Facebook interests and nothing else",
    * which is not what the targeting says either.
    */
+  /** Bars for the placement panel — see lib/freehold/placement-bars.ts for
+   *  why a surface with no evidence draws nothing and why one bar is not a
+   *  comparison. */
+  const placementBars = useMemo(
+    () => barsFor((placements?.readings ?? []).map((r) => ({
+      id: r.id, lpm: r.lpm, impressions: r.impressions,
+    }))),
+    [placements],
+  )
+
   const overlaps = useMemo(
     () => (liveAdSets.length >= 2 ? computeOverlaps(liveAdSets) : []),
     [liveAdSets],
@@ -895,6 +906,12 @@ export default function CampaignCommandPage() {
         <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.place.title')}</div>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-200">{placements.headline}</p>
+          {/* THE COMPARISON, DRAWN. Eight rows of numbers still have to be
+              held in somebody's head; a bar makes a twenty-fold gap visible
+              without reading anything. Withheld entirely when there are fewer
+              than two measurable surfaces — with one, the scale IS that
+              surface and it renders full-width whatever its real rate, which
+              is flattery by construction. See lib/freehold/placement-bars.ts. */}
           <div className="mt-3 divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-line bg-surface">
             {placements.readings.map((r) => (
               <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-xs">
@@ -920,6 +937,26 @@ export default function CampaignCommandPage() {
                   {r.lpm !== null ? t('lm.place.perM', { n: Math.round(r.lpm) }) : '—'}
                 </span>
                 <span className="shrink-0 text-slate-500">{Math.round(r.spendShare * 100)}% {t('lm.place.ofSpend')}</span>
+                {/* A surface nobody has tested draws NO bar — an empty one in
+                    a row of long ones accuses it of being bad. A surface that
+                    WAS tested and converted nobody draws an empty bar, because
+                    that is a real result. */}
+                {placementBars.show && (
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-surface-2">
+                    {(() => {
+                      const fill = placementBars.bars.find((b) => b.id === r.id)?.fill
+                      if (fill === null || fill === undefined) return null
+                      return (
+                        <div
+                          className={`h-full rounded-full ${
+                            r.verdict === 'strong' ? 'bg-emerald-400/70'
+                            : r.verdict === 'drain' ? 'bg-red-400/60' : 'bg-slate-500/50'}`}
+                          style={{ width: `${Math.max(fill * 100, fill > 0 ? 2 : 0)}%` }}
+                        />
+                      )
+                    })()}
+                  </div>
+                )}
               </div>
             ))}
           </div>
