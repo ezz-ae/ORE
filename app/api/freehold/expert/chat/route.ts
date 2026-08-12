@@ -368,6 +368,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ── THE KILL SWITCH ───────────────────────────────────────────────────
+    //
+    // EXPERT_FREE_TEXT=0 silences the free-writing agent entirely, without a
+    // deploy and without touching any of the deterministic screens.
+    //
+    // It exists because of a real transcript: asked about "the Zada Tower
+    // campaign" — a campaign that does not exist in this account, the
+    // inventory, or anywhere in this codebase — the assistant answered at
+    // length about its automation rules, its lead quality score, its lead
+    // count, its ad copy and its price. All invented, in business prose, with
+    // buttons under them.
+    //
+    // The grounding checks below now catch that specific shape. They are nets,
+    // not a cure, and the owner of a business running real money through this
+    // screen is entitled to a switch that does not depend on my nets holding.
+    // Every panel that reads live data and carries a real button keeps working
+    // when this is off; only the part that WRITES SENTENCES stops.
+    if (process.env.EXPERT_FREE_TEXT === '0') {
+      return NextResponse.json({
+        layer: 'expert',
+        status: 'ok',
+        data: {
+          blocks: [{
+            type: 'text',
+            content:
+              'The chat assistant is switched off for this workspace. Everything it could do is on the screens themselves: '
+              + 'Live shows every campaign with what is wrong and the button that fixes it, the campaign page shows the ad sets side by side, '
+              + 'and the CRM shows the leads. Nothing there is written by a model — every number comes from Meta or from your own database.',
+          }],
+        },
+        generatedAt,
+      })
+    }
+
     const skill = getSkill('expert')!
     const brokerId = sessionUser?.role === 'broker' ? (sessionUser.brokerId ?? sessionUser.email) : null
     const systemContext = await gatherSystemContext(role as Role, brokerId)
