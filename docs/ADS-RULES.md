@@ -67,6 +67,46 @@ is not a denial — `unknown` proceeds and lets Meta be the judge. An empty arra
 *Guard:* `page-ads-permission-test.ts` — includes a source scan asserting the
 refusal precedes `launchFullCampaign`.
 
+## The money layer — leads are not the objective
+
+Every gate in the Ads Machine judged **leads**. The business is paid on deals,
+and they are not the same campaign:
+
+```
+cashoffer          25 leads   CPL AED 106   0 qualified   0 deals
+venice-investor     8 leads   CPL AED 331   5 qualified   2 deals
+```
+
+On cost per lead the first wins three times over and the second gets condemned
+as "> 2× the best sibling". `deal_value_aed` was in the CRM the whole time, read
+by the seed builder and by no advertising decision anywhere.
+
+`lib/freehold/money-truth.ts` states three rules:
+
+1. **A campaign is judged only on a rung it has had TIME to reach** —
+   lead → qualified → deal. A campaign eleven days old with no sale has not
+   failed at selling; a sale here takes about six weeks. The account's own cycle
+   replaces that default once it has closed `MIN_CLOSED_FOR_CYCLE = 5` deals
+   (`money-truth-db.ts`), measured as a median so one nine-month deal cannot
+   move it.
+2. **The ranking counts deals, not dirhams.** One AED 12M villa does not prove a
+   campaign fifteen times better than one that closed an AED 800k studio — that
+   is the variance of the catalogue. Revenue is shown; cost per deal decides.
+3. **Two campaigns separate only on a real test** — `samePace`, the same
+   conditional-Poisson test the CPL gate uses. Otherwise `tied`, and the machine
+   acts on a tie by doing nothing.
+
+In ROTATE this gives the machine a **veto**: a trial provably ahead on qualified
+leads or deals is not paused for its cost per lead. The veto never fires on the
+lead rung, where it would be the CPL gate overruling itself with its own
+numbers, and never over a human verdict — brokers calling the leads junk
+outranks arithmetic about them. The mirror also holds: cheap leads that provably
+become nothing get paused on that basis, and the log cites the p-value.
+
+*Guard:* `money-truth-test.ts` — includes a source scan asserting the veto
+filter is present in the rotate gate and that deal value travels from the CRM
+read to the engine.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
@@ -79,6 +119,9 @@ refusal precedes `launchFullCampaign`.
 | No placement bar drawn for a surface nobody tested | `placement-bars.ts` | `MIN_IMPRESSIONS_FOR_BAR = 500` |
 | No chart at all with one measurable surface | `placement-bars.ts` | `MIN_BARS_TO_COMPARE = 2` |
 | No design called a winner against one that was never funded | `design-race.ts` | one lead's worth of spend |
+| No campaign judged on a rung it has not had time to reach | `money-truth.ts` | `DEFAULT_DAYS_TO_CLOSE = 42` |
+| No return per dirham without a median deal to price it | `money-truth.ts` | `MIN_DEALS_FOR_MEDIAN = 3` |
+| No account paced by its own sales cycle below a real median | `money-truth.ts` | `MIN_CLOSED_FOR_CYCLE = 5` |
 
 An unknown is never rendered as a zero. "We do not know" and "it produced
 none" are different sentences and only one of them is true.

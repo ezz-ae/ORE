@@ -31,6 +31,20 @@ export interface CampaignQuality {
   reached: number       // progressed past 'new' (someone actually engaged)
   qualified: number     // qualified or deeper
   won: number           // converted / closed — the real objective event
+  /**
+   * Money recorded against those wins, in AED.
+   *
+   * The funnel counts a win as a RATE, so one closed deal in twenty-five leads
+   * scored identically whether it was an AED 800k studio or an AED 12M villa —
+   * and `deal_value_aed` was in the CRM the whole time, read by the seed
+   * builder and by no advertising decision anywhere. Carried here so the money
+   * layer (lib/freehold/money-truth.ts) can be built from one read.
+   *
+   * A FACT, NOT A RANKING BASIS. money-truth ranks on deal COUNTS, because the
+   * spread of Dubai inventory means one villa does not prove a campaign
+   * fifteen times better than one that closed a studio.
+   */
+  revenueAed: number
   junk: number          // blocked, unusable phone on a lost lead, or a duplicate
   /** Attributed leads that repeat an earlier lead's phone — the same person
    *  delivered more than once, i.e. spend paid twice. Included in `junk`. */
@@ -76,11 +90,11 @@ const WON = WON_STATUSES
 export const badPhone = (p: string | null) => !p || p.replace(/\D/g, '').length < 7
 
 export async function getCampaignQuality(campaignId: string, campaignName: string): Promise<CampaignQuality> {
-  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null; value_rating: number | null }
+  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null; value_rating: number | null; deal_value_aed: string | number | null }
   let rows: Row[] = []
   try {
     rows = await query<Row>(
-      `SELECT id, status, blocked, phone, behaviour_score, value_rating
+      `SELECT id, status, blocked, phone, behaviour_score, value_rating, deal_value_aed
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
           AND ( ($1 <> '' AND utm_id = $1)
@@ -97,9 +111,13 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     // REAL data; only if that still fails do we degrade to nulls.
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS behaviour_score int`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
+    // deal_value_aed is created lazily by the deals feature (lead-writeback).
+    // Same lesson as the other two: a tenant that HAS closed deals must not be
+    // reported as having closed none because one column was missing.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS deal_value_aed numeric`).catch(() => undefined)
     try {
       rows = await query<Row>(
-        `SELECT id, status, blocked, phone, behaviour_score, value_rating
+        `SELECT id, status, blocked, phone, behaviour_score, value_rating, deal_value_aed
            FROM freehold_site_leads
           WHERE archived IS NOT TRUE
             AND ( ($1 <> '' AND utm_id = $1)
@@ -110,7 +128,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     } catch {
       try {
         rows = await query<Row>(
-          `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating
+          `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating, NULL::numeric AS deal_value_aed
              FROM freehold_site_leads
             WHERE archived IS NOT TRUE
               AND ( ($1 <> '' AND utm_id = $1)
@@ -130,7 +148,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   if (untrusted.size > 0) rows = rows.filter((r) => !untrusted.has(r.id))
 
   const attributed = rows.length
-  let reached = 0, qualified = 0, won = 0
+  let reached = 0, qualified = 0, won = 0, revenueAed = 0
   // Junk is collected as a SET of lead ids, not a counter, because one lead can
   // trip several junk signals at once and must only be counted once.
   const junkIds = new Set<string>()
@@ -138,7 +156,13 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     const s = r.status
     if (s && s !== 'new') reached++
     if (s && QUALIFIED_STATUSES.has(s)) qualified++
-    if (s && WON.has(s)) won++
+    if (s && WON.has(s)) {
+      won++
+      // Only money against a WON lead counts. A value stamped on a lead that
+      // later went cold is a hope, not a receipt.
+      const v = Number(r.deal_value_aed ?? 0)
+      if (Number.isFinite(v) && v > 0) revenueAed += v
+    }
     if (r.blocked || (s === 'lost' && badPhone(r.phone))) junkIds.add(r.id)
   }
 
@@ -248,7 +272,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   ]
 
   return {
-    campaignId, attributed, reached, qualified, won, junk, duplicates, score, worked, funnel,
+    campaignId, attributed, reached, qualified, won, revenueAed, junk, duplicates, score, worked, funnel,
     avgBehaviour, behaviourCount,
     valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
   }
