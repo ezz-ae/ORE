@@ -13,6 +13,17 @@
  *   · saturation                lookalike-ladder.ts, over Meta frequency/reach
  *   · the price of a lead       what decides how many arms the cap carries
  *   · the current budgets       from the ad sets that actually hold them
+ *
+ * BOTH CHANNELS, and this one is not a reporting nicety. The Ads Machine's cap
+ * is ONE combined figure covering Meta and Google (ads-machine-engine states
+ * it). Splitting that cap across the Meta campaigns alone would hand Google's
+ * share to Meta — the plan would fit the cap on paper and the account would
+ * spend over it in fact.
+ *
+ * A Google campaign carries no reach or frequency, so it is never marked
+ * saturated on evidence this product does not have; its budget also lives on
+ * the campaign rather than on ad sets, so the panel plans it and does not
+ * apply it. Saying which is better than a button that silently does nothing.
  */
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
@@ -26,6 +37,10 @@ import { assessTier } from '@/lib/freehold/lookalike-ladder'
 import { splitBudget, type SplitRow } from '@/lib/freehold/budget-split'
 import { listMachines } from '@/lib/freehold/ads-machine'
 import { deliveryOf, isSpending } from '@/lib/meta/delivery-status'
+import {
+  listCampaigns as listGoogleCampaigns, googleConfiguredAsync,
+} from '@/lib/google/client'
+import { googleDeliveryOf, isServing as googleIsServing } from '@/lib/google/delivery'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -50,9 +65,9 @@ export async function GET() {
         effectiveStatus: c.effective_status, status: c.status,
       }).state))
       .slice(0, MAX_CAMPAIGNS)
-    if (live.length === 0) {
-      return NextResponse.json({ connected: true, live: 0, plans: [] })
-    }
+    // NOT an early return on "no live Meta campaigns". An account running
+    // Google only would have been told it has nothing running, which is a
+    // different and much louder claim than "this only looked at Meta".
 
     const [basis, insightsById, capAed] = await Promise.all([
       accountMoneyBasis(),
@@ -110,18 +125,59 @@ export async function GET() {
       }
     }))
 
-    const standings = moneyStandings(detail.map((d) => d.money), basis.cycle, basis.medianDealAed)
+    // ── The Google half of the same cap ────────────────────────────────
+    const googleDetail = (await googleConfiguredAsync().catch(() => false))
+      ? await (async () => {
+          const gs = await listGoogleCampaigns('LAST_30_DAYS').catch(() => [])
+          const live = gs.filter((g) => googleIsServing(googleDeliveryOf({
+            primaryStatus: g.primaryStatus ?? null, reasons: g.primaryStatusReasons ?? [],
+          }).state))
+          return Promise.all(live.slice(0, MAX_CAMPAIGNS).map(async (g) => {
+            const quality = await getCampaignQuality(g.id, g.name).catch(() => null)
+            const created = g.startDate ? Date.parse(g.startDate) : NaN
+            return {
+              campaign: { id: g.id, name: g.name },
+              money: {
+                campaignId: g.id,
+                spendAed: (g.metrics?.costMicros ?? 0) / 1_000_000,
+                leads: quality?.attributed ?? 0,
+                qualified: quality?.qualified ?? 0,
+                deals: quality?.won ?? 0,
+                revenueAed: quality?.revenueAed ?? 0,
+                ageDays: Number.isFinite(created)
+                  ? Math.max(0, (Date.now() - created) / 86_400_000) : 0,
+              } satisfies CampaignMoney,
+              dailyBudgetAed: (g.dailyBudgetMicros ?? 0) / 1_000_000,
+              // Google budgets live on the campaign, not on ad sets. Empty
+              // means the panel plans this row and does not offer to apply it.
+              adSetIds: [] as string[],
+              frequency: 0,
+              // A search auction has no reach or frequency, so there is no
+              // saturation evidence. Never claimed on a number we do not have.
+              saturated: false,
+              channel: 'google' as const,
+            }
+          }))
+        })()
+      : []
+
+    const detailAll = [
+      ...detail.map((d) => ({ ...d, channel: 'meta' as const })),
+      ...googleDetail,
+    ]
+
+    const standings = moneyStandings(detailAll.map((d) => d.money), basis.cycle, basis.medianDealAed)
     const standingById = new Map(standings.map((s) => [s.campaignId, s]))
 
     // The price of a lead, pooled across the account — what decides how many
     // arms this cap can carry. Pooled rather than per campaign, because the
     // question is "what does a lead cost HERE", and one campaign's sample is
     // thinner than the account's.
-    const totalSpend = detail.reduce((n, d) => n + d.money.spendAed, 0)
-    const totalLeads = detail.reduce((n, d) => n + d.money.leads, 0)
+    const totalSpend = detailAll.reduce((n, d) => n + d.money.spendAed, 0)
+    const totalLeads = detailAll.reduce((n, d) => n + d.money.leads, 0)
     const costPerLeadAed = totalLeads > 0 && totalSpend > 0 ? totalSpend / totalLeads : null
 
-    const rows: SplitRow[] = detail.map((d) => ({
+    const rows: SplitRow[] = detailAll.map((d) => ({
       campaignId: d.money.campaignId,
       dailyBudgetAed: d.dailyBudgetAed,
       standing: standingById.get(d.money.campaignId)?.verdict ?? 'tooEarly',
@@ -133,11 +189,14 @@ export async function GET() {
     // play, and the split is about how to arrange it rather than how much.
     const cap = capAed ?? rows.reduce((n, r) => n + r.dailyBudgetAed, 0)
     const split = splitBudget(rows, { capAed: cap, costPerLeadAed })
-    const detailById = new Map(detail.map((d) => [d.money.campaignId, d]))
+    const detailById = new Map(detailAll.map((d) => [d.money.campaignId, d]))
 
     return NextResponse.json({
       connected: true,
-      live: live.length,
+      // BOTH CHANNELS. `live.length` was the Meta count, and the panel prints
+      // it beside "you are running N" — a number that omitted Google would
+      // have contradicted the rows underneath it on the same card.
+      live: detailAll.length,
       capAed: cap,
       capIsConfigured: capAed !== null,
       costPerLeadAed,
@@ -149,7 +208,8 @@ export async function GET() {
         const d = detailById.get(p.campaignId)
         return {
           ...p,
-          name: d?.campaign.name ?? p.campaignId,
+          name: d ? `${d.campaign.name}${d.channel === 'google' ? ' · Google' : ''}` : p.campaignId,
+          channel: d?.channel ?? 'meta',
           currentAed: Math.round(d?.dailyBudgetAed ?? 0),
           saturated: d?.saturated ?? false,
           frequency: d?.frequency ?? 0,

@@ -35,6 +35,7 @@ interface Plan {
   saturated: boolean
   frequency: number
   adSetIds: string[]
+  channel: 'meta' | 'google'
 }
 
 interface Response {
@@ -149,8 +150,13 @@ export default function BudgetSplitPanel() {
                         ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
                         : t('split.apply', { step: aed(p.stepAed) })}
                     </button>
+                  // A button that cannot do the thing is worse than no
+                  // button. Google budgets live on the campaign, not on ad
+                  // sets, so this panel plans them and says where to set them.
                   : <span className="shrink-0 text-[10px] text-slate-500">
-                      {t('split.manyAdSets', { n: p.adSetIds.length })}
+                      {p.channel === 'google'
+                        ? t('split.onGoogle')
+                        : t('split.manyAdSets', { n: p.adSetIds.length })}
                     </span>
             )}
           </li>

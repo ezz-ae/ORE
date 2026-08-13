@@ -10,6 +10,13 @@
  * The judgement is pure and lives in lib/freehold/smart-view.ts. This only
  * fetches and translates.
  *
+ * BOTH CHANNELS, because a total that quietly omits one is a WRONG number
+ * rather than a missing one. A sheet headed "which projects are actually
+ * selling" that leaves Google's spend out does not under-report — it sends
+ * somebody to the wrong conclusion with a number that looks complete. Google
+ * rows leave blank the cells Google does not report (there is no reach or
+ * frequency in a search auction) instead of borrowing Meta's shape for them.
+ *
  * Fail-soft throughout: a build that cannot reach one source produces a sheet
  * with that column blank rather than no sheet at all. A saved view that
  * disappears because Meta was rate-limited for a minute is worse than a sheet
@@ -31,6 +38,10 @@ import { QUALIFIED_STATUSES } from '@/lib/freehold/lead-stages'
 import {
   buildSheet, TEMPLATE_SPEC, type SmartView, type ViewRow, type RiskKind,
 } from '@/lib/freehold/smart-view'
+import {
+  listCampaigns as listGoogleCampaigns, googleConfiguredAsync,
+} from '@/lib/google/client'
+import { googleDeliveryOf, isServing as googleIsServing } from '@/lib/google/delivery'
 
 /** Most campaigns a single sheet reads. One CRM read and one ad-set read each. */
 const MAX_CAMPAIGNS = 40
@@ -95,7 +106,9 @@ export async function buildRows(view: SmartView): Promise<ViewRow[]> {
     answerTimes(),
     getInventoryPropertiesFromDB().catch(() => []),
   ])
-  if (all.length === 0) return []
+  // NOT `if (all.length === 0) return []`. An account running Google and
+  // nothing on Meta would have got an empty sheet, and an empty sheet reads as
+  // "you spent nothing" rather than "this only looked at Meta".
 
   // Which project each campaign belongs to. Read from our own link table, not
   // guessed from the campaign name — a name is a label somebody typed.
@@ -107,7 +120,7 @@ export async function buildRows(view: SmartView): Promise<ViewRow[]> {
     for (const id of ids) slugByCampaign.set(id, l.slug)
   }
 
-  const chosen = all.slice(0, MAX_CAMPAIGNS)
+  const chosen = view.channel === 'google' ? [] : all.slice(0, MAX_CAMPAIGNS)
   const now = Date.now()
 
   const built = await Promise.all(chosen.map(async (c): Promise<Built | null> => {
@@ -178,6 +191,70 @@ export async function buildRows(view: SmartView): Promise<ViewRow[]> {
   }))
 
   const rows = built.filter((b): b is Built => b !== null)
+
+  // ── GOOGLE, on the same sheet ───────────────────────────────────────────
+  //
+  // Everything above reads Meta. A "Spent" total with Google missing from it
+  // is not an incomplete number, it is a wrong one — and it looks complete,
+  // which is what makes it dangerous on a sheet somebody plans a week from.
+  //
+  // Google reports different things, and the difference is kept rather than
+  // papered over: there is no reach or frequency in a search auction, so those
+  // cells stay blank, and there is no daily creative read yet, so a Google row
+  // carries no decay verdict and falls back to the frequency rule.
+  if (view.channel !== 'meta' && (await googleConfiguredAsync().catch(() => false))) {
+    const gRows = await listGoogleCampaigns('LAST_30_DAYS').catch(() => [])
+    for (const g of gRows) {
+      const quality = await getCampaignQuality(g.id, g.name).catch(() => null)
+      const spend = (g.metrics?.costMicros ?? 0) / 1_000_000
+      const created = g.startDate ? Date.parse(g.startDate) : NaN
+      // THE SWITCH IS NOT THE STATE, on Google too — primary_status and its
+      // reasons are what say whether anything is being served.
+      const serving = googleIsServing(googleDeliveryOf({
+        primaryStatus: g.primaryStatus ?? null,
+        reasons: g.primaryStatusReasons ?? [],
+      }).state)
+      const dailyBudgetAed = (g.dailyBudgetMicros ?? 0) / 1_000_000
+
+      const risks: RiskKind[] = []
+      if (!serving && (g.status ?? '').toUpperCase() === 'ENABLED') risks.push('notServing')
+      const cpl = (quality?.attributed ?? 0) > 0 && spend > 0 ? spend / (quality?.attributed ?? 1) : null
+      if (cpl !== null && dailyBudgetAed > 0 && dailyBudgetAed < dailyBudgetToLearn(cpl)) {
+        risks.push('budgetTooThin')
+      }
+
+      rows.push({
+        campaignId: g.id,
+        // Google campaigns are not linked to a project in this product, so a
+        // project sheet cannot claim them. Left blank rather than guessed from
+        // the name — see the project grouping below, which drops blanks.
+        projectSlug: '',
+        serving,
+        row: {
+          id: `g:${g.id}`,
+          // The channel is on the row because two campaigns can be named the
+          // same thing on two platforms and a sheet that cannot tell them
+          // apart is a sheet nobody can act on.
+          label: `${g.name} · Google`,
+          spend,
+          enquiries: quality?.attributed ?? 0,
+          worthCalling: quality?.qualified ?? 0,
+          viewings: quality?.viewings ?? 0,
+          sold: quality?.won ?? 0,
+          moneyIn: quality?.revenueAed ?? 0,
+          // A search auction has no reach and no frequency. Blank, not zero,
+          // and never Meta's numbers wearing a Google row.
+          seenBy: 0,
+          timesSeen: 0,
+          answeredIn: answers.has(g.id) ? answers.get(g.id) ?? null : null,
+          daysLive: Number.isFinite(created)
+            ? Math.max(0, Math.floor((now - created) / 86_400_000)) : 0,
+          saturated: false,
+          risks,
+        },
+      })
+    }
+  }
 
   if (spec.groupBy === 'campaign') {
     return buildSheet(rows.map((b) => b.row), view.template)
