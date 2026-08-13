@@ -15,7 +15,9 @@ has **two faces on one database and one AI layer**:
 
 Because both faces share one Neon database and one AI layer, every action on the
 private server sharpens the public storefront and feeds the learning loop. The
-full architecture is in [`docs/`](docs/) — start with the index there.
+full architecture is in [`docs/`](docs/) — start with the index there. The rules
+that decide what an advertising number means, and which of them a guard
+enforces, are in [`docs/ADS-RULES.md`](docs/ADS-RULES.md).
 
 Each client company gets its **own private deployment** (own Vercel project, own
 Postgres, own domain, own credentials). There is **no multi-tenancy** — see

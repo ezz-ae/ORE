@@ -14,13 +14,28 @@ import type { GenerateCreativePayload, GeneratedCreativeVariant, MetaCta } from 
 import { geminiApiKey } from "@/lib/gemini-rest"
 import { geminiGenerate } from '@/lib/gemini-rest'
 
-function fmtPrice(n: number | null) {
-  if (!n) return 'AED TBD'
+/**
+ * THE PRICE, OR AN HONEST ABSENCE OF ONE.
+ *
+ * This returned the literal string 'AED TBD' when a listing had no stored
+ * price, and buildVariants interpolates the result into TWENTY-FIVE places in
+ * live ad copy. A project with a blank price field published paid ads reading
+ * "Starting at AED TBD" — a placeholder, in an advertisement, that somebody
+ * paid Meta to show.
+ *
+ * "Price on request" is the phrase this industry actually uses and it is TRUE
+ * when the price is unknown. It is not a placeholder: it is a real offer.
+ */
+export const PRICE_ON_REQUEST = 'price on request'
+
+function fmtPrice(n: number | null): string {
+  if (!n || n <= 0) return PRICE_ON_REQUEST
   if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1).replace('.0', '')}M`
   return `AED ${Math.round(n / 1000)}K`
 }
 
 export function buildVariants(p: GenerateCreativePayload): GeneratedCreativeVariant[] {
+  const hasPrice = !!p.startingPrice && p.startingPrice > 0
   const price = fmtPrice(p.startingPrice)
   const plan  = p.paymentPlan ?? 'flexible payment plan'
   const cta   = p.cta
@@ -106,7 +121,12 @@ export function buildVariants(p: GenerateCreativePayload): GeneratedCreativeVari
     ],
   }
 
-  const angleVariants = sets[p.angle] ?? sets.investor
+  // THE GOLDEN VISA SET CLAIMS A THRESHOLD. "From <price> — above the AED 2M
+  // threshold" is a statement about the property's price, and with no price
+  // stored it is a claim this company cannot support in a paid ad. Fall back
+  // to the investor angle, which makes no such claim.
+  const angle = p.angle === 'golden_visa' && !hasPrice ? 'investor' : p.angle
+  const angleVariants = sets[angle] ?? sets.investor
   return angleVariants.map((v, i) => ({ id: `variant_${i + 1}`, cta, ...v }))
 }
 

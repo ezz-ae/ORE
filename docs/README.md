@@ -11,6 +11,7 @@ docs below.
 
 | Doc | What it covers |
 | --- | --- |
+| [`ADS-RULES.md`](ADS-RULES.md) | How a lead finds its campaign, when a number is withheld, what the machine may change unattended, and the permit gate. Every rule names the guard suite that enforces it. |
 | [`../DEPLOYMENT.md`](../DEPLOYMENT.md) | Private white-label deployment playbook — one isolated deployment per client (Vercel + Neon + domain + credentials), no multi-tenancy. (Kept at repo root; code references it.) |
 | [`WHITE-LABEL.md`](WHITE-LABEL.md) | Operator runbook for the **branded demo mode** — extract → deploy (`NEXT_PUBLIC_WHITE_LABEL=1`) → `pnpm seed:demo` → mint keys (`/wl-admin`) → prospect activates at `/activate`. |
 | [`INTEGRATIONS-SETUP.md`](INTEGRATIONS-SETUP.md) | Connecting the external services: Meta Ads, Google Ads, AI/Vertex, tracking, database. |
