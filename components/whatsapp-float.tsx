@@ -12,8 +12,9 @@ const WhatsAppGlyph = ({ className }: { className?: string }) => (
 )
 
 // Landing pages (/lp) carry their own WhatsApp actions (topbar + mobile sticky
-// bar) — the global float would overlap them.
-const HIDDEN_PREFIXES = ["/freehold-intelligence", "/chat", "/server", "/crm", "/lp"]
+// bar) — the global float would overlap them. "/business" is the platform site,
+// which addresses operators rather than property buyers.
+const HIDDEN_PREFIXES = ["/freehold-intelligence", "/chat", "/server", "/crm", "/lp", "/business"]
 
 export function WhatsAppFloat() {
   const pathname = usePathname() || "/"
