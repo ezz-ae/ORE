@@ -294,6 +294,33 @@ asks for days rather than a total, and the raw daily rows never leave the server
 
 *Guard:* `creative-decay-test.ts`.
 
+## One account, two channels
+
+Every layer added in this pass — the money ladder, the hour report, the cap
+split, Smart View — was built against Meta and read nothing from Google. On an
+account running both, that is not an incomplete number. It is a **wrong** one
+that looks complete:
+
+- a "Spent" total with Google missing sends somebody to the wrong conclusion;
+- and the Ads Machine's cap is **one combined figure covering both channels**,
+  so splitting it across the Meta campaigns alone hands Google's share to Meta.
+  The plan fits the cap on paper and the account spends over it in fact.
+
+`smart-view-build.ts` and `/api/ads/budget-split` now read both. What Google
+does **not** report stays blank rather than borrowing Meta's shape for it:
+
+| | Meta | Google |
+| --- | --- | --- |
+| People reached / times each saw it | read | blank — a search auction has neither |
+| Saturation | `assessTier` | never claimed; there is no evidence for it |
+| Creative decay | per-picture daily read | absent; falls back to the frequency rule |
+| Budget lives on | the ad set — panel applies it | the campaign — panel plans it and says so |
+
+Rows carry the channel in their label, because two campaigns can be named the
+same thing on two platforms, and a sheet that cannot tell them apart is a sheet
+nobody can act on. Neither surface early-returns on "no live Meta campaigns"
+any more — a Google-only account was being told it had nothing running.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
