@@ -168,6 +168,42 @@ would be lying about what the platform allows. The panel's Apply writes the
 
 *Guard:* `budget-split-test.ts`.
 
+## The intent router — a verdict that decides something
+
+The router reads a launch request as **intent** against what is already running
+for the project, and returns one of five structural actions. It computed that
+correctly from the day it shipped, and nothing acted on it:
+
+- `/api/freehold/ads/route-intent` says in its own header *"the wizard shows
+  this before the broker commits"* — and had no caller anywhere.
+- In the launch route the decision changed behaviour in exactly **one** branch,
+  `autonomy === 3 && action === 'hold'`. `getAutonomyLevel()` defaults to `1` and
+  **fails closed** to `1`, so on a real account it is never `3`.
+- Every other verdict was written to the decision log as *"the intent router
+  recommended X — fold the arms via Campaign Groups"*: telling somebody,
+  afterwards, what should have happened.
+
+Now `routerBlocks` refuses a launch whose objective, language, audience **and**
+creative are already running and still in the learning phase. A second one bids
+against the first in the same auction and resets the learning on both.
+
+**Refused at any autonomy level.** The autonomy gate governs the machine
+*spending* on its own; declining to create a competitor is the machine *not*
+acting — the same class as the Trakheesi gate and the landing-404 gate, both of
+which refuse whatever the level is. Refusing to spend is not autonomy.
+
+**And always overridable.** `confirmDuplicate` re-posts the launch. There are
+real reasons to want two, and a refusal with no way through is a wall people
+route around. Nothing is created and the reserved credits go back.
+
+`routerWarns` covers the softer verdict — the same setup running but past
+learning — which rides out **with** the successful launch instead of into a log.
+
+*Guard:* `intent-router-acts-test.ts` — source scans that the refusal precedes
+`launchFullCampaign`, that no autonomy check precedes it, and that the Run
+button never hands its click event to `confirmDuplicate` (React passes the event
+as the first argument, and a `MouseEvent` is truthy).
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |

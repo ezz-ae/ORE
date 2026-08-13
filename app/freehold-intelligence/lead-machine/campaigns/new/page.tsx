@@ -258,6 +258,11 @@ export default function NewCampaignPage() {
   const [step,    setStep]    = useState<WizardStep>(1)
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+  // THE DUPLICATE QUESTION. The intent router refuses a launch whose goal,
+  // language, audience and creative are already running and still learning — a
+  // second one bids against the first. There are real reasons to want two, so
+  // the refusal is a question with a way through rather than a wall.
+  const [duplicate, setDuplicate] = useState<{ message: string; campaignId: string | null } | null>(null)
   const [launched, setLaunched] = useState<{ campaignId: string; status: string; demo?: boolean } | null>(null)
 
   const [form, setForm] = useState<WizardState>({
@@ -1460,7 +1465,7 @@ export default function NewCampaignPage() {
   const needsAudience = !attachedAudience && !attachedPreset
 
   // ── Launch ─────────────────────────────────────────────────────────────────
-  async function handleLaunch() {
+  async function handleLaunch(confirmDuplicate = false) {
     setLoading(true)
     setApiError(null)
 
@@ -1586,6 +1591,8 @@ export default function NewCampaignPage() {
       manualPlacements: form.placementMode === 'manual' ? form.manualPlacements : undefined,
       // Persisted per campaign — the autopilot pass enforces it.
       autoEnhance:      form.autoEnhance,
+      // Only ever true because somebody answered the duplicate question.
+      confirmDuplicate: confirmDuplicate || undefined,
     }
 
     try {
@@ -1598,14 +1605,25 @@ export default function NewCampaignPage() {
       const data = await res.json()
 
       if (!res.ok) {
+        // A REFUSAL THAT IS A QUESTION. Rendered as its own block with a way
+        // through, not as a red error — the launch was not broken, it was
+        // declined for a reason the operator may legitimately overrule.
+        if (res.status === 409 && data.type === 'duplicate' && data.confirmable) {
+          setDuplicate({ message: String(data.error ?? ''), campaignId: data.targetCampaignId ?? null })
+          setApiError(null)
+          setLoading(false)
+          return
+        }
         setApiError(
           res.status === 402
             ? t('lm.launch.insufficientCredits', { required: data.required ?? 0, balance: data.balance ?? 0 })
             : (data.error ?? 'Launch failed. Check your Meta credentials and try again.'),
         )
+        setDuplicate(null)
         setLoading(false)
         return
       }
+      setDuplicate(null)
 
       // The API returns demo:true when Meta isn't connected — the campaign is a
       // LOCAL record and no ad exists on Facebook. Saying "launched" there is
@@ -3306,6 +3324,31 @@ export default function NewCampaignPage() {
               </div>
             </div>
 
+            {/* The intent router declined this launch. A question, with both
+                answers on it — a refusal with no way through is a wall people
+                route around. */}
+            {duplicate && (
+              <div className="flex items-start gap-3 rounded-[14px] border border-amber-400/25 bg-amber-400/[0.05] p-4">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-slate-300">{duplicate.message}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {duplicate.campaignId && (
+                      <Link href={`/freehold-intelligence/ads-live/meta/${duplicate.campaignId}`}
+                        className="rounded-full border border-line-strong bg-surface-2 px-3.5 py-1.5 text-[12px] font-semibold text-slate-200 transition hover:border-gold/40 hover:text-white">
+                        {t('lm.launch.duplicate.openRunning')}
+                      </Link>
+                    )}
+                    <button type="button" disabled={loading}
+                      onClick={() => { setDuplicate(null); void handleLaunch(true) }}
+                      className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 text-[12px] font-semibold text-amber-200 transition hover:bg-amber-400/15 disabled:opacity-50">
+                      {t('lm.launch.duplicate.anyway')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {apiError && (() => {
               // Meta's own wording describes its API, not what the operator was
               // doing. A fault we recognise is said plainly; anything else keeps
@@ -3372,7 +3415,11 @@ export default function NewCampaignPage() {
           <button
             type="button"
             data-coach="wiz-launch"
-            onClick={handleLaunch}
+            // NEVER `onClick={handleLaunch}`. React hands the click event to
+            // the first argument, and a MouseEvent is truthy — every press of
+            // Run would have arrived at the server as confirmDuplicate: true,
+            // silently answering the duplicate question nobody was asked.
+            onClick={() => void handleLaunch()}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-60"
           >
