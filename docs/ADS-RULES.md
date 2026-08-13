@@ -133,6 +133,41 @@ four hours and looks perfectly reasonable.
 *Guard:* `hour-truth-test.ts` — includes the blocks tiling the full day exactly
 once, and that no lead rows survive into the reading the API serialises.
 
+## The cap, split on purpose
+
+The machine moves budget locally — ROTATE pauses a loser and hands its money to
+a survivor, GROW raises a winner into idle headroom. Nothing ever asked the
+portfolio question: given this cap and these campaigns, what should each be
+running at tomorrow? The four facts that answer it were all being computed and
+read by nothing that sets a budget.
+
+`lib/freehold/budget-split.ts`:
+
+1. **Fewer arms funded properly beats many arms starved.** `armsThatCanLearn`
+   has always known how many ad sets a cap can carry past Meta's fifty-events
+   floor. Splitting a cap across five arms it can fund two of does not give you
+   five results — it gives five campaigns that never tell you anything.
+   An **unknown** cost per lead starves nothing: not knowing is not evidence.
+2. **The next dirham is not worth what the last one was.** A saturated arm —
+   frequency at the ceiling, reach flat (`lookalike-ladder.ts`) — is held at its
+   base and never raised. Its *average* still looks excellent, because the
+   average is dominated by the money that bought the first views. This is the
+   difference between allocating on average and on marginal return.
+3. **Money moves only on a standing that separated on a real test**
+   (`money-truth.ts`). A tie moves nothing.
+4. **And the move never resets learning.** A change over
+   `LEARNING_RESET_BUDGET_CHANGE` re-enters the learning phase, so the plan
+   carries a **target** and a **step** and they are different numbers. A large
+   cut is a glide of `glideDays`, capped at `MAX_GLIDE_DAYS = 14`; past a
+   fortnight the evidence will have changed before the budget arrives.
+
+An account already over its cap is reported as `overCapAed` — still over
+tomorrow, converging across the glide. A plan that claimed to land overnight
+would be lying about what the platform allows. The panel's Apply writes the
+**step**, never the target.
+
+*Guard:* `budget-split-test.ts`.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
@@ -149,6 +184,7 @@ once, and that no lead rows survive into the reading the API serialises.
 | No return per dirham without a median deal to price it | `money-truth.ts` | `MIN_DEALS_FOR_MEDIAN = 3` |
 | No account paced by its own sales cycle below a real median | `money-truth.ts` | `MIN_CLOSED_FOR_CYCLE = 5` |
 | No verdict on a part of the day below a real lead count | `hour-truth.ts` | `MIN_LEADS_PER_BLOCK = 12` |
+| No campaign starved on a cost per lead nobody knows | `budget-split.ts` | `costPerLeadAed === null` |
 
 An unknown is never rendered as a zero. "We do not know" and "it produced
 none" are different sentences and only one of them is true.
