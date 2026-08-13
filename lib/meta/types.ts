@@ -371,6 +371,16 @@ export interface LaunchCampaignPayload {
   /** Autopilot policy for THIS campaign: act / record-for-approval / skip. */
   autoEnhance?: 'on' | 'approval' | 'off'
   /**
+   * "Yes, launch it anyway" after the intent router refused a duplicate.
+   *
+   * The router refuses a launch whose objective, language, audience AND
+   * creative are already running and still in the learning phase — a second
+   * one bids against the first and resets the learning on both. There ARE real
+   * reasons to want two, so the refusal is a question and this is the answer;
+   * a refusal with no way through is a wall people route around.
+   */
+  confirmDuplicate?: boolean
+  /**
    * Lead-language codes ('en' | 'ar' | 'ru') to narrow delivery to people
    * whose Facebook locale matches — the same three languages the /lp landing
    * pages actually serve. Resolved server-side to Meta's numeric locale IDs

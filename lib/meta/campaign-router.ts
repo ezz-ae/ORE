@@ -209,3 +209,71 @@ export function decideCampaignAction(intent: CampaignIntent, structure: ProjectA
     alternatives: [{ action: 'new_ad', reason: 'If the broker actually has a fresh creative, an added ad would test it head-to-head.' }],
   }
 }
+
+// ─── ACTING ON THE DECISION ──────────────────────────────────────────────────
+//
+// The router above computed the healthiest structural action from the moment it
+// shipped, and NOTHING EVER ACTED ON IT.
+//
+//   · /api/freehold/ads/route-intent exists, says in its own header "the wizard
+//     shows this before the broker commits", and has no caller anywhere;
+//   · in the launch route the decision changed behaviour in exactly one branch,
+//     `autonomy === 3 && action === 'hold'` — and getAutonomyLevel() defaults to
+//     1 and FAILS CLOSED to 1, so on a real account it is never 3;
+//   · every other action was written into the decision log as
+//     "the intent router recommended <action> ... fold the arms via Campaign
+//     Groups", which tells somebody, afterwards, what should have happened.
+//
+// Five actions, four of which could never do anything, and the fifth behind a
+// switch that is off. The predicates below are what make it a decision.
+//
+// WHY A REFUSAL DOES NOT NEED AUTONOMY. The autonomy level governs the machine
+// SPENDING ON ITS OWN. Declining to create a second campaign that would bid
+// against the first is not the machine acting — it is the machine not acting,
+// the same class as the Trakheesi gate and the landing-page 404 gate, both of
+// which refuse at every autonomy level. Refusing to spend is not autonomy.
+//
+// AND IT IS ALWAYS OVERRIDABLE. There are real reasons to run two: a genuine
+// campaign-level test of two creative concepts, or a second budget line somebody
+// wants kept separate for reporting. A refusal with no way through would be
+// worse than the log line it replaces, because people route around a wall.
+
+/** Actions that mean an identical setup is ALREADY delivering. */
+export const DUPLICATE_ACTIONS: readonly RouterAction[] = ['hold', 'increase_budget']
+
+/**
+ * Should this launch be refused?
+ *
+ * Only 'hold': the exact objective, language, audience AND creative are already
+ * running, and still in the learning phase. A second one splits the budget,
+ * bids against the first, and resets the learning on both — there is no reading
+ * of that which is good for the person pressing the button.
+ *
+ * 'increase_budget' is NOT refused. The setup is running and past learning, so
+ * a parallel campaign is worse than a budget raise but it is not self-harm — it
+ * comes back as a warning on a successful launch.
+ */
+export const routerBlocks = (d: RouterDecision | null): boolean => d?.action === 'hold'
+
+/** Should the launch go ahead and say something? */
+export const routerWarns = (d: RouterDecision | null): boolean => d?.action === 'increase_budget'
+
+/**
+ * The refusal, in words the person pressing Run can act on.
+ *
+ * Names the campaign it would compete with and the two ways forward — because a
+ * refusal that does not say what to do instead is a wall.
+ */
+export function duplicateRefusal(d: RouterDecision, runningName?: string | null): string {
+  const who = runningName ? `“${runningName}”` : 'a campaign'
+  return `${who} is already running this exact ad — same goal, same language, same audience, same creative — and it is still in its first week. ` +
+    `A second one would bid against it in the same auction and restart the learning on both. ` +
+    `Add budget to the one running, or change something about this one. ` +
+    `Nothing was created and no credits were spent.`
+}
+
+/** The warning that rides with a launch we allowed but would not have chosen. */
+export function duplicateWarning(d: RouterDecision, runningName?: string | null): string {
+  const who = runningName ? `“${runningName}”` : 'another campaign'
+  return `${who} already runs this same goal, language and audience. Two campaigns after the same people bid against each other — raising the budget on one usually buys more than splitting it across both.`
+}

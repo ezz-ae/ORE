@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { launchFullCampaign, listAccessiblePages, checkPageAds } from '@/lib/meta/client'
+import { launchFullCampaign, listAccessiblePages, checkPageAds, getCampaign } from '@/lib/meta/client'
 import { blocksLaunch as blocksPageAds, pageAdsRefusal } from '@/lib/meta/page-ads'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { createLocalCampaign } from '@/lib/meta/local-store'
@@ -23,7 +23,10 @@ import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
 import { deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance } from '@/lib/freehold/credits-db'
 import { creditsForDailyBudget } from '@/lib/freehold/credits-shared'
 import { randomUUID } from 'crypto'
-import { decideCampaignAction, type CampaignIntent, type RouterDecision } from '@/lib/meta/campaign-router'
+import {
+  decideCampaignAction, routerBlocks, routerWarns, duplicateRefusal, duplicateWarning,
+  type CampaignIntent, type RouterDecision,
+} from '@/lib/meta/campaign-router'
 import {
   buildProjectAdStructure, recordCampaignProject,
   audienceFingerprintFromTargeting, languageFingerprintFromTargeting,
@@ -382,9 +385,52 @@ export async function POST(req: NextRequest) {
     brokerId: brokerId ?? sessionUser.email,
   }
   let decision: RouterDecision | null = null
+  /** The campaign this launch would compete with, by name, for the sentence. */
+  let rivalName: string | null = null
   try {
     const structure = await buildProjectAdStructure(projectSlug)
     decision = decideCampaignAction(intent, structure)
+    rivalName = decision.targetCampaignId
+      ? await getCampaign(decision.targetCampaignId).then((c) => c.name ?? null).catch(() => null)
+      : null
+
+    // ── THE ROUTER NOW DECIDES SOMETHING ────────────────────────────────────
+    //
+    // It has computed the healthiest structural action since the day it
+    // shipped and nothing ever acted on it: the only branch with an effect was
+    // the autonomy-3 hold below, and getAutonomyLevel() defaults to 1 and fails
+    // closed to 1. Every other verdict went into the decision log as "the
+    // intent router recommended X — fold the arms via Campaign Groups", which
+    // tells somebody afterwards what should have happened.
+    //
+    // Refused at ANY autonomy level, because the autonomy gate governs the
+    // machine SPENDING on its own. Declining to create a second campaign that
+    // would bid against the first is the machine NOT acting — the same class as
+    // the permit gate and the landing-404 gate above, both of which refuse
+    // whatever the autonomy level is.
+    //
+    // And always overridable: a genuine campaign-level test of two concepts is
+    // a real thing to want, and a refusal with no way through is a wall people
+    // route around.
+    if (routerBlocks(decision) && body.confirmDuplicate !== true) {
+      const refunded = await releaseReservation()
+      await recordDecision({
+        projectSlug, campaignId: decision.targetCampaignId ?? null, brokerId: intent.brokerId,
+        action: 'hold', outcome: 'auto', reason: decision.reason,
+      })
+      return NextResponse.json({
+        error: duplicateRefusal(decision, rivalName),
+        type: 'duplicate',
+        // The wizard offers "launch anyway", which re-posts with
+        // confirmDuplicate — so the refusal is a question, not a wall.
+        confirmable: true,
+        targetCampaignId: decision.targetCampaignId ?? null,
+        targetCampaignName: rivalName,
+        alternatives: decision.alternatives,
+        ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
+      }, { status: 409 })
+    }
+
     const autonomy = await getAutonomyLevel()
     if (autonomy === 3 && decision.action === 'hold') {
       // No new campaign serves on this path → return the reserved credits first,
@@ -421,7 +467,7 @@ export async function POST(req: NextRequest) {
       outcome: 'auto',
       reason: wasBest
         ? decision.reason
-        : `Launched a new campaign. The intent router recommended "${decision.action}" to avoid competing spend on this objective — fold the arms via Campaign Groups. ${decision.adminNote}`,
+        : `Launched a new campaign after the operator confirmed it. The intent router recommended "${decision.action}": ${decision.reason} ${decision.adminNote}`,
       spendBeforeAED: 0,
       spendAfterAED: body.dailyBudgetAED,
     })
@@ -551,8 +597,17 @@ export async function POST(req: NextRequest) {
     // Warnings ride WITH the success, never instead of it. A launch that
     // worked and has a caveat is not a failure, and refusing it would train
     // people to route around this route.
+    //
+    // The router's 'increase_budget' verdict lands here: the exact setup is
+    // already running and past learning, so a parallel campaign is worse than
+    // a budget raise but it is not self-harm. Said, not refused — and it is
+    // SAID, which is the whole difference from the log line it replaces.
+    const warnings = [
+      ...landingWarnings,
+      ...(routerWarns(decision) ? [duplicateWarning(decision as RouterDecision, rivalName)] : []),
+    ]
     return NextResponse.json(
-      { ...result, brokerId, decision, ...(landingWarnings.length ? { warnings: landingWarnings } : {}) },
+      { ...result, brokerId, decision, ...(warnings.length ? { warnings } : {}) },
       { status: 201 },
     )
   } catch (err) {
