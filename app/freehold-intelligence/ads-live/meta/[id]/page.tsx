@@ -2406,14 +2406,25 @@ function DesignsBlock({ campaignId }: { campaignId: string }) {
           const live = a.status === 'ACTIVE'
           const row = race.standings.find((x) => x.id === a.id)
           const winner = race.winnerId === a.id
+          // AHEAD TODAY IS NOT PROVEN BEST. The badge used to go to whoever
+          // cost least among the designs that had converted, which on one lead
+          // each is a statement about who Meta served first. Leading says the
+          // true, smaller thing.
+          const leading = race.leadingId === a.id
           return (
-            <div key={a.id} className={`flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-2.5 ${winner ? 'border-gold/40 bg-gold/[0.06]' : 'border-line bg-surface'}`}>
+            <div key={a.id} className={`flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-2.5 ${
+              winner ? 'border-gold/40 bg-gold/[0.06]' : 'border-line bg-surface'}`}>
               {a.thumbnailUrl
                 // eslint-disable-next-line @next/next/no-img-element
                 ? <img src={a.thumbnailUrl} alt="" className="h-9 w-14 shrink-0 rounded object-cover" />
                 : <span className="h-9 w-14 shrink-0 rounded bg-surface-2" />}
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-200">{a.name}</span>
               {winner && <span className="shrink-0 rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-gold">{t('lm.designs.winner')}</span>}
+              {leading && (
+                <span className="shrink-0 rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                  {t('lm.designs.leading')}
+                </span>
+              )}
               {/* TOO EARLY IS NOT LOSING. A design under one lead's worth of
                   spend has produced nothing because it was given nothing, and
                   a blank next to a gold badge reads as a verdict. The number

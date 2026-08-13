@@ -28,11 +28,41 @@
  * so there is no badge — the same reason a single bar is not a comparison in
  * placement-bars.ts.
  *
+ * ── AND BEATEN THEM MEASURABLY, which the first version did not require ──
+ *
+ * From a live export of this account, three ads in one ad set on one day:
+ *
+ *   story full info    AED 611.05   1 lead    CPL 611
+ *   New creative       AED  17.08   1 lead    CPL  17
+ *   Mixed creative     AED  30.16   0 leads   CPL  —
+ *
+ * Both converters had exactly ONE lead, so `contenders >= MIN_CONTENDERS`
+ * passed and the badge went to whoever had the lower cost — "New creative",
+ * on a hundred and thirty-three impressions. The panel then printed, on the
+ * same row, that it needed AED 297 more before it could be judged. A winner
+ * and a shortfall on one line is not a close call; it is two of this file's
+ * own rules disagreeing out loud.
+ *
+ * The cheapest lead among contenders is not evidence that one design is
+ * better — it is evidence about which one Meta happened to serve first. So the
+ * badge now requires the same conditional-Poisson separation every other
+ * comparison in this product uses (`samePace`): one lead against one lead is
+ * p = 0.107, and 0.107 is not a winner. It is a tie, and a tie has no badge.
+ *
  * Pure — no I/O, no clock. Runs in `pnpm guards`.
  */
+import { samePace, SIGNIFICANT_P } from '@/lib/freehold/inventory-quality'
 
-/** Walkable — each renders its own word. */
-export const DESIGN_STANDINGS = ['winner', 'contender', 'tooEarly', 'noLeads'] as const
+/**
+ * Walkable — each renders its own word.
+ *
+ * LEADING is the state the first version was missing, and its absence is why
+ * that version handed the badge out on one lead. "Cheapest so far" and "proven
+ * best" are different claims and the panel needs to be able to make the
+ * smaller one — otherwise the choice is a false badge or a blank, and a blank
+ * beside a gold badge on the row above reads as a verdict too.
+ */
+export const DESIGN_STANDINGS = ['winner', 'leading', 'contender', 'tooEarly', 'noLeads'] as const
 export type DesignStanding = (typeof DESIGN_STANDINGS)[number]
 
 /**
@@ -48,6 +78,17 @@ export const FAIR_CHANCE_MULTIPLE = 1
 
 /** A race needs somebody to beat. */
 export const MIN_CONTENDERS = 2
+
+/**
+ * …and beating them has to be measurable.
+ *
+ * The badge is the loudest thing on the panel and the panel offers a Pause
+ * button on every other row, so an unearned badge is an invitation to switch
+ * off something that was never actually beaten. The bar is the conventional
+ * line, and it is the SAME test the rotate gate, the inventory ranking and the
+ * money layer use — one product, one idea of what "better" means.
+ */
+export const WINNER_P = SIGNIFICANT_P
 
 export interface DesignRow {
   id: string
@@ -96,8 +137,14 @@ export function leadPriceOf(rows: DesignRow[]): number | null {
 export function standingsOf(rows: DesignRow[]): {
   standings: DesignStandingRow[]
   winnerId: string | null
+  /** Cheapest lead so far, when the race has not separated. Never set at the
+   *  same time as winnerId. */
+  leadingId: string | null
   leadPriceAed: number | null
   contenders: number
+  /** How strong the win is, for the sentence that has to justify the badge.
+   *  1 when nothing separated — which is most of the time, early on. */
+  p: number
 } {
   const leadPriceAed = leadPriceOf(rows)
 
@@ -108,23 +155,41 @@ export function standingsOf(rows: DesignRow[]): {
   const contenderRows = rows.filter((r) => r.leads > 0 || hadAChance(r))
   const contenders = contenderRows.length
 
-  // Cheapest lead wins, among designs that actually produced one.
-  const best = contenderRows
+  // Cheapest lead first, among designs that actually produced one.
+  const converters = contenderRows
     .filter((r) => r.leads > 0 && r.cpl !== null)
-    .sort((a, b) => (a.cpl as number) - (b.cpl as number))[0]
+    .sort((a, b) => (a.cpl as number) - (b.cpl as number))
+  const best = converters[0]
+  const runnerUp = converters[1]
 
-  const winnerId = contenders >= MIN_CONTENDERS && best ? best.id : null
+  // THE SEPARATION, not just the ordering. Being cheapest among two designs
+  // that produced one lead each says which one Meta served first, not which
+  // one is better. Measured against the nearest rival: if the best cannot beat
+  // the second-best, it certainly cannot claim to have beaten the field.
+  const p = best && runnerUp
+    ? samePace(best.leads, best.spendAed, runnerUp.leads, runnerUp.spendAed)
+    : 1
+
+  const separated = !!(best && runnerUp) && p < WINNER_P
+  const winnerId = contenders >= MIN_CONTENDERS && separated ? (best as DesignRow).id : null
+  // Cheapest of a race that has not been decided. Said out loud rather than
+  // left blank: the operator wants to know which one is ahead today, and
+  // "ahead today" is a true sentence where "winner" is not.
+  const leadingId = contenders >= MIN_CONTENDERS && best && !separated ? best.id : null
 
   return {
     winnerId,
+    leadingId,
     leadPriceAed,
     contenders,
+    p,
     standings: rows.map((r): DesignStandingRow => {
       const shortfall = leadPriceAed !== null
         ? Math.max(0, leadPriceAed * FAIR_CHANCE_MULTIPLE - r.spendAed)
         : 0
       const standing: DesignStanding =
         r.id === winnerId ? 'winner'
+          : r.id === leadingId ? 'leading'
           // TOO EARLY IS THE DEFAULT FOR THE UNPROVEN. A design that has not
           // spent one lead's worth has not lost — and neither has anything,
           // when nothing anywhere has converted and there is no price to
