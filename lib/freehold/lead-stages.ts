@@ -31,6 +31,16 @@ export const QUALIFIED_STATUSES = new Set(['qualified', 'viewing', 'negotiation'
  */
 export const OVERDUE_FOLLOWUP_HOURS = 72
 
+/**
+ * Reached a viewing or deeper.
+ *
+ * The rung between "worth calling" and "sold", and the one a property team
+ * actually plans its week around — a viewing is a Saturday morning and a car.
+ * A subset of QUALIFIED_STATUSES by construction; the guard asserts it, so the
+ * two can never drift into disagreeing about what a viewing lead is.
+ */
+export const VIEWING_STATUSES = new Set(['viewing', 'negotiation', 'converted', 'closed'])
+
 /** The real objective event — money changed hands. */
 export const WON_STATUSES = new Set(['converted', 'closed'])
 

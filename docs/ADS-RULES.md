@@ -204,6 +204,54 @@ learning — which rides out **with** the successful launch instead of into a lo
 button never hands its click event to `confirmDuplicate` (React passes the event
 as the first argument, and a `MouseEvent` is truthy).
 
+## Smart View — a report you ask for in property words
+
+Meta's Ads Manager has "Create view": name it, then assemble it from Filters,
+Columns, Sorting, Breakdowns and Attribution settings, and it is saved for next
+time. The idea is right; the assembly is the problem. Before you see anything you
+must already know that Frequency is the fatigue number, that Reach and
+Impressions differ, and which twelve of three hundred columns matter for a
+property lead.
+
+`lib/freehold/smart-view.ts` inverts it. **There is no column picker.** You pick
+the question and it brings its own columns, sort, grouping and filter:
+
+| The question | Rows are | Kept |
+| --- | --- | --- |
+| Which projects are actually selling | projects | anything that spent |
+| Where the money went | campaigns | anything that spent |
+| Ads people are tired of | campaigns | tired **and** saturated |
+| Enquiries nobody called | campaigns | median reply ≥ `SLOW_ANSWER_MINUTES = 240` |
+| Worth putting more money into | campaigns | sold **and** not saturated |
+| About to waste money | campaigns | has a `RISK_KIND` |
+
+Three rules the guard locks:
+
+1. **Every template narrows.** A question that keeps every row is a list, and a
+   list is what the operator already had.
+2. **A cost with nothing bought is an empty cell, not a zero** — and an empty
+   cell never takes the top row of a worst-first sheet, which is the loudest
+   position on the page.
+3. **Totals are re-derived, never averaged.** An average of two costs weights a
+   campaign that spent AED 40 the same as one that spent AED 40,000, and the
+   totals strip is the number that gets screenshotted.
+
+"Tired" is `TIRED_TIMES_SEEN`, asserted equal to the ladder's
+`FREQUENCY_CEILING` so a report and the ladder cannot drift apart. Tired **and**
+still producing is not stale — putting winners on a list headed "gone stale" is
+how a list stops being read.
+
+**Built before it is opened.** `/api/cron/smart-views` runs at 02:30 and each
+sheet carries its `builtAt`, so opening a view is instant and the screen says how
+old the answer is. A failed rebuild keeps the previous sheet with its own older
+timestamp — never an empty sheet stamped as fresh.
+
+`smart-view-build.ts` is the only file where platform words survive. Keeping the
+seam in one place is what stops one leaking onto a screen.
+
+*Guard:* `smart-view-test.ts` — including a scan asserting no column is named
+after a platform metric.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |

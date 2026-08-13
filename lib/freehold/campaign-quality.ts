@@ -1,6 +1,6 @@
 import { query } from '@/lib/db'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
-import { QUALIFIED_STATUSES, WON_STATUSES } from '@/lib/freehold/lead-stages'
+import { QUALIFIED_STATUSES, VIEWING_STATUSES, WON_STATUSES } from '@/lib/freehold/lead-stages'
 import { bucketLeadsByCampaign, type CampaignRef, type LeadCounts } from '@/lib/freehold/lead-attribution'
 
 /**
@@ -30,6 +30,9 @@ export interface CampaignQuality {
   attributed: number
   reached: number       // progressed past 'new' (someone actually engaged)
   qualified: number     // qualified or deeper
+  /** Reached a viewing or deeper — the rung between "worth calling" and
+   *  "sold", and the one a property team plans its week around. */
+  viewings: number
   won: number           // converted / closed — the real objective event
   /**
    * Money recorded against those wins, in AED.
@@ -148,7 +151,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   if (untrusted.size > 0) rows = rows.filter((r) => !untrusted.has(r.id))
 
   const attributed = rows.length
-  let reached = 0, qualified = 0, won = 0, revenueAed = 0
+  let reached = 0, qualified = 0, viewings = 0, won = 0, revenueAed = 0
   // Junk is collected as a SET of lead ids, not a counter, because one lead can
   // trip several junk signals at once and must only be counted once.
   const junkIds = new Set<string>()
@@ -156,6 +159,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     const s = r.status
     if (s && s !== 'new') reached++
     if (s && QUALIFIED_STATUSES.has(s)) qualified++
+    if (s && VIEWING_STATUSES.has(s)) viewings++
     if (s && WON.has(s)) {
       won++
       // Only money against a WON lead counts. A value stamped on a lead that
@@ -272,7 +276,7 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   ]
 
   return {
-    campaignId, attributed, reached, qualified, won, revenueAed, junk, duplicates, score, worked, funnel,
+    campaignId, attributed, reached, qualified, viewings, won, revenueAed, junk, duplicates, score, worked, funnel,
     avgBehaviour, behaviourCount,
     valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
   }

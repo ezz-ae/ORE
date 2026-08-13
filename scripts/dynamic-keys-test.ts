@@ -44,6 +44,9 @@ import { READINESS_CHECKS, REACHABLE } from '../lib/freehold/launch-readiness'
 import { MONEY_RUNGS, MONEY_VERDICTS } from '../lib/freehold/money-truth'
 import { DAY_BLOCKS, EXPLAINED_VERDICTS } from '../lib/freehold/hour-truth'
 import { SPLIT_REASONS } from '../lib/freehold/budget-split'
+import {
+  VIEW_TEMPLATES, VIEW_COLUMNS, RISK_KINDS, VIEW_RANGES, VIEW_ACCESS, VIEW_SCHEDULES,
+} from '../lib/freehold/smart-view'
 import { PULSE_STATES } from '../lib/freehold/machine-activity'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
@@ -196,6 +199,17 @@ console.log('\n── recommendations ──')
   // The budget split: a reason per row. Each one is a different instruction —
   // "stop this" and "held on purpose" are opposite actions — so a missing word
   // here prints a key where the decision should be.
+  // Smart views: the question, its one-liner, every column header, and every
+  // risk badge. A missing column header blanks a table heading; a missing
+  // question blanks the card somebody is choosing between.
+  family('sv.q', 'sv.q.', VIEW_TEMPLATES)
+  family('sv.qsub', 'sv.qsub.', VIEW_TEMPLATES)
+  family('sv.col', 'sv.col.', VIEW_COLUMNS)
+  family('sv.risk', 'sv.risk.', RISK_KINDS)
+  family('sv.range', 'sv.range.', VIEW_RANGES)
+  family('sv.access', 'sv.access.', VIEW_ACCESS)
+  family('sv.sched', 'sv.sched.', VIEW_SCHEDULES)
+
   family('split.why', 'split.why.', SPLIT_REASONS)
 
   family('hours.block', 'hours.block.', DAY_BLOCKS)
