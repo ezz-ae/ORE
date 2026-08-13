@@ -17,8 +17,10 @@
  */
 import { query } from '@/lib/db'
 import {
-  listCampaigns, listAdSets, getAccountCampaignInsights, isMetaConfigured,
+  listCampaigns, listAdSets, getAccountCampaignInsights, getAdDailyInsights,
+  getAdResults, isMetaConfigured,
 } from '@/lib/meta/client'
+import { readDecay } from '@/lib/freehold/creative-decay'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import { assessTier } from '@/lib/freehold/lookalike-ladder'
 import { deliveryOf, isSpending } from '@/lib/meta/delivery-status'
@@ -179,6 +181,48 @@ export async function buildRows(view: SmartView): Promise<ViewRow[]> {
 
   if (spec.groupBy === 'campaign') {
     return buildSheet(rows.map((b) => b.row), view.template)
+  }
+
+  // ── By picture ──────────────────────────────────────────────────────────
+  // "Make a new creative" is the fix this sheet asks for, and you cannot make
+  // a new creative for a campaign. The slope per picture is what decides —
+  // see creative-decay.ts — and a picture with too little history carries no
+  // verdict rather than a guessed one.
+  if (spec.groupBy === 'ad') {
+    const daily = await getAdDailyInsights().catch(() => new Map())
+    const perCampaign = await Promise.all(rows.map(async (b) => {
+      const ads = await getAdResults(b.campaignId).catch(() => [])
+      return ads.map((a) => {
+        const days = daily.get(a.id) ?? []
+        const d = readDecay(days)
+        return {
+          id: a.id,
+          // The campaign's name beside the picture's: an ad called
+          // "Story 3 - AR" means nothing on its own in a list of forty.
+          label: `${a.name} · ${b.row.label}`,
+          spend: a.spend,
+          enquiries: a.leads,
+          // The CRM rungs are attributed to a CAMPAIGN, never to an ad, so
+          // they are not invented here. The columns this template shows do
+          // not include them.
+          worthCalling: 0, viewings: 0, sold: 0, moneyIn: 0,
+          // People reached is not reported per ad on the account edge, so the
+          // cell stays blank rather than borrowing the campaign's number — a
+          // campaign's reach printed on a picture's row is a wrong number, not
+          // a missing one.
+          seenBy: 0,
+          // The RECENT half, not the lifetime average. The whole point of this
+          // sheet is that the average hides the death.
+          timesSeen: d.recent.frequency,
+          answeredIn: null,
+          daysLive: days.length,
+          saturated: d.verdict === 'fatigued',
+          decay: d.verdict,
+          risks: [] as RiskKind[],
+        } satisfies ViewRow
+      })
+    }))
+    return buildSheet(perCampaign.flat(), view.template)
   }
 
   // ── By project ──────────────────────────────────────────────────────────

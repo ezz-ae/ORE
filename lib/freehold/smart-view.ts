@@ -66,13 +66,14 @@ export type ViewColumn = (typeof VIEW_COLUMNS)[number]
 /**
  * What each row of the sheet stands for.
  *
- * No 'ad' grouping yet, deliberately. Frequency and reach are read at the
- * campaign level in this product, and a creative-level staleness sheet built
- * from campaign-level numbers would attribute one tired picture's fatigue to
- * every picture beside it. Creative decay is its own piece of work; a grouping
- * with no honest data behind it is the kind of thing this file exists to avoid.
+ * 'ad' was deliberately absent at first: frequency and reach were read only at
+ * the campaign level, and a creative-level staleness sheet built from
+ * campaign-level numbers would have blamed one tired picture's fatigue on every
+ * picture beside it. creative-decay.ts and getAdDailyInsights answered that, so
+ * the grouping now has honest data behind it and the tired-ads sheet names the
+ * actual picture.
  */
-export const VIEW_GROUPINGS = ['project', 'campaign'] as const
+export const VIEW_GROUPINGS = ['project', 'campaign', 'ad'] as const
 export type ViewGrouping = (typeof VIEW_GROUPINGS)[number]
 
 /** How often the sheet rebuilds itself. */
@@ -134,9 +135,10 @@ export const TEMPLATE_SPEC: Record<ViewTemplate, TemplateSpec> = {
     sortBy: 'spend', worstFirst: false, keep: 'anySpend',
   },
   // "Which ads have gone stale" — the same people keep seeing it and it has
-  // stopped producing. Worst first, because this list exists to be acted on.
+  // stopped producing. PER PICTURE, because "a new creative" is the fix and
+  // you cannot make a new creative for a campaign.
   goneStale: {
-    groupBy: 'campaign',
+    groupBy: 'ad',
     columns: ['spend', 'seenBy', 'timesSeen', 'enquiries', 'costPerEnquiry', 'daysLive'],
     sortBy: 'timesSeen', worstFirst: false, keep: 'stale',
   },
@@ -185,6 +187,14 @@ export interface ViewRow {
   daysLive: number
   /** Is the audience used up? Decided upstream (lookalike-ladder). */
   saturated: boolean
+  /**
+   * Is this still working — the slope, not the average (creative-decay.ts).
+   *
+   * Only ad rows carry it; a campaign or project row leaves it undefined,
+   * because a campaign is not a picture and cannot be tired. undefined falls
+   * back to the frequency rule below rather than emptying the sheet.
+   */
+  decay?: 'fresh' | 'fatigued' | 'audienceMoved' | 'tooEarly'
   /** Anything that will stop or waste this campaign. Empty when nothing is
    *  wrong — which is most rows, most of the time. */
   risks: RiskKind[]
@@ -240,9 +250,20 @@ export function keeps(row: ViewRow, filter: ViewFilter): boolean {
   switch (filter) {
     case 'anySpend':  return row.spend > 0
     case 'hasSales':  return row.sold > 0
-    // Tired AND not producing. Tired alone is a winner at scale, and putting
-    // winners on a list headed "gone stale" is how a list gets ignored.
+    // WORN OUT, measured as a slope where there is one.
+    //
+    // creative-decay separates the picture people are bored of from the
+    // audience that changed underneath it — opposite fixes, identical in a
+    // cost-per-lead chart. 'audienceMoved' is deliberately NOT on this sheet:
+    // its title says these need a new picture, and for that row a new picture
+    // is a week of work that fixes nothing.
+    //
+    // Without a decay reading (a Google row, or a picture with too little
+    // history) the old frequency rule stands: tired AND not producing. Tired
+    // alone is a winner at scale, and putting winners on a list headed "gone
+    // stale" is how a list gets ignored.
     case 'stale':
+      if (row.decay) return row.decay === 'fatigued'
       return row.enquiries >= MIN_ROWS_TO_FLAG
         ? row.timesSeen >= TIRED_TIMES_SEEN && row.saturated
         : row.timesSeen >= TIRED_TIMES_SEEN && row.saturated && row.spend > 0
