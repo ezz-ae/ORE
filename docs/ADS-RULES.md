@@ -362,6 +362,57 @@ anywhere in the event body.
 
 *Guard:* `click-identity-test.ts`.
 
+## Points — rating pays, and a self-fulfilling rating pays nothing
+
+`rating-loop.ts` states the problem: a rating that changes nothing costs
+somebody ten seconds a lead and buys a number in a column, so brokers stop
+within a week — and the rating is the strongest signal this product has. So an
+accurate rating returns a point.
+
+**The trap that decides whether that works.** Pay for accurate ratings and you
+get a broker who rates a lead 1, never calls it, and is proven right by their own
+inaction. The product would be funding people to write leads off instead of
+working them.
+
+`lib/freehold/points.ts` has five refusals, and they close every way to print a
+point:
+
+| Verdict | Why nothing is paid |
+| --- | --- |
+| `notWorked` | nobody contacted the lead — you are not paid for judging what you never touched |
+| `knewTheAnswer` | the lead had already qualified or closed when it was rated; that is copying |
+| `notFirst` | only the first rating earns; a later edit has seen the outcome |
+| `noForecast` | 3–5 is "neither" on the house scale, and "I do not know" is unpaid, never punished |
+| `tooEarly` | a forecast judged the next morning is not judged — the claim stays **open** |
+
+`notWorked` outranks being right, deliberately: paying it would teach the wrong
+lesson loudest.
+
+**Enforced by the database, not by a check somebody can forget.** The claim table
+is keyed by the *lead*, so a second rating writes nothing and the first
+snapshot — the rating, and what the CRM knew at that moment — survives untouched.
+
+**Paid through the existing ledger**, whose unique index on
+`(broker_id, type, reference)` already makes every referenced movement
+idempotent. The reference is `rating:<leadId>` because there is one judgement
+per lead, ever, so a settlement run that fires twice cannot pay twice. The point
+is paid *before* the claim is marked settled — a crash between the two costs a
+retry the index refuses, where the other order loses the point silently.
+
+**Rating can never out-earn advertising.** `MAX_REFUND_SHARE_OF_SPEND = 0.5`,
+measured against what the broker actually spent, so an account that has bought
+nothing earns nothing. Capped rows stay on the list with zero points rather than
+vanishing — a broker who hit the ceiling should see that they hit it.
+
+**Seasoned on the account's own cycle.** `/api/cron/settle-ratings` reads
+`accountMoneyBasis().cycle.daysToQualify`, so a brokerage whose leads take six
+weeks does not have its forecasts marked in seven days. `money-truth.ts` owns
+that number, so a report and a payout cannot disagree about how long a lead takes.
+
+*Guard:* `points-test.ts` — including source scans that the snapshot is taken at
+the rating, that payment precedes settlement, and that rating is not counted as
+having worked the lead.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |

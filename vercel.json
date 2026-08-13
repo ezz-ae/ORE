@@ -47,6 +47,10 @@
     {
       "path": "/api/cron/smart-views",
       "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/cron/settle-ratings",
+      "schedule": "0 3 * * *"
     }
   ]
 }

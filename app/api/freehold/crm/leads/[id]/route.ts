@@ -10,6 +10,8 @@ import { answerLeadScore } from '@/lib/freehold/ads-machine'
 import { authorizeReassign, authorizeDelete } from '@/lib/freehold/authority-db'
 import { statusForDenial } from '@/lib/freehold/authority'
 import { reportLeadToMeta } from '@/lib/freehold/lead-writeback'
+import { openRatingClaim } from '@/lib/freehold/points-db'
+import { outcomeOf } from '@/lib/freehold/points'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -217,6 +219,37 @@ export async function PATCH(
     updates.push(`value_rated_by = $${values.length + 1}`)
     values.push(user.email)
     updates.push(`value_rated_at = now()`)
+
+    // ── The points claim, opened on the FIRST rating only ─────────────────
+    //
+    // A rating that changes nothing is worse than no rating: brokers stop
+    // within a week, and this is the strongest signal in the product. So an
+    // accurate call earns the point back — settled later, when the forecast
+    // has had time to be right or wrong.
+    //
+    // The snapshot is taken HERE, before the outcome could be known, because
+    // that is the whole integrity of the scheme. Best-effort: a rating must
+    // never fail because the points table is unreachable — the rating is the
+    // signal, the point is only the thank-you. See lib/freehold/points.ts.
+    void (async () => {
+      try {
+        const [row] = await query<{ status: string | null; blocked: boolean | null; phone: string | null }>(
+          `SELECT status, blocked, phone FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
+          [id],
+        )
+        await openRatingClaim({
+          leadId: id,
+          brokerId: user.brokerId ?? user.email,
+          rating: Math.round(v),
+          outcomeAtRating: outcomeOf({
+            status: row?.status,
+            blocked: row?.blocked,
+            badPhone: !row?.phone || row.phone.replace(/\D/g, '').length < 7,
+          }),
+        })
+      } catch { /* the rating stands whatever the points table does */ }
+    })()
+
     // Bridge into the machine's learning, best-effort: the rating must never
     // fail because the machine has no question open.
     void (async () => {
