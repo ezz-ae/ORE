@@ -63,8 +63,11 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
       phone: string | null
       interest: string | null
       meta_reported_stages: string[] | null
+      meta_fbc: string | null
+      meta_fbp: string | null
     }>(
-      `SELECT status, value_rating, email, phone, interest, meta_reported_stages
+      `SELECT status, value_rating, email, phone, interest, meta_reported_stages,
+              meta_fbc, meta_fbp
          FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
       [leadId],
     )
@@ -121,6 +124,16 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
       externalId: leadId,
       email: lead.email ?? undefined,
       phone: lead.phone ?? undefined,
+      // THE CLICK COOKIE FROM THE VISIT THAT PRODUCED THIS PERSON.
+      //
+      // It was read at submission, handed to that one Lead event and dropped,
+      // so these events — fired weeks later and carrying the only outcome
+      // Meta cannot see for itself — went out with a hashed email and phone
+      // and nothing else. `_fbc` is the strongest match Meta accepts, and the
+      // strongest signal this account can send was going out with the weakest
+      // identity it had. See lib/freehold/click-identity.ts.
+      fbc: lead.meta_fbc ?? undefined,
+      fbp: lead.meta_fbp ?? undefined,
       contentName: lead.interest ?? undefined,
       // The REAL deal value when one exists — the closed deal's property
       // price, read from the deals ledger above — and nothing otherwise.

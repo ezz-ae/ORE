@@ -17,6 +17,7 @@ import {
 // ─── Credentials ─────────────────────────────────────────────────────────────
 
 import { getStoredCreds } from '@/lib/freehold/integration-credentials'
+import { GOOGLE_CLICK_TRACKING } from '@/lib/freehold/click-identity'
 
 export interface GoogleStoredCreds {
   developerToken: string
@@ -856,7 +857,15 @@ export async function launchSearchCampaign(p: LaunchGoogleCampaignPayload): Prom
           // what the CRM attribution matcher keys on (utm_id = campaign id OR
           // utm_campaign name) — and what makes getCampaignQuality work for
           // Google leads. finalUrls stay untouched; Google appends at serve.
-          trackingUrlTemplate:    '{lpurl}?utm_source=google&utm_medium=paid&utm_campaign={campaignid}&utm_id={campaignid}',
+          // THE CLICK ID IS NOT AUTOMATIC. Auto-tagging puts a gclid on the
+          // landing URL only when it is switched on in the account, and that
+          // is a setting nobody in this product can see or fix. Without it,
+          // Google will never accept an offline conversion for this lead —
+          // and a click id not captured is gone, unlike a deal value which can
+          // be typed in next month. See lib/freehold/click-identity.ts.
+          trackingUrlTemplate:
+            '{lpurl}?utm_source=google&utm_medium=paid&utm_campaign={campaignid}&utm_id={campaignid}'
+            + `&${GOOGLE_CLICK_TRACKING}`,
           ...(p.biddingStrategy === 'TARGET_CPA'
             ? { targetCpa: { targetCpaMicros: Math.round((p.targetCpaAED ?? 50) * 1_000_000) } }
             : { maximizeConversions: {} }),
