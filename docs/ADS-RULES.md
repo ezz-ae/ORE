@@ -264,6 +264,7 @@ after a platform metric.
 | No placement bar drawn for a surface nobody tested | `placement-bars.ts` | `MIN_IMPRESSIONS_FOR_BAR = 500` |
 | No chart at all with one measurable surface | `placement-bars.ts` | `MIN_BARS_TO_COMPARE = 2` |
 | No design called a winner against one that was never funded | `design-race.ts` | one lead's worth of spend |
+| No design called a winner without measurably beating the runner-up | `design-race.ts` | `WINNER_P = 0.05` |
 | No campaign judged on a rung it has not had time to reach | `money-truth.ts` | `DEFAULT_DAYS_TO_CLOSE = 42` |
 | No return per dirham without a median deal to price it | `money-truth.ts` | `MIN_DEALS_FOR_MEDIAN = 3` |
 | No account paced by its own sales cycle below a real median | `money-truth.ts` | `MIN_CLOSED_FOR_CYCLE = 5` |
