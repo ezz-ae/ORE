@@ -179,7 +179,7 @@ export default function PricingPage() {
             <P>
               It is worth having this conversation early if it applies to you, because it affects
               how the first month is planned.{' '}
-              <TextLink href="/contact">Ask about a dedicated deployment</TextLink>.
+              <TextLink href="/business/contact">Ask about a dedicated deployment</TextLink>.
             </P>
           </div>
         </div>

@@ -190,7 +190,7 @@ export default function GettingStartedPage() {
             </Card>
             <div className="flex flex-wrap gap-3">
               <ButtonLink href="/signup">Start a trial</ButtonLink>
-              <ButtonLink href="/contact" variant="ghost">Talk it through first</ButtonLink>
+              <ButtonLink href="/business/contact" variant="ghost">Talk it through first</ButtonLink>
             </div>
           </div>
         </div>

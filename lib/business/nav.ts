@@ -93,6 +93,11 @@ export const COMPANY: NavItem[] = [
     label: 'Getting started',
     blurb: 'What the first thirty days look like, week by week.',
   },
+  {
+    href: '/business/contact',
+    label: 'Talk to us',
+    blurb: 'Ask about your own company, or a dedicated deployment.',
+  },
 ]
 
 export const NAV_GROUPS: NavGroup[] = [

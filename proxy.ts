@@ -5,6 +5,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES, LEADERSHIP_ROLES } from '@/lib/freehold/session-types'
 import { WHITE_LABEL } from '@/lib/whitelabel/config'
 import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
+import { vendorHostAction } from '@/lib/tenancy/vendor-host'
 
 // Internal command surfaces — pages that must never render for anonymous visitors.
 const internalPagePrefixes = [
@@ -171,6 +172,26 @@ export async function proxy(request: NextRequest) {
         }
       }
     }
+  }
+
+  // ── The vendor's own hosts ────────────────────────────────────────────────
+  // entrestate.com and its product doors (machine., meta., listing.) are not
+  // brokerages, so they must not answer with the property-marketing site that
+  // ships in this codebase. See lib/tenancy/vendor-host.ts for the rule; it
+  // returns "pass" for every host when tenancy is switched off, which is every
+  // request on the Freehold deployment.
+  //
+  // Runs after the API wall above so authentication is never skipped, and
+  // before the routes below so a vendor host cannot fall into them.
+  const vendor = vendorHostAction(hostname, pathname)
+  if (vendor.kind === 'redirect') {
+    url.pathname = vendor.to
+    url.search = ''
+    return NextResponse.redirect(url, { status: 307 })
+  }
+  if (vendor.kind === 'rewrite') {
+    url.pathname = vendor.to
+    return NextResponse.rewrite(url)
   }
 
   // ── Market routing ────────────────────────────────────────────────────────
