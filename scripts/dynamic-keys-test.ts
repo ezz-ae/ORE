@@ -44,6 +44,7 @@ import { READINESS_CHECKS, REACHABLE } from '../lib/freehold/launch-readiness'
 import { MONEY_RUNGS, MONEY_VERDICTS } from '../lib/freehold/money-truth'
 import { DAY_BLOCKS, EXPLAINED_VERDICTS } from '../lib/freehold/hour-truth'
 import { SPLIT_REASONS } from '../lib/freehold/budget-split'
+import { DECAY_VERDICTS } from '../lib/freehold/creative-decay'
 import {
   VIEW_TEMPLATES, VIEW_COLUMNS, RISK_KINDS, VIEW_RANGES, VIEW_ACCESS, VIEW_SCHEDULES,
 } from '../lib/freehold/smart-view'
@@ -202,6 +203,11 @@ console.log('\n── recommendations ──')
   // Smart views: the question, its one-liner, every column header, and every
   // risk badge. A missing column header blanks a table heading; a missing
   // question blanks the card somebody is choosing between.
+  // Is this design still working. The two verdicts that render have OPPOSITE
+  // fixes — a new picture, or leave the picture alone and look at the audience
+  // — so a missing word here prints a key where the instruction should be.
+  family('lm.designs.decay', 'lm.designs.decay.', DECAY_VERDICTS.filter((v) => v !== 'fresh' && v !== 'tooEarly'))
+
   family('sv.q', 'sv.q.', VIEW_TEMPLATES)
   family('sv.qsub', 'sv.qsub.', VIEW_TEMPLATES)
   family('sv.col', 'sv.col.', VIEW_COLUMNS)

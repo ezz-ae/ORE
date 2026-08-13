@@ -252,6 +252,41 @@ seam in one place is what stops one leaking onto a screen.
 *Guard:* `smart-view-test.ts` — including a scan asserting no column is named
 after a platform metric.
 
+## Creative decay — a picture dies slowly and every number is an average
+
+Cost per lead, click-through, cost per thousand: all totals over a window. A
+creative that worked brilliantly for a fortnight and has produced nothing since
+still reads as a good creative, because both fortnights are inside the same
+average. By the time the average moves enough to notice, the money is gone.
+
+`lib/freehold/creative-decay.ts` measures the **slope** — what this creative did
+early against what the same creative is doing now, tested with `samePace`.
+
+**And it splits the two problems that look identical in a cost-per-lead chart:**
+
+| What happened | Verdict | The fix |
+| --- | --- | --- |
+| Frequency **rose**, lead rate fell | `fatigued` | a new picture |
+| Frequency **flat**, lead rate fell | `audienceMoved` | *not* a new picture |
+
+The second is the one every dashboard gets wrong. New people are still arriving
+and converting worse — the creative is doing exactly what it always did. Making
+a new one costs a week and fixes nothing. `FATIGUE_FREQUENCY_RISE = 0.1`, not
+zero: frequency drifts up on any ad set that keeps running, and a bar of zero
+would call every decline fatigue.
+
+The halves are cut **by exposure, not by date**. Split fourteen days down the
+middle and a creative that got AED 50 in week one and AED 5,000 in week two is
+compared against almost nothing — every ramping ad in the account would report
+"no change". `MIN_IMPRESSIONS_PER_HALF = 10,000` a side, or the verdict is
+withheld.
+
+`getAdDailyInsights` (`time_increment: 1`) is the only read in this product that
+asks for days rather than a total, and the raw daily rows never leave the server
+— the route returns counts and a word.
+
+*Guard:* `creative-decay-test.ts`.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
@@ -265,6 +300,7 @@ after a platform metric.
 | No chart at all with one measurable surface | `placement-bars.ts` | `MIN_BARS_TO_COMPARE = 2` |
 | No design called a winner against one that was never funded | `design-race.ts` | one lead's worth of spend |
 | No design called a winner without measurably beating the runner-up | `design-race.ts` | `WINNER_P = 0.05` |
+| No creative called tired below real exposure on both sides of the split | `creative-decay.ts` | `MIN_IMPRESSIONS_PER_HALF = 10,000` |
 | No campaign judged on a rung it has not had time to reach | `money-truth.ts` | `DEFAULT_DAYS_TO_CLOSE = 42` |
 | No return per dirham without a median deal to price it | `money-truth.ts` | `MIN_DEALS_FOR_MEDIAN = 3` |
 | No account paced by its own sales cycle below a real median | `money-truth.ts` | `MIN_CLOSED_FOR_CYCLE = 5` |

@@ -24,6 +24,7 @@ import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { barsFor } from '@/lib/freehold/placement-bars'
 import { standingsOf } from '@/lib/freehold/design-race'
+import type { DecayVerdict } from '@/lib/freehold/creative-decay'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 import { headlineInsights } from '@/lib/meta/insights-window'
 
@@ -2363,7 +2364,13 @@ function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => voi
  *  nothing to compare. */
 function DesignsBlock({ campaignId }: { campaignId: string }) {
   const t = useT()
-  const [ads, setAds] = useState<Array<{ id: string; name: string; status: string; thumbnailUrl: string | null; spend: number; leads: number; cpl: number | null }>>([])
+  const [ads, setAds] = useState<Array<{
+    id: string; name: string; status: string; thumbnailUrl: string | null
+    spend: number; leads: number; cpl: number | null
+    /** Is it still working — see lib/freehold/creative-decay.ts. Absent when
+     *  Meta would not return the day-by-day history. */
+    decay?: { verdict: DecayVerdict; p: number; survivingShare: number | null; frequencyRise: number }
+  }>>([])
   const [busy, setBusy] = useState<string | null>(null)
 
   useEffect(() => {
@@ -2423,6 +2430,22 @@ function DesignsBlock({ campaignId }: { campaignId: string }) {
               {leading && (
                 <span className="shrink-0 rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
                   {t('lm.designs.leading')}
+                </span>
+              )}
+              {/* IS IT STILL WORKING. Every other figure on this row is a total
+                  over a window and cannot see a design that worked for a
+                  fortnight and has produced nothing since. The two verdicts
+                  have OPPOSITE fixes, so they never share a badge — see
+                  lib/freehold/creative-decay.ts. */}
+              {(a.decay?.verdict === 'fatigued' || a.decay?.verdict === 'audienceMoved') && (
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                  a.decay.verdict === 'fatigued'
+                    ? 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+                    : 'border-sky-400/30 bg-sky-400/10 text-sky-200'
+                }`}>
+                  {t(`lm.designs.decay.${a.decay.verdict}`, {
+                    pct: Math.round((1 - (a.decay.survivingShare ?? 0)) * 100),
+                  })}
                 </span>
               )}
               {/* TOO EARLY IS NOT LOSING. A design under one lead's worth of

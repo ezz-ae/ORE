@@ -39,7 +39,7 @@ import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
 import { geoLocationsSpec } from './geo-spec'
-import { HEADLINE_WINDOW, indexInsightsByCampaign, type CampaignInsightRow } from './insights-window'
+import { HEADLINE_WINDOW, RECENT_WINDOW, indexInsightsByCampaign, type CampaignInsightRow } from './insights-window'
 import {
   callToActionSpec, isVideoUrl, pickThumbnail, videoDataSpec, videoStatusOf,
   whyNotLaunchable, VIDEO_POLL_DELAYS_MS, type VideoStatus, type VideoThumbnail,
@@ -503,6 +503,62 @@ export async function getAccountCampaignInsights(): Promise<Map<string, MetaInsi
   } catch {
     return new Map()
   }
+}
+
+/**
+ * EVERY AD'S NUMBERS DAY BY DAY — keyed by ad id, oldest day first.
+ *
+ * Every other insights read in this file asks for a TOTAL, and a total cannot
+ * answer the one question that matters about a picture: is it still working?
+ * A creative that produced brilliantly for a fortnight and nothing since reads
+ * as a good creative in any window that contains both fortnights.
+ *
+ * `time_increment: 1` is the whole difference. It is one call for the account
+ * rather than one per ad, and `frequency` rides along on each row because
+ * telling fatigue from an audience change needs it — see
+ * lib/freehold/creative-decay.ts, which is where the judgement lives.
+ *
+ * Thirty days: long enough for two halves that can separate, short enough that
+ * it is about the creative running now. Returns an empty map rather than
+ * throwing — a panel with no history is a true screen, an error is not.
+ */
+export async function getAdDailyInsights(): Promise<Map<string, Array<{
+  day: string; impressions: number; leads: number; spendAed: number; frequency: number
+}>>> {
+  const out = new Map<string, Array<{
+    day: string; impressions: number; leads: number; spendAed: number; frequency: number
+  }>>()
+  try {
+    const { adAccountId } = await creds()
+    const res = await apiFetchAllPages<Record<string, unknown>>(
+      `/${adAccountId}/insights`,
+      {
+        fields: 'ad_id,impressions,spend,actions,frequency',
+        level: 'ad',
+        time_increment: '1',
+        date_preset: RECENT_WINDOW,
+        limit: '500',
+      },
+      5000,
+    )
+    for (const row of res) {
+      const id = String(row?.ad_id ?? '').trim()
+      const day = String(row?.date_start ?? '').trim()
+      if (!id || !day) continue
+      const list = out.get(id) ?? []
+      list.push({
+        day,
+        impressions: Number(row?.impressions) || 0,
+        leads: metaLeadCount(row?.actions as MetaInsightActions[] | undefined),
+        spendAed: Number(row?.spend) || 0,
+        frequency: Number(row?.frequency) || 0,
+      })
+      out.set(id, list)
+    }
+    // Oldest first, so "early" and "recent" mean what they say downstream.
+    for (const list of out.values()) list.sort((a, b) => a.day.localeCompare(b.day))
+  } catch { /* an empty history is a true screen; an error is not */ }
+  return out
 }
 
 /**
