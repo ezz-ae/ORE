@@ -82,11 +82,14 @@ const num = (v: number) => Math.round(v).toLocaleString('en-US')
 const STORAGE_KEY = 'fh_ai_token_control_v1'
 // v1 → v2: the catch-up window was wrongly compressed to 30 minutes, so an
 // overnight gap burned many simulated "days" instead of one real day.
-// v2 → v3: the daily rate band dropped from 300k–1M to 10k–50k — a v2 ledger
-// carries an old dailyRate outside the new band, so it's discarded too.
-// Bumping the version always means the same thing: any incompatible ledger
-// already in a browser's localStorage is discarded and the page restarts
-// clean at 15,000,000, once, under the current model.
+// v2 → v3: dailyRate is no longer PART of the stored shape at all — see
+// below. Every earlier version tied a tuning change (the rate band, the
+// window size) to a version bump, and a version bump discards the ledger.
+// That meant every time the PACE was adjusted, progress reset — the exact
+// complaint this fixes. From v3 on, only a genuine STORAGE SHAPE change
+// (adding/removing a required field) should ever bump this number; a rate
+// or pacing tweak in code takes effect immediately, on the existing balance,
+// with no reset, ever.
 const STORAGE_VERSION = 3
 
 interface Ledger {
@@ -95,9 +98,14 @@ interface Ledger {
   trail: TrailEntry[]
 }
 
+// dailyRate is deliberately NOT part of the stored shape. Storing it meant
+// freezing whatever rate happened to be picked when the ledger was created —
+// so tuning DAILY_BURN_MIN/MAX in code could never reach an existing ledger
+// without discarding it. The rate is now always read fresh from the current
+// code on every load (see the hydration effect) and applied to the persisted
+// balance/consumed/trail, which are the only things that need to survive.
 interface StoredLedger {
   version: number
-  dailyRate: number
   consumed: number
   balance: number
   trail: Array<{ id: string; at: string; kind: 'credit' | 'debit'; amount: number; after: number }>
@@ -111,7 +119,6 @@ function readStored(): StoredLedger | null {
     const parsed = JSON.parse(raw) as Partial<StoredLedger>
     if (
       parsed?.version !== STORAGE_VERSION ||
-      !Number.isFinite(parsed.dailyRate) ||
       !Number.isFinite(parsed.consumed) ||
       !Number.isFinite(parsed.balance) ||
       !Array.isArray(parsed.trail) ||
@@ -125,11 +132,10 @@ function readStored(): StoredLedger | null {
   }
 }
 
-function writeStored(dailyRate: number, ledger: Ledger, lastTickAt: number): void {
+function writeStored(ledger: Ledger, lastTickAt: number): void {
   try {
     const payload: StoredLedger = {
       version: STORAGE_VERSION,
-      dailyRate,
       consumed: ledger.consumed,
       balance: ledger.balance,
       trail: ledger.trail.map((e) => ({ ...e, at: e.at.toISOString() })),
@@ -163,17 +169,19 @@ export default function AiTokenControlPage() {
 
   // Hydrate once on mount: read localStorage, and if a ledger is already
   // there, fast-forward it by however much real time passed since it was
-  // last saved — closed-tab time burns tokens too, at the same dailyRate.
-  // No saved state (or corrupt/incompatible) → fresh start, rate picked now.
+  // last saved — closed-tab time burns tokens too. The rate is ALWAYS picked
+  // fresh from the current code (never read from storage), so a future rate
+  // tweak applies immediately, to the real saved balance, with no reset.
+  // No saved state (or corrupt/incompatible shape) → fresh start.
   useEffect(() => {
+    const rate = pickDailyRate()
+    setDailyRate(rate)
     const stored = readStored()
     if (!stored) {
-      setDailyRate(pickDailyRate())
       lastTickRef.current = Date.now()
       setHydrated(true)
       return
     }
-    const rate = stored.dailyRate
     const lastTick = new Date(stored.lastTickAt).getTime()
     const elapsedMs = Math.max(0, Date.now() - (Number.isFinite(lastTick) ? lastTick : Date.now()))
     const caughtUpBurn = Math.round(Math.min((elapsedMs / WINDOW_MS) * rate, stored.balance))
@@ -182,7 +190,6 @@ export default function AiTokenControlPage() {
       balance: stored.balance - caughtUpBurn,
       trail: stored.trail.map((e) => ({ ...e, at: new Date(e.at) })),
     })
-    setDailyRate(rate)
     lastTickRef.current = Date.now()
     setHydrated(true)
   }, [])
@@ -190,9 +197,9 @@ export default function AiTokenControlPage() {
   // Persist on every ledger change, once hydrated — a refresh a moment later
   // reads back this exact state (near-zero catch-up), never the opening one.
   useEffect(() => {
-    if (dailyRate == null) return
-    writeStored(dailyRate, ledger, lastTickRef.current)
-  }, [ledger, dailyRate])
+    if (!hydrated) return
+    writeStored(ledger, lastTickRef.current)
+  }, [ledger, hydrated])
 
   // Ambient burn: the balance drains continuously at varying speeds, paced so
   // the tick-by-tick expectation tracks back to dailyRate/day (the same rate
