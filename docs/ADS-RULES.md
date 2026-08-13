@@ -249,6 +249,13 @@ timestamp — never an empty sheet stamped as fresh.
 `smart-view-build.ts` is the only file where platform words survive. Keeping the
 seam in one place is what stops one leaking onto a screen.
 
+The tired-pictures sheet groups by **ad**, not campaign — "make a new creative"
+is the fix it asks for, and you cannot make a new creative for a campaign. It
+keeps only `fatigued` rows: `audienceMoved` is a real decline whose fix is not a
+new picture, so putting it under that title would cost a week and change
+nothing. A picture with too little history falls back to the frequency rule
+rather than emptying the sheet.
+
 *Guard:* `smart-view-test.ts` — including a scan asserting no column is named
 after a platform metric.
 

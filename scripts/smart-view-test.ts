@@ -111,6 +111,19 @@ console.log('\n── gone stale means tired AND not working ──')
   const fresh = row({ id: 'f', timesSeen: 1.1, saturated: false, enquiries: 20 })
 
   check('a tired, saturated ad is on the list', keeps(tiredLoser, 'stale'))
+
+  // WITH A REAL SLOPE, the slope decides — and the slope knows the difference
+  // between a picture people are bored of and an audience that changed.
+  check('a measured fatigue is on the list',
+    keeps(row({ id: 'd1', decay: 'fatigued', timesSeen: 1.0, saturated: false }), 'stale'))
+  // A NEW PICTURE IS THE WRONG ANSWER HERE, and this sheet's title asks for
+  // one — so the row that needs an audience change stays off it.
+  check('an audience that moved is NOT on the "make a new picture" list',
+    !keeps(row({ id: 'd2', decay: 'audienceMoved', timesSeen: 2.4, saturated: true }), 'stale'))
+  check('a measured-fresh picture is off it too, whatever its frequency says',
+    !keeps(row({ id: 'd3', decay: 'fresh', timesSeen: 2.4, saturated: true }), 'stale'))
+  check('too little history falls back to the frequency rule, not to silence',
+    keeps(row({ id: 'd4', timesSeen: 2.4, saturated: true, enquiries: 4 }), 'stale'))
   check('a fresh ad is not', !keeps(fresh, 'stale'))
   // Saturation is the second half and it is not optional: a high count on a
   // pool that is still growing is a popular ad, not a dying one.
