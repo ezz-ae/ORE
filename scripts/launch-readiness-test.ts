@@ -31,7 +31,9 @@ const NOW = new Date('2026-08-12T09:00:00Z')
 
 /** A draft with everything right, so each test changes exactly one thing. */
 const draft = (o: Partial<LaunchDraft> = {}): LaunchDraft => ({
-  metaConnected: true, pageId: 'p1',
+  // 'can' rather than left out: the ads permission on the Page is a fact Meta
+  // reports, and a draft that has not been told it is not a complete draft.
+  metaConnected: true, pageId: 'p1', pageAds: 'can',
   projectSlug: 'azizi-venice', permitExpiry: '2027-01-31',
   landingVerdict: 'ok', hasCreative: true, hasCopy: true,
   dailyBudgetAed: 300, hasAudience: true, ...o,
@@ -44,7 +46,7 @@ console.log('\n── an empty form is not a wall of red ──')
   // A launcher that shows five failures before you have typed anything is a
   // launcher nobody reads, and then it protects nothing.
   const empty = readinessOf({
-    metaConnected: true, pageId: 'p1', projectSlug: null,
+    metaConnected: true, pageId: 'p1', pageAds: 'can', projectSlug: null,
     landingVerdict: null, hasCreative: false, hasCopy: false,
     dailyBudgetAed: null, hasAudience: false,
   }, NOW)

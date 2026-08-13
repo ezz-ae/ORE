@@ -625,6 +625,11 @@ export default function NewCampaignPage() {
     for (const pg of metaPages) seen.set(pg.id, { ...pg, canAdvertise: pg.canAdvertise !== false })
     for (const f of leadForms) {
       const id = String(f.page_id ?? '')
+      // A form's Page comes with no `tasks`, so whether ads may run from it is
+      // genuinely UNKNOWN — and unknown stays selectable, because hiding a Page
+      // on a gap in our own data reads as "the system lost my Page". The
+      // readiness strip asks Meta about whichever Page is picked, and the
+      // launch route refuses before creating anything if the answer is no.
       if (id && !seen.has(id)) seen.set(id, { id, name: String(f.page_name ?? '') || id, canAdvertise: true })
     }
     return [...seen.values()]
@@ -1837,6 +1842,7 @@ export default function NewCampaignPage() {
         <LaunchReadinessStrip
           listingId={form.listingId}
           landingUrl={form.landingUrl}
+          pageId={adPageId}
           draft={{
             projectSlug: form.listingId || null,
             // The objective decides the destination — a lead-generation

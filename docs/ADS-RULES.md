@@ -43,6 +43,30 @@ set. Neither says whether anything is being served.
 *Guards:* `delivery-status-test.ts` (includes a source scan over the ads
 screens, so a new screen cannot invent its own badge), `machine-activity-test.ts`.
 
+## Seeing a Page is not advertising with it
+
+An ad runs from a Facebook Page, and Meta grants those two things separately. A
+login can read a Page, list its lead forms and show its name in the picker, and
+still be refused at ad-creation time with subcode 1487202.
+
+`/me/accounts` has always returned the answer — a `tasks` array per Page, where
+ADVERTISE (or MANAGE, which contains it) is the exact grant. Three places threw
+it away: the launch route asked only whether the posted Page was **in** the
+list, the configured Page was appended with the permission hardcoded true, and a
+launch that posted no Page skipped the check entirely. So Meta answered instead,
+after the campaign and its ad sets had been created.
+
+Now `checkPageAds` (`lib/meta/client.ts`) reads it, the readiness strip shows it
+on the first screen, and the launch route refuses **before** it builds anything
+and returns the reserved credits.
+
+Three states, not two. Meta omits `tasks` for some token scopes, and an omission
+is not a denial — `unknown` proceeds and lets Meta be the judge. An empty array
+*is* a denial.
+
+*Guard:* `page-ads-permission-test.ts` — includes a source scan asserting the
+refusal precedes `launchFullCampaign`.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
