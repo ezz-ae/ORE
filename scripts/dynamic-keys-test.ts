@@ -42,6 +42,7 @@ import { SEED_SIGNALS, AVOID_SIGNALS } from '../lib/freehold/seed-cohort'
 import { DESTINATION_KINDS, ATTRIBUTION_STATES } from '../lib/freehold/campaign-destination'
 import { READINESS_CHECKS, REACHABLE } from '../lib/freehold/launch-readiness'
 import { MONEY_RUNGS, MONEY_VERDICTS } from '../lib/freehold/money-truth'
+import { DAY_BLOCKS, EXPLAINED_VERDICTS } from '../lib/freehold/hour-truth'
 import { PULSE_STATES } from '../lib/freehold/machine-activity'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
@@ -187,6 +188,13 @@ console.log('\n── recommendations ──')
   // the rung's word (which appears INSIDE that sentence and on every bar), and
   // the ladder steps. A missing rung word prints a raw key in the middle of a
   // sentence about somebody's money.
+  // The hour report: a word per block, and a sentence per verdict EXCEPT
+  // 'even'. A missing block word blanks a bar label; a missing verdict
+  // sentence prints a key where the instruction should be, and the two
+  // instructions here are opposite ("stop buying this hour" vs "cover it").
+  family('hours.block', 'hours.block.', DAY_BLOCKS)
+  family('hours.why', 'hours.why.', EXPLAINED_VERDICTS)
+
   family('money.said', 'money.said.', MONEY_VERDICTS)
   family('money.rung', 'money.rung.', MONEY_RUNGS)
   family('money.step', 'money.step.', ['spend', 'leads', 'qualified', 'deals', 'revenue'])

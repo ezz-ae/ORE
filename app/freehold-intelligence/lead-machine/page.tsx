@@ -3,6 +3,7 @@ import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon, 
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
 import { MachinePulse } from '@/components/freehold/machine-pulse'
+import HourTruthPanel from '@/components/freehold/hour-truth-panel'
 import LiveCampaignsWidget from '@/components/freehold/lead-machine/live-campaigns-widget'
 import RocketAdWidget from '@/components/freehold/lead-machine/rocket-ad-widget'
 import RatingLoopWidget from '@/components/freehold/rating-loop-widget'
@@ -118,6 +119,14 @@ export default async function LeadMachineOverviewPage() {
       </div>
 
       <MachinePulse />
+
+      {/* WHEN THE GOOD LEADS ARRIVE. An hour pattern belongs to the market and
+          the desk, not to one campaign — so it is read once here rather than
+          sliced per campaign into buckets too thin to say anything. See
+          lib/freehold/hour-truth.ts. */}
+      <div className="mt-8">
+        <HourTruthPanel />
+      </div>
 
       {/* Inventory readiness — still here, now below the machine. It answers
           "what could I launch next", which is a real question and a second
