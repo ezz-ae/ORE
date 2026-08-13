@@ -107,6 +107,32 @@ become nothing get paused on that basis, and the log cites the p-value.
 filter is present in the rotate gate and that deal value travels from the CRM
 read to the engine.
 
+## The clock — a bad hour is not always a bad hour
+
+Nothing in this product read the clock. Every number was a total over thirty
+days, and an account that spends the same at 03:00 as at 19:00 is leaving the
+easiest money on the table there is.
+
+The obvious analysis is the wrong one. "Leads at 3am never convert, so stop
+advertising at 3am" is what every dashboard does, and on a brokerage it is
+usually backwards: a lead arriving at 03:00 is not called at 03:00, it waits
+until 09:00 and goes cold. The hour did not fail — the cover did, and switching
+the hour off deletes the evidence rather than the problem.
+
+`lib/freehold/hour-truth.ts` splits them. A block that converts badly is `weak`
+only when its leads were answered as fast as everywhere else; when they waited
+`SLOW_RESPONSE_MULTIPLE = 2` times longer, it is `unanswered` and points at the
+rota. Only `weak` may ever remove an hour from a schedule, and `scheduleFrom`
+never returns an empty day.
+
+Four blocks, not twenty-four hours: a month of one brokerage's leads gives two
+or three per hourly bucket, so nothing would ever separate and the chart would
+be noise. Dubai time throughout — an hour report computed in UTC is wrong by
+four hours and looks perfectly reasonable.
+
+*Guard:* `hour-truth-test.ts` — includes the blocks tiling the full day exactly
+once, and that no lead rows survive into the reading the API serialises.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
@@ -122,6 +148,7 @@ read to the engine.
 | No campaign judged on a rung it has not had time to reach | `money-truth.ts` | `DEFAULT_DAYS_TO_CLOSE = 42` |
 | No return per dirham without a median deal to price it | `money-truth.ts` | `MIN_DEALS_FOR_MEDIAN = 3` |
 | No account paced by its own sales cycle below a real median | `money-truth.ts` | `MIN_CLOSED_FOR_CYCLE = 5` |
+| No verdict on a part of the day below a real lead count | `hour-truth.ts` | `MIN_LEADS_PER_BLOCK = 12` |
 
 An unknown is never rendered as a zero. "We do not know" and "it produced
 none" are different sentences and only one of them is true.
