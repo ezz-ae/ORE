@@ -29,7 +29,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Users, UserPlus, UserCheck, UsersRound, Inbox, Kanban, ListChecks, Copy, Activity, FlaskConical,
   CalendarDays, Flag, CheckSquare,
-  Megaphone, Rocket, Target, Wand2, SlidersHorizontal, GitBranch, FileInput, Crosshair,
+  Megaphone, Rocket, Target, Wand2, SlidersHorizontal, GitBranch, FileInput, Crosshair, Table2,
   Radio, Link2, ShieldCheck, ClipboardList, Presentation, Search as SearchIcon, KeyRound,
   Package, PlusSquare, Building2, Home as HomeIcon, LayoutTemplate, Inbox as InboxIcon, Gauge,
   HardDrive, FolderOpen, Image as ImageIcon, PenTool, Clapperboard, Film, BookOpen, Globe, Cloud, Repeat,
@@ -105,6 +105,7 @@ export const TOOLS: ToolDef[] = [
   { id: 'ads.machine',     href: `${FI}/lead-machine/ads-machine`,           labelKey: 'tools.ads.machine',     group: 'advertise', app: 'ads', Icon: Bot,              keywords: 'ads machine autopilot trials automatic' },
   { id: 'ads.creatives',   href: `${FI}/lead-machine/creatives`,             labelKey: 'tools.ads.creatives',   group: 'advertise', app: 'ads', Icon: ImageIcon,        keywords: 'creatives images videos ad art' },
   { id: 'ads.generate',    href: `${FI}/lead-machine/creatives/generate`,    labelKey: 'tools.ads.generate',    group: 'advertise', app: 'ads', Icon: Wand2,            keywords: 'generate ai creative brochure to ad' },
+  { id: 'ads.views',       href: `${FI}/lead-machine/views`,                 labelKey: 'tools.ads.views',       group: 'advertise', app: 'ads', Icon: Table2,           keywords: 'smart view saved report sheet which project is selling where the money went' },
   { id: 'ads.forms',       href: `${FI}/lead-machine/forms`,                 labelKey: 'tools.ads.forms',       group: 'advertise', app: 'ads', Icon: FileInput,        keywords: 'instant forms lead forms questions' },
   { id: 'ads.formNew',     href: `${FI}/lead-machine/forms/new`,             labelKey: 'tools.ads.formNew',     group: 'advertise', app: 'ads', Icon: PlusSquare,       keywords: 'build a lead form new instant form questions' },
   { id: 'ads.audiences',   href: `${FI}/lead-machine/audiences`,             labelKey: 'tools.ads.audiences',   group: 'advertise', app: 'ads', Icon: UsersRound,       keywords: 'audiences lookalike custom retargeting' },

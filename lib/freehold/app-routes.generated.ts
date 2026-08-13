@@ -153,6 +153,7 @@ export const APP_ROUTES: readonly string[] = [
   "/freehold-intelligence/lead-machine/requirements",
   "/freehold-intelligence/lead-machine/roadshow",
   "/freehold-intelligence/lead-machine/targeting",
+  "/freehold-intelligence/lead-machine/views",
   "/freehold-intelligence/management",
   "/freehold-intelligence/management/deals",
   "/freehold-intelligence/management/events",

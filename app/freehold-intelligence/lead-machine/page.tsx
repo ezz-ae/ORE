@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon, Bot, ClipboardList } from 'lucide-react'
+import { Zap, ArrowUpRight, FileText, Megaphone, Search, Monitor, AlertOctagon, Bot, ClipboardList, Table2 } from 'lucide-react'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
 import { MachinePulse } from '@/components/freehold/machine-pulse'
@@ -51,6 +51,14 @@ export default async function LeadMachineOverviewPage() {
       desc: t('lm.hub.nav.landings.desc'),
       // Don't advertise "0 pages" — the count only helps once there are pages.
       count: livePages > 0 ? `${livePages} ${t('lm.hub.count.pages')}` : undefined,
+    },
+    {
+      // The saved questions. Sits beside the campaign list because it is the
+      // reading half of the same job — see lib/freehold/smart-view.ts.
+      label: t('lm.hub.nav.views'),
+      href: '/freehold-intelligence/lead-machine/views',
+      icon: Table2,
+      desc: t('lm.hub.nav.views.desc'),
     },
     {
       label: t('lm.hub.nav.metaCampaigns'),
