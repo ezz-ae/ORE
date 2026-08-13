@@ -321,6 +321,47 @@ same thing on two platforms, and a sheet that cannot tell them apart is a sheet
 nobody can act on. Neither surface early-returns on "no live Meta campaigns"
 any more — a Google-only account was being told it had nothing running.
 
+## The CRM talks back, and the handle it needs lives for one visit
+
+The loop out of the CRM is the most valuable thing in this product: a qualified
+lead and a closed deal go to Meta through `lead-writeback`, the value-based
+lookalike is built from closed buyers, the exclusion from the ones brokers
+rejected.
+
+It had three breaks.
+
+**1. Nothing went to Google at all.** Its bidding optimised on form fills it
+could not tell apart while the CRM two tables away knew which became a
+three-million-dirham deal.
+
+**2. And an upload could not simply have been added.** Google accepts an offline
+outcome only against a click identifier — `gclid`, or `gbraid`/`wbraid` on app
+and iOS traffic — and this product captured none of the three: not in the
+tracking template, not on the landing form, not in the leads table.
+
+**3. Meta's outcome events went out half-identified.** `_fbc` was read from the
+cookie jar at submission, spent on that one Lead event and dropped. The events
+that carry the only outcome Meta cannot see for itself — fired weeks later —
+were identified by a hashed email and phone alone.
+
+`lib/freehold/click-identity.ts` states the rule. The Google tracking template
+now asks for all three click ids explicitly (auto-tagging is an account setting
+nobody here can see), the landing form reads them, the leads table keeps them,
+and `lead-writeback` reads them back.
+
+**Why this could not wait.** Everything else in the loop backfills — a deal value
+typed in next month still teaches Meta something. A click identifier does not: it
+exists for the length of one visit, and a visit that ended without it written
+down is gone. `CLICK_ID_VALID_DAYS = 90` is the window the platforms accept, and
+an outcome outside it is refused here rather than sent and silently dropped.
+
+`fbc`/`fbp` go out **unhashed** — they are Meta's own opaque tokens, matched by
+equality against what its pixel wrote, and a hashed one matches nothing. Email
+and phone are still hashed, and the guard asserts neither appears in the clear
+anywhere in the event body.
+
+*Guard:* `click-identity-test.ts`.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |

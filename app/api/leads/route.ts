@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { readClickIdentity } from "@/lib/freehold/click-identity"
 import { getSiteUrl } from "@/lib/site"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
@@ -82,6 +83,15 @@ export async function POST(req: NextRequest) {
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_term text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_content text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
+    // THE HANDLE THAT LETS THE CRM TALK BACK, stored rather than used once.
+    // Google will only accept "this enquiry became a sale" against a click
+    // identifier, and _fbc is what makes Meta's outcome events match as well
+    // as its Lead event does. Both live for one visit; neither can be
+    // recovered later. See lib/freehold/click-identity.ts.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS google_click_id text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS google_click_kind text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_fbc text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_fbp text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS campaign_id text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS referrer text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS device jsonb`)
@@ -162,10 +172,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── The identity this visit can prove, read once and KEPT ────────────
+    // The cookies were being read here and handed to one Lead event, then
+    // dropped. The events that matter — qualified, sold — fire weeks later
+    // from lead-writeback, and were going out with only a hashed email and
+    // phone behind them. The strongest signal this account can send was being
+    // sent with the weakest identity it had.
+    const clickBody = (body as { click?: Record<string, unknown> }).click ?? {}
+    const identity = readClickIdentity(
+      {
+        gclid: toText(clickBody.gclid),
+        gbraid: toText(clickBody.gbraid),
+        wbraid: toText(clickBody.wbraid),
+        fbclid: toText(clickBody.fbclid),
+      },
+      {
+        _fbc: req.cookies.get("_fbc")?.value,
+        _fbp: req.cookies.get("_fbp")?.value,
+      },
+      Date.now(),
+    )
+
     if (!isRepeatInquiry) await query(
       `INSERT INTO freehold_site_leads (
         id, name, phone, email, source, project_slug, landing_slug, interest, message, budget, status,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
+        google_click_id, google_click_kind, meta_fbc, meta_fbp,
         referrer, device, geo_country, geo_region, geo_city, campaign_id,
         lp_session_id, behaviour_score, buyer_intent, purchase_probability, budget_confidence,
         click_intent,
@@ -174,9 +206,10 @@ export async function POST(req: NextRequest) {
       VALUES (
         $1, $2, $3, NULLIF($4, ''), $5, NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), NULLIF($9, ''), NULLIF($10, ''), 'new',
         NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, ''), NULLIF($16, ''),
-        NULLIF($17, ''), $18::jsonb, NULLIF($19, ''), NULLIF($20, ''), NULLIF($21, ''), NULLIF($13, ''),
-        NULLIF($22, ''), $23, NULLIF($24, ''), $25, NULLIF($26, ''),
-        NULLIF($27, ''),
+        NULLIF($17, ''), NULLIF($18, ''), NULLIF($19, ''), NULLIF($20, ''),
+        NULLIF($21, ''), $22::jsonb, NULLIF($23, ''), NULLIF($24, ''), NULLIF($25, ''), NULLIF($13, ''),
+        NULLIF($26, ''), $27, NULLIF($28, ''), $29, NULLIF($30, ''),
+        NULLIF($31, ''),
         now(), now()
       )`,
       [
@@ -196,6 +229,12 @@ export async function POST(req: NextRequest) {
         toText(utm.term),
         toText(utm.content),
         toText(utm.id),
+        // Nulls, not empty strings: an empty string reads as "we captured
+        // nothing here", which is indistinguishable from "we never looked".
+        identity.googleClickId ?? '',
+        identity.googleClickIdKind ?? '',
+        identity.fbc ?? '',
+        identity.fbp ?? '',
         toText(body.referrer),
         JSON.stringify(device),
         toText(req.headers.get("x-vercel-ip-country")),
@@ -265,8 +304,8 @@ export async function POST(req: NextRequest) {
         sourceUrl: landingSlug ? `${baseUrl}/lp/${landingSlug}` : toText(body.referrer) || undefined,
         clientIp: toText(req.headers.get("x-forwarded-for")).split(",")[0].trim() || undefined,
         userAgent: toText(req.headers.get("user-agent")) || undefined,
-        fbp: req.cookies.get("_fbp")?.value,
-        fbc: req.cookies.get("_fbc")?.value,
+        fbp: identity.fbp ?? undefined,
+        fbc: identity.fbc ?? undefined,
         contentName: project?.name || projectSlug || landingSlug || undefined,
       }),
     )

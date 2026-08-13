@@ -59,6 +59,24 @@ export function LeadCaptureForm({
     [params],
   )
 
+  // THE HANDLE THAT LETS THE CRM TALK BACK. Google will only accept an
+  // outcome — "this enquiry became a sale" — against a click identifier, and
+  // it exists for the length of this one visit. A deal value can be typed in
+  // next month; a click id that was not written down is gone.
+  // See lib/freehold/click-identity.ts.
+  const click = useMemo(
+    () => ({
+      gclid: params.get("gclid") || "",
+      gbraid: params.get("gbraid") || "",
+      wbraid: params.get("wbraid") || "",
+      // Meta's cookie is read server-side from the jar; this is the fallback
+      // for the visit where the pixel had not run yet — which is exactly the
+      // visit an ad blocker produces.
+      fbclid: params.get("fbclid") || "",
+    }),
+    [params],
+  )
+
   const trackConversion = () => {
     if (typeof window === "undefined") return
 
@@ -102,6 +120,7 @@ export function LeadCaptureForm({
           projectSlug,
           source: `lp:${landingSlug}`,
           utm,
+          click,
           referrer: document.referrer || "",
           device: {
             userAgent: navigator.userAgent,

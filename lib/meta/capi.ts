@@ -144,6 +144,19 @@ export interface QualifiedLeadParams {
   valueAED?: number | null
   /** Listing / project name, for Meta's breakdowns. */
   contentName?: string
+  /**
+   * The click cookie from the visit that produced this person, stored on the
+   * lead at submission and read back here.
+   *
+   * `_fbc` is the strongest match Meta accepts. It was being read at
+   * submission, spent on that one Lead event and dropped — so these events,
+   * which fire weeks later and carry the only outcome Meta cannot see for
+   * itself, went out identified by a hashed email and phone alone. The
+   * strongest signal this account can send was going out with the weakest
+   * identity it had. See lib/freehold/click-identity.ts.
+   */
+  fbc?: string
+  fbp?: string
 }
 
 /** Meta's custom event names for the two stages. */
@@ -164,11 +177,17 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
   if (em) userData.em = [em]
   if (ph) userData.ph = [ph]
   if (params.externalId) userData.external_id = [sha256(params.externalId.trim().toLowerCase())]
+  // NOT hashed, and that is Meta's rule not a lapse: fbc and fbp are Meta's
+  // own opaque tokens, matched by equality against what its pixel wrote. A
+  // hashed one matches nothing.
+  if (params.fbc) userData.fbc = params.fbc
+  if (params.fbp) userData.fbp = params.fbp
   // No match key means Meta cannot attach this to anyone. Sending it anyway
   // would inflate the count with events that teach the optimiser nothing.
   // An external id alone does not count: it only matches a person Meta has
-  // already seen it against, so on its own it identifies nobody.
-  if (!em && !ph) return null
+  // already seen it against, so on its own it identifies nobody. A click
+  // cookie DOES identify somebody, so it counts.
+  if (!em && !ph && !params.fbc) return null
 
   const custom: Record<string, unknown> = { content_category: 'real_estate' }
   if (params.contentName) custom.content_name = params.contentName
