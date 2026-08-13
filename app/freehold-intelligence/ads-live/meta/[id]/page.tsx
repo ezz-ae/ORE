@@ -22,6 +22,7 @@ import CampaignDestinationPanel from '@/components/freehold/campaign-destination
 import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { barsFor } from '@/lib/freehold/placement-bars'
+import { standingsOf } from '@/lib/freehold/design-race'
 import { deliveryOf } from '@/lib/meta/delivery-status'
 import { headlineInsights } from '@/lib/meta/insights-window'
 
@@ -2369,7 +2370,14 @@ function DesignsBlock({ campaignId }: { campaignId: string }) {
   }, [campaignId])
 
   if (ads.length < 2) return null
-  const best = ads.filter((a) => a.leads > 0).sort((a, b) => (a.cpl ?? Infinity) - (b.cpl ?? Infinity))[0]
+  // A WINNER NEEDS SOMEBODY TO HAVE BEATEN. This used to be
+  // `ads.filter(a => a.leads > 0).sort(by cpl)[0]` — one lead took the badge
+  // whatever the others were allowed to spend, so a design given AED 26 on a
+  // campaign where a lead costs AED 106 sat there looking beaten. It never
+  // ran. See lib/freehold/design-race.ts.
+  const race = standingsOf(ads.map((a) => ({
+    id: a.id, leads: a.leads, spendAed: a.spend, cpl: a.cpl,
+  })))
 
   async function toggle(adId: string, cur: string) {
     setBusy(adId)
@@ -2390,7 +2398,8 @@ function DesignsBlock({ campaignId }: { campaignId: string }) {
       <div className="mt-3 space-y-2">
         {ads.map((a) => {
           const live = a.status === 'ACTIVE'
-          const winner = best && a.id === best.id
+          const row = race.standings.find((x) => x.id === a.id)
+          const winner = race.winnerId === a.id
           return (
             <div key={a.id} className={`flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-2.5 ${winner ? 'border-gold/40 bg-gold/[0.06]' : 'border-line bg-surface'}`}>
               {a.thumbnailUrl
@@ -2399,6 +2408,17 @@ function DesignsBlock({ campaignId }: { campaignId: string }) {
                 : <span className="h-9 w-14 shrink-0 rounded bg-surface-2" />}
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-200">{a.name}</span>
               {winner && <span className="shrink-0 rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-gold">{t('lm.designs.winner')}</span>}
+              {/* TOO EARLY IS NOT LOSING. A design under one lead's worth of
+                  spend has produced nothing because it was given nothing, and
+                  a blank next to a gold badge reads as a verdict. The number
+                  says exactly what it still needs. */}
+              {row?.standing === 'tooEarly' && (
+                <span className="shrink-0 rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">
+                  {row.shortfallAed > 0
+                    ? t('lm.designs.tooEarlyBy', { aed: row.shortfallAed })
+                    : t('lm.designs.tooEarly')}
+                </span>
+              )}
               <span className="shrink-0 text-xs text-slate-500">{t('lm.campaignList.field.leads')} <span className="font-semibold text-gold">{a.leads}</span></span>
               <span className="shrink-0 text-xs text-slate-500">{t('lm.campaignList.field.cpl')} <span className="text-slate-300">{a.cpl != null ? `AED ${a.cpl}` : '—'}</span></span>
               <span className="shrink-0 text-xs text-slate-500">{t('lm.campaignList.field.spend')} <span className="text-slate-300">AED {a.spend.toFixed(0)}</span></span>
