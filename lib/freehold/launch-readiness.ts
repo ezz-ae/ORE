@@ -27,7 +27,7 @@
 
 /** Walkable — each renders its own line. */
 export const READINESS_CHECKS = [
-  'account', 'page', 'project', 'permit', 'destination', 'creative', 'budget', 'audience',
+  'account', 'page', 'pageAds', 'project', 'permit', 'destination', 'creative', 'budget', 'audience',
 ] as const
 export type ReadinessCheck = (typeof READINESS_CHECKS)[number]
 
@@ -62,6 +62,7 @@ export const META_MIN_DAILY_AED = 20
 export const REACHABLE: Record<ReadinessCheck, readonly Exclude<ReadinessState, 'ok'>[]> = {
   account:     ['blocked'],
   page:        ['blocked', 'pending'],
+  pageAds:     ['blocked', 'pending'],
   project:     ['pending'],
   permit:      ['blocked', 'warn', 'pending'],
   destination: ['blocked', 'warn', 'pending'],
@@ -75,6 +76,14 @@ export interface LaunchDraft {
   metaConnected: boolean
   /** A Facebook Page is selected — no Page, no ad, at any budget. */
   pageId: string | null
+  /**
+   * May this login run ads FROM that Page? See lib/meta/page-ads.ts.
+   *
+   * Seeing a Page and advertising with it are two permissions, and only the
+   * second creates an ad. undefined = not looked up yet. 'unknown' is Meta
+   * declining to say, which is not a refusal.
+   */
+  pageAds?: 'can' | 'cannot' | 'unknown' | null
   /** The chosen listing, when one is chosen. */
   projectSlug: string | null
   /** Its Trakheesi permit expiry, YYYY-MM-DD. undefined = not looked up yet. */
@@ -105,6 +114,7 @@ export interface ReadinessRow {
 const FIX: Record<ReadinessCheck, string | null> = {
   account:     '/freehold-intelligence/integrations',
   page:        '/freehold-intelligence/integrations',
+  pageAds:     '/freehold-intelligence/integrations',
   project:     null,
   permit:      '/freehold-intelligence/inventory',
   destination: '/freehold-intelligence/landing-pages',
@@ -138,6 +148,21 @@ export function readinessOf(d: LaunchDraft, now: Date = new Date()): ReadinessRo
   // it is the one blocker the person cannot fix by choosing differently.
   rows.push(row('account', d.metaConnected ? 'ok' : 'blocked'))
   rows.push(row('page', !d.metaConnected ? 'pending' : d.pageId ? 'ok' : 'blocked'))
+
+  // ── …and whether ads may run FROM it ───────────────────────────────────
+  // The launch that kept failing. A login can see a Page, list its forms and
+  // show its name in the picker, and still be refused the moment an ad is
+  // created (subcode 1487202) — because seeing a Page and advertising with it
+  // are two separate grants. It was only ever discovered on the last click.
+  //
+  // 'unknown' stays PENDING rather than becoming a tick. Meta omits the field
+  // for some token scopes, and a green tick for "we could not check" is the
+  // false reassurance that made this worth building.
+  rows.push(row('pageAds',
+    !d.metaConnected || !d.pageId ? 'pending'
+      : d.pageAds === 'cannot' ? 'blocked'
+      : d.pageAds === 'can' ? 'ok'
+      : 'pending'))
 
   // ── The project ────────────────────────────────────────────────────────
   rows.push(row('project', d.projectSlug ? 'ok' : 'pending'))

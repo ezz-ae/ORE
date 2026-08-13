@@ -15,7 +15,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { isMetaConfigured, getAdIdentity } from '@/lib/meta/client'
+import { isMetaConfigured, getAdIdentity, checkPageAds } from '@/lib/meta/client'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getLandingPublishState } from '@/lib/landing-pages'
 import { BRAND } from '@/lib/freehold/brand'
@@ -36,8 +36,19 @@ export async function GET(req: NextRequest) {
   // The Page is read from the stored identity rather than asked for, because
   // the wizard never had a Page picker — it inherits the connected one, and a
   // launch fails at Meta if that is missing.
+  // The Page the launcher has SELECTED, when it offers a choice. Falls back to
+  // the connected one, which is what a launch naming no Page runs from.
+  const picked = req.nextUrl.searchParams.get('pageId')?.trim() || ''
   const pageId = metaConnected
-    ? await getAdIdentity().then((i) => i.pageId || null).catch(() => null)
+    ? picked || (await getAdIdentity().then((i) => i.pageId || null).catch(() => null))
+    : null
+
+  // Whether ads may actually be created FROM that Page — the grant Meta checks
+  // at ad-creation time and refuses with subcode 1487202. Read here so the
+  // strip can say it on the first screen instead of the launch saying it on
+  // the last click. Never throws: 'unknown' is not a refusal.
+  const pageAds = metaConnected && pageId
+    ? await checkPageAds(pageId).then((r) => r.verdict).catch(() => 'unknown' as const)
     : null
 
   // undefined means NOT LOOKED UP — the strip renders that as pending rather
@@ -55,5 +66,5 @@ export async function GET(req: NextRequest) {
     landingVerdict = preflightLanding(landingUrl, state, { domain: BRAND.domain }).verdict
   }
 
-  return NextResponse.json({ metaConnected, pageId, permitExpiry, landingVerdict })
+  return NextResponse.json({ metaConnected, pageId, pageAds, permitExpiry, landingVerdict })
 }

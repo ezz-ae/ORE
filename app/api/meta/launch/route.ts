@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { launchFullCampaign, listAccessiblePages } from '@/lib/meta/client'
+import { launchFullCampaign, listAccessiblePages, checkPageAds } from '@/lib/meta/client'
+import { blocksLaunch as blocksPageAds, pageAdsRefusal } from '@/lib/meta/page-ads'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { createLocalCampaign } from '@/lib/meta/local-store'
 import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
@@ -442,6 +443,39 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `This Meta account cannot publish as Page ${wanted} — reconnect the Page or pick one of the ${accessible.length} connected Pages.` }, { status: 400 })
       }
       launchPageId = wanted
+    }
+
+    // ── CAN AN AD BE CREATED FROM THIS PAGE AT ALL ──────────────────────────
+    //
+    // The check above only asked whether the Page was IN the list. The list
+    // has said all along whether the login may ADVERTISE with it, and nothing
+    // read that — so Meta refused instead, at the far end, with subcode
+    // 1487202, after the campaign and its ad sets already existed.
+    //
+    // Asked with NO posted Page too, which is the common case and was never
+    // checked at all: a launch that names no Page runs from the configured
+    // one, and that Page was appended to the list with the permission
+    // hardcoded true.
+    //
+    // 'unknown' proceeds. Meta omits `tasks` for some token scopes, and
+    // refusing on a field we did not receive would block real campaigns over
+    // our own blind spot — the position landing-preflight and the permit gate
+    // already take about missing evidence.
+    {
+      const ads = await checkPageAds(launchPageId).catch(() => null)
+      if (ads && blocksPageAds(ads.verdict)) {
+        // Nothing has been created yet and the reserved credits go straight
+        // back — a refusal that quietly held a broker's credits would be a
+        // second failure on top of the first.
+        const refunded = await releaseReservation()
+        return NextResponse.json({
+          error: pageAdsRefusal(ads.pageName),
+          type: 'validation',
+          subcode: 1487202,
+          pageId: ads.pageId,
+          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
+        }, { status: 400 })
+      }
     }
 
     const result = await launchFullCampaign({

@@ -34,6 +34,7 @@ import type {
 import { mergeLeadLanguages } from './lead-language'
 import { questionsForMeta } from './form-templates'
 import { explainMetaError } from './error-advice'
+import { pageAdsVerdict, type PageAdsVerdict } from './page-ads'
 import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
@@ -2235,32 +2236,87 @@ export interface MetaPageRef {
   /** May this login run ads from the Page? Unknown reads as true — only an
    *  explicit tasks list without ADVERTISE/MANAGE is a real no. */
   canAdvertise: boolean
+  /** The same answer without the guess: 'unknown' where canAdvertise had to
+   *  assume. See lib/meta/page-ads.ts — a launch may not be refused on an
+   *  assumption, so the refusal path reads THIS. */
+  adsVerdict: PageAdsVerdict
 }
 
 export async function listAccessiblePages(): Promise<MetaPageRef[]> {
   const { pageId, token } = await creds()
-  const fallback: MetaPageRef[] = [{ id: pageId, name: null, token, canAdvertise: true }]
+  // A LOOKUP FAILURE IS NOT A PERMISSION ANSWER. The fallback row exists so the
+  // launcher still opens; its verdict is 'unknown' so nothing downstream reads
+  // our own outage as Meta's approval.
+  const fallback: MetaPageRef[] = [
+    { id: pageId, name: null, token, canAdvertise: true, adsVerdict: 'unknown' },
+  ]
   try {
     const res = await apiFetchAllPages<{ id: string; name?: string; access_token?: string; tasks?: string[] }>(
       '/me/accounts', { fields: 'id,name,access_token,tasks', limit: '50' }, 100,
     )
     const pages = res
       .filter((p) => p.id)
-      .map((p) => ({
-        id: p.id, name: p.name ?? null, token: p.access_token || token,
+      .map((p) => {
         // Whether this login may RUN ADS from the Page — Meta's `tasks` edge.
         // Absent tasks is unknown, not forbidden: only an explicit list that
         // lacks ADVERTISE/MANAGE is a real "no", and the launcher shows it
         // instead of letting the launch fail at the far end (subcode 1487202).
-        canAdvertise: !Array.isArray(p.tasks) || p.tasks.includes('ADVERTISE') || p.tasks.includes('MANAGE'),
-      }))
+        const adsVerdict = pageAdsVerdict(p.tasks)
+        return {
+          id: p.id, name: p.name ?? null, token: p.access_token || token,
+          canAdvertise: adsVerdict !== 'cannot',
+          adsVerdict,
+        }
+      })
     if (pages.length === 0) return fallback
     // The configured Page must always be included, even if /me/accounts omits
     // it (it can, for Pages held through a Business rather than personally).
-    if (!pages.some((p) => p.id === pageId)) pages.unshift({ id: pageId, name: null, token, canAdvertise: true })
+    // It used to be appended with canAdvertise hardcoded TRUE — and it is the
+    // Page the wizard uses when nobody picks another, so the one Page most
+    // launches run from was the one Page never checked.
+    if (!pages.some((p) => p.id === pageId)) {
+      pages.unshift({ id: pageId, name: null, token, canAdvertise: true, adsVerdict: 'unknown' })
+    }
     return pages
   } catch {
     return fallback
+  }
+}
+
+/**
+ * CAN AN AD BE CREATED FROM THIS PAGE — the question the launch route asks
+ * before it creates anything.
+ *
+ * Two reads, because they fail differently. `/me/accounts` carries `tasks` for
+ * every Page this login holds personally; a Page held through a Business can be
+ * missing from it entirely, and reading the Page node directly answers for that
+ * one. Neither throws: an unreadable answer is 'unknown', which never refuses.
+ *
+ * `pageId` omitted ⇒ the configured Page, which is what a launch that names no
+ * Page will actually run from.
+ */
+export async function checkPageAds(pageId?: string): Promise<{
+  pageId: string
+  pageName: string | null
+  verdict: PageAdsVerdict
+}> {
+  const { pageId: configured } = await creds()
+  const id = (pageId || configured || '').trim()
+  if (!id) return { pageId: '', pageName: null, verdict: 'unknown' }
+
+  const listed = await listAccessiblePages().catch(() => [] as MetaPageRef[])
+  const hit = listed.find((p) => p.id === id)
+  if (hit && hit.adsVerdict !== 'unknown') {
+    return { pageId: id, pageName: hit.name, verdict: hit.adsVerdict }
+  }
+
+  try {
+    const page = await apiFetch<{ id: string; name?: string; tasks?: string[] }>(
+      `/${id}`, undefined, { fields: 'id,name,tasks' },
+    )
+    return { pageId: id, pageName: page.name ?? hit?.name ?? null, verdict: pageAdsVerdict(page.tasks) }
+  } catch {
+    return { pageId: id, pageName: hit?.name ?? null, verdict: 'unknown' }
   }
 }
 

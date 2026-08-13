@@ -44,13 +44,19 @@ function Icon({ state }: { state: string }) {
 /** The four facts the browser cannot know. undefined on permitExpiry means
  *  NOT LOOKED UP — rendered as pending, not as a missing permit, which is a
  *  different and much louder claim. */
-type ServerFacts = Pick<LaunchDraft, 'metaConnected' | 'pageId' | 'permitExpiry' | 'landingVerdict'>
+type ServerFacts = Pick<LaunchDraft, 'metaConnected' | 'pageId' | 'pageAds' | 'permitExpiry' | 'landingVerdict'>
 
-export default function LaunchReadinessStrip({ draft, listingId, landingUrl }: {
+export default function LaunchReadinessStrip({ draft, listingId, landingUrl, pageId }: {
   /** Everything the wizard already holds. */
   draft: Omit<LaunchDraft, keyof ServerFacts>
   listingId: string
   landingUrl: string
+  /** The Page the operator PICKED, when the launcher offers a choice. Asked
+   *  about by id, because the ads permission belongs to the chosen Page and
+   *  answering for the configured one would be a tick for a Page nobody is
+   *  launching from. Empty ⇒ the configured Page, which is what the launch
+   *  would use. */
+  pageId?: string
 }) {
   const t = useT()
   const [open, setOpen] = useState(false)
@@ -60,10 +66,11 @@ export default function LaunchReadinessStrip({ draft, listingId, landingUrl }: {
     const q = new URLSearchParams()
     if (listingId) q.set('listingId', listingId)
     if (landingUrl) q.set('landingUrl', landingUrl)
+    if (pageId) q.set('pageId', pageId)
     const d = await fetch(`/api/meta/launch/readiness?${q}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null)).catch(() => null)
     setFacts(d)
-  }, [listingId, landingUrl])
+  }, [listingId, landingUrl, pageId])
   useEffect(() => { void load() }, [load])
 
   // Until the server has answered, the account and Page are UNKNOWN rather
@@ -74,6 +81,7 @@ export default function LaunchReadinessStrip({ draft, listingId, landingUrl }: {
     ...draft,
     metaConnected: facts?.metaConnected ?? true,
     pageId: facts ? facts.pageId : 'pending',
+    pageAds: facts ? facts.pageAds : null,
     permitExpiry: facts ? facts.permitExpiry : undefined,
     landingVerdict: facts?.landingVerdict ?? null,
   })
