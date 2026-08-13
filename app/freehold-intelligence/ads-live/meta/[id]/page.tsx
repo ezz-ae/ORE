@@ -19,6 +19,7 @@ import { recommendationsFor, type Recommendation } from '@/lib/freehold/recommen
 import CampaignTrend from '@/components/freehold/campaign-trend'
 import CreativePoolPanel from '@/components/freehold/creative-pool-panel'
 import CampaignDestinationPanel from '@/components/freehold/campaign-destination-panel'
+import MoneyLadderPanel from '@/components/freehold/money-ladder-panel'
 import { MIN_ADS_FOR_ROTATION } from '@/lib/freehold/creative-pool'
 import { checkAudienceFit } from '@/lib/freehold/audience-fit'
 import { barsFor } from '@/lib/freehold/placement-bars'
@@ -1758,6 +1759,11 @@ export default function CampaignCommandPage() {
           anything, and a fault it finds invalidates the cost per lead this
           page prints in large type. */}
       <section className="mt-8">
+        {/* WHAT THE MONEY BOUGHT — above the destination card, because it is
+            the question the page is for. Everything else here stops at the
+            lead. See lib/freehold/money-truth.ts. */}
+        <MoneyLadderPanel campaignId={id} />
+
         <CampaignDestinationPanel campaignId={id} />
       </section>
 

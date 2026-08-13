@@ -34,6 +34,11 @@ import { BRAND } from '@/lib/freehold/brand'
 import { query } from '@/lib/db'
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import {
+  standingOf, moneyProtects, moneyCondemns, countOn, DEFAULT_CYCLE,
+  type CampaignMoney, type SalesCycle,
+} from '@/lib/freehold/money-truth'
+import { accountMoneyBasis } from '@/lib/freehold/money-truth-db'
+import {
   launchFullCampaign,
   getCampaignInsights,
   getCampaignInsightsByPlacement,
@@ -228,6 +233,13 @@ interface TrialState {
   attributedCplAed: number | null
   qualityScore: number | null
   attributed: number
+  /** The rungs below a lead — see lib/freehold/money-truth.ts. Every gate in
+   *  this engine judged on LEADS while the business is paid on deals; these
+   *  carry the deeper counts so a trial can be judged on what it actually
+   *  produced. */
+  qualified: number
+  deals: number
+  revenueAed: number
   verdicts: TrialVerdictStats | null
   /** Meta frequency for the window — average times one person saw this ad.
    *  null on Google, where the concept does not apply. */
@@ -1129,10 +1141,14 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
     let qualityScore: number | null = null
     let attributed = 0
+    let qualified = 0, deals = 0, revenueAed = 0
     try {
       const quality = await getCampaignQuality(row.campaignId, campaignName)
       qualityScore = quality.score
       attributed = quality.attributed
+      qualified = quality.qualified
+      deals = quality.won
+      revenueAed = quality.revenueAed
     } catch (e) {
       // Fail-soft (quality stays null — honest "no signal", never invented),
       // but observable: symmetric with the insights-read failure above.
@@ -1158,6 +1174,9 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
       attributedCplAed: attributed > 0 ? spendAed / attributed : null,
       qualityScore,
       attributed,
+      qualified,
+      deals,
+      revenueAed,
       verdicts: verdictStats.get(row.campaignId) ?? null,
       frequency,
       delivery: deliveryByCampaign[row.campaignId] ?? null,
@@ -1228,6 +1247,14 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
   // ── ROTATE (running only; deterministic; ≤1 pause per project per cycle) ──
   if (machine.status === 'running') {
+    // THE ACCOUNT'S OWN SALES CYCLE, read once for the whole rotate pass. It
+    // decides which rung a trial has had TIME to be judged on — six weeks to
+    // close is a default, and an account with its own closed deals should not
+    // be paced by a guess. A failed read degrades to the defaults; a machine
+    // cycle must not die because a column is missing.
+    let salesCycle: SalesCycle = DEFAULT_CYCLE
+    try { salesCycle = (await accountMoneyBasis()).cycle } catch { /* defaults */ }
+
     const activeStates = states.filter((s) => s.row.status === 'active')
     const byProject = new Map<string, TrialState[]>()
     for (const s of activeStates) {
@@ -1319,12 +1346,57 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
         return group.some((o) => o !== s && scored(o) && (o.qualityScore as number) >= QUALITY_SIBLING_AT_LEAST)
       }
 
+      // ── (M) THE MONEY LAYER — the gate that outranks cost per lead ────────
+      //
+      // Every branch above judges LEADS. The business is paid on deals, and
+      // those are not the same campaign: a trial can buy leads at three times
+      // the price of its sibling and be the only one whose leads ever qualify
+      // or close. On the old rules that trial got paused and its budget moved
+      // to the one selling nothing.
+      //
+      // money-truth judges on the deepest rung both sides have HAD TIME to
+      // reach, and separates them with the same conditional-Poisson test this
+      // file already uses for CPL. Two consequences, and the veto is the
+      // important one:
+      //
+      //   · PROTECTS  — a trial provably ahead on qualified leads or deals is
+      //     not paused for its cost per lead. Only ever on a rung deeper than
+      //     leads, so this can never be the CPL gate overruling itself with
+      //     its own numbers.
+      //   · CONDEMNS  — a trial whose cheap leads provably become nothing,
+      //     while a sibling's do, is paused on that basis and the log says so.
+      const moneyRow = (s: TrialState): CampaignMoney => ({
+        campaignId: s.row.campaignId,
+        spendAed: s.spendAed,
+        // The CRM-attributed count, always: the rungs below it are CRM facts,
+        // and dividing Meta-reported leads into CRM-qualified ones would mix
+        // two different populations.
+        leads: s.attributed,
+        qualified: s.qualified,
+        deals: s.deals,
+        revenueAed: s.revenueAed,
+        ageDays: Math.max(0, (now.getTime() - Date.parse(s.row.createdAt)) / 86_400_000),
+      })
+      const moneyOf = (s: TrialState) =>
+        standingOf(moneyRow(s), group.filter((o) => o !== s).map(moneyRow), salesCycle)
+
+      const moneyProtected = (s: TrialState) => moneyProtects(moneyOf(s))
+      const moneyCondemned = (s: TrialState) => spendGated(s) && !isProtected(s) && moneyCondemns(moneyOf(s))
+
       const candidates = group
-        .filter((s) => verdictCondemned(s) || cplCondemned(s) || qualityCondemned(s))
+        .filter((s) => verdictCondemned(s) || cplCondemned(s) || qualityCondemned(s) || moneyCondemned(s))
+        // A trial the money layer PROTECTS survives a metric condemnation. It
+        // cannot survive a human verdict — brokers saying these leads are junk
+        // outranks any arithmetic about them, and by construction a
+        // money-condemned trial is not a protected one.
+        .filter((s) => verdictCondemned(s) || !moneyProtected(s))
         .sort((a, b) => {
           const av = verdictCondemned(a) ? 0 : 1
           const bv = verdictCondemned(b) ? 0 : 1
           if (av !== bv) return av - bv                       // verdict-condemned first
+          const am = moneyCondemned(a) ? 0 : 1
+          const bm = moneyCondemned(b) ? 0 : 1
+          if (am !== bm) return am - bm                       // then money-condemned
           return (b.cplAed ?? -1) - (a.cplAed ?? -1)          // then highest CPL
         })
 
@@ -1334,6 +1406,13 @@ export async function runMachineCycle(machineId: string): Promise<CycleResult> {
 
       const reasons: string[] = []
       if (verdictCondemned(target)) reasons.push(`human verdicts condemned it (yes-ratio ${(100 * (yesRatio(target) ?? 0)).toFixed(0)}% < ${CONDEMN_YES_RATIO * 100}%)`)
+      if (moneyCondemned(target)) {
+        const st = moneyOf(target)
+        reasons.push(
+          `its leads do not become ${st.rung === 'deal' ? 'deals' : 'qualified leads'} — ` +
+          `${countOn(moneyRow(target), st.rung)} on AED ${Math.round(target.spendAed)} against ` +
+          `${st.beatenBy.length} sibling(s) that do (p=${st.p < 0.0001 ? st.p.toExponential(1) : st.p.toFixed(4)})`)
+      }
       const cplBasis = cplCondemnedBy(target)
       if (cplBasis === 'native') {
         reasons.push(`CPL AED ${target.cplAed!.toFixed(0)} (${target.leadBasis}) > ${CPL_CONDEMN_MULTIPLIER}× the best same-channel sibling`)
