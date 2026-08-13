@@ -43,6 +43,7 @@ import { DESTINATION_KINDS, ATTRIBUTION_STATES } from '../lib/freehold/campaign-
 import { READINESS_CHECKS, REACHABLE } from '../lib/freehold/launch-readiness'
 import { MONEY_RUNGS, MONEY_VERDICTS } from '../lib/freehold/money-truth'
 import { DAY_BLOCKS, EXPLAINED_VERDICTS } from '../lib/freehold/hour-truth'
+import { SPLIT_REASONS } from '../lib/freehold/budget-split'
 import { PULSE_STATES } from '../lib/freehold/machine-activity'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
@@ -192,6 +193,11 @@ console.log('\n── recommendations ──')
   // 'even'. A missing block word blanks a bar label; a missing verdict
   // sentence prints a key where the instruction should be, and the two
   // instructions here are opposite ("stop buying this hour" vs "cover it").
+  // The budget split: a reason per row. Each one is a different instruction —
+  // "stop this" and "held on purpose" are opposite actions — so a missing word
+  // here prints a key where the decision should be.
+  family('split.why', 'split.why.', SPLIT_REASONS)
+
   family('hours.block', 'hours.block.', DAY_BLOCKS)
   family('hours.why', 'hours.why.', EXPLAINED_VERDICTS)
 

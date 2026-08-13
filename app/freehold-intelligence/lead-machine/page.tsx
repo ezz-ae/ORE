@@ -4,6 +4,7 @@ import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
 import { MachinePulse } from '@/components/freehold/machine-pulse'
 import HourTruthPanel from '@/components/freehold/hour-truth-panel'
+import BudgetSplitPanel from '@/components/freehold/budget-split-panel'
 import LiveCampaignsWidget from '@/components/freehold/lead-machine/live-campaigns-widget'
 import RocketAdWidget from '@/components/freehold/lead-machine/rocket-ad-widget'
 import RatingLoopWidget from '@/components/freehold/rating-loop-widget'
@@ -124,8 +125,12 @@ export default async function LeadMachineOverviewPage() {
           the desk, not to one campaign — so it is read once here rather than
           sliced per campaign into buckets too thin to say anything. See
           lib/freehold/hour-truth.ts. */}
-      <div className="mt-8">
+      <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <HourTruthPanel />
+        {/* THE WHOLE CAP AT ONCE. The machine moves budget one decision at a
+            time; nobody has ever been shown how the money ought to be arranged
+            across everything running. See lib/freehold/budget-split.ts. */}
+        <BudgetSplitPanel />
       </div>
 
       {/* Inventory readiness — still here, now below the machine. It answers
