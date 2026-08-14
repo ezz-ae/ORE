@@ -44,7 +44,8 @@ function Icon({ state }: { state: string }) {
 /** The four facts the browser cannot know. undefined on permitExpiry means
  *  NOT LOOKED UP — rendered as pending, not as a missing permit, which is a
  *  different and much louder claim. */
-type ServerFacts = Pick<LaunchDraft, 'metaConnected' | 'pageId' | 'pageAds' | 'permitExpiry' | 'landingVerdict'>
+type ServerFacts = Pick<LaunchDraft,
+  'metaConnected' | 'pageId' | 'pageAds' | 'permitExpiry' | 'landingVerdict' | 'learningFloorAed'>
 
 export default function LaunchReadinessStrip({ draft, listingId, landingUrl, pageId }: {
   /** Everything the wizard already holds. */
@@ -82,6 +83,7 @@ export default function LaunchReadinessStrip({ draft, listingId, landingUrl, pag
     metaConnected: facts?.metaConnected ?? true,
     pageId: facts ? facts.pageId : 'pending',
     pageAds: facts ? facts.pageAds : null,
+    learningFloorAed: facts?.learningFloorAed ?? null,
     permitExpiry: facts ? facts.permitExpiry : undefined,
     landingVerdict: facts?.landingVerdict ?? null,
   })

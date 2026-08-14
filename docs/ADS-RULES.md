@@ -413,6 +413,34 @@ that number, so a report and a payout cannot disagree about how long a lead take
 the rating, that payment precedes settlement, and that rating is not counted as
 having worked the lead.
 
+## A budget too thin to learn anything
+
+The launcher warned below a fixed **AED 150** a day. The real floor is fifty
+leads a week at whatever a lead actually costs on the account —
+`dailyBudgetToLearn` has computed it all along:
+
+| A lead costs | The floor really is |
+| --- | --- |
+| AED 50 | AED 357/day |
+| AED 112 | AED 800/day |
+| AED 200 | AED 1,429/day |
+
+So the warning fired below 150 and stayed **silent through the entire range
+where a budget is genuinely too thin to ever learn anything** — which is the
+range that wastes the money.
+
+`accountLeadPriceAed` (`money-truth-db.ts`) is now the one definition of what a
+lead costs here, pooled across every campaign that spent, read by both the
+launcher and the cap split so two screens cannot derive it differently. An
+account that has bought nothing has no price to compute a floor from, and gets
+the stated `LEARNING_DAILY_AED` fallback rather than an invented figure.
+
+**Warned, never blocked**, either way. A small test budget is a legitimate thing
+to want, and refusing it would be this tool deciding how much of somebody's
+money is enough. Meta's own hard minimum is still a blocker.
+
+*Guard:* `launch-readiness-test.ts`.
+
 ## Evidence gates — when a number is withheld
 
 | Rule | Where | Threshold |
@@ -432,6 +460,7 @@ having worked the lead.
 | No account paced by its own sales cycle below a real median | `money-truth.ts` | `MIN_CLOSED_FOR_CYCLE = 5` |
 | No verdict on a part of the day below a real lead count | `hour-truth.ts` | `MIN_LEADS_PER_BLOCK = 12` |
 | No campaign starved on a cost per lead nobody knows | `budget-split.ts` | `costPerLeadAed === null` |
+| No budget called thin against a constant when the account has its own price | `launch-readiness.ts` | `learningFloorAed` |
 
 An unknown is never rendered as a zero. "We do not know" and "it produced
 none" are different sentences and only one of them is true.

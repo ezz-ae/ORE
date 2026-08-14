@@ -109,3 +109,48 @@ export async function accountMoneyBasis(): Promise<AccountMoneyBasis> {
     closedDeals: values.length,
   }
 }
+
+/**
+ * WHAT A LEAD COSTS ON THIS ACCOUNT — pooled across every campaign that spent.
+ *
+ * One definition, because two screens that each derive "the price of a lead"
+ * their own way will eventually disagree in front of somebody. The launcher's
+ * budget warning and the cap split both read this.
+ *
+ * Pooled rather than per campaign: the question is what a lead costs HERE, and
+ * one campaign's sample is thinner than the account's. Lifetime spend against
+ * CRM-attributed leads, so it is the same population on both sides of the
+ * division — Meta-reported leads over lifetime spend would mix two different
+ * counts.
+ *
+ * null when nothing has been spent or nothing has been attributed. Not zero:
+ * "we do not know what a lead costs" and "a lead is free" are different
+ * sentences, and every caller treats them differently.
+ */
+export async function accountLeadPriceAed(): Promise<number | null> {
+  try {
+    const { listCampaigns, getAccountCampaignInsights, isMetaConfigured } =
+      await import('@/lib/meta/client')
+    if (!(await isMetaConfigured())) return null
+    const [campaigns, insights] = await Promise.all([
+      listCampaigns().catch(() => []),
+      getAccountCampaignInsights().catch(() => new Map()),
+    ])
+    if (campaigns.length === 0) return null
+
+    const { getLeadCountsForCampaigns } = await import('@/lib/freehold/campaign-quality')
+    const counts = await getLeadCountsForCampaigns(
+      campaigns.map((c) => ({ id: c.id, name: c.name ?? '' })),
+    ).catch(() => new Map())
+
+    let spend = 0
+    let leads = 0
+    for (const c of campaigns) {
+      spend += Number(insights.get(c.id)?.spend ?? 0) || 0
+      leads += counts.get(c.id)?.attributed ?? 0
+    }
+    return spend > 0 && leads > 0 ? spend / leads : null
+  } catch {
+    return null
+  }
+}
