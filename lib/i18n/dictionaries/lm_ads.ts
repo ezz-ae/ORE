@@ -400,6 +400,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'points.verdict.knewTheAnswer': 'Rated after the outcome',
   'points.verdict.notFirst': 'Someone rated it first',
   'points.verdict.tooEarly': 'Too soon to tell',
+  'points.verdict.cappedOut': 'Right, but the month was full',
   'points.why.paid': 'The lead did what you said it would.',
   'points.why.wrong': 'It went the other way. Nothing is taken off you for it.',
   'points.why.notWorked': 'A rating on a lead nobody phoned proves nothing — call them, then rate them.',
@@ -407,6 +408,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'points.why.knewTheAnswer': 'The lead had already qualified or closed when you rated it.',
   'points.why.notFirst': 'Only the first rating on a lead earns. Yours still helps the targeting.',
   'points.why.tooEarly': 'Give it time — a call is judged once the lead has had a chance to go either way.',
+  'points.why.cappedOut': 'You called it right and had already earned this month\u2019s maximum. It stays on the list and pays next month.',
   // ── Smart Views — a saved report asked for in property words ───────────
   // Meta makes you assemble a report out of Columns, Breakdowns and
   // Attribution settings. Here you pick the question and it brings the rest.
@@ -1518,6 +1520,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'points.verdict.knewTheAnswer': 'قُيّم بعد ظهور النتيجة',
   'points.verdict.notFirst': 'قيّمه شخص قبلك',
   'points.verdict.tooEarly': 'مبكر على الحكم',
+  'points.verdict.cappedOut': 'صحيح، لكن الشهر امتلأ',
   'points.why.paid': 'العميل فعل ما قلته.',
   'points.why.wrong': 'ذهب في الاتجاه الآخر. ولا يُخصم منك شيء.',
   'points.why.notWorked': 'تقييم عميل لم يتصل به أحد لا يثبت شيئًا — اتصل ثم قيّم.',
@@ -1525,6 +1528,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'points.why.knewTheAnswer': 'كان العميل قد تأهل أو أُغلق قبل تقييمك.',
   'points.why.notFirst': 'أول تقييم فقط يكسب. تقييمك ما زال يفيد الاستهداف.',
   'points.why.tooEarly': 'امنحه وقتًا — يُحكم على الرأي بعد أن تتاح للعميل فرصة.',
+  'points.why.cappedOut': 'حكمك صحيح وقد بلغت حد هذا الشهر. يبقى في القائمة ويُدفع الشهر القادم.',
   // ── العروض الذكية ────────────────────────────────────────────────────
   'sv.title': 'العروض الذكية',
   'sv.sub': 'اختر ما تريد معرفته. الجدول يُبنى ليلًا ويكون جاهزًا حين تفتحه.',
@@ -2633,6 +2637,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'points.verdict.knewTheAnswer': 'Оценено после результата',
   'points.verdict.notFirst': 'Кто-то оценил раньше',
   'points.verdict.tooEarly': 'Судить рано',
+  'points.verdict.cappedOut': 'Верно, но месяц заполнен',
   'points.why.paid': 'Заявка повела себя так, как вы сказали.',
   'points.why.wrong': 'Вышло иначе. С вас за это ничего не снимают.',
   'points.why.notWorked': 'Оценка заявки, которой никто не звонил, ничего не доказывает — позвоните, потом оценивайте.',
@@ -2640,6 +2645,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'points.why.knewTheAnswer': 'Заявка уже прошла квалификацию или закрылась к моменту оценки.',
   'points.why.notFirst': 'Зарабатывает только первая оценка. Ваша всё равно помогает таргетингу.',
   'points.why.tooEarly': 'Дайте время — оценку судят, когда у заявки был шанс.',
+  'points.why.cappedOut': 'Вы угадали, но уже выбрали максимум за месяц. Оценка остаётся в списке и оплатится в следующем.',
   // ── Умные виды ───────────────────────────────────────────────────────
   'sv.title': 'Умные виды',
   'sv.sub': 'Выберите, что хотите знать. Таблица собирается ночью и ждёт вас.',

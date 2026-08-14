@@ -17,7 +17,7 @@
  * the reference precisely because there is one judgement per lead, ever.
  */
 import { ensureOnce, query } from '@/lib/db'
-import { refundCredits, getCreditBalance } from '@/lib/freehold/credits-db'
+import { refundCredits } from '@/lib/freehold/credits-db'
 import {
   settleClaim, applyCeiling, ratingRefundReference, outcomeOf,
   DEFAULT_SEASON_DAYS,
@@ -161,8 +161,12 @@ export async function settleDueClaims(opts: {
     }
 
     for (const [brokerId, group] of byBroker) {
-      const bal = await getCreditBalance(brokerId).catch(() => null)
-      const spent = bal?.total_spent ?? 0
+      // SPENT IN THIS CYCLE, not lifetime. getCreditBalance().total_spent sums
+      // every 'spend' row ever written, and the refunds counted against it are
+      // this cycle's — so the ceiling grew for ever against a figure that
+      // resets monthly, and an old account could earn back half of everything
+      // it had ever spent again every month. Both sides are now the cycle.
+      const spent = await spentThisCycle(brokerId)
       const alreadyRefunded = await refundedThisCycle(brokerId)
       const capped = applyCeiling(group.map((g) => g.settlement), {
         spentThisCycle: spent,
@@ -172,6 +176,24 @@ export async function settleDueClaims(opts: {
       for (let i = 0; i < group.length; i++) {
         const g = group[i]
         const s = capped.settled[i]
+        // A CAPPED CLAIM STAYS OPEN. It was judged right; there was simply no
+        // room in the month. Marking it settled would close a point somebody
+        // earned, for ever, and tell them it was "too soon to tell".
+        if (s.verdict === 'cappedOut') {
+          // The VERDICT is written so the broker can see "right, but the month
+          // was full" instead of "too soon to tell" — but settled_at stays
+          // NULL, so the claim comes back round next cycle and pays.
+          await query(
+            `UPDATE freehold_rating_claims SET verdict = $2
+              WHERE lead_id = $1 AND settled_at IS NULL`,
+            [g.row.lead_id, s.verdict],
+          ).catch(() => undefined)
+          out.push({
+            leadId: g.row.lead_id, brokerId, rating: g.row.rating,
+            verdict: s.verdict, points: 0,
+          })
+          continue
+        }
         // PAY FIRST, MARK AFTER. The ledger write is idempotent on
         // `rating:<leadId>`, so a crash between the two costs at most a repeat
         // attempt that the unique index refuses. Marking first and crashing
@@ -199,6 +221,29 @@ export async function settleDueClaims(opts: {
     return out
   } catch {
     return []
+  }
+}
+
+/**
+ * Credits this broker SPENT inside the current cycle.
+ *
+ * The ceiling is a share of it, and it has to be the same window as the
+ * refunds counted against it — see refundCeiling.
+ */
+async function spentThisCycle(brokerId: string): Promise<number> {
+  try {
+    const rows = await query<{ n: string }>(
+      `SELECT COALESCE(SUM(cl.amount), 0)::text AS n
+         FROM credit_ledger cl
+         JOIN broker_credit_accounts a ON a.broker_id = cl.broker_id
+        WHERE cl.broker_id = $1
+          AND cl.type = 'spend'
+          AND cl.created_at >= a.cycle_start`,
+      [brokerId],
+    )
+    return Number(rows[0]?.n ?? 0) || 0
+  } catch {
+    return 0
   }
 }
 
@@ -231,20 +276,27 @@ export async function ratingEarnings(brokerId: string): Promise<{
   const empty = { paid: 0, open: 0, settled: 0, byVerdict: {} as Record<string, number> }
   try {
     await ensure()
-    const rows = await query<{ verdict: string | null; n: string; pts: string }>(
-      `SELECT verdict, COUNT(*)::text AS n, COALESCE(SUM(points), 0)::text AS pts
+    // Grouped by verdict AND by whether the claim is closed, because the two
+    // are no longer the same question: a capped claim carries a verdict and is
+    // still open, waiting for room next cycle.
+    const rows = await query<{ verdict: string | null; is_open: boolean; n: string; pts: string }>(
+      `SELECT verdict, (settled_at IS NULL) AS is_open,
+              COUNT(*)::text AS n, COALESCE(SUM(points), 0)::text AS pts
          FROM freehold_rating_claims
         WHERE broker_id = $1
-        GROUP BY verdict`,
+        GROUP BY verdict, (settled_at IS NULL)`,
       [brokerId],
     )
     const byVerdict: Record<string, number> = {}
     let paid = 0, open = 0, settled = 0
     for (const r of rows) {
       const n = Number(r.n) || 0
-      if (r.verdict === null) { open += n; continue }
-      settled += n
-      byVerdict[r.verdict] = n
+      // OPEN IS ABOUT settled_at, not about the verdict. Counting a capped
+      // claim as unjudged would show the broker "too soon to tell" about a
+      // call they got right and are owed for.
+      if (r.is_open) open += n
+      else settled += n
+      if (r.verdict) byVerdict[r.verdict] = (byVerdict[r.verdict] ?? 0) + n
       paid += Number(r.pts) || 0
     }
     return { paid, open, settled, byVerdict }

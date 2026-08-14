@@ -35,10 +35,14 @@ interface Points {
 }
 
 /** Paid first, then the near misses, then the ones that were never in play. */
-const ORDER: ClaimVerdict[] = ['paid', 'wrong', 'notWorked', 'noForecast', 'knewTheAnswer', 'notFirst', 'tooEarly']
+const ORDER: ClaimVerdict[] = [
+  'paid', 'cappedOut', 'wrong', 'notWorked', 'noForecast', 'knewTheAnswer', 'notFirst', 'tooEarly',
+]
 
 const TONE: Record<ClaimVerdict, string> = {
   paid: 'text-emerald-300',
+  // Earned but unpaid this month — an amber "you are owed this", never grey.
+  cappedOut: 'text-amber-200',
   wrong: 'text-slate-400',
   notWorked: 'text-amber-200',
   noForecast: 'text-slate-500',
@@ -121,9 +125,14 @@ export default function PointsPage() {
           <p className="mt-6 text-[13px] text-slate-400">{t('points.none')}</p>
         ) : (
           <ul className="mt-4 space-y-2.5">
-            {ORDER.filter((v) => (data.byVerdict[v] ?? 0) > 0 || v === 'tooEarly')
-              .map((v) => {
-                const n = v === 'tooEarly' ? data.open : (data.byVerdict[v] ?? 0)
+            {ORDER.map((v) => {
+                // 'tooEarly' is the only verdict never written to a row — it is
+                // "still open and not yet carrying a verdict", so it is counted
+                // from what is open MINUS the capped ones, which are also open
+                // but have already been judged right.
+                const n = v === 'tooEarly'
+                  ? Math.max(0, data.open - (data.byVerdict.cappedOut ?? 0))
+                  : (data.byVerdict[v] ?? 0)
                 if (n === 0) return null
                 return (
                   <li key={v} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">

@@ -171,6 +171,13 @@ console.log('\n── rating can never out-earn advertising ──')
   check('a capped row is still on the list with zero points',
     capped.settled.filter((s) => s.points === 0).length === 6)
 
+  // AND IT MUST NOT BE 'tooEarly'. The caller marks anything it settles as
+  // done, so reusing that verdict closed a right call for ever, worth nothing,
+  // and told the broker it was too soon to tell. They earned it and lost it.
+  check('a capped row is CAPPED, never "too soon to tell"',
+    capped.settled.filter((s) => s.points === 0).every((s) => s.verdict === 'cappedOut'),
+    capped.settled.map((s) => s.verdict).join(','))
+
   const already = applyCeiling(ten, { spentThisCycle: 100, alreadyRefundedThisCycle: 48 })
   check('what was already refunded this cycle counts against the ceiling',
     already.paid === 2, String(already.paid))
@@ -210,6 +217,8 @@ console.log('\n── reading a CRM row into an outcome ──')
 console.log('\n── every verdict is reachable ──')
 {
   const seen = new Set<string>([
+    applyCeiling([{ verdict: 'paid', points: 1, band: 'good' }],
+      { spentThisCycle: 0, alreadyRefundedThisCycle: 0 }).settled[0].verdict,
     verdict({ rating: 1, worked: false }).verdict,
     verdict({ rating: 10, outcomeAtRating: 'won' }).verdict,
     verdict({ rating: 9, isFirstRating: false }).verdict,
@@ -253,6 +262,39 @@ console.log('\n── the scheme is wired where it says it is ──')
     /ratingRefundReference\(g\.row\.lead_id\)/.test(db))
   check('the point is paid BEFORE the claim is marked settled',
     db.indexOf('refundCredits(') < db.indexOf('SET settled_at = now()'))
+
+  // A CAPPED CLAIM STAYS OPEN so it can pay next cycle. Closing it would
+  // destroy a point somebody had genuinely earned.
+  // Read the capped branch itself rather than counting characters — the
+  // assertion is that this branch never closes the claim, whatever else it
+  // grows to do.
+  const cappedFrom = db.indexOf("s.verdict === 'cappedOut'")
+  const cappedBranch = cappedFrom > 0 ? db.slice(cappedFrom, db.indexOf('continue', cappedFrom)) : ''
+  check('the capped branch exists', cappedBranch.length > 0, String(cappedFrom))
+  check('…and never marks the claim settled',
+    !/settled_at = now\(\)/.test(cappedBranch), cappedBranch.slice(0, 200))
+  check('…it only records the verdict, leaving the claim open',
+    /SET verdict = \$2/.test(cappedBranch) && /settled_at IS NULL/.test(cappedBranch),
+    cappedBranch.slice(0, 200))
+
+  // BOTH SIDES OF THE CEILING MUST BE THE SAME WINDOW. Lifetime spend against
+  // this cycle's refunds is not a loose cap, it is no cap: an old account
+  // could earn back half of everything it ever spent, again, every month.
+  check('the ceiling measures spend over the same cycle as the refunds',
+    /spentThisCycle\(brokerId\)/.test(db) && /cl\.type = 'spend'[\s\S]{0,120}cycle_start/.test(db),
+    'the cap is comparing lifetime spend to cycle refunds')
+  check('…so the lifetime figure is no longer read here',
+    !/total_spent/.test(db), 'total_spent is still being used as the cycle spend')
+
+  // A capped claim carries a VERDICT while staying OPEN, so "open" can no
+  // longer be read as "not yet judged" — otherwise the broker is shown "too
+  // soon to tell" about a call they got right and are owed for.
+  check('a capped claim records its verdict without closing',
+    /SET verdict = \$2\s*\n\s*WHERE lead_id = \$1 AND settled_at IS NULL/.test(db),
+    'a capped claim writes no verdict, so the screen cannot tell it apart')
+  check('open is counted from settled_at, not from a null verdict',
+    /\(settled_at IS NULL\) AS is_open/.test(db) && /if \(r\.is_open\) open \+= n/.test(db),
+    'open is still inferred from the verdict being null')
 
   // RATING IS NOT WORK. If rating counted as working the lead, the
   // self-fulfilling rating would satisfy its own condition.

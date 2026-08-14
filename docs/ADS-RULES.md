@@ -400,9 +400,17 @@ is paid *before* the claim is marked settled — a crash between the two costs a
 retry the index refuses, where the other order loses the point silently.
 
 **Rating can never out-earn advertising.** `MAX_REFUND_SHARE_OF_SPEND = 0.5`,
-measured against what the broker actually spent, so an account that has bought
-nothing earns nothing. Capped rows stay on the list with zero points rather than
-vanishing — a broker who hit the ceiling should see that they hit it.
+measured against what the broker spent **in the same cycle** the refunds are
+counted over. Comparing lifetime spend to one month's refunds is not a loose cap,
+it is no cap: a two-year-old account could earn back half of everything it had
+ever spent, again, every month.
+
+**A capped claim stays open.** It was judged right; there was simply no room left
+in the month. It carries a `cappedOut` verdict so the screen can say so, keeps
+`settled_at` NULL so it pays next cycle, and is never closed — closing it would
+destroy a point somebody had genuinely earned and tell them it was "too soon to
+tell". `open` is therefore counted from `settled_at`, not from the verdict being
+absent.
 
 **Seasoned on the account's own cycle.** `/api/cron/settle-ratings` reads
 `accountMoneyBasis().cycle.daysToQualify`, so a brokerage whose leads take six
