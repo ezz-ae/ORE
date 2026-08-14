@@ -31,6 +31,35 @@ export const isCreditTier = (value: unknown): value is CreditTier =>
 export const CREDIT_VALUE_AED = 10
 
 /**
+ * WHAT A LEDGER UNIT IS WORTH, IN THE MONEY PEOPLE THINK IN.
+ *
+ * The ledger counts whole units because an INTEGER column is what makes the
+ * balance safe: no rounding, no drift, no fractional movement Postgres can
+ * quietly halve. That is a storage decision and it should never have been a
+ * VOCABULARY decision.
+ *
+ * "You earned 4 points" is a token. "You earned AED 40 of ad spend" is the same
+ * fact in the currency the person actually works in, and it is TEN TIMES the
+ * number — a unit is AED 10, so calling a unit a dirham would understate every
+ * balance in the product by an order of magnitude.
+ *
+ * So the unit stays the storage and this is the display. Everything a broker
+ * reads goes through here.
+ */
+export const aedOf = (units: number): number =>
+  Number.isFinite(units) ? Math.round(units * CREDIT_VALUE_AED) : 0
+
+/**
+ * The AED figure as it is written on screen.
+ *
+ * Always "of ad spend" at the call site, never bare: this is advertising budget
+ * a broker has earned the right to spend, not cash they can withdraw, and a
+ * bare "AED 400" beside a balance invites exactly that misreading.
+ */
+export const aedText = (units: number): string =>
+  `AED ${aedOf(units).toLocaleString('en-US')}`
+
+/**
  * Credits reserved for a campaign launch, for EVERY ad platform.
  *
  * One derivation, one rate: Meta and Google must charge a broker the same for
