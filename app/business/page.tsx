@@ -292,7 +292,7 @@ export default function BusinessHome() {
         <div className="flex flex-col gap-4 border-t border-white/[0.07] pt-8 sm:flex-row sm:items-center sm:justify-between">
           <P className="!text-[0.875rem]">
             Questions about running this for a company of your size?{' '}
-            <TextLink href="/contact">Talk to us</TextLink>.
+            <TextLink href="/business/contact">Talk to us</TextLink>.
           </P>
           <div className="flex gap-6 text-[0.875rem]">
             <TextLink href="/business/security">Security &amp; control</TextLink>

@@ -204,7 +204,7 @@ export default function ListingToLandingPage() {
               </P>
             </div>
             <div className="mt-9 flex flex-wrap gap-3">
-              <ButtonLink href="/contact">Talk to us</ButtonLink>
+              <ButtonLink href="/business/contact">Talk to us</ButtonLink>
               <ButtonLink href="/signup" variant="ghost">Try the platform first</ButtonLink>
             </div>
           </div>
