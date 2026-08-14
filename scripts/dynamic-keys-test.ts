@@ -50,6 +50,11 @@ import {
   VIEW_TEMPLATES, VIEW_COLUMNS, RISK_KINDS, VIEW_RANGES, VIEW_ACCESS, VIEW_SCHEDULES,
 } from '../lib/freehold/smart-view'
 import { PULSE_STATES } from '../lib/freehold/machine-activity'
+import {
+  BANK_REFUSALS, CASH_ORIGINS, CASH_STATES, DEPOSIT_STATES, SPEND_KINDS, USE_STATES,
+} from '../lib/freehold/bank'
+import { POSTING_KINDS } from '../lib/freehold/wallet'
+import { wallet as walletDict } from '../lib/i18n/dictionaries/wallet'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
@@ -289,6 +294,29 @@ console.log('\n── ready-buyer names ──')
   // t(`lm.aud.ready.${id}.name`) from the READY_BUYERS catalog — a computed
   // key per catalog entry, invisible to the literal audit like the rest.
   family('lm.aud.ready.*.name', 'lm.aud.ready.', READY_BUYERS.map((b) => `${b.id}.name`), lm_audiences)
+}
+
+console.log('\n── the wallet and the bank ──')
+{
+  // EVERY ONE OF THESE IS RENDERED THROUGH A COMPUTED KEY on the wallet screen,
+  // and every list is a walkable `const` the type is derived from — so a new
+  // spend kind or a new refusal cannot ship wordless the way `noClicks` did.
+  //
+  //   t(`wal.kind.${m.kind}`)          t(`bank.origin.${lot.origin}`)
+  //   t(`wal.no.${code}`)              t(`bank.state.${lot.state}`)
+  //   t(`bank.kind.${w.kind}`)         t(`bank.use.state.${u.state}`)
+  //   t(`bank.deposit.${lot.deposit}`)
+  //
+  // A refusal rendering as `wal.no.notYourCheque` would be worse here than
+  // anywhere else in the product: it appears at the exact moment somebody is
+  // being told they may not move money, which is when they least need a riddle.
+  family('wal.kind', 'wal.kind.', POSTING_KINDS, walletDict)
+  family('wal.no', 'wal.no.', [...BANK_REFUSALS, 'notEnough', 'noSuchLot', 'error'], walletDict)
+  family('bank.origin', 'bank.origin.', CASH_ORIGINS, walletDict)
+  family('bank.state', 'bank.state.', CASH_STATES, walletDict)
+  family('bank.deposit', 'bank.deposit.', DEPOSIT_STATES, walletDict)
+  family('bank.kind', 'bank.kind.', SPEND_KINDS, walletDict)
+  family('bank.use.state', 'bank.use.state.', USE_STATES, walletDict)
 }
 
 if (failures > 0) {

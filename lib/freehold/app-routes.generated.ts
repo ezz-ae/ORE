@@ -204,6 +204,7 @@ export const APP_ROUTES: readonly string[] = [
   "/freehold-intelligence/team/*",
   "/freehold-intelligence/team/log",
   "/freehold-intelligence/team/teams",
+  "/freehold-intelligence/wallet",
   "/lp/*",
   "/map",
   "/privacy",

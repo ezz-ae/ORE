@@ -48,15 +48,28 @@ export type WalletKind =
   /** One per broker. */
   | 'broker'
 
-export type PostingKind =
-  | 'issue'     // treasury → a wallet: new coin enters the system
-  | 'burn'      // a wallet → treasury: coin leaves it
-  | 'transfer'  // wallet → wallet, by account number
-  | 'spend'     // wallet → operations, against real ad spend
-  | 'refund'    // operations → wallet, a spend reversed
-  | 'earn'      // treasury → broker, a bonus
-  | 'hold'      // inside one wallet: balance → held
-  | 'release'   // inside one wallet: held → balance
+/**
+ * Every kind of movement, as a walkable list.
+ *
+ * A const array rather than a bare union because the wallet screen renders a
+ * WORD for each one — `t(`wal.kind.${kind}`)` — and a union type is invisible
+ * to the i18n audit. The array is what lets dynamic-keys-test.ts prove every
+ * kind has a sentence in all three languages before anybody sees a raw
+ * `wal.kind.release` on screen.
+ *
+ *   issue     treasury → a wallet: new coin enters the system
+ *   burn      a wallet → treasury: coin leaves it
+ *   transfer  wallet → wallet, by account number
+ *   spend     wallet → operations, against real ad spend
+ *   refund    operations → wallet, a spend reversed
+ *   earn      treasury → broker, a bonus
+ *   hold      inside one wallet: balance → held
+ *   release   inside one wallet: held → balance
+ */
+export const POSTING_KINDS = [
+  'issue', 'burn', 'transfer', 'spend', 'refund', 'earn', 'hold', 'release',
+] as const
+export type PostingKind = (typeof POSTING_KINDS)[number]
 
 export interface Wallet {
   id: string
