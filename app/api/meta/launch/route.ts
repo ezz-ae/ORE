@@ -20,8 +20,9 @@ import { crmExclusionAudienceId } from '@/lib/freehold/crm-exclusion'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
 import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
 import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
-import { deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance } from '@/lib/freehold/credits-db'
-import { creditsForDailyBudget } from '@/lib/freehold/credits-shared'
+import { canLaunch, LAUNCH_FLOOR_DAYS } from '@/lib/freehold/ad-settlement'
+import { ensureBankWallets, walletFor } from '@/lib/freehold/bank-db'
+import { listWallets } from '@/lib/freehold/wallet-db'
 import { randomUUID } from 'crypto'
 import {
   decideCampaignAction, routerBlocks, routerWarns, duplicateRefusal, duplicateWarning,
@@ -129,83 +130,57 @@ export async function POST(req: NextRequest) {
     brokerId = fulfilsRequest.brokerId
   }
 
-  // 1 credit = AED 10 of funded ad spend (CREDIT_VALUE_AED). Whole credits only —
-  // the ledger column is INTEGER. The rate lives in credits-shared so Meta and
-  // Google charge identically instead of each re-deriving "/ 10".
-  const creditsToSpend = brokerId ? creditsForDailyBudget(body.dailyBudgetAED) : 0
-
-  // ── Money: RESERVE credits BEFORE launching (fail-closed) ────────────────────
-  // A campaign must never reach the auction without its credits already committed.
-  // The debit is atomic (row-locked, balance re-derived under the lock), booked
-  // under a placeholder reference; two concurrent launches for the same broker
-  // serialize on that lock, so the second can't slip past a stale balance read and
-  // over-serve. The getCreditBalance check below is only the fast, friendly 402 —
-  // the reservation debit is the authority. If the launch then fails or falls back
-  // to a demo campaign that never serves, the reservation is refunded.
-  const reservationRef = `res-${randomUUID()}`
-  let reserved = false
-  if (brokerId && creditsToSpend > 0) {
-    // Friendly pre-check ONLY. A null balance means "no account yet" OR "the
-    // read failed" — telling a broker they are out of credits because a query
-    // errored is a lie, so we only 402 here on a balance we actually read. The
-    // locked deduction below is the authority either way.
-    const bal = await getCreditBalance(brokerId)
-    if (bal && bal.balance < creditsToSpend) {
+  // ── Money: A GATE, NOT A CHARGE ─────────────────────────────────────────────
+  //
+  // This used to debit the DAILY BUDGET before launching. A budget is a ceiling,
+  // not a price: a campaign set to AED 300 that delivered AED 40 charged the
+  // broker AED 300, and one that ran three weeks charged them once. Neither
+  // figure had anything to do with money leaving the company.
+  //
+  // The bill is now the platform's own reported spend, settled every AED 10 out
+  // of the launcher's wallet by the settlement sync (ad-settlement.ts). NOTHING
+  // IS RESERVED HERE, and nothing may be — charging at launch AND on delivery
+  // would bill the same campaign twice, out of two different ledgers.
+  //
+  // What remains is a gate. A campaign whose owner cannot cover its first two
+  // days will be paused by the sync within hours, after Meta has already
+  // charged the company for the impressions it bought; refusing now is both
+  // kinder and cheaper than that.
+  let walletBalance = 0
+  if (brokerId) {
+    await ensureBankWallets()
+    const walletId = await walletFor(brokerId, sessionUser.name || brokerId)
+    walletBalance = (await listWallets()).find((w) => w.id === walletId)?.balance ?? 0
+    const gate = canLaunch(walletBalance, body.dailyBudgetAED)
+    if (!gate.ok) {
       return NextResponse.json(
-        { error: 'Insufficient credits to launch this campaign.', balance: bal.balance, required: creditsToSpend },
+        {
+          error: 'Not enough Cash to run this campaign.',
+          balance: gate.haveAed,
+          required: gate.needAed,
+          // Said explicitly, because the number is no longer the daily budget
+          // and a broker comparing the two will otherwise think it is a bug.
+          reason: `Ads are billed on what they actually spend. Starting one needs ${LAUNCH_FLOOR_DAYS} days of budget in your wallet.`,
+        },
         { status: 402 },
       )
     }
-    const reservation = await deductCreditsForCampaign(brokerId, reservationRef, body.campaignName, creditsToSpend)
-    if (!reservation.ok) {
-      // Lost the race, or a concurrent spend drained the balance — never launch.
-      // A failure that is NOT about the balance must say so: reporting "out of
-      // credits" for a database error sends the broker to Finance for a refill
-      // that will not help.
-      if (reservation.reason === 'insufficient') {
-        return NextResponse.json(
-          { error: 'Insufficient credits to launch this campaign.', balance: reservation.balance ?? 0, required: creditsToSpend },
-          { status: 402 },
-        )
-      }
-      return NextResponse.json(
-        {
-          error: reservation.reason === 'invalid'
-            ? 'That daily budget does not convert to a valid number of credits.'
-            : 'Could not reserve credits for this campaign, so nothing was launched. Please try again.',
-          required: creditsToSpend,
-        },
-        { status: reservation.reason === 'invalid' ? 400 : 500 },
-      )
-    }
-    reserved = true
   }
 
-  // Give the reserved credits back when a launch does NOT actually serve an ad
-  // (Meta rejected it, or it fell back to a local/demo campaign). Returns false
-  // when the ledger write failed — the credits are then still held, and the
-  // caller must say so rather than report a clean outcome.
-  async function releaseReservation(): Promise<boolean> {
-    if (!reserved || !brokerId) return true
-    const refund = await refundCredits(
-      brokerId, reservationRef, creditsToSpend, 'Refund: campaign did not launch/serve',
-    ).catch(() => ({ ok: false as const }))
-    if (!refund.ok) {
-      // Keep `reserved` true so a later attempt in this request retries, and
-      // leave a trace an operator can reconcile the ledger from.
-      console.error(
-        '[meta/launch] credit refund FAILED — broker credits are still held',
-        { brokerId, reservationRef, credits: creditsToSpend },
-      )
-      return false
-    }
-    reserved = false
-    return true
-  }
+  /**
+   * Nothing is reserved, so nothing is released.
+   *
+   * Kept as a named call rather than deleted from seven branches: each of those
+   * branches is a path where the campaign does NOT serve, and they should go on
+   * saying so out loud. Under the old model they returned held credits; under
+   * this one there is nothing to return, because a campaign that never served
+   * never spent and therefore was never billed.
+   */
+  async function releaseReservation(): Promise<boolean> { return true }
 
-  // Persist broker↔campaign attribution (best-effort link). The money is already
-  // reserved above, so this never charges — on a real launch the reservation is
-  // separately reconciled to the true campaign id.
+  // Persist broker↔campaign attribution (best-effort link). This is what tells
+  // the settlement sync WHOSE wallet pays for the spend this campaign delivers,
+  // so it is the only money-relevant thing the launch still writes.
   async function attributeCampaign(campaignId: string) {
     if (!brokerId) return
     try {
@@ -413,7 +388,7 @@ export async function POST(req: NextRequest) {
     // a real thing to want, and a refusal with no way through is a wall people
     // route around.
     if (routerBlocks(decision) && body.confirmDuplicate !== true) {
-      const refunded = await releaseReservation()
+      await releaseReservation()
       await recordDecision({
         projectSlug, campaignId: decision.targetCampaignId ?? null, brokerId: intent.brokerId,
         action: 'hold', outcome: 'auto', reason: decision.reason,
@@ -427,15 +402,14 @@ export async function POST(req: NextRequest) {
         targetCampaignId: decision.targetCampaignId ?? null,
         targetCampaignName: rivalName,
         alternatives: decision.alternatives,
-        ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
       }, { status: 409 })
     }
 
     const autonomy = await getAutonomyLevel()
     if (autonomy === 3 && decision.action === 'hold') {
-      // No new campaign serves on this path → return the reserved credits first,
-      // so a held launch never charges the broker.
-      const refunded = await releaseReservation()
+      // No new campaign serves on this path, so nothing will ever be billed for
+      // it — said out loud because that is the fact the caller cares about.
+      await releaseReservation()
       await recordDecision({
         projectSlug, campaignId: decision.targetCampaignId ?? null, brokerId: intent.brokerId,
         action: 'hold', outcome: 'auto', reason: decision.reason,
@@ -445,8 +419,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           campaignId: decision.targetCampaignId, held: true, decision, brokerId,
-          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
-        },
+          },
         { status: 200 },
       )
     }
@@ -510,17 +483,16 @@ export async function POST(req: NextRequest) {
     {
       const ads = await checkPageAds(launchPageId).catch(() => null)
       if (ads && blocksPageAds(ads.verdict)) {
-        // Nothing has been created yet and the reserved credits go straight
-        // back — a refusal that quietly held a broker's credits would be a
-        // second failure on top of the first.
-        const refunded = await releaseReservation()
+        // Nothing has been created yet, so nothing will be billed. A refusal
+        // that also cost the broker money would be a second failure on top of
+        // the first.
+        await releaseReservation()
         return NextResponse.json({
           error: pageAdsRefusal(ads.pageName),
           type: 'validation',
           subcode: 1487202,
           pageId: ads.pageId,
-          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
-        }, { status: 400 })
+          }, { status: 400 })
       }
     }
 
@@ -558,17 +530,12 @@ export async function POST(req: NextRequest) {
       endTimeIso:       permitEndTime,
     })
 
-    // Launch succeeded → the ad WILL serve, so the reservation is now committed.
-    // Clearing the flag first is the whole point: everything below is
-    // bookkeeping, and a throw in bookkeeping used to fall into the catch below
-    // and REFUND a live campaign — the broker got funded ad spend for free and
-    // the ledger said "did not launch/serve".
-    reserved = false
+    // Launch succeeded → the ad WILL serve. From here the settlement sync bills
+    // it against what it actually delivers; this route's job with money is over.
     try {
       await attributeCampaign(result.campaignId)
       // The request's receipt: it is a campaign now.
       if (fulfilsRequest) await markRequestLaunched(fulfilsRequest.id, result.campaignId).catch(() => {})
-      await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
       await recordCampaignProject(result.campaignId, projectSlug) // link for the router
       // WHICH AUDIENCE THIS CAME FROM. The launch resolves a named audience
       // into a targeting spec and then, until now, forgot the name — so the
@@ -615,7 +582,7 @@ export async function POST(req: NextRequest) {
       // Not connected → persist a local campaign (mirrors the Google flow) so
       // the wizard's success screen + detail page work end to end. A demo campaign
       // never serves an ad, so release the reservation (attribute, don't charge).
-      const refunded = await releaseReservation()
+      await releaseReservation()
       const local = await createLocalCampaign(body, brokerId)
       await attributeCampaign(local.campaignId)
       await recordCampaignProject(local.campaignId, projectSlug)
@@ -626,12 +593,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           ...local, brokerId, demo: true, decision,
-          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
-        },
+          },
         { status: 201 },
       )
     }
-    // A real launch failed → nothing serves → return the reserved credits.
+    // A real launch failed → nothing serves → nothing is ever billed for it.
     await releaseReservation()
     if (err instanceof MetaApiError) {
       return NextResponse.json(

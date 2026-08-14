@@ -3,11 +3,9 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { launchSearchCampaign } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type LaunchGoogleCampaignPayload } from '@/lib/google/types'
 import { createLocalCampaign } from '@/lib/google/local-store'
-import {
-  deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance,
-} from '@/lib/freehold/credits-db'
-import { creditsForDailyBudget } from '@/lib/freehold/credits-shared'
-import { randomUUID } from 'crypto'
+import { canLaunch, LAUNCH_FLOOR_DAYS } from '@/lib/freehold/ad-settlement'
+import { ensureBankWallets, walletFor } from '@/lib/freehold/bank-db'
+import { listWallets } from '@/lib/freehold/wallet-db'
 
 export async function POST(req: Request) {
   const __auth = await requireSession()
@@ -43,75 +41,34 @@ export async function POST(req: Request) {
     ? (sessionUser.brokerId ?? sessionUser.email)
     : undefined
 
-  // Same rate as Meta, from the same shared derivation: 1 credit per AED 10 of
-  // funded daily budget. A Google campaign burns the broker's ad budget exactly
-  // like a Meta one, so it costs exactly the same credits.
-  const creditsToSpend = brokerId ? creditsForDailyBudget(body.dailyBudgetAED) : 0
-
-  // ── Money: RESERVE credits BEFORE launching (fail-closed) ────────────────────
-  // Mirrors app/api/meta/launch: the debit is atomic (row-locked, balance
-  // re-derived under the lock) and booked under a placeholder reference, so two
-  // concurrent launches serialise and neither can overspend. The balance check
-  // below is only the fast, friendly 402 — the reservation is the authority. If
-  // the launch then fails, or falls back to a local campaign that never serves,
-  // the reservation is released.
-  const reservationRef = `res-${randomUUID()}`
-  let reserved = false
-  if (brokerId && creditsToSpend > 0) {
-    // Friendly pre-check ONLY. A null balance means "no account yet" OR "the
-    // read failed" — telling a broker they are out of credits because a query
-    // errored is a lie.
-    const bal = await getCreditBalance(brokerId)
-    if (bal && bal.balance < creditsToSpend) {
+  // ── Money: A GATE, NOT A CHARGE ─────────────────────────────────────────────
+  //
+  // Mirrors app/api/meta/launch, and must: a Google campaign burns the same
+  // wallet as a Meta one, so it is billed the same way — on what the platform
+  // actually spends, settled every AED 10 by the settlement sync, never on the
+  // daily budget at launch. NOTHING IS RESERVED HERE and nothing may be:
+  // charging at launch AND on delivery bills the same campaign twice.
+  let walletBalance = 0
+  if (brokerId) {
+    await ensureBankWallets()
+    const walletId = await walletFor(brokerId, sessionUser.name || brokerId)
+    walletBalance = (await listWallets()).find((w) => w.id === walletId)?.balance ?? 0
+    const gate = canLaunch(walletBalance, body.dailyBudgetAED)
+    if (!gate.ok) {
       return NextResponse.json(
-        { error: 'Insufficient credits to launch this campaign.', balance: bal.balance, required: creditsToSpend },
+        {
+          error: 'Not enough Cash to run this campaign.',
+          balance: gate.haveAed,
+          required: gate.needAed,
+          reason: `Ads are billed on what they actually spend. Starting one needs ${LAUNCH_FLOOR_DAYS} days of budget in your wallet.`,
+        },
         { status: 402 },
       )
     }
-    const reservation = await deductCreditsForCampaign(brokerId, reservationRef, body.campaignName, creditsToSpend)
-    if (!reservation.ok) {
-      // A failure that is NOT about the balance must say so: reporting "out of
-      // credits" for a database error sends the broker to Finance for a refill
-      // that will not help.
-      if (reservation.reason === 'insufficient') {
-        return NextResponse.json(
-          { error: 'Insufficient credits to launch this campaign.', balance: reservation.balance ?? 0, required: creditsToSpend },
-          { status: 402 },
-        )
-      }
-      return NextResponse.json(
-        {
-          error: reservation.reason === 'invalid'
-            ? 'That daily budget does not convert to a valid number of credits.'
-            : 'Could not reserve credits for this campaign, so nothing was launched. Please try again.',
-          required: creditsToSpend,
-        },
-        { status: reservation.reason === 'invalid' ? 400 : 500 },
-      )
-    }
-    reserved = true
   }
 
-  // Give the reserved credits back when a launch does NOT actually serve an ad.
-  // Returns false when the ledger write failed — the credits are then still
-  // held, and the caller must say so rather than report a clean outcome.
-  async function releaseReservation(): Promise<boolean> {
-    if (!reserved || !brokerId) return true
-    const refund = await refundCredits(
-      brokerId, reservationRef, creditsToSpend, 'Refund: campaign did not launch/serve',
-    ).catch(() => ({ ok: false as const }))
-    if (!refund.ok) {
-      // Keep `reserved` true so a later attempt in this request retries, and
-      // leave a trace an operator can reconcile the ledger from.
-      console.error(
-        '[google/campaigns/launch] credit refund FAILED — broker credits are still held',
-        { brokerId, reservationRef, credits: creditsToSpend },
-      )
-      return false
-    }
-    reserved = false
-    return true
-  }
+  /** Nothing is reserved, so nothing is released — see the Meta route. */
+  async function releaseReservation(): Promise<boolean> { return true }
 
   try {
     const result = await launchSearchCampaign(body)
@@ -120,9 +77,7 @@ export async function POST(req: Request) {
     // Clearing the flag FIRST is the lesson the Meta route learned the hard way:
     // everything below is bookkeeping, and a throw in bookkeeping must never
     // fall into the catch and refund a live campaign.
-    reserved = false
     try {
-      await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
     } catch (bookkeepingErr) {
       console.error('[google/campaigns/launch] post-launch bookkeeping failed', bookkeepingErr)
     }
@@ -133,20 +88,18 @@ export async function POST(req: Request) {
       // Not connected → persist the campaign locally (created paused) so the
       // wizard completes and the new campaign appears in the list. A local
       // campaign never serves an ad, so the reservation goes back.
-      const refunded = await releaseReservation()
+      await releaseReservation()
       const campaign = await createLocalCampaign(body, brokerId)
       return NextResponse.json({
         success: true, campaign, campaignId: campaign.id, demo: true, brokerId,
-        ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
       })
     }
-    // A real launch failed → nothing serves → return the reserved credits.
-    const refunded = await releaseReservation()
+    // A real launch failed → nothing serves → nothing is ever billed for it.
+    await releaseReservation()
     if (e instanceof GoogleApiError) {
       return NextResponse.json(
         {
           error: e.message, details: e.details,
-          ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
         },
         { status: e.status },
       )
@@ -154,7 +107,6 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: 'Unexpected error',
-        ...(refunded ? {} : { creditsRefunded: false, creditsHeld: creditsToSpend }),
       },
       { status: 500 },
     )
