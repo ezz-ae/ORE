@@ -16,13 +16,14 @@
  *
  * AND IT IS SHOWN IN MONEY. The ledger counts whole units because an INTEGER
  * column is what keeps a balance safe from rounding — that is a storage
- * decision, and it had leaked out as the vocabulary. "4 points" is a token
- * nobody can price; "AED 40 of ad spend" is the same fact in the currency the
- * person works in, and it is ten times the number, because a unit is AED 10.
+ * decision, and it had leaked out as the vocabulary. "4 points" was a token
+ * nobody could price. One Cash is one dirham now, so the stored number IS the
+ * money and there is nothing left to translate.
  *
- * Never a bare "AED 40" beside a balance, always "of ad spend": this is
- * advertising budget somebody earned the right to spend, not cash they can
- * withdraw, and the difference has to survive being screenshotted.
+ * The word is still "Cash" rather than "AED", and that difference has to
+ * survive being screenshotted: this is company money spendable THROUGH the
+ * system, and a bare "AED 40" beside a balance invites somebody to read it as
+ * cash they can withdraw.
  *
  * The rules are pure and live in lib/freehold/points.ts. This screen reads.
  */
