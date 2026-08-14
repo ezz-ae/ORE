@@ -189,6 +189,7 @@ export const TOOLS: ToolDef[] = [
   { id: 'fin.home',        href: `${FI}/finance`,              labelKey: 'tools.fin.home',        group: 'money', app: 'finance', Icon: DollarSign,    keywords: 'finance money revenue overview' },
   { id: 'fin.invoices',    href: `${FI}/finance/invoices`,     labelKey: 'tools.fin.invoices',    group: 'money', app: 'finance', Icon: Receipt,       keywords: 'invoices billing charge client' },
   { id: 'fin.payments',    href: `${FI}/finance/payments`,     labelKey: 'tools.fin.payments',    group: 'money', app: 'finance', Icon: CreditCard,    keywords: 'payments expenses received paid' },
+  { id: 'me.points',       href: `${FI}/points`,               labelKey: 'tools.me.points',       group: 'money', app: 'finance', Icon: Coins,         keywords: 'my points rating rewards earned back accurate calls refund' },
   { id: 'fin.credits',     href: `${FI}/finance/credits`,      labelKey: 'tools.fin.credits',     group: 'money', app: 'finance', Icon: Coins,         keywords: 'credits points allocate top up balance' },
   { id: 'fin.wallets',     href: `${FI}/finance/wallets`,      labelKey: 'tools.fin.wallets',     group: 'money', app: 'finance', Icon: Landmark,      keywords: 'bank wallet ads coin account number transfer treasury capital liquidity ledger' },
   { id: 'fin.creditRules', href: `${FI}/finance/credit-rules`, labelKey: 'tools.fin.creditRules', group: 'money', app: 'finance', Icon: Scale,         keywords: 'credit rules earning quota tiers' },
