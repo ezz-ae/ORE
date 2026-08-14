@@ -362,6 +362,27 @@ anywhere in the event body.
 
 *Guard:* `click-identity-test.ts`.
 
+## The ledger counts units; a broker reads dirhams
+
+`CREDIT_VALUE_AED = 10`. **One ledger unit is AED 10 of ad spend, not AED 1**, so
+a unit is not a dirham and calling it one would understate every balance in the
+product by an order of magnitude.
+
+The ledger counts whole units because an INTEGER column is what keeps a balance
+safe from rounding and drift. That is a **storage** decision, and it had leaked
+out as the **vocabulary** — "4 points" is a token nobody can price.
+
+`aedOf` / `aedText` (`credits-shared.ts`) are the one conversion, and everything
+a broker reads goes through them. Always written **"of ad spend"**, never a bare
+"AED 400" beside a balance: this is advertising budget somebody earned the right
+to spend, not cash they can withdraw, and that distinction has to survive being
+screenshotted.
+
+Counts stay counts. "6 calls were wrong" is a number of leads; rendering it as
+AED 60 would read as a debt.
+
+*Guard:* `points-test.ts`.
+
 ## Points — rating pays, and a self-fulfilling rating pays nothing
 
 `rating-loop.ts` states the problem: a rating that changes nothing costs

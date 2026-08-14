@@ -30,6 +30,7 @@ import {
   type RatingClaim, type ClaimSettlement,
 } from '../lib/freehold/points'
 import { VALUABLE_RATING, AVOID_RATING, DEAL_RATING } from '../lib/freehold/lead-stages'
+import { aedOf, aedText, CREDIT_VALUE_AED } from '../lib/freehold/credits-shared'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -233,6 +234,32 @@ console.log('\n── every verdict is reachable ──')
     RATING_BANDS.every((b) => [0, 5, 8, 10].some((r) => bandOf(r) === b)))
   check('a point is a whole point',
     Number.isInteger(POINTS_PER_ACCURATE_RATING) && POINTS_PER_ACCURATE_RATING > 0)
+}
+
+console.log('\n── a broker reads money, not a token ──')
+{
+  // The ledger counts whole units because an INTEGER column is what keeps a
+  // balance safe from rounding. That is a STORAGE decision, and it had leaked
+  // out as the vocabulary — "4 points" is a token nobody can price.
+  check('a unit is worth ten dirhams of ad spend', CREDIT_VALUE_AED === 10, String(CREDIT_VALUE_AED))
+  // SO A UNIT IS NOT A DIRHAM. Calling one a dirham would understate every
+  // balance in the product by an order of magnitude.
+  check('…so four units read as AED 40, not as 4', aedOf(4) === 40, String(aedOf(4)))
+  check('the written form carries the currency', aedText(4) === 'AED 40', aedText(4))
+  check('a big balance is grouped so it can be read', aedText(1234) === 'AED 12,340', aedText(1234))
+  check('nothing is nothing, not NaN', aedOf(0) === 0 && aedText(0) === 'AED 0')
+  check('a nonsense balance never renders NaN', aedOf(NaN) === 0, String(aedOf(NaN)))
+
+  const page = readFileSync(
+    join(process.cwd(), 'app/freehold-intelligence/points/page.tsx'), { encoding: 'utf8' })
+  check('the balance is rendered in dirhams', /value=\{data\.balance === null \? '—' : aedText\(/.test(page))
+  check('…and so is what rating earned back', /value=\{aedText\(data\.paid\)\}/.test(page))
+  check('…and the ceiling', /ceiling: aedText\(data\.ceiling\)/.test(page))
+
+  // THE PER-VERDICT NUMBERS ARE COUNTS OF LEADS AND MUST STAY COUNTS. "6 calls
+  // were wrong" is the fact; AED 60 beside it would read as a debt.
+  check('the verdict counts are not dressed up as money',
+    !/aedText\(n\)/.test(page), 'a lead count is being rendered as currency')
 }
 
 console.log('\n── the scheme is wired where it says it is ──')

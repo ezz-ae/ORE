@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * MY POINTS — what rating leads has earned this broker, and why the rest did not.
+ * WHAT RATING HAS EARNED — in dirhams of ad spend, not in tokens.
  *
  * The scheme only works if people can see it. A broker who rates fifty leads
  * and cannot tell which calls came back is being asked to take a payout on
@@ -14,6 +14,16 @@
  * half the score missing, and the half it hides is the half that would teach
  * somebody to rate better.
  *
+ * AND IT IS SHOWN IN MONEY. The ledger counts whole units because an INTEGER
+ * column is what keeps a balance safe from rounding — that is a storage
+ * decision, and it had leaked out as the vocabulary. "4 points" is a token
+ * nobody can price; "AED 40 of ad spend" is the same fact in the currency the
+ * person works in, and it is ten times the number, because a unit is AED 10.
+ *
+ * Never a bare "AED 40" beside a balance, always "of ad spend": this is
+ * advertising budget somebody earned the right to spend, not cash they can
+ * withdraw, and the difference has to survive being screenshotted.
+ *
  * The rules are pure and live in lib/freehold/points.ts. This screen reads.
  */
 import { useCallback, useEffect, useState } from 'react'
@@ -22,6 +32,7 @@ import { Coins, Loader2, ArrowUpRight } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { CLAIM_VERDICTS, type ClaimVerdict } from '@/lib/freehold/points'
+import { aedText } from '@/lib/freehold/credits-shared'
 
 interface Points {
   paid: number
@@ -92,14 +103,14 @@ export default function PointsPage() {
         Icon={Coins}
         eyebrow={t('points.eyebrow')}
         title={t('points.title')}
-        subtitle={t('points.sub', { per: data.perRating })}
+        subtitle={t('points.sub', { per: aedText(data.perRating) })}
       />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t('points.stat.balance')}
-          value={data.balance === null ? '—' : data.balance.toLocaleString('en-US')}
+          value={data.balance === null ? '—' : aedText(data.balance)}
           hint={data.balance === null ? t('points.stat.noAccount') : undefined} />
-        <StatCard label={t('points.stat.earned')} value={data.paid.toLocaleString('en-US')}
+        <StatCard label={t('points.stat.earned')} value={aedText(data.paid)}
           hint={t('points.stat.earnedHint', { rated })} />
         {/* A hit rate on nothing is not 0% — it is a number nobody has yet. */}
         <StatCard label={t('points.stat.hitRate')}
@@ -113,7 +124,9 @@ export default function PointsPage() {
           paying and assumes the scheme is broken. */}
       <p className="mt-4 text-[12px] text-slate-500">
         {data.ceiling > 0
-          ? t('points.ceiling', { earned: data.paid, ceiling: data.ceiling, left: data.remaining })
+          ? t('points.ceiling', {
+              earned: aedText(data.paid), ceiling: aedText(data.ceiling), left: aedText(data.remaining),
+            })
           : t('points.ceilingNone')}
       </p>
 
@@ -135,6 +148,8 @@ export default function PointsPage() {
                   : (data.byVerdict[v] ?? 0)
                 if (n === 0) return null
                 return (
+                  // The number here is a COUNT OF LEADS, never money — "6 calls
+                  // were wrong" is the fact, and AED 60 would read as a debt.
                   <li key={v} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <span className={`w-10 shrink-0 text-right text-[15px] font-semibold tabular-nums ${TONE[v]}`}>
                       {n}
