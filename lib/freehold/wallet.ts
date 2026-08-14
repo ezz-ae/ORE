@@ -31,6 +31,16 @@ export type Coins = number
 export type WalletKind =
   /** The one account coin is issued FROM. May go negative — that is the float. */
   | 'treasury'
+  /**
+   * THE BANK. Cash that has been minted or deposited and NOT YET SIGNED OUT.
+   *
+   * It is its own account rather than a number on the treasury because the
+   * distinction is the whole cheque model: money sitting here has never moved,
+   * so it belongs to nobody and any admin may burn it. The moment it leaves
+   * this wallet an admin has put their name on it. A balance cannot record
+   * that; a transfer out of a real account can.
+   */
+  | 'bank'
   /** The company's own spending account. */
   | 'operations'
   /** The autonomous ads budget. Brokers and the machine both draw on coin. */
@@ -88,7 +98,7 @@ export interface Transfer {
  * rather than becoming a transfer to a wallet that happens to exist.
  */
 const KIND_CODE: Record<WalletKind, string> = {
-  treasury: '10', operations: '20', lead_machine: '21', broker: '30',
+  treasury: '10', bank: '11', operations: '20', lead_machine: '21', broker: '30',
 }
 const CODE_KIND: Record<string, WalletKind> = Object.fromEntries(
   Object.entries(KIND_CODE).map(([k, v]) => [v, k as WalletKind]),
@@ -237,7 +247,7 @@ export interface TreasuryPosition {
   liquidity: Coins
   /** Committed to running campaigns. */
   inUse: Coins
-  /** Issued but not yet distributed — still in operations. */
+  /** Issued and not yet handed to anybody — sitting in the bank or operations. */
   undistributed: Coins
 }
 
@@ -251,8 +261,12 @@ export function treasuryPosition(wallets: Wallet[]): TreasuryPosition {
   // The treasury's negative balance IS the coin in circulation.
   const capital = treasury ? Math.max(0, -treasury.balance) : spending.reduce((n, w) => n + w.balance + w.held, 0)
   const inUse = spending.reduce((n, w) => n + w.held, 0)
-  const undistributed = spending.filter((w) => w.kind === 'operations').reduce((n, w) => n + w.balance, 0)
-  const liquidity = spending.filter((w) => w.kind !== 'operations').reduce((n, w) => n + w.balance, 0)
+  // The bank counts as undistributed, not as liquidity. Cash nobody has signed
+  // out is not money anyone can spend — reading it as liquidity would tell the
+  // company it has working capital that no broker can actually reach.
+  const house = (k: WalletKind) => k === 'operations' || k === 'bank'
+  const undistributed = spending.filter((w) => house(w.kind)).reduce((n, w) => n + w.balance, 0)
+  const liquidity = spending.filter((w) => !house(w.kind)).reduce((n, w) => n + w.balance, 0)
   return { capital, liquidity, inUse, undistributed }
 }
 
