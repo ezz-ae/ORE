@@ -66,19 +66,22 @@ export const CLAIM_VERDICTS = [
 export type ClaimVerdict = (typeof CLAIM_VERDICTS)[number]
 
 /**
- * Points returned for one accurate rating.
+ * Cash returned for one accurate rating.
  *
- * One point. It is deliberately the smallest movement the ledger can make: the
- * scheme has to be worth a broker's ten seconds without ever becoming a better
- * business than selling property. A broker who rates fifty leads accurately in
- * a month earns back fifty points — about what one modest campaign costs — and
- * they had to be right about fifty leads to get it.
+ * Ten Cash, which is ten dirhams of ad budget. The scheme has to be worth a
+ * broker's ten seconds without ever becoming a better business than selling
+ * property: rate fifty leads accurately in a month and you earn back AED 500 —
+ * about what one modest campaign costs — and you had to be RIGHT about fifty
+ * leads to get it.
  *
- * Whole points only. The ledger column is INTEGER (credits-shared.ts) and a
+ * The reward did not change when the unit did. This was 1 credit at AED 10 a
+ * credit; it is 10 Cash at AED 1 a Cash. Same ten dirhams.
+ *
+ * Whole units only. The ledger column is INTEGER (credits-shared.ts) and a
  * fractional reward would be silently rounded by Postgres into either nothing
  * or double.
  */
-export const POINTS_PER_ACCURATE_RATING = 1
+export const POINTS_PER_ACCURATE_RATING = 10
 
 /**
  * The most a broker may earn back, as a share of what they spent.

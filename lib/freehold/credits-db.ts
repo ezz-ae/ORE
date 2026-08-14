@@ -6,6 +6,8 @@ import {
   isCreditTier,
   CYCLE_REFERENCE_PREFIX,
   TIER_MONTHLY_QUOTA,
+  REDENOMINATION_FACTOR,
+  REDENOMINATION_REFERENCE,
   type CreditTier,
 } from '@/lib/freehold/credits-shared'
 
@@ -286,6 +288,20 @@ async function ensureCreditsSchemaOnce(): Promise<void> {
   `)
   await ddl(`CREATE INDEX IF NOT EXISTS idx_ad_spend_broker ON ad_spend_allocations(broker_id)`)
   await ddl(`CREATE INDEX IF NOT EXISTS idx_ad_spend_campaign ON ad_spend_allocations(campaign_id)`)
+
+  // The re-denomination's memory. One row, written by the first run and read by
+  // every run after it — see `redenominateToCash`. It exists so the migration
+  // has a CUTOFF: money that arrived after the scale changed is already in the
+  // new scale and must never be multiplied again.
+  await ddl(`
+    CREATE TABLE IF NOT EXISTS credit_redenominations (
+      id      TEXT PRIMARY KEY,
+      factor  INTEGER NOT NULL,
+      cutoff  TIMESTAMPTZ NOT NULL,
+      run_by  TEXT,
+      run_at  TIMESTAMPTZ DEFAULT now()
+    )
+  `)
 
   await ddl(`
     CREATE OR REPLACE VIEW broker_credit_balances AS
@@ -739,6 +755,163 @@ export async function earnCreditsForDeal(
   } catch {
     return { ok: false, reason: 'error' }
   }
+}
+
+// ─── The re-denomination to Cash ─────────────────────────────────────────────
+
+export interface RedenominationResult {
+  ok: boolean
+  /** Accounts that had already been scaled before this run. */
+  alreadyDone: number
+  /** Accounts scaled by THIS run. */
+  scaled: number
+  /** Cash added across all accounts. */
+  addedCash: number
+  reason?: 'error'
+}
+
+/**
+ * SCALE EVERY EXISTING BALANCE INTO THE NEW UNIT.
+ *
+ * A unit is a tenth of what it was, so a stored balance means a tenth of what it
+ * meant. Shipping the rate change without this would have quietly taken 90% of
+ * every broker's ad budget — the number on their screen would not even move,
+ * which is why it would have gone unnoticed until somebody could not launch a
+ * campaign they had paid for.
+ *
+ * ── IT IS AN ENTRY, NOT A REWRITE ────────────────────────────────────────
+ *
+ * The obvious implementation is `UPDATE credit_ledger SET amount = amount * 10`.
+ * That is the wrong shape for a money ledger: it rewrites history, so afterwards
+ * nobody can tell what a broker was actually granted last March, and a half-run
+ * migration leaves rows in two scales with no way to tell them apart.
+ *
+ * Instead each account gets ONE adjustment entry worth (factor − 1) × its old
+ * balance. The ledger stays append-only, the entry is visible in the broker's
+ * own history with a note saying what happened, and the arithmetic is auditable
+ * forever. The unique index on (broker_id, type, reference) makes running it
+ * twice a no-op at the DATABASE, not merely in this function.
+ *
+ * ── THE CUTOFF IS WHY IT IS SAFE TO RE-RUN ───────────────────────────────
+ *
+ * The first run stamps a cutoff and every run reads it back. Only ledger rows
+ * written BEFORE the cutoff are scaled, so a broker who joined after the switch
+ * — whose money is already in the new unit — is never touched, and a run that
+ * dies halfway can simply be run again.
+ *
+ * DELIBERATELY MANUAL. It is triggered by an admin from the bank screen and not
+ * by a deploy hook or a lazy read, because it moves real money and the person
+ * who owns the books should be the person who decides when the books move.
+ */
+export async function redenominateToCash(runBy: string): Promise<RedenominationResult> {
+  const empty: RedenominationResult = { ok: false, alreadyDone: 0, scaled: 0, addedCash: 0 }
+  try {
+    await ensureCreditsSchema()
+
+    // Claim (or read back) the cutoff. INSERT … ON CONFLICT DO NOTHING then
+    // SELECT: two admins pressing the button together agree on one cutoff
+    // rather than each stamping their own.
+    await query(
+      `INSERT INTO credit_redenominations (id, factor, cutoff, run_by)
+       VALUES ($1, $2, now(), $3)
+       ON CONFLICT (id) DO NOTHING`,
+      [REDENOMINATION_REFERENCE, REDENOMINATION_FACTOR, runBy],
+    )
+    const stamp = await query<{ cutoff: string; factor: number }>(
+      `SELECT cutoff::text, factor FROM credit_redenominations WHERE id = $1`,
+      [REDENOMINATION_REFERENCE],
+    )
+    const cutoff = stamp[0]?.cutoff
+    const factor = stamp[0]?.factor ?? REDENOMINATION_FACTOR
+    if (!cutoff) return { ...empty, reason: 'error' }
+
+    const accounts = await query<{ broker_id: string }>(
+      `SELECT broker_id FROM broker_credit_accounts ORDER BY broker_id`,
+      [],
+    )
+
+    let alreadyDone = 0
+    let scaled = 0
+    let addedCash = 0
+
+    for (const { broker_id: brokerId } of accounts) {
+      // One account per transaction, under the same row lock every spend takes,
+      // so a broker launching a campaign mid-migration cannot interleave with
+      // their own scaling. One big transaction would hold every account locked
+      // for the length of the run.
+      const moved = await withTransaction(async (q) => {
+        const account = await lockAccount(q, brokerId)
+        if (!account.locked) return 0
+
+        const rows = await q<{ balance: number; allocated: number }>(
+          `SELECT ${BALANCE_SUM('')} AS balance,
+                  (SELECT COALESCE(allocated, 0)::integer
+                     FROM broker_credit_accounts WHERE broker_id = $1) AS allocated
+           FROM credit_ledger
+           WHERE broker_id = $1 AND created_at < $2::timestamptz`,
+          [brokerId, cutoff],
+        )
+        const oldBalance = rows[0]?.balance ?? 0
+        const oldAllocated = rows[0]?.allocated ?? 0
+        const top = (factor - 1) * oldBalance
+
+        // A zero or negative balance gets no entry — there is nothing to scale,
+        // and writing a 0 row would fail isValidCreditAmount anyway. An overdrawn
+        // account is left for a human: multiplying a debt by ten silently is not
+        // a migration, it is a decision.
+        if (top <= 0 || !isValidCreditAmount(top)) return 0
+
+        const booked = await insertLedgerOnce(q, {
+          brokerId,
+          type: 'adjustment',
+          amount: top,
+          note: `Re-denominated to Cash — 1 Cash = AED 1 (was ${oldBalance} × AED ${factor})`,
+          reference: REDENOMINATION_REFERENCE,
+          meta: {
+            factor,
+            balance_before: oldBalance,
+            balance_after: oldBalance * factor,
+            cutoff,
+          },
+          createdBy: runBy,
+        })
+        if (!booked) return 0
+
+        // `allocated` is a stored column (the usage bar's denominator), unlike
+        // total_spent which the view re-derives from the ledger and which
+        // therefore scales itself. Left alone it would read "1,200 of 40 used".
+        await q(
+          `UPDATE broker_credit_accounts
+           SET allocated = $2, updated_at = now()
+           WHERE broker_id = $1`,
+          [brokerId, oldAllocated * factor],
+        )
+        return top
+      })
+
+      if (moved > 0) { scaled++; addedCash += moved } else { alreadyDone++ }
+    }
+
+    return { ok: true, alreadyDone, scaled, addedCash }
+  } catch {
+    return { ...empty, reason: 'error' }
+  }
+}
+
+/** Has the re-denomination already run? The bank screen asks before offering
+ *  the button, so nobody is invited to press something that will do nothing. */
+export async function redenominationStatus(): Promise<
+  { ran: false } | { ran: true; at: string; by: string | null }
+> {
+  try {
+    await ensureCreditsSchema()
+    const rows = await query<{ run_at: string; run_by: string | null }>(
+      `SELECT run_at::text, run_by FROM credit_redenominations WHERE id = $1`,
+      [REDENOMINATION_REFERENCE],
+    )
+    const row = rows[0]
+    return row ? { ran: true, at: row.run_at, by: row.run_by } : { ran: false }
+  } catch { return { ran: false } }
 }
 
 /** Persist a broker's tier (creates the account row when missing). */

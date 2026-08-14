@@ -30,7 +30,22 @@ import {
   type RatingClaim, type ClaimSettlement,
 } from '../lib/freehold/points'
 import { VALUABLE_RATING, AVOID_RATING, DEAL_RATING } from '../lib/freehold/lead-stages'
-import { aedOf, aedText, CREDIT_VALUE_AED } from '../lib/freehold/credits-shared'
+import {
+  aedOf, cashText, CREDIT_VALUE_AED, TIER_MONTHLY_QUOTA, MAX_CREDIT_AMOUNT,
+  creditsEarnedForCommission, creditsForDailyBudget,
+  REDENOMINATION_FACTOR, REDENOMINATION_REFERENCE,
+} from '../lib/freehold/credits-shared'
+
+/**
+ * A source file with its comments removed.
+ *
+ * Every guard below that scans source must go through this. A rule's header
+ * states the pattern it forbids so the next reader knows WHY it is forbidden,
+ * and a scanner that reads prose as code fails on the explanation — which
+ * teaches people to delete the explanation.
+ */
+const stripComments = (src: string): string =>
+  src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -238,35 +253,70 @@ console.log('\n── every verdict is reachable ──')
 
 console.log('\n── a broker reads money, not a token ──')
 {
-  // The ledger counts whole units because an INTEGER column is what keeps a
-  // balance safe from rounding. That is a STORAGE decision, and it had leaked
-  // out as the vocabulary — "4 points" is a token nobody can price.
-  check('a unit is worth ten dirhams of ad spend', CREDIT_VALUE_AED === 10, String(CREDIT_VALUE_AED))
-  // SO A UNIT IS NOT A DIRHAM. Calling one a dirham would understate every
-  // balance in the product by an order of magnitude.
-  check('…so four units read as AED 40, not as 4', aedOf(4) === 40, String(aedOf(4)))
-  check('the written form carries the currency', aedText(4) === 'AED 40', aedText(4))
-  check('a big balance is grouped so it can be read', aedText(1234) === 'AED 12,340', aedText(1234))
-  check('nothing is nothing, not NaN', aedOf(0) === 0 && aedText(0) === 'AED 0')
+  // ONE CASH IS ONE DIRHAM. The unit used to be a "credit" worth AED 10, which
+  // made every balance a translation exercise and gave a real-money system
+  // arcade vocabulary. The identity is asserted here because everything else in
+  // this section is only true while it holds.
+  check('one Cash is one dirham', CREDIT_VALUE_AED === 1, String(CREDIT_VALUE_AED))
+  check('…so a balance of 40 is forty dirhams', aedOf(40) === 40, String(aedOf(40)))
+  check('the written form carries the word', cashText(40) === 'Cash 40', cashText(40))
+  check('a big balance is grouped so it can be read',
+    cashText(12_340) === 'Cash 12,340', cashText(12_340))
+  check('nothing is nothing, not NaN', aedOf(0) === 0 && cashText(0) === 'Cash 0')
   check('a nonsense balance never renders NaN', aedOf(NaN) === 0, String(aedOf(NaN)))
+
+  // THE MONEY DID NOT CHANGE WHEN THE UNIT DID. Every constant denominated in
+  // units had to move by the same factor, or the re-denomination silently cut
+  // the product's economics to a tenth. Each of these is the old number × 10.
+  check('an accurate rating still returns ten dirhams',
+    POINTS_PER_ACCURATE_RATING * CREDIT_VALUE_AED === 10,
+    String(POINTS_PER_ACCURATE_RATING * CREDIT_VALUE_AED))
+  check('the tier quotas still buy the same ad budget',
+    TIER_MONTHLY_QUOTA.Starter === 120 && TIER_MONTHLY_QUOTA.Elite === 400,
+    `${TIER_MONTHLY_QUOTA.Starter}/${TIER_MONTHLY_QUOTA.Elite}`)
+  check('a closed deal still earns one percent of commission',
+    creditsEarnedForCommission(50_000) * CREDIT_VALUE_AED === 500,
+    String(creditsEarnedForCommission(50_000) * CREDIT_VALUE_AED))
+  check('a day of budget costs its own price',
+    creditsForDailyBudget(300) === 300, String(creditsForDailyBudget(300)))
+  check('the fail-closed ceiling is still AED 10m',
+    MAX_CREDIT_AMOUNT * CREDIT_VALUE_AED === 10_000_000, String(MAX_CREDIT_AMOUNT))
+
+  // AND EVERY STORED BALANCE HAD TO BE SCALED TO MATCH, or the rate change
+  // would have taken 90% of everybody's ad budget without moving a single
+  // number on screen — the quietest way a money system can rob someone.
+  check('the migration factor is the change in the unit',
+    REDENOMINATION_FACTOR * CREDIT_VALUE_AED === 10, String(REDENOMINATION_FACTOR))
+  // Comments stripped first. This suite has now twice failed on a header that
+  // NAMED the forbidden pattern in order to explain why it is forbidden — a
+  // guard that cannot tell prose from code punishes the documentation.
+  const db = stripComments(
+    readFileSync(join(process.cwd(), 'lib/freehold/credits-db.ts'), { encoding: 'utf8' }))
+  check('…and it is one appended entry, never a rewrite of history',
+    !/UPDATE\s+credit_ledger\s+SET\s+amount/i.test(db), 'the ledger is being rewritten in place')
+  check('…idempotent through the same unique index as every other movement',
+    /reference: REDENOMINATION_REFERENCE/.test(db))
+  check('…and bounded by a cutoff, so money that arrived after is left alone',
+    /created_at < \$2::timestamptz/.test(db))
+  check('the version is in the key, so a second re-denomination cannot reuse it',
+    /-v\d+$/.test(REDENOMINATION_REFERENCE), REDENOMINATION_REFERENCE)
 
   const page = readFileSync(
     join(process.cwd(), 'app/freehold-intelligence/points/page.tsx'), { encoding: 'utf8' })
-  check('the balance is rendered in dirhams', /value=\{data\.balance === null \? '—' : aedText\(/.test(page))
-  check('…and so is what rating earned back', /value=\{aedText\(data\.paid\)\}/.test(page))
-  check('…and the ceiling', /ceiling: aedText\(data\.ceiling\)/.test(page))
+  check('the balance is rendered as Cash', /value=\{data\.balance === null \? '—' : cashText\(/.test(page))
+  check('…and so is what rating earned back', /value=\{cashText\(data\.paid\)\}/.test(page))
+  check('…and the ceiling', /ceiling: cashText\(data\.ceiling\)/.test(page))
 
   // THE PER-VERDICT NUMBERS ARE COUNTS OF LEADS AND MUST STAY COUNTS. "6 calls
-  // were wrong" is the fact; AED 60 beside it would read as a debt.
+  // were wrong" is the fact; "Cash 6" beside it would read as a debt.
   check('the verdict counts are not dressed up as money',
-    !/aedText\(n\)/.test(page), 'a lead count is being rendered as currency')
+    !/cashText\(n\)/.test(page), 'a lead count is being rendered as currency')
 }
 
 console.log('\n── the scheme is wired where it says it is ──')
 {
   const read = (p: string) => readFileSync(join(process.cwd(), p), { encoding: 'utf8' })
-  const code = (p: string) =>
-    read(p).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+  const code = (p: string) => stripComments(read(p))
 
   // THE SNAPSHOT MUST BE TAKEN AT THE RATING. Settle against today's row and a
   // broker who edits after the outcome lands looks like somebody who called it

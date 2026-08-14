@@ -1,6 +1,30 @@
 /**
- * Credit economy vocabulary shared by server (credits-db.ts) and client pages.
+ * CASH — the money vocabulary shared by server (credits-db.ts) and client pages.
  * Kept free of server-only imports so 'use client' components can import it.
+ *
+ * ── ONE CASH IS ONE DIRHAM ───────────────────────────────────────────────
+ *
+ * The unit used to be a "credit" worth AED 10, and that was two mistakes in one
+ * number. It made every balance a translation exercise — a broker holding 40 of
+ * something had to be told what the something was worth before they knew
+ * whether they could afford a campaign — and "credit" is arcade vocabulary for
+ * a system that moves real company money through real ad accounts.
+ *
+ * So the unit is CASH and the rate is 1:1. A balance of 400 is AED 400. There
+ * is nothing to convert, nothing to explain, and no screen can be wrong about
+ * the rate because there is no rate.
+ *
+ * The rate constant stays (as 1) rather than being deleted: it is the one place
+ * that states the identity, the guard suite asserts it, and every arithmetic
+ * site keeps a name to point at instead of a bare literal that a later change
+ * could not find.
+ *
+ * WHEN THIS CHANGED, EVERY UNIT-DENOMINATED CONSTANT BELOW MOVED WITH IT
+ * (×10), and every stored balance was scaled by a one-off ledger adjustment —
+ * see `redenominateToCash` in credits-db.ts. Changing the rate without moving
+ * the constants would have silently cut the product's economics to a tenth;
+ * changing it without the ledger adjustment would have devalued every account
+ * anybody had already earned.
  */
 
 /** Real tier vocabulary — matches broker_credit_accounts.tier. */
@@ -8,68 +32,76 @@ export const CREDIT_TIERS = ['Starter', 'Growth', 'Pro', 'Elite'] as const
 export type CreditTier = (typeof CREDIT_TIERS)[number]
 
 /**
- * Monthly credit quota per tier — the single source of truth for UI + server.
+ * Monthly Cash quota per tier, in dirhams — the single source of truth for UI
+ * and server.
  *
  * The numbers are COMMERCIAL TERMS, not derived from any platform constraint:
  * they are what each subscription tier buys, set by whoever owns Freehold's
  * pricing. There is nothing in the code to balance them against — change them
  * only on a pricing decision, and expect brokers to notice: the grant job
  * tops accounts up to these values every month.
+ *
+ * These are the SAME commercial terms as the 12/18/25/40 credits they replaced —
+ * ten times the number because a unit is now a tenth of what it was. AED 120 to
+ * AED 400 of monthly ad budget, unchanged in money.
  */
 export const TIER_MONTHLY_QUOTA: Record<CreditTier, number> = {
-  Starter: 12,
-  Growth: 18,
-  Pro: 25,
-  Elite: 40,
+  Starter: 120,
+  Growth: 180,
+  Pro: 250,
+  Elite: 400,
 }
 
 export const isCreditTier = (value: unknown): value is CreditTier =>
   typeof value === 'string' && (CREDIT_TIERS as readonly string[]).includes(value)
 
-/** 1 credit = AED 10 of funded ad spend (matches the launch deduction:
- *  creditsToSpend = dailyBudgetAED / CREDIT_VALUE_AED). */
-export const CREDIT_VALUE_AED = 10
+/**
+ * ONE CASH IS ONE DIRHAM.
+ *
+ * Kept as a named constant rather than deleted so the identity has a place to
+ * be stated, asserted (points-test.ts) and pointed at. It is not a knob: moving
+ * it re-denominates the whole product, and doing that requires moving every
+ * constant in this file and running `redenominateToCash` again with a new
+ * reference. See the module header.
+ */
+export const CREDIT_VALUE_AED = 1
 
 /**
- * WHAT A LEDGER UNIT IS WORTH, IN THE MONEY PEOPLE THINK IN.
+ * A ledger amount in dirhams.
  *
  * The ledger counts whole units because an INTEGER column is what makes the
  * balance safe: no rounding, no drift, no fractional movement Postgres can
- * quietly halve. That is a storage decision and it should never have been a
- * VOCABULARY decision.
- *
- * "You earned 4 points" is a token. "You earned AED 40 of ad spend" is the same
- * fact in the currency the person actually works in, and it is TEN TIMES the
- * number — a unit is AED 10, so calling a unit a dirham would understate every
- * balance in the product by an order of magnitude.
- *
- * So the unit stays the storage and this is the display. Everything a broker
- * reads goes through here.
+ * quietly halve. At 1:1 that also means the stored number IS the dirham figure,
+ * which is the whole point of the re-denomination — the storage and the
+ * vocabulary finally agree, and there is no translation left to get wrong.
  */
 export const aedOf = (units: number): number =>
   Number.isFinite(units) ? Math.round(units * CREDIT_VALUE_AED) : 0
 
 /**
- * The AED figure as it is written on screen.
+ * A balance as it is written on screen.
  *
- * Always "of ad spend" at the call site, never bare: this is advertising budget
- * a broker has earned the right to spend, not cash they can withdraw, and a
- * bare "AED 400" beside a balance invites exactly that misreading.
+ * "Cash", not "AED", and the difference is deliberate: this is company money a
+ * person may spend THROUGH the system — on ads, and on what the bank pays out —
+ * and writing it as plain AED beside a bank balance invites somebody to read it
+ * as money they can withdraw at an ATM. Cash is the word the bank screen, the
+ * wallet and the broker's own page all use, and it is worth exactly a dirham.
  */
-export const aedText = (units: number): string =>
-  `AED ${aedOf(units).toLocaleString('en-US')}`
+export const cashText = (units: number): string =>
+  `Cash ${aedOf(units).toLocaleString('en-US')}`
 
 /**
- * Credits reserved for a campaign launch, for EVERY ad platform.
+ * Cash reserved for a campaign launch, for EVERY ad platform.
  *
  * One derivation, one rate: Meta and Google must charge a broker the same for
- * the same funded budget, so neither route re-derives "/ 10" of its own. Whole
- * credits only (the ledger column is INTEGER), minimum 1 — a funded campaign is
- * never free.
+ * the same funded budget, so neither route re-derives the conversion of its own.
+ * At 1:1 the daily budget IS the charge, which is the answer a broker would
+ * give if you asked them — AED 300 a day costs 300. Whole units only (the
+ * ledger column is INTEGER), minimum 1 — a funded campaign is never free.
  *
  * Returns 0 for a non-finite budget so a malformed payload can never produce a
  * NaN charge; every caller must still reject a non-numeric budget BEFORE this
- * point (0 credits = no reservation = a free launch, which is the bug this
+ * point (0 = no reservation = a free launch, which is the bug this
  * guard exists to make loud rather than to paper over).
  */
 export const creditsForDailyBudget = (dailyBudgetAED: number): number =>
@@ -90,8 +122,15 @@ export const CYCLE_REFERENCE_PREFIX = 'cycle:'
 export const isCycleGrantReference = (reference: string | null | undefined): boolean =>
   typeof reference === 'string' && reference.startsWith(CYCLE_REFERENCE_PREFIX)
 
-/** Earn rule: 1 credit per AED 1,000 of broker net commission, minimum 1. */
-export const EARN_AED_PER_CREDIT = 1000
+/**
+ * Earn rule: 1 Cash per AED 100 of broker net commission, minimum 1.
+ *
+ * The same commercial rate as the credit it replaced (1 credit — AED 10 — per
+ * AED 1,000). A broker who closes on AED 50,000 of net commission earns 500
+ * Cash, which is AED 500 of ad budget: one percent of what they made, back into
+ * finding the next buyer.
+ */
+export const EARN_AED_PER_CREDIT = 100
 
 export const creditsEarnedForCommission = (brokerTotalAED: number): number => {
   if (!Number.isFinite(brokerTotalAED)) return 1
@@ -99,17 +138,41 @@ export const creditsEarnedForCommission = (brokerTotalAED: number): number => {
 }
 
 /**
- * Sanity ceiling for a single ledger movement (1,000,000 credits = AED 10M of
- * funded ad spend). Not an economic rule — a fail-closed guard so a typo or a
- * malformed payload can never write an absurd amount into the ledger.
+ * Sanity ceiling for a single ledger movement — AED 10,000,000.
+ *
+ * Not an economic rule and not a permission: a fail-closed guard so a typo or a
+ * malformed payload can never write an absurd amount into the ledger. It is ten
+ * times the old number because a unit is a tenth of the old unit — the ceiling
+ * in MONEY is unchanged, which is the only reading of it that means anything.
  */
-export const MAX_CREDIT_AMOUNT = 1_000_000
+export const MAX_CREDIT_AMOUNT = 10_000_000
 
 /**
- * Every credit movement is a WHOLE, POSITIVE, finite number of credits. The
- * ledger column is INTEGER, so a float would be silently rounded by Postgres
- * and a negative would invert the sign convention (a negative 'spend' ADDS
- * credits). Validated at the library boundary, not just in the API routes.
+ * How much bigger the new unit count is than the old one.
+ *
+ * The old unit was a "credit" worth AED 10; the new unit is Cash worth AED 1.
+ * The MONEY did not change — a broker who held 40 credits held AED 400 then and
+ * holds 400 Cash now. Ten is that fact and nothing else: it is the old
+ * CREDIT_VALUE_AED divided by the new one, and every constant in this file was
+ * multiplied by it.
+ */
+export const REDENOMINATION_FACTOR = 10
+
+/**
+ * The idempotency key of the one-off balance migration (`redenominateToCash`).
+ *
+ * It carries a VERSION because a second re-denomination would need its own key
+ * and its own cutoff — reusing this one would silently do nothing, which is the
+ * worst outcome available to a money migration: it reports success while every
+ * balance stays a tenth of what it should be.
+ */
+export const REDENOMINATION_REFERENCE = 'redenominate:cash-1aed-v1'
+
+/**
+ * Every movement is a WHOLE, POSITIVE, finite number of Cash. The ledger column
+ * is INTEGER, so a float would be silently rounded by Postgres and a negative
+ * would invert the sign convention (a negative 'spend' ADDS money). Validated
+ * at the library boundary, not just in the API routes.
  */
 export const isValidCreditAmount = (value: unknown): value is number =>
   typeof value === 'number' &&
