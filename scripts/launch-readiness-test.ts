@@ -181,6 +181,40 @@ console.log('\n── every check and every state is reachable ──')
     noFix.length === 0, noFix.map((r) => r.id).join(','))
 }
 
+console.log('\n── the budget floor is this account\'s, not a constant ──')
+{
+  // THE WARNING WAS SILENT WHERE IT MATTERED. It fired below a fixed AED 150
+  // while the real floor — fifty leads a week at this account's own lead price
+  // — is several times that, so the entire range where a budget is too thin to
+  // ever learn anything passed without a word.
+  const atFixed = state({ dailyBudgetAed: 300 }, 'budget')
+  check('AED 300/day looks fine against the old constant', atFixed === 'ok', String(atFixed))
+
+  const real = state({ dailyBudgetAed: 300, learningFloorAed: 800 }, 'budget')
+  check('…and is warned against the account\'s real floor', real === 'warn', String(real))
+  check('the sentence carries the real number, not the constant',
+    rows({ dailyBudgetAed: 300, learningFloorAed: 800 })
+      .find((r) => r.id === 'budget')?.vars.learning === 800)
+
+  // An account that has never bought a lead has no price to compute one from,
+  // so the stated fallback stands rather than an invented figure.
+  check('with no measured price the stated fallback stands',
+    rows({ dailyBudgetAed: 300 }).find((r) => r.id === 'budget')?.vars.learning === LEARNING_DAILY_AED)
+  check('a nonsense floor falls back too',
+    rows({ dailyBudgetAed: 300, learningFloorAed: 0 }).find((r) => r.id === 'budget')?.vars.learning
+      === LEARNING_DAILY_AED)
+
+  // WARNED, NEVER BLOCKED. A small test budget is a legitimate thing to want,
+  // and refusing it would be this tool deciding how much of somebody's money
+  // is enough.
+  check('a thin budget is never a blocker',
+    state({ dailyBudgetAed: 300, learningFloorAed: 5000 }, 'budget') === 'warn')
+  check('…and Meta\'s own hard minimum still is',
+    state({ dailyBudgetAed: 10, learningFloorAed: 5000 }, 'budget') === 'blocked')
+  check('a budget above the real floor is simply fine',
+    state({ dailyBudgetAed: 900, learningFloorAed: 800 }, 'budget') === 'ok')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} launch-readiness rule(s) broken.`)
   process.exit(1)

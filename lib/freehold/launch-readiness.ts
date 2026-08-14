@@ -36,13 +36,28 @@ export const READINESS_STATES = ['ok', 'blocked', 'warn', 'pending'] as const
 export type ReadinessState = (typeof READINESS_STATES)[number]
 
 /**
- * Meta's own floor for a lead-optimised ad set to leave the learning phase in
- * a reasonable time — roughly fifty conversions in a week.
+ * The FALLBACK floor for leaving the learning phase, used only when nobody
+ * knows what a lead costs on this account yet.
  *
- * Below the daily budget that can buy those, the ad set never stabilises and
- * every number it produces is learning-phase noise. Warned, never blocked: a
- * small test budget is a legitimate thing to want, and refusing it would be
- * this tool deciding how much of somebody's money is enough.
+ * Meta needs roughly fifty conversions in a week; below the budget that buys
+ * those, an ad set never stabilises and every number it produces is
+ * learning-phase noise.
+ *
+ * AND 150 IS ALMOST ALWAYS THE WRONG NUMBER. The real floor is fifty leads a
+ * week at whatever a lead actually costs here — `dailyBudgetToLearn` has
+ * computed it all along. On this account, at an AED 112 lead, it is about
+ * AED 800 a day; at an AED 200 lead it is AED 1,430. So the warning fired
+ * below 150 and stayed silent through the entire range where a budget is
+ * genuinely too thin to ever learn anything, which is the range that wastes
+ * the money.
+ *
+ * The draft carries the real figure when the account has one (see
+ * `learningFloorAed`). This constant survives for the account that has never
+ * bought a lead and therefore has no price to compute one from.
+ *
+ * Warned, never blocked, either way: a small test budget is a legitimate thing
+ * to want, and refusing it would be this tool deciding how much of somebody's
+ * money is enough.
  */
 export const LEARNING_DAILY_AED = 150
 
@@ -98,6 +113,12 @@ export interface LaunchDraft {
   /** Words: at least a headline and a primary text. */
   hasCopy: boolean
   dailyBudgetAed: number | null
+  /**
+   * What this account's own lead price says a budget needs to be before the ad
+   * set can leave learning. undefined/null ⇒ nobody knows yet, and
+   * LEARNING_DAILY_AED stands in.
+   */
+  learningFloorAed?: number | null
   /** At least one audience selected or a persona chosen. */
   hasAudience: boolean
 }
@@ -212,13 +233,21 @@ export function readinessOf(d: LaunchDraft, now: Date = new Date()): ReadinessRo
     { hasCreative: d.hasCreative ? 1 : 0, hasCopy: d.hasCopy ? 1 : 0 }))
 
   // ── The budget ─────────────────────────────────────────────────────────
+  // Measured against what a lead ACTUALLY costs here when that is known. The
+  // fixed 150 was quiet through the whole range where a budget is too thin to
+  // ever learn — see LEARNING_DAILY_AED.
   const b = d.dailyBudgetAed
+  const floor = d.learningFloorAed != null && d.learningFloorAed > 0
+    ? Math.round(d.learningFloorAed)
+    : LEARNING_DAILY_AED
   rows.push(row('budget',
     b === null || b <= 0 ? 'pending'
       : b < META_MIN_DAILY_AED ? 'blocked'
-      : b < LEARNING_DAILY_AED ? 'warn'
+      : b < floor ? 'warn'
       : 'ok',
-    { budget: b ?? 0, min: META_MIN_DAILY_AED, learning: LEARNING_DAILY_AED }))
+    {
+      budget: b ?? 0, min: META_MIN_DAILY_AED, learning: floor,
+    }))
 
   // ── The audience ───────────────────────────────────────────────────────
   // Never a blocker. Meta will deliver to a broad audience, and there are real

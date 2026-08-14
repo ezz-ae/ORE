@@ -20,6 +20,8 @@ import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getLandingPublishState } from '@/lib/landing-pages'
 import { BRAND } from '@/lib/freehold/brand'
 import { preflightLanding, landingSlugOf } from '@/lib/freehold/landing-preflight'
+import { accountLeadPriceAed } from '@/lib/freehold/money-truth-db'
+import { dailyBudgetToLearn } from '@/lib/freehold/learning-phase'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -59,6 +61,15 @@ export async function GET(req: NextRequest) {
     permitExpiry = listing ? (listing.permitExpiry ?? null) : undefined
   }
 
+  // WHAT A BUDGET ACTUALLY HAS TO BE HERE. The strip warned below a fixed
+  // AED 150 while the real floor — fifty leads a week at this account's own
+  // lead price — is several times that, so the warning was silent through the
+  // whole range where a budget is too thin to ever learn anything. See
+  // LEARNING_DAILY_AED. null when nothing has been bought yet: an account with
+  // no lead price gets the stated fallback rather than an invented figure.
+  const leadPrice = metaConnected ? await accountLeadPriceAed().catch(() => null) : null
+  const learningFloorAed = leadPrice !== null ? Math.round(dailyBudgetToLearn(leadPrice)) : null
+
   let landingVerdict: string | null = null
   if (landingUrl) {
     const slug = landingSlugOf(landingUrl, BRAND.domain)
@@ -66,5 +77,8 @@ export async function GET(req: NextRequest) {
     landingVerdict = preflightLanding(landingUrl, state, { domain: BRAND.domain }).verdict
   }
 
-  return NextResponse.json({ metaConnected, pageId, pageAds, permitExpiry, landingVerdict })
+  return NextResponse.json({
+    metaConnected, pageId, pageAds, permitExpiry, landingVerdict,
+    learningFloorAed, leadPriceAed: leadPrice,
+  })
 }

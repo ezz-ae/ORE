@@ -454,7 +454,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'ready.said.creative.warn': 'Half an ad \u2014 it needs both a picture and the words.',
   'ready.said.creative.pending': 'Add a picture and the words.',
   'ready.said.budget.blocked': 'AED {budget}/day is under Meta\u2019s own minimum of {min}. Meta will refuse it.',
-  'ready.said.budget.warn': 'AED {budget}/day is legal but thin. Under about {learning}/day an ad set never settles, so its numbers stay noise.',
+  'ready.said.budget.warn': 'AED {budget}/day is allowed but thin. At what a lead costs here, an ad needs about AED {learning}/day before its numbers mean anything.',
   'ready.said.budget.pending': 'Set a daily budget.',
   'ready.said.audience.warn': 'No audience picked \u2014 this goes broad. Sometimes right, rarely on purpose.',
 
@@ -1535,7 +1535,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'ready.said.creative.warn': 'نصف إعلان — يحتاج صورة ونصًا معًا.',
   'ready.said.creative.pending': 'أضف صورة والنص.',
   'ready.said.budget.blocked': '{budget} درهم يوميًا أقل من حد ميتا نفسه ({min}). سترفضها ميتا.',
-  'ready.said.budget.warn': '{budget} درهم يوميًا مسموح لكنه ضئيل. تحت {learning} تقريبًا لا تستقر المجموعة الإعلانية، فتبقى أرقامها ضجيجًا.',
+  'ready.said.budget.warn': '{budget} درهم يوميًا مسموح لكنه ضئيل. بسعر العميل هنا، يحتاج الإعلان نحو {learning} درهم يوميًا قبل أن تعني أرقامه شيئًا.',
   'ready.said.budget.pending': 'حدّد ميزانية يومية.',
   'ready.said.audience.warn': 'لم يُختَر جمهور — سيذهب واسعًا. صحيح أحيانًا، ونادرًا عن قصد.',
 
@@ -2616,7 +2616,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'ready.said.creative.warn': 'Половина объявления — нужны и картинка, и текст.',
   'ready.said.creative.pending': 'Добавьте картинку и текст.',
   'ready.said.budget.blocked': '{budget} AED в день ниже собственного минимума Meta ({min}). Meta это отклонит.',
-  'ready.said.budget.warn': '{budget} AED в день допустимо, но мало. Ниже примерно {learning} в день группа объявлений не стабилизируется, и её цифры остаются шумом.',
+  'ready.said.budget.warn': '{budget} AED в день допустимо, но мало. При здешней цене заявки объявлению нужно около {learning} AED в день, чтобы его цифры что-то значили.',
   'ready.said.budget.pending': 'Задайте дневной бюджет.',
   'ready.said.audience.warn': 'Аудитория не выбрана — пойдёт широко. Иногда верно, редко намеренно.',
 
