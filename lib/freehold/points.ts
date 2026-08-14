@@ -60,7 +60,8 @@ export type LeadOutcome = (typeof LEAD_OUTCOMES)[number]
 
 /** Walkable — why a claim did or did not pay. Each renders its own sentence. */
 export const CLAIM_VERDICTS = [
-  'paid', 'wrong', 'notWorked', 'noForecast', 'knewTheAnswer', 'notFirst', 'tooEarly',
+  'paid', 'wrong', 'notWorked', 'noForecast', 'knewTheAnswer', 'notFirst',
+  'tooEarly', 'cappedOut',
 ] as const
 export type ClaimVerdict = (typeof CLAIM_VERDICTS)[number]
 
@@ -204,9 +205,15 @@ export function settleClaim(
 /**
  * The ceiling on what an account may earn back this cycle.
  *
- * Read from what the broker actually SPENT, so a broker who has bought nothing
- * can earn nothing — there is no lead to rate that their points paid for, and
- * an account that can earn without spending is a faucet.
+ * Read from what the broker actually SPENT IN THAT SAME CYCLE, so a broker who
+ * has bought nothing can earn nothing — there is no lead to rate that their
+ * points paid for, and an account that can earn without spending is a faucet.
+ *
+ * BOTH SIDES MUST BE THE SAME WINDOW. The first version handed this the
+ * LIFETIME spend while counting refunds only from the current cycle, so the
+ * ceiling grew for ever against a figure that reset every month: a two-year-old
+ * account could earn back half of everything it had ever spent, again, every
+ * single month. The cap was not slightly loose; it was not a cap.
  */
 export function refundCeiling(spentThisCycle: number): number {
   if (!Number.isFinite(spentThisCycle) || spentThisCycle <= 0) return 0
@@ -217,9 +224,15 @@ export function refundCeiling(spentThisCycle: number): number {
  * How many of these settlements may actually be paid, given the ceiling and
  * what has already been paid this cycle.
  *
- * Returns the settlements in order with the ones past the ceiling turned into
- * a plain zero rather than dropped — a broker who hit the cap should be able
- * to see that they hit it, not find rows silently missing.
+ * A row past the ceiling becomes `cappedOut`, NOT `tooEarly`, and that is not
+ * a cosmetic difference. The first version reused 'tooEarly' and the caller
+ * marks anything it settles as done — so a right call that arrived after the
+ * monthly cap was full was closed forever, worth nothing, and the screen told
+ * the broker it was "too soon to tell". They earned that point and lost it
+ * silently.
+ *
+ * `cappedOut` is a distinct verdict so the caller can leave the claim OPEN and
+ * pay it next cycle, and so the screen can say what actually happened.
  */
 export function applyCeiling(
   settled: ClaimSettlement[],
@@ -237,7 +250,7 @@ export function applyCeiling(
       return s
     }
     cappedOut += s.points
-    return { ...s, points: 0, verdict: 'tooEarly' as ClaimVerdict }
+    return { ...s, points: 0, verdict: 'cappedOut' as ClaimVerdict }
   })
   return { settled: out, paid, cappedOut }
 }
