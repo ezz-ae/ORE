@@ -45,6 +45,7 @@ import { MONEY_RUNGS, MONEY_VERDICTS } from '../lib/freehold/money-truth'
 import { DAY_BLOCKS, EXPLAINED_VERDICTS } from '../lib/freehold/hour-truth'
 import { SPLIT_REASONS } from '../lib/freehold/budget-split'
 import { DECAY_VERDICTS } from '../lib/freehold/creative-decay'
+import { CLAIM_VERDICTS } from '../lib/freehold/points'
 import {
   VIEW_TEMPLATES, VIEW_COLUMNS, RISK_KINDS, VIEW_RANGES, VIEW_ACCESS, VIEW_SCHEDULES,
 } from '../lib/freehold/smart-view'
@@ -207,6 +208,12 @@ console.log('\n── recommendations ──')
   // fixes — a new picture, or leave the picture alone and look at the audience
   // — so a missing word here prints a key where the instruction should be.
   family('lm.designs.decay', 'lm.designs.decay.', DECAY_VERDICTS.filter((v) => v !== 'fresh' && v !== 'tooEarly'))
+
+  // The broker's points page shows EVERY verdict, including the ones that paid
+  // nothing — a missing word there leaves a raw key on somebody's payout
+  // screen, which is the screen they will trust least to begin with.
+  family('points.verdict', 'points.verdict.', CLAIM_VERDICTS)
+  family('points.why', 'points.why.', CLAIM_VERDICTS)
 
   family('sv.q', 'sv.q.', VIEW_TEMPLATES)
   family('sv.qsub', 'sv.qsub.', VIEW_TEMPLATES)
