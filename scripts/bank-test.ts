@@ -6,23 +6,31 @@
  * it does not say is WHO may make a movement, and that is the half a finance
  * system is judged on.
  *
- * Four rules, and this suite is here so none of them can be softened by a
- * future screen that finds them inconvenient:
+ * Six rules, and this suite exists so none of them can be softened by a future
+ * screen that finds them inconvenient:
  *
- *   1. Nobody takes from anybody. A transfer's source is the actor's own
- *      wallet, structurally — there is no branch that accepts somebody else's.
- *   2. A team leader funds their own team and no one else's.
- *   3. An admin may destroy only what they themselves deposited.
- *   4. Every dirham that leaves carries a receipt, and a spend that can prove
+ *   1. Nobody takes from anybody. A send's source is the actor's own wallet,
+ *      structurally — there is no branch that accepts somebody else's.
+ *   2. Any wallet may send to any wallet. There is no hierarchy in a payment.
+ *   3. A deposit is real money and carries a transaction number; a mint has no
+ *      cash in front of it and is admins only. The two are never summed.
+ *   4. Cash in the bank belongs to nobody and any admin may burn it. Once moved
+ *      it is a cheque, and only the admin who moved it may burn it — however
+ *      far it has travelled since.
+ *   5. A claimed deposit is not money until somebody has read the statement.
+ *   6. Every dirham that leaves carries a receipt, and a spend that can prove
  *      nothing is refused.
  *
  * Pure — no network, no clock. Runs in `pnpm guards`.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
-  BANK_ACTIONS, SPEND_KINDS, BANK_REFUSALS, USE_STATES, SELF_EVIDENCING,
-  IDLE_AFTER_DAYS,
-  isAdmin, hasProof, authorise, withdrawalReference, readUse, bankImbalance,
-  type Actor, type MoveRequest, type SpendProof, type AccountUse,
+  BANK_ACTIONS, BANK_SIDES, CASH_ORIGINS, CASH_STATES, DEPOSIT_STATES,
+  SPEND_KINDS, BANK_REFUSALS, USE_STATES, SELF_EVIDENCING, IDLE_AFTER_DAYS,
+  isAdmin, hasProof, authorise, mayBurn, cashState, isSpendable, backing,
+  withdrawalReference, readUse, bankImbalance,
+  type Actor, type MoveRequest, type SpendProof, type AccountUse, type CashLot,
 } from '../lib/freehold/bank'
 
 let failures = 0
@@ -30,9 +38,10 @@ const ok = (m: string) => console.log(`  ✓ ${m}`)
 const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}\n      got: ${got}`) }
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
-const admin: Actor = { userId: 'u-admin', role: 'admin', walletId: 'w-admin', teamMemberIds: [] }
-const leader: Actor = { userId: 'u-lead', role: 'team_leader', walletId: 'w-lead', teamMemberIds: ['u-b1', 'u-b2'] }
-const broker: Actor = { userId: 'u-b1', role: 'broker', walletId: 'w-b1', teamMemberIds: [] }
+const admin: Actor = { userId: 'u-admin', role: 'admin', walletId: 'w-admin' }
+const admin2: Actor = { userId: 'u-admin2', role: 'admin', walletId: 'w-admin2' }
+const leader: Actor = { userId: 'u-lead', role: 'team_leader', walletId: 'w-lead' }
+const broker: Actor = { userId: 'u-b1', role: 'broker', walletId: 'w-b1' }
 
 const req = (o: Partial<MoveRequest> & { action: MoveRequest['action'] }): MoveRequest => ({
   amount: 100, fromWalletId: null, toWalletId: 'w-b1', ...o,
@@ -41,206 +50,294 @@ const why = (a: Actor, r: MoveRequest) => {
   const v = authorise(a, r)
   return v.ok ? 'ok' : v.refusal
 }
+const lot = (o: Partial<CashLot> = {}): CashLot => ({
+  id: 'lot-1', origin: 'mint', createdBy: 'u-admin', transactionRef: null,
+  deposit: 'cleared', amount: 1000, movedBy: null, remaining: 1000, closedBy: null, ...o,
+})
 
-console.log('\n── new money enters in one place ──')
+console.log('\n── the two doors Cash comes through ──')
 {
-  check('an admin may deposit', why(admin, req({ action: 'deposit', fromWalletId: 'treasury' })) === 'ok')
-  check('a team leader may not', why(leader, req({ action: 'deposit', fromWalletId: 'treasury' })) === 'notAdmin')
-  check('a broker certainly may not', why(broker, req({ action: 'deposit', fromWalletId: 'treasury' })) === 'notAdmin')
-  check('…and a deposit needs somewhere to land',
-    why(admin, req({ action: 'deposit', toWalletId: null })) === 'noSuchWallet')
+  // A DEPOSIT IS REAL MONEY AND ANYONE MAY RECORD ONE. Somebody paying for
+  // their own ads is not an administrative act; refusing to let them record it
+  // is how a finance system ends up with a WhatsApp thread beside it.
+  check('a broker may record money they actually paid in',
+    why(broker, req({ action: 'deposit', transactionRef: 'TT-8891' })) === 'ok')
+  check('…so may a team leader',
+    why(leader, req({ action: 'deposit', transactionRef: 'TT-8891' })) === 'ok')
 
-  check('allocating is an admin\'s move too',
-    why(admin, req({ action: 'allocate' })) === 'ok' && why(leader, req({ action: 'allocate' })) === 'notAdmin')
+  // …AND IT CARRIES THE NUMBER THE STATEMENT CAN BE READ AGAINST. Without one
+  // there is nothing to clear the claim against, so it is not a deposit at all.
+  check('a deposit with no transaction number is refused',
+    why(broker, req({ action: 'deposit' })) === 'noTransactionNumber')
+  check('…and neither is whitespace a transaction number',
+    why(broker, req({ action: 'deposit', transactionRef: '   ' })) === 'noTransactionNumber')
+
+  // A MINT IS CASH WITH NO CASH IN FRONT OF IT, so only an admin may make one.
+  check('only an admin mints', why(admin, req({ action: 'mint' })) === 'ok')
+  check('a team leader may not mint', why(leader, req({ action: 'mint' })) === 'notAdmin')
+  check('a broker may not mint', why(broker, req({ action: 'mint' })) === 'notAdmin')
+
+  // The absence of a reference IS the difference between the doors, so it is a
+  // field on the lot rather than a flag two screens could set differently.
+  const minted = lot()
+  check('a mint carries no transaction reference', minted.transactionRef === null)
+  check('…and is spendable the moment it is made', isSpendable(minted))
 }
 
-console.log('\n── NOBODY TAKES FROM ANYBODY ──')
+console.log('\n── a claim is not money until somebody reads the statement ──')
 {
-  // The rule the whole design rests on. A transfer's source must be the
-  // actor's own wallet — there is no branch that accepts anybody else's, which
-  // is what makes this structural rather than a rule to remember.
-  check('a leader moving their OWN money to their team is fine',
-    why(leader, req({ action: 'transfer', fromWalletId: 'w-lead', toWalletId: 'w-b1', toUserId: 'u-b1' })) === 'ok')
+  // THE HOLE THIS CLOSES: if typing a transaction number credited a wallet, any
+  // broker could type any number and give themselves real ad spend. Depositing
+  // stays open to everyone; the money becomes spendable when the bank agrees.
+  const claimed = lot({ origin: 'deposit', transactionRef: 'TT-1', deposit: 'claimed' })
+  check('a recorded-but-uncleared deposit is not spendable', !isSpendable(claimed))
+  const cleared = lot({ origin: 'deposit', transactionRef: 'TT-1', deposit: 'cleared' })
+  check('…and is, once the statement agrees', isSpendable(cleared))
+  check('an uncleared deposit cannot even be burned',
+    why(admin, req({ action: 'burn', lot: claimed })) === 'notCleared')
 
-  check('a leader reaching into a member\'s wallet is refused',
-    why(leader, req({ action: 'transfer', fromWalletId: 'w-b1', toWalletId: 'w-lead', toUserId: 'u-lead' }))
-      === 'notYourMoney')
-  check('a broker pulling from the leader is refused',
-    why(broker, req({ action: 'transfer', fromWalletId: 'w-lead', toWalletId: 'w-b1', toUserId: 'u-b1' }))
-      === 'notYourMoney')
-  // EVEN AN ADMIN CANNOT PULL. They can issue and allocate, which is a
-  // different movement with its own name; taking from a wallet is not on the
-  // list at all.
-  check('even an ADMIN cannot transfer out of somebody else\'s wallet',
-    why(admin, req({ action: 'transfer', fromWalletId: 'w-b1', toWalletId: 'w-admin', toUserId: 'u-admin' }))
-      === 'notYourMoney')
-  check('somebody with no account cannot transfer',
-    why({ ...broker, walletId: null }, req({ action: 'transfer', fromWalletId: 'w-b1' })) === 'notYourMoney')
+  // AND THE THREE FIGURES NEVER MERGE. A single "we have AED 900,000" blending
+  // real deposits with printed money is not a balance, it is a mood.
+  const b = backing([
+    lot({ origin: 'deposit', deposit: 'cleared', amount: 200 }),
+    lot({ origin: 'deposit', deposit: 'claimed', amount: 50 }),
+    lot({ origin: 'deposit', deposit: 'rejected', amount: 999 }),
+    lot({ origin: 'mint', amount: 700 }),
+  ])
+  check('real money is counted as real money', b.depositedAed === 200, String(b.depositedAed))
+  check('printed money is counted separately', b.mintedAed === 700, String(b.mintedAed))
+  check('an unread claim is counted as neither', b.claimedAed === 50, String(b.claimedAed))
+  check('a rejected deposit is counted nowhere',
+    b.depositedAed + b.mintedAed + b.claimedAed === 950,
+    String(b.depositedAed + b.mintedAed + b.claimedAed))
 }
 
-console.log('\n── a leader funds their own team and no one else\'s ──')
+console.log('\n── in the bank it is float; once it moves it is a cheque ──')
 {
-  const out = req({ action: 'transfer', fromWalletId: 'w-lead', toWalletId: 'w-x', toUserId: 'u-stranger' })
-  check('somebody outside the team is refused', why(leader, out) === 'notYourTeam')
-  check('the second member of the team is fine',
-    why(leader, req({ action: 'transfer', fromWalletId: 'w-lead', toWalletId: 'w-b2', toUserId: 'u-b2' })) === 'ok')
-  // An admin's transfer is not bounded by a team, because they lead everybody.
-  check('an admin\'s own money may go to anyone',
-    why(admin, req({ action: 'transfer', fromWalletId: 'w-admin', toWalletId: 'w-x', toUserId: 'u-stranger' })) === 'ok')
-  check('a broker with no team can fund nobody',
-    why(broker, req({ action: 'transfer', fromWalletId: 'w-b1', toWalletId: 'w-b2', toUserId: 'u-b2' }))
-      === 'notYourTeam')
+  const float = lot()
+  check('unmoved Cash is in the bank', cashState(float) === 'inBank', cashState(float))
+  check('…and belongs to nobody, so any admin may burn it', mayBurn(admin2, float).ok)
+  check('…including the one who minted it', mayBurn(admin, float).ok)
+
+  // THE MOMENT IT MOVES IT HAS AN OWNER, and the owner is the mover.
+  const cheque = lot({ movedBy: 'u-admin' })
+  check('moved Cash is a cheque', cashState(cheque) === 'cheque', cashState(cheque))
+  check('the admin who moved it may burn it', mayBurn(admin, cheque).ok)
+  const refused = mayBurn(admin2, cheque)
+  check('another admin may not — however senior',
+    !refused.ok && refused.refusal === 'notYourCheque')
+
+  // …AND THE RIGHT DOES NOT TRAVEL WITH THE MONEY. The bank can see from the
+  // log where a cheque went; the signature on it stays where it was written.
+  const holder: Actor = { userId: 'u-b1', role: 'admin', walletId: 'w-b1' }
+  const travelled = mayBurn(holder, cheque)
+  check('nor may whoever is holding it now',
+    !travelled.ok && travelled.refusal === 'notYourCheque')
+
+  // TEARING UP A CHEQUE NEEDS BOTH SIGNATURES ON IT. "Any admin may burn what
+  // is still in the bank" and "nobody burns Cash they did not create" disagree
+  // about one case, and this is where they are reconciled: in the bank is the
+  // carve-out, and outside it BOTH rules apply.
+  const split = lot({ createdBy: 'u-admin', movedBy: 'u-admin2' })
+  const mover = mayBurn(admin2, split)
+  check('the mover alone cannot burn what somebody else created',
+    !mover.ok && mover.refusal === 'notYourMint')
+  const minter = mayBurn(admin, split)
+  check('…and the creator alone cannot burn what somebody else signed out',
+    !minter.ok && minter.refusal === 'notYourCheque')
+  // This deadlocks that parcel, deliberately. Being unable to destroy money is
+  // recoverable — it is still there to be spent or sent back. Being able to
+  // destroy somebody else's is not.
+  check('a cheque with two different names on it can be burned by neither',
+    !mayBurn(admin, split).ok && !mayBurn(admin2, split).ok)
+
+  // A ledger where anybody can annihilate anybody's money is not a bank.
+  check('a broker cannot burn at all',
+    why(broker, req({ action: 'burn', lot: float })) === 'notAdmin')
+  check('nor a team leader',
+    why(leader, req({ action: 'burn', lot: float })) === 'notAdmin')
+  check('and nobody burns more than the parcel holds',
+    why(admin, req({ action: 'burn', lot: lot({ remaining: 40 }), amount: 100 })) === 'badAmount')
+
+  // Both endings are reachable, so neither is dead vocabulary.
+  check('a fully spent parcel reads as spent',
+    cashState(lot({ remaining: 0, closedBy: 'spent' })) === 'spent')
+  check('a fully burned parcel reads as burned',
+    cashState(lot({ remaining: 0, closedBy: 'burned' })) === 'burned')
 }
 
-console.log('\n── you may only destroy what you put in ──')
+console.log('\n── signing Cash out of the bank ──')
 {
-  // Without this bound one admin could annihilate another's float, and a
-  // ledger where anybody can destroy anybody's money is not a bank whatever
-  // the double entry says.
-  check('burning inside your own deposits is fine',
-    why(admin, req({ action: 'burn', amount: 3000, toWalletId: null, burnableByActor: 5000 })) === 'ok')
-  check('burning more than you deposited is refused',
-    why(admin, req({ action: 'burn', amount: 6000, toWalletId: null, burnableByActor: 5000 }))
-      === 'moreThanYouDeposited')
-  check('having deposited nothing, you may burn nothing',
-    why(admin, req({ action: 'burn', amount: 1, toWalletId: null, burnableByActor: 0 }))
-      === 'moreThanYouDeposited')
-  check('…and it is exactly the boundary, not one either side',
-    why(admin, req({ action: 'burn', amount: 5000, toWalletId: null, burnableByActor: 5000 })) === 'ok')
-  check('a team leader cannot burn at all',
-    why(leader, req({ action: 'burn', amount: 1, toWalletId: null, burnableByActor: 99_999 })) === 'notAdmin')
+  // THE MOVE IS WHAT CREATES THE CHEQUE AND NAMES ITS OWNER, so an admin signs
+  // it into their OWN wallet. Wanting somebody else to have it is a send, made
+  // in the open, afterwards — which puts a named human between the printing
+  // press and a broker's balance.
+  check('an admin moves Cash into their own wallet',
+    why(admin, req({ action: 'move', toWalletId: 'w-admin' })) === 'ok')
+  check('…and not straight into somebody else\'s',
+    why(admin, req({ action: 'move', toWalletId: 'w-b1' })) === 'notYourMoney')
+  check('a broker cannot sign money out of the bank',
+    why(broker, req({ action: 'move', toWalletId: 'w-b1' })) === 'notAdmin')
+
+  // THE OLD "ALLOCATE" IS GONE. It was the one movement whose source was not
+  // the actor's own wallet, and while it existed "nobody takes from anybody"
+  // was a sentence rather than a shape.
+  check('there is no allocate action left to reach for',
+    !(BANK_ACTIONS as readonly string[]).includes('allocate'), BANK_ACTIONS.join(','))
+}
+
+console.log('\n── any wallet to any wallet, out of your own pocket ──')
+{
+  // ANY WALLET MAY SEND TO ANY WALLET. People pay each other; a payment has no
+  // hierarchy and no team boundary.
+  check('a broker sends to another broker',
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: 'w-b9' })) === 'ok')
+  check('a team leader sends outside their own team',
+    why(leader, req({ action: 'send', fromWalletId: 'w-lead', toWalletId: 'w-x' })) === 'ok')
+  check('a broker sends to an admin',
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: 'w-admin' })) === 'ok')
+
+  // WHAT NOBODY CAN DO IS REACH INTO SOMEBODY ELSE'S WALLET. This is the rule
+  // the whole module is shaped around.
+  check('nobody sends from a wallet that is not theirs',
+    why(broker, req({ action: 'send', fromWalletId: 'w-lead', toWalletId: 'w-b1' })) === 'notYourMoney')
+  check('…and an admin is not an exception',
+    why(admin, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: 'w-admin' })) === 'notYourMoney')
+  check('somebody with no wallet cannot send',
+    why({ ...broker, walletId: null }, req({ action: 'send', fromWalletId: 'w-b1' })) === 'notYourMoney')
+  check('a send to nowhere is refused',
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: null })) === 'noSuchWallet')
+  check('a send to yourself is refused',
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: 'w-b1' })) === 'sameWallet')
+
+  // THE STRUCTURAL CLAIM, CHECKED AS A SHAPE. A permission test passes until
+  // somebody adds a branch; this fails the moment one is added.
+  const src = readFileSync(join(process.cwd(), 'lib/freehold/bank.ts'), { encoding: 'utf8' })
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+  const sendBranch = src.slice(src.indexOf("case 'send'"), src.indexOf("case 'burn'"))
+  check('the send branch requires the source to be the actor\'s own wallet',
+    /req\.fromWalletId !== actor\.walletId/.test(sendBranch))
+  check('…and has no escape hatch for a role',
+    !/isAdmin/.test(sendBranch), 'a role check appeared in the send branch')
 }
 
 console.log('\n── every dirham that leaves carries its receipt ──')
 {
+  const proof = (o: Partial<SpendProof> = {}): SpendProof => ({ kind: 'other', ...o })
+
   // ADS PAY THEMSELVES. The ad account holds the invoice and the campaign id
-  // ties the spend to what it bought — a stronger record than a number
-  // somebody types, so no cheque is asked for.
-  const adSpend: SpendProof = { kind: 'ads', campaignId: '120xxx' }
-  check('an ads spend is proved by its campaign', hasProof(adSpend))
-  check('…or by the ad account it came out of', hasProof({ kind: 'ads', adAccountId: 'act_1' }))
-  check('an ads spend with neither is not proved', !hasProof({ kind: 'ads' }))
+  // ties the spend to what it bought — a stronger record than a typed number,
+  // and it reconciles against Meta's and Google's own invoices.
+  check('a campaign id proves an ad spend', hasProof(proof({ kind: 'ads', campaignId: '120' })))
+  check('so does the ad account', hasProof(proof({ kind: 'ads', adAccountId: 'act_9' })))
+  check('an ad spend proving neither is refused', !hasProof(proof({ kind: 'ads' })))
 
   // EVERYTHING ELSE LEAVES THROUGH A BANK, AND A BANK GIVES YOU A REFERENCE.
-  check('a commission needs a cheque or transaction number',
-    hasProof({ kind: 'commission', reference: 'CHQ-4471' }))
-  check('…and is refused without one', !hasProof({ kind: 'commission' }))
-  check('a campaign id does not prove a commission',
-    !hasProof({ kind: 'commission', campaignId: '120xxx' }))
+  check('a commission needs a cheque number', !hasProof(proof({ kind: 'commission' })))
+  check('…and is fine with one', hasProof(proof({ kind: 'commission', reference: 'CHQ-4471' })))
+  check('a campaign id does NOT prove a salary',
+    !hasProof(proof({ kind: 'salary', campaignId: '120' })))
 
-  // AN IMAGE IS NEVER ENOUGH ON ITS OWN. A photograph with no number attached
-  // cannot be reconciled against a statement.
-  check('a photograph alone proves nothing',
-    !hasProof({ kind: 'vendor', imageUrl: 'https://x/cheque.jpg' }))
-  // …and is never REQUIRED either. A system that refuses a real payment
-  // because nobody could photograph the cheque teaches people to keep the
-  // books somewhere else.
-  check('…and is never required when there is a reference',
-    hasProof({ kind: 'vendor', reference: 'TXN-9' }))
-  check('whitespace is not a reference', !hasProof({ kind: 'other', reference: '   ' }))
+  // AN IMAGE IS EVIDENCE, NEVER PROOF. A photograph with no number attached
+  // cannot be reconciled against anything — and a system that refuses to record
+  // a real payment because nobody could photograph the cheque teaches people to
+  // keep the books somewhere else.
+  check('a photograph alone does not authorise a withdrawal',
+    !hasProof(proof({ kind: 'vendor', imageUrl: 'https://x/y.jpg' })))
+  check('…and a payment with a reference and no photograph is fine',
+    hasProof(proof({ kind: 'vendor', reference: 'TT-2231' })))
 
-  check('a spend with no receipt at all is refused',
-    why(broker, req({ action: 'spend', fromWalletId: 'w-b1', spend: { kind: 'other' } })) === 'noProof')
-  check('…and one with a receipt goes through',
-    why(broker, req({ action: 'spend', fromWalletId: 'w-b1', spend: { kind: 'other', reference: 'TXN-1' } }))
-      === 'ok')
+  check('a spend with nothing behind it is refused',
+    why(broker, req({ action: 'spend', fromWalletId: 'w-b1', spend: proof() })) === 'noProof')
+  check('a proven spend goes through',
+    why(broker, req({ action: 'spend', fromWalletId: 'w-b1', spend: proof({ reference: 'X' }) })) === 'ok')
   check('a broker cannot spend from a wallet that is not theirs',
-    why(broker, req({ action: 'spend', fromWalletId: 'w-lead', spend: adSpend })) === 'notYourMoney')
-  check('…but an admin may spend a company wallet',
-    why(admin, req({ action: 'spend', fromWalletId: 'w-ops', spend: adSpend })) === 'ok')
+    why(broker, req({ action: 'spend', fromWalletId: 'w-lead', spend: proof({ reference: 'X' }) })) === 'notYourMoney')
+  check('an admin may spend from a company wallet',
+    why(admin, req({ action: 'spend', fromWalletId: 'w-company', spend: proof({ reference: 'X' }) })) === 'ok')
 
-  check('only ads prove themselves', SELF_EVIDENCING.length === 1 && SELF_EVIDENCING[0] === 'ads')
+  // The withdraw record files ads under the campaign, so the record, the
+  // campaign page and the platform invoice read against each other with nobody
+  // re-typing an id.
   check('an ads withdrawal is filed under its campaign',
-    withdrawalReference(adSpend) === '120xxx', withdrawalReference(adSpend))
-  check('…and everything else under its reference',
-    withdrawalReference({ kind: 'commission', reference: ' CHQ-4471 ' }) === 'CHQ-4471')
+    withdrawalReference({ kind: 'ads', campaignId: '120', reference: 'ignored' }) === '120')
+  check('…falling back to the ad account',
+    withdrawalReference({ kind: 'ads', adAccountId: 'act_9' }) === 'act_9')
+  check('everything else is filed under its cheque',
+    withdrawalReference({ kind: 'salary', reference: 'CHQ-1' }) === 'CHQ-1')
 }
 
-console.log('\n── a malformed movement is refused before anything else ──')
+console.log('\n── the books, and who is sitting on money ──')
 {
-  // Being told "you are not an admin" about a request that was never valid is
-  // a confusing thing to read.
-  for (const bad of [0, -5, 1.5, NaN, Infinity]) {
-    check(`an amount of ${bad} is refused as an amount`,
-      why(admin, req({ action: 'deposit', amount: bad as number })) === 'badAmount')
-  }
-  check('…even for an action the actor could not perform anyway',
-    why(broker, req({ action: 'burn', amount: -1 })) === 'badAmount')
-}
-
-console.log('\n── who used it, and who did not ──')
-{
-  const use = (o: Partial<Omit<AccountUse, 'state'>>) => readUse({
-    walletId: 'w', userId: 'u', label: 'x',
-    fundedAed: 1000, spentAed: 400, balanceAed: 600, daysSinceSpend: 2, ...o,
-  })
-
-  check('money going out is spending', use({}) === 'spending')
-  // IDLE MONEY IS THE FINDING. Overspending announces itself; money allocated
-  // and never touched is invisible until somebody asks why the pipeline is thin.
-  check('a fortnight untouched while holding money is idle',
-    use({ daysSinceSpend: IDLE_AFTER_DAYS }) === 'idle')
-  check('never spent at all is idle too', use({ daysSinceSpend: null }) === 'idle')
-  check('…but not before the fortnight is up', use({ daysSinceSpend: IDLE_AFTER_DAYS - 1 }) === 'spending')
-
-  // EMPTY AND IDLE ARE DIFFERENT. Telling somebody they are sitting on money
-  // when they have none is how a report loses its reader.
-  check('an account with nothing in it is empty, not idle',
-    use({ fundedAed: 0, spentAed: 0, balanceAed: 0, daysSinceSpend: null }) === 'empty')
-  check('one that spent everything it was given is spending, not idle',
-    use({ balanceAed: 0, daysSinceSpend: null }) === 'spending')
-  check('a negative balance is overdrawn, whatever else is true',
-    use({ balanceAed: -5, daysSinceSpend: null }) === 'overdrawn')
-}
-
-console.log('\n── the books add up, and say how far out they are ──')
-{
-  const balanced = { depositedAed: 10_000, burnedAed: 1_000, withdrawnAed: 4_000, heldAed: 5_000 }
-  check('a balanced bank reports zero', bankImbalance(balanced) === 0, String(bankImbalance(balanced)))
   // A NUMBER, NOT A BOOLEAN. "The books are wrong" is not actionable; "the
   // books are AED 40 out" is.
-  check('money that appeared is reported as an amount',
-    bankImbalance({ ...balanced, heldAed: 4_960 }) === 40,
-    String(bankImbalance({ ...balanced, heldAed: 4_960 })))
-  check('…and money that vanished is reported with its sign',
-    bankImbalance({ ...balanced, heldAed: 5_040 }) === -40)
-  check('an empty bank is balanced',
-    bankImbalance({ depositedAed: 0, burnedAed: 0, withdrawnAed: 0, heldAed: 0 }) === 0)
+  check('books that add up read zero',
+    bankImbalance({ issuedAed: 1000, burnedAed: 100, withdrawnAed: 400, heldAed: 500 }) === 0)
+  check('…and books that do not say how far out they are',
+    bankImbalance({ issuedAed: 1000, burnedAed: 100, withdrawnAed: 400, heldAed: 460 }) === 40)
+
+  const use = (o: Partial<AccountUse>): AccountUse['state'] => readUse({
+    walletId: 'w', userId: 'u', label: 'x',
+    fundedAed: 1000, spentAed: 0, balanceAed: 1000, daysSinceSpend: 1, ...o,
+  })
+  // IDLE MONEY IS THE FINDING. Overspending announces itself; money that was
+  // sent and never used is invisible until somebody asks why the pipeline is
+  // thin.
+  check('money sitting untouched for a fortnight is idle',
+    use({ daysSinceSpend: IDLE_AFTER_DAYS }) === 'idle')
+  check('money that has never been spent at all is idle',
+    use({ daysSinceSpend: null }) === 'idle')
+  check('…but yesterday is not a fortnight', use({ daysSinceSpend: 1 }) === 'spending')
+
+  // EMPTY IS NOT IDLE. Telling somebody they are sitting on money when they
+  // have none is how a report loses its reader.
+  check('an account with nothing in it is empty, not idle',
+    use({ balanceAed: 0, fundedAed: 0, daysSinceSpend: null }) === 'empty')
+  check('an account that spent everything it was given is spending',
+    use({ balanceAed: 0, fundedAed: 1000, spentAed: 1000 }) === 'spending')
+  check('an overdrawn account says so first',
+    use({ balanceAed: -5, fundedAed: 0, daysSinceSpend: null }) === 'overdrawn')
 }
 
-console.log('\n── every list is walkable and every member reachable ──')
+console.log('\n── the vocabulary is walkable and nothing in it is dead ──')
 {
-  check('every action is authorised by name',
-    BANK_ACTIONS.every((a) => {
-      const v = authorise(admin, req({ action: a, fromWalletId: 'w-admin', burnableByActor: 1e9,
-        spend: { kind: 'ads', campaignId: 'c' } }))
-      return typeof v.ok === 'boolean'
-    }), BANK_ACTIONS.join(','))
-  check('every spend kind has a proof rule',
-    SPEND_KINDS.every((k) => typeof hasProof({ kind: k, reference: 'r' }) === 'boolean'))
-  check('every use state is reachable', USE_STATES.length === 4)
-  check('isAdmin agrees with the role list',
-    isAdmin('admin') && isAdmin('ceo') && !isAdmin('team_leader') && !isAdmin('broker'))
-
-  const seen = new Set<string>()
-  for (const [a, r] of [
-    [leader, req({ action: 'deposit' })],
-    [leader, req({ action: 'transfer', fromWalletId: 'w-b1' })],
-    [leader, req({ action: 'transfer', fromWalletId: 'w-lead', toUserId: 'u-x' })],
-    [admin, req({ action: 'burn', amount: 9, burnableByActor: 1 })],
-    [broker, req({ action: 'spend', fromWalletId: 'w-b1', spend: { kind: 'other' } })],
-    [admin, req({ action: 'deposit', amount: -1 })],
-    [admin, req({ action: 'deposit', toWalletId: null })],
-  ] as Array<[Actor, MoveRequest]>) {
-    const v = authorise(a, r)
-    if (!v.ok) seen.add(v.refusal)
+  // Every list a screen renders from is a const array, so the UI can enumerate
+  // it and the i18n audit can see the keys.
+  for (const [name, list] of [
+    ['actions', BANK_ACTIONS], ['sides', BANK_SIDES], ['origins', CASH_ORIGINS],
+    ['cash states', CASH_STATES], ['deposit states', DEPOSIT_STATES],
+    ['spend kinds', SPEND_KINDS], ['refusals', BANK_REFUSALS], ['use states', USE_STATES],
+  ] as const) {
+    check(`${name} is a non-empty walkable list`, list.length > 0 && new Set(list).size === list.length)
   }
-  const missing = BANK_REFUSALS.filter((r) => !seen.has(r))
-  check('every refusal can happen — none is dead copy', missing.length === 0, missing.join(','))
+  check('ads is the only self-evidencing kind',
+    SELF_EVIDENCING.length === 1 && SELF_EVIDENCING[0] === 'ads', SELF_EVIDENCING.join(','))
+  check('every self-evidencing kind is a real spend kind',
+    SELF_EVIDENCING.every((k) => (SPEND_KINDS as readonly string[]).includes(k)))
+  check('management is management', isAdmin('admin') && !isAdmin('broker'))
+
+  // EVERY REFUSAL MUST BE REACHABLE. A refusal nobody can trigger is a sentence
+  // in a dictionary that no screen will ever show, and it rots.
+  const reached = new Set<string>([
+    why(broker, req({ action: 'mint' })),
+    why(admin, req({ action: 'send', fromWalletId: 'w-b1' })),
+    why(admin2, req({ action: 'burn', lot: lot({ movedBy: 'u-admin' }) })),
+    why(broker, req({ action: 'deposit' })),
+    why(admin, req({ action: 'burn', lot: lot({ deposit: 'claimed' }) })),
+    why(broker, req({ action: 'spend', fromWalletId: 'w-b1', spend: { kind: 'other' } })),
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', amount: -1 })),
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: null })),
+    why(broker, req({ action: 'send', fromWalletId: 'w-b1', toWalletId: 'w-b1' })),
+    why(admin, req({ action: 'move', toWalletId: 'w-b1' })),
+    why(admin2, req({ action: 'burn', lot: lot({ createdBy: 'u-admin', movedBy: 'u-admin2' }) })),
+  ])
+  const unreachable = BANK_REFUSALS.filter((r) => !reached.has(r))
+  check('every refusal is reachable — none is dead copy',
+    unreachable.length === 0, unreachable.join(','))
 }
 
 if (failures > 0) {
   console.error(`\n${failures} bank rule(s) broken.`)
   process.exit(1)
 }
-console.log('\nMoney is pushed, never pulled, and nothing leaves without a receipt.\n')
+console.log('\nCash comes from one place, moves only forward, and never leaves without a receipt.\n')
