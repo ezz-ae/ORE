@@ -32,7 +32,7 @@ import { Coins, Loader2, ArrowUpRight } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { CLAIM_VERDICTS, type ClaimVerdict } from '@/lib/freehold/points'
-import { aedText } from '@/lib/freehold/credits-shared'
+import { cashText } from '@/lib/freehold/credits-shared'
 
 interface Points {
   paid: number
@@ -103,14 +103,14 @@ export default function PointsPage() {
         Icon={Coins}
         eyebrow={t('points.eyebrow')}
         title={t('points.title')}
-        subtitle={t('points.sub', { per: aedText(data.perRating) })}
+        subtitle={t('points.sub', { per: cashText(data.perRating) })}
       />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label={t('points.stat.balance')}
-          value={data.balance === null ? '—' : aedText(data.balance)}
+          value={data.balance === null ? '—' : cashText(data.balance)}
           hint={data.balance === null ? t('points.stat.noAccount') : undefined} />
-        <StatCard label={t('points.stat.earned')} value={aedText(data.paid)}
+        <StatCard label={t('points.stat.earned')} value={cashText(data.paid)}
           hint={t('points.stat.earnedHint', { rated })} />
         {/* A hit rate on nothing is not 0% — it is a number nobody has yet. */}
         <StatCard label={t('points.stat.hitRate')}
@@ -125,7 +125,7 @@ export default function PointsPage() {
       <p className="mt-4 text-[12px] text-slate-500">
         {data.ceiling > 0
           ? t('points.ceiling', {
-              earned: aedText(data.paid), ceiling: aedText(data.ceiling), left: aedText(data.remaining),
+              earned: cashText(data.paid), ceiling: cashText(data.ceiling), left: cashText(data.remaining),
             })
           : t('points.ceilingNone')}
       </p>

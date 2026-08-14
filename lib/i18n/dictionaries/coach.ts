@@ -35,11 +35,11 @@ const en: Dict = {
 
   // ── broker ─────────────────────────────────────────────────────────────────
   'coach.broker.welcome.title': 'Welcome, {name} 👋',
-  'coach.broker.welcome.body': 'In under a minute, here is what you can do from your Workspace — work leads, run campaigns, top up credits and put the AI to work.',
+  'coach.broker.welcome.body': 'In under a minute, here is what you can do from your Workspace — work leads, run campaigns, top up Cash and put the AI to work.',
   'coach.broker.workspace.title': 'Jump back to your day',
-  'coach.broker.workspace.body': 'Tap your Workspace anytime to return to your urgent leads, live pipeline and credit balance in one glance.',
+  'coach.broker.workspace.body': 'Tap your Workspace anytime to return to your urgent leads, live pipeline and Cash balance in one glance.',
   'coach.broker.apps.title': 'What you can do every day',
-  'coach.broker.apps.body': 'Open My Leads to call and follow up, Campaigns to promote a property, Credits to top up, or Notebook to run AI research. Badges show what needs you first.',
+  'coach.broker.apps.body': 'Open My Leads to call and follow up, Campaigns to promote a property, Cash to top up, or Notebook to run AI research. Badges show what needs you first.',
   'coach.broker.depth.title': 'Let the AI act for you',
   'coach.broker.depth.body': 'Tap a prompt to ask the docked Expert — "what should I focus on?", "draft a follow-up for my hottest lead", "a plan to hit target". Every app has its own.',
 
@@ -71,7 +71,7 @@ const en: Dict = {
   'coach.director.management.title': 'See the whole company',
   'coach.director.management.body': 'Review team, deals, ROI and events aggregated across every app. Start your day here for the full picture.',
   'coach.director.finance.title': 'Oversee the money',
-  'coach.director.finance.body': 'Review invoices, payments, credits and budget — and approve the items that move real money.',
+  'coach.director.finance.body': 'Review invoices, payments, Cash and budget — and approve the items that move real money.',
 
   // ── ceo ────────────────────────────────────────────────────────────────────
   'coach.ceo.welcome.title': 'Welcome, {name} 👋',
@@ -125,7 +125,7 @@ const en: Dict = {
   'coach.app.inventory.tip.title': 'Turn a listing into a page',
   'coach.app.inventory.tip.body': 'Open a property to generate a landing page or microsite, or fix the gaps flagged in Data Quality before you advertise it.',
   'coach.app.finance.intro.title': 'Manage the money',
-  'coach.app.finance.intro.body': 'Record invoices and payments, allocate credits, track the budget, and approve what moves money.',
+  'coach.app.finance.intro.body': 'Record invoices and payments, move Cash, track the budget, and approve what moves money.',
   'coach.app.finance.tip.title': 'See the whole P&L',
   'coach.app.finance.tip.body': 'Switch to the Company view for commission earned, spend by category and outstanding balances at a glance.',
   'coach.app.studio.intro.title': 'Generate your content',
@@ -176,7 +176,7 @@ const ar: Dict = {
   'coach.common.done.body': 'أعد هذه الجولة في أي وقت من قائمة الحساب ← «ابدأ الجولة التعريفية». والآن أنجِز بعض الصفقات.',
 
   'coach.broker.welcome.title': 'مرحباً، {name} 👋',
-  'coach.broker.welcome.body': 'في أقل من دقيقة، إليك ما يمكنك فعله من مساحة عملك — التعامل مع العملاء، وتشغيل الحملات، وشحن الرصيد، وتسخير الذكاء الاصطناعي.',
+  'coach.broker.welcome.body': 'في أقل من دقيقة، إليك ما يمكنك فعله من مساحة عملك — التعامل مع العملاء، وتشغيل الحملات، وشحن الكاش، وتسخير الذكاء الاصطناعي.',
   'coach.broker.workspace.title': 'عُد إلى يومك بسرعة',
   'coach.broker.workspace.body': 'اضغط على مساحة عملك في أي وقت للعودة إلى عملائك العاجلين ومسارك النشط ورصيدك في لمحة واحدة.',
   'coach.broker.apps.title': 'ما يمكنك فعله كل يوم',
@@ -209,7 +209,7 @@ const ar: Dict = {
   'coach.director.management.title': 'اطّلع على الشركة بأكملها',
   'coach.director.management.body': 'راجِع الفريق والصفقات والعائد والأحداث مجمّعة عبر كل تطبيق. ابدأ يومك هنا للصورة الكاملة.',
   'coach.director.finance.title': 'أشرِف على الأموال',
-  'coach.director.finance.body': 'راجِع الفواتير والمدفوعات والرصيد والميزانية — واعتمد البنود التي تحرّك أموالاً فعلية.',
+  'coach.director.finance.body': 'راجِع الفواتير والمدفوعات والكاش والميزانية — واعتمد البنود التي تحرّك أموالاً فعلية.',
 
   'coach.ceo.welcome.title': 'مرحباً، {name} 👋',
   'coach.ceo.welcome.body': 'أقصر جولة — ما يمكنك مراجعته لرؤية الشركة كاملةً في لمحة واحدة.',
@@ -312,11 +312,11 @@ const ru: Dict = {
   'coach.common.done.body': 'Повторите тур в любой момент из меню аккаунта → «Пройти обучение». А теперь — за сделки.',
 
   'coach.broker.welcome.title': 'Добро пожаловать, {name} 👋',
-  'coach.broker.welcome.body': 'Меньше чем за минуту — вот что вы можете делать в своём рабочем пространстве: работать с лидами, запускать кампании, пополнять кредиты и поручать дела ИИ.',
+  'coach.broker.welcome.body': 'Меньше чем за минуту — вот что вы можете делать в своём рабочем пространстве: работать с лидами, запускать кампании, пополнять кэш и поручать дела ИИ.',
   'coach.broker.workspace.title': 'Быстро вернитесь к своему дню',
-  'coach.broker.workspace.body': 'Нажмите на рабочее пространство в любой момент, чтобы вернуться к срочным лидам, активной воронке и балансу кредитов в одном взгляде.',
+  'coach.broker.workspace.body': 'Нажмите на рабочее пространство в любой момент, чтобы вернуться к срочным лидам, активной воронке и балансу кэша в одном взгляде.',
   'coach.broker.apps.title': 'Что вы можете делать каждый день',
-  'coach.broker.apps.body': 'Откройте «Мои лиды» для звонков и follow-up, «Кампании» для продвижения объекта, «Кредиты» для пополнения или Notebook для ИИ-исследований. Значки показывают, что требует внимания в первую очередь.',
+  'coach.broker.apps.body': 'Откройте «Мои лиды» для звонков и follow-up, «Кампании» для продвижения объекта, «Кэш» для пополнения или Notebook для ИИ-исследований. Значки показывают, что требует внимания в первую очередь.',
   'coach.broker.depth.title': 'Пусть ИИ действует за вас',
   'coach.broker.depth.body': 'Нажмите подсказку, чтобы спросить закреплённого Эксперта — «на чём сосредоточиться?», «составь follow-up для самого горячего лида», «план достижения цели». В каждом приложении свой набор.',
 
@@ -345,7 +345,7 @@ const ru: Dict = {
   'coach.director.management.title': 'Увидьте всю компанию',
   'coach.director.management.body': 'Просмотрите команду, сделки, ROI и события, собранные по всем приложениям. Начинайте день здесь — для полной картины.',
   'coach.director.finance.title': 'Контролируйте деньги',
-  'coach.director.finance.body': 'Просматривайте счета, платежи, кредиты и бюджет — и согласовывайте то, что двигает реальные деньги.',
+  'coach.director.finance.body': 'Просматривайте счета, платежи, кэш и бюджет — и согласовывайте то, что двигает реальные деньги.',
 
   'coach.ceo.welcome.title': 'Добро пожаловать, {name} 👋',
   'coach.ceo.welcome.body': 'Самый короткий тур — что вы можете проверить, чтобы увидеть всю компанию с одного взгляда.',
@@ -397,7 +397,7 @@ const ru: Dict = {
   'coach.app.inventory.tip.title': 'Превратите листинг в страницу',
   'coach.app.inventory.tip.body': 'Откройте объект, чтобы создать лендинг или микросайт, либо исправьте пробелы из раздела «Качество данных» перед рекламой.',
   'coach.app.finance.intro.title': 'Управляйте деньгами',
-  'coach.app.finance.intro.body': 'Регистрируйте счета и платежи, распределяйте кредиты, отслеживайте бюджет и согласовывайте то, что двигает деньги.',
+  'coach.app.finance.intro.body': 'Регистрируйте счета и платежи, распределяйте кэш, отслеживайте бюджет и согласовывайте то, что двигает деньги.',
   'coach.app.finance.tip.title': 'Весь P&L целиком',
   'coach.app.finance.tip.body': 'Переключитесь на «Вид компании», чтобы увидеть заработанную комиссию, расходы по категориям и непогашенные остатки с одного взгляда.',
   'coach.app.studio.intro.title': 'Генерируйте контент',
