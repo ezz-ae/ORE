@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/settle-ratings",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/settle-ad-spend",
+      "schedule": "0 * * * *"
     }
   ]
 }
