@@ -19,6 +19,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Users, UsersRound, Megaphone, DollarSign, TrendingUp, Bot, Package,
   ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard, CalendarDays, HardDrive,
+  Wallet as WalletIcon,
 } from 'lucide-react'
 import type { Role } from './session-types'
 import { MANAGEMENT_ROLES } from './session-types'
@@ -188,6 +189,24 @@ export const APPS: AppDef[] = [
     icon: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
     managementOnly: true,
   },
+  /**
+   * THE WALLET IS EVERY ROLE'S, so it is its own app rather than a page filed
+   * under somebody else's.
+   *
+   * It was first registered as a tool under `agent`, which is `brokerOnly` —
+   * so it inherited that guard and a director could not see the thing that
+   * holds their own money. A wallet is not a management feature and it is not
+   * a broker feature; everybody has one, and the Bank inside it is what the
+   * server gates.
+   */
+  {
+    id: 'wallet', label: 'Wallet', sub: 'Cash · Send · Deposit · The Bank',
+    href: '/freehold-intelligence/wallet', Icon: WalletIcon,
+    metric: 'My Cash', badge: 0, accent: '#34D399',
+    card: 'border-emerald-400/15 hover:border-emerald-400/30',
+    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  },
+
   // The broker's personal workspace — only brokers see this tab.
   // Managers can still visit /agent but don't need a spine tab for it.
   {
