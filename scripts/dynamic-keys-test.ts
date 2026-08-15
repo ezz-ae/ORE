@@ -51,9 +51,11 @@ import {
 } from '../lib/freehold/smart-view'
 import { PULSE_STATES } from '../lib/freehold/machine-activity'
 import {
-  BANK_REFUSALS, CASH_ORIGINS, CASH_STATES, DEPOSIT_STATES, SPEND_KINDS, USE_STATES,
+  ACTIVITY_STATES, BANK_REFUSALS, CASH_ORIGINS, CASH_STATES, DEPOSIT_STATES,
+  SPEND_KINDS, USE_STATES,
 } from '../lib/freehold/bank'
 import { POSTING_KINDS } from '../lib/freehold/wallet'
+
 import { wallet as walletDict } from '../lib/i18n/dictionaries/wallet'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
@@ -310,7 +312,11 @@ console.log('\n── the wallet and the bank ──')
   // A refusal rendering as `wal.no.notYourCheque` would be worse here than
   // anywhere else in the product: it appears at the exact moment somebody is
   // being told they may not move money, which is when they least need a riddle.
-  family('wal.kind', 'wal.kind.', POSTING_KINDS, walletDict)
+  // `deposit` is not a POSTING kind — a recorded claim has no posting, which
+  // is the whole point of it — but the activity feed renders a row for one, so
+  // the word has to exist alongside the eight real ones.
+  family('wal.kind', 'wal.kind.', [...POSTING_KINDS, 'deposit'], walletDict)
+  family('wal.state', 'wal.state.', ACTIVITY_STATES, walletDict)
   family('wal.no', 'wal.no.', [...BANK_REFUSALS, 'notEnough', 'noSuchLot', 'error'], walletDict)
   family('bank.origin', 'bank.origin.', CASH_ORIGINS, walletDict)
   family('bank.state', 'bank.state.', CASH_STATES, walletDict)

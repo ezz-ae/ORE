@@ -119,6 +119,18 @@ export type CashOrigin = (typeof CASH_ORIGINS)[number]
 export const DEPOSIT_STATES = ['claimed', 'cleared', 'rejected'] as const
 export type DepositState = (typeof DEPOSIT_STATES)[number]
 
+/**
+ * Walkable — where one movement stands, as a wallet shows it.
+ *
+ * `pending` is not decoration. A recorded deposit is a real claim on real money
+ * that has not been confirmed, which is exactly the state a wallet needs a word
+ * for: it is going to be yours, and it is not yours now. Hiding it until it
+ * clears leaves somebody staring at an unchanged balance wondering whether
+ * their payment was recorded at all.
+ */
+export const ACTIVITY_STATES = ['confirmed', 'pending', 'rejected'] as const
+export type ActivityState = (typeof ACTIVITY_STATES)[number]
+
 /** Walkable — what a parcel of Cash currently is. */
 export const CASH_STATES = ['inBank', 'cheque', 'spent', 'burned'] as const
 export type CashState = (typeof CASH_STATES)[number]

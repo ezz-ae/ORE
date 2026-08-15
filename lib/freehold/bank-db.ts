@@ -46,8 +46,8 @@
 import { query, withTransaction, ensureOnce, type TxQuery } from '@/lib/db'
 import {
   authorise, mayBurn, cashState, withdrawalReference, readUse, backing,
-  type Actor, type CashLot, type CashOrigin, type DepositState, type SpendKind,
-  type SpendProof, type BankRefusal, type AccountUse, type Backing,
+  type Actor, type ActivityState, type CashLot, type CashOrigin, type DepositState,
+  type SpendKind, type SpendProof, type BankRefusal, type AccountUse, type Backing,
 } from '@/lib/freehold/bank'
 import { openWallet, postTransfer, listPostings } from '@/lib/freehold/wallet-db'
 import { isValidAmount, type Coins } from '@/lib/freehold/wallet'
@@ -668,6 +668,95 @@ export async function spendAnalysis(): Promise<AccountUse[]> {
 export async function bankLog(opts: { walletId?: string; limit?: number } = {}) {
   await ensureBankSchema()
   return listPostings({ walletId: opts.walletId, limit: opts.limit ?? 100 })
+}
+
+// ─── One wallet's activity, the way a wallet reads it ───────────────────────
+
+export interface Activity {
+  /** The reference, which is this system's transaction hash. */
+  id: string
+  kind: string
+  direction: 'in' | 'out'
+  amount: number
+  /** The other side, by name where we have one. Null for the house accounts. */
+  counterparty: string | null
+  counterpartyAccount: string | null
+  memo: string
+  state: ActivityState
+  at: string
+}
+
+/**
+ * What this wallet has done, newest first.
+ *
+ * ── WHY THE OTHER SIDE IS JOINED HERE AND NOT ON THE SCREEN ──────────────
+ *
+ * A posting knows its own wallet and nothing else; the counterparty is the
+ * OTHER posting sharing its transfer_id. A screen that rendered the raw row
+ * would show "Payment · −400" with no answer to "to whom", which is the first
+ * question anybody asks of a payment. Resolving it here means one query rather
+ * than one per row, and it means the answer is the same everywhere.
+ */
+export async function walletActivity(
+  walletId: string,
+  userId: string,
+  limit = 60,
+): Promise<Activity[]> {
+  await ensureBankSchema()
+
+  const rows = await query(
+    `SELECT p.reference, p.kind, p.direction, p.amount, p.memo, p.created_at::text AS at,
+            o.label AS other_label, o.account_no AS other_account, o.kind AS other_kind
+       FROM freehold_wallet_postings p
+       LEFT JOIN freehold_wallet_postings q
+              ON q.transfer_id = p.transfer_id AND q.wallet_id <> p.wallet_id
+       LEFT JOIN freehold_wallets o ON o.id = q.wallet_id
+      WHERE p.wallet_id = $1
+      ORDER BY p.id DESC
+      LIMIT $2`,
+    [walletId, Math.min(200, Math.max(1, limit))],
+  )
+
+  const moves: Activity[] = rows.map((r) => ({
+    id: String(r.reference),
+    kind: String(r.kind),
+    direction: r.direction === 'credit' ? 'in' : 'out',
+    amount: Number(r.amount ?? 0),
+    // The treasury and the bank are plumbing, not people. Naming them on a
+    // personal wallet row would answer the question with a machine.
+    counterparty: r.other_kind === 'treasury' || r.other_kind === 'bank'
+      ? null : (r.other_label == null ? null : String(r.other_label)),
+    counterpartyAccount: r.other_account == null ? null : String(r.other_account),
+    memo: String(r.memo ?? ''),
+    state: 'confirmed',
+    at: String(r.at),
+  }))
+
+  // The claims this person has recorded and nobody has matched yet. They carry
+  // no posting — there is no money — so they are joined in here rather than
+  // read from the ledger, and they sort in by time like anything else.
+  const claims = await query(
+    `SELECT id, amount, transaction_ref, deposit_state, created_at::text AS at
+       FROM freehold_cash_lots
+      WHERE origin = 'deposit' AND created_by = $1 AND deposit_state <> 'cleared'
+      ORDER BY created_at DESC LIMIT 20`,
+    [userId],
+  )
+  for (const c of claims) {
+    moves.push({
+      id: String(c.transaction_ref ?? c.id),
+      kind: 'deposit',
+      direction: 'in',
+      amount: Number(c.amount ?? 0),
+      counterparty: null,
+      counterpartyAccount: null,
+      memo: '',
+      state: String(c.deposit_state) === 'rejected' ? 'rejected' : 'pending',
+      at: String(c.at),
+    })
+  }
+
+  return moves.sort((a, b) => (a.at < b.at ? 1 : -1))
 }
 
 // ── Small shared pieces ──────────────────────────────────────────────────────
