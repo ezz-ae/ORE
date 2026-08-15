@@ -55,6 +55,7 @@ import {
   SPEND_KINDS, USE_STATES,
 } from '../lib/freehold/bank'
 import { POSTING_KINDS } from '../lib/freehold/wallet'
+import { SIGNATURE_REFUSALS } from '../lib/freehold/wallet-signing'
 
 import { wallet as walletDict } from '../lib/i18n/dictionaries/wallet'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
@@ -317,7 +318,11 @@ console.log('\n── the wallet and the bank ──')
   // the word has to exist alongside the eight real ones.
   family('wal.kind', 'wal.kind.', [...POSTING_KINDS, 'deposit'], walletDict)
   family('wal.state', 'wal.state.', ACTIVITY_STATES, walletDict)
-  family('wal.no', 'wal.no.', [...BANK_REFUSALS, 'notEnough', 'noSuchLot', 'error'], walletDict)
+  // The signature refusals render through the same family. `replayed` shown as
+  // a generic failure would send somebody to try again, which is the exact
+  // opposite of what happened — the payment went through, once.
+  family('wal.no', 'wal.no.',
+    [...BANK_REFUSALS, ...SIGNATURE_REFUSALS, 'notEnough', 'noSuchLot', 'error'], walletDict)
   family('bank.origin', 'bank.origin.', CASH_ORIGINS, walletDict)
   family('bank.state', 'bank.state.', CASH_STATES, walletDict)
   family('bank.deposit', 'bank.deposit.', DEPOSIT_STATES, walletDict)
