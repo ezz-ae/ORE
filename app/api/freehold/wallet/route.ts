@@ -18,7 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import {
-  personId, walletFor, ensureBankWallets, sendCash, recordDeposit, spendCash, bankLog,
+  personId, walletFor, ensureBankWallets, sendCash, recordDeposit, spendCash, walletActivity,
 } from '@/lib/freehold/bank-db'
 import { listWallets } from '@/lib/freehold/wallet-db'
 import { isValidAmount } from '@/lib/freehold/wallet'
@@ -38,7 +38,10 @@ export async function GET() {
     const walletId = await walletFor(personId(user), user.name || user.email)
     const wallets = await listWallets()
     const mine = wallets.find((w) => w.id === walletId) ?? null
-    const movements = await bankLog({ walletId, limit: 80 })
+    // The activity feed, not the raw ledger: each row already carries who was
+    // on the other side and whether it has cleared. A screen that had to work
+    // that out per row would ask the database once per line.
+    const activity = await walletActivity(walletId, personId(user), 60)
 
     // The directory of who can be paid. Account number and name only — a
     // wallet screen has no business telling one broker what another holds.
@@ -50,7 +53,7 @@ export async function GET() {
       wallet: mine && {
         id: mine.id, accountNo: mine.accountNo, balance: mine.balance, held: mine.held,
       },
-      movements,
+      activity,
       payees,
     })
   } catch (err) {

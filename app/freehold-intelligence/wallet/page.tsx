@@ -37,7 +37,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Wallet as WalletIcon, Landmark, Loader2, ArrowDownLeft, ArrowUpRight,
-  Copy, Check, Flame, PenLine, AlertTriangle,
+  Copy, Check, Flame, PenLine, AlertTriangle, QrCode, Plus, X,
+  Sparkles, RotateCcw, Megaphone, Lock, Unlock,
 } from 'lucide-react'
 import { PageHeader, StatCard, Panel, PanelHeader, EmptyState, Button, fieldClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
@@ -47,20 +48,30 @@ import {
   type BankRefusal, type CashState, type DepositState, type SpendKind, type UseState,
 } from '@/lib/freehold/bank'
 
-interface Movement {
-  reference: string
+/**
+ * One row of the wallet's own history.
+ *
+ * Shaped by the server (walletActivity), not by the ledger: `direction` is in
+ * or out from THIS wallet's point of view, the counterparty is already
+ * resolved, and `state` carries the one thing a raw posting cannot say — a
+ * recorded deposit that nobody has matched yet is money on its way, and a
+ * wallet has to be able to show that.
+ */
+interface Activity {
+  id: string
   kind: string
-  walletId: string
-  direction: 'debit' | 'credit'
+  direction: 'in' | 'out'
   amount: number
+  counterparty: string | null
+  counterpartyAccount: string | null
   memo: string
-  actor: string | null
-  createdAt: string
+  state: 'confirmed' | 'pending' | 'rejected'
+  at: string
 }
 interface Payee { id: string; accountNo: string; label: string }
 interface WalletData {
   wallet: { id: string; accountNo: string; balance: number; held: number } | null
-  movements: Movement[]
+  activity: Activity[]
   payees: Payee[]
 }
 
@@ -217,6 +228,24 @@ export default function WalletPage() {
 
 // ─── The wallet everybody has ────────────────────────────────────────────────
 
+/**
+ * The address, shortened the way an address is shortened.
+ *
+ * `FH-30-004472-9` is fourteen characters and the middle six are the only part
+ * that differs between two accounts — so the ends are exactly what must survive
+ * truncation. Nobody reads a full address; they check the first and last few
+ * against what they expected and scan the QR for the rest.
+ */
+const shortAddress = (a: string): string =>
+  a.length <= 12 ? a : `${a.slice(0, 6)}…${a.slice(-5)}`
+
+/** What each movement is called on a wallet row, and which way it points. */
+const ACTIVITY_ICON: Record<string, typeof ArrowUpRight> = {
+  issue: Sparkles, earn: Sparkles, refund: RotateCcw, burn: Flame,
+  spend: Megaphone, transfer: ArrowUpRight, hold: Lock, release: Unlock,
+  deposit: ArrowDownLeft,
+}
+
 function MyWallet({
   data, t, post, onNote,
 }: {
@@ -225,7 +254,11 @@ function MyWallet({
   post: (url: string, body: Record<string, unknown>) => Promise<Record<string, unknown> | null>
   onNote: (n: { tone: 'ok' | 'bad'; text: string } | null) => void
 }) {
+  const [sheet, setSheet] = useState<'none' | 'send' | 'receive' | 'deposit'>('none')
+  const [detail, setDetail] = useState<Activity | null>(null)
   const [copied, setCopied] = useState(false)
+  const [qr, setQr] = useState<string | null>(null)
+
   const [to, setTo] = useState('')
   const [amount, setAmount] = useState('')
   const [memo, setMemo] = useState('')
@@ -233,9 +266,28 @@ function MyWallet({
   const [depAmount, setDepAmount] = useState('')
   const [depRef, setDepRef] = useState('')
 
-  // ONE KEY PER ATTEMPT, not per click. Regenerated only when the form changes,
-  // so a double-click or a retry after a dropped connection pays once.
+  const w = data?.wallet ?? null
+
+  // ONE KEY PER ATTEMPT, not per click, so a double-tap or a retry after a
+  // dropped connection pays once.
   const idem = useMemo(() => `${to}|${amount}|${memo}|${Date.now()}`, [to, amount, memo])
+
+  // Fetched only when the receive sheet is opened. The QR is rendered on the
+  // server from the caller's own wallet, so there is nothing to pass and
+  // nothing a crafted link could substitute.
+  useEffect(() => {
+    if (sheet !== 'receive' || qr) return
+    void fetch('/api/freehold/wallet/qr', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.qr) setQr(String(j.qr)) })
+      .catch(() => {})
+  }, [sheet, qr])
+
+  const copy = (text: string) => {
+    void navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
 
   const send = async () => {
     setBusy(true)
@@ -245,7 +297,7 @@ function MyWallet({
     setBusy(false)
     if (r) {
       onNote({ tone: 'ok', text: t(r.duplicate ? 'wal.send.duplicate' : 'wal.send.done') })
-      setAmount(''); setMemo('')
+      setAmount(''); setMemo(''); setSheet('none')
     }
   }
 
@@ -257,136 +309,285 @@ function MyWallet({
     setBusy(false)
     if (r) {
       onNote({ tone: 'ok', text: t(r.duplicate ? 'wal.deposit.duplicate' : 'wal.deposit.done') })
-      setDepAmount(''); setDepRef('')
+      setDepAmount(''); setDepRef(''); setSheet('none')
     }
   }
 
-  const w = data?.wallet
+  const activity = data?.activity ?? []
+  const pending = activity.filter((a) => a.state === 'pending')
+  const pendingIn = pending.reduce((n, a) => n + a.amount, 0)
+
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label={t('wal.stat.balance')} Icon={WalletIcon}
-          value={w ? cashText(w.balance) : '—'}
-        />
-        <StatCard
-          label={t('wal.stat.held')} hint={t('wal.stat.heldHint')}
-          value={w ? cashText(w.held) : '—'}
-        />
-        <StatCard
-          label={t('wal.stat.account')} hint={t('wal.stat.accountHint')}
-          value={
-            <span className="flex items-center gap-2">
-              <span className="font-mono text-base">{w?.accountNo ?? '—'}</span>
-              {w && (
-                <button
-                  onClick={() => { void navigator.clipboard.writeText(w.accountNo); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
-                  className="text-slate-400 hover:text-slate-200"
-                  aria-label={t('wal.copy')}
-                >
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                </button>
-              )}
-            </span>
-          }
-        />
+      {/* ── THE BALANCE, AS ONE NUMBER ───────────────────────────────────────
+          A wallet answers one question before any other: how much have I got.
+          It is the largest thing on the screen for that reason, and the address
+          sits under it because the second question is where people send it. */}
+      <div className="rounded-2xl border border-line bg-gradient-to-b from-surface-2 to-surface p-6 sm:p-8">
+        <p className="text-sm text-slate-400">{t('wal.stat.balance')}</p>
+        <p className="mt-1 text-4xl font-semibold tabular-nums text-white sm:text-5xl">
+          {w ? cashText(w.balance) : '—'}
+        </p>
+
+        {/* Incoming money is shown BESIDE the balance, never inside it. A
+            recorded deposit is a claim, and adding it to the spendable figure
+            would be the wallet lying about what can be spent right now. */}
+        {pendingIn > 0 && (
+          <p className="mt-1.5 text-sm text-amber-200">
+            {t('wal.hero.pending', { amount: cashText(pendingIn) })}
+          </p>
+        )}
+        {w && w.held > 0 && (
+          <p className="mt-1 text-sm text-slate-400">
+            {t('wal.hero.held', { amount: cashText(w.held) })}
+          </p>
+        )}
+
+        {w && (
+          <button
+            onClick={() => copy(w.accountNo)}
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 font-mono text-xs text-slate-300 transition hover:border-gold/40 hover:text-white"
+            title={w.accountNo}
+          >
+            {shortAddress(w.accountNo)}
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        )}
+
+        {/* Three actions, equal weight, always in the same order. */}
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          {([
+            ['send', ArrowUpRight, 'wal.act.send'],
+            ['receive', QrCode, 'wal.act.receive'],
+            ['deposit', Plus, 'wal.act.topUp'],
+          ] as const).map(([id, Icon, key]) => (
+            <button
+              key={id}
+              onClick={() => setSheet(id)}
+              disabled={!w}
+              className="flex flex-col items-center gap-2 rounded-xl border border-line bg-surface px-3 py-4 text-xs font-medium text-slate-200 transition hover:border-gold/40 hover:text-white disabled:opacity-40"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-2">
+                <Icon className="h-4 w-4" />
+              </span>
+              {t(key)}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel>
-          <PanelHeader title={t('wal.send.title')} icon={<ArrowUpRight className="h-4 w-4" />} />
-          <div className="space-y-3 p-5">
-            <p className="text-sm text-slate-400">{t('wal.send.sub')}</p>
-            <label className="block text-sm">
-              <span className="text-slate-400">{t('wal.send.to')}</span>
-              <select value={to} onChange={(e) => setTo(e.target.value)} className={`${fieldClass()} mt-1 w-full`}>
-                <option value="">{t('wal.send.toPlaceholder')}</option>
-                {(data?.payees ?? []).map((p) => (
-                  <option key={p.id} value={p.id}>{p.label} · {p.accountNo}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-slate-400">{t('wal.send.amount')}</span>
-              <input
-                type="number" min={1} step={1} value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className={`${fieldClass()} mt-1 w-full`}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-slate-400">{t('wal.send.memo')}</span>
-              <input
-                value={memo} onChange={(e) => setMemo(e.target.value)}
-                placeholder={t('wal.send.memoPlaceholder')}
-                className={`${fieldClass()} mt-1 w-full`}
-              />
-            </label>
-            <Button onClick={() => void send()} disabled={busy || !to || !amount}>
-              {busy ? t('wal.send.sending') : t('wal.send.action')}
-            </Button>
-          </div>
-        </Panel>
-
-        <Panel>
-          <PanelHeader title={t('wal.deposit.title')} icon={<ArrowDownLeft className="h-4 w-4" />} />
-          <div className="space-y-3 p-5">
-            <p className="text-sm text-slate-400">{t('wal.deposit.sub')}</p>
-            {/* THE SENTENCE THAT PREVENTS THE BUG REPORT. Said before the
-                button, not after the press. */}
-            <p className="rounded-lg border border-amber-500/25 px-3 py-2 text-sm text-amber-100/90">
-              {t('wal.deposit.claimNote')}
-            </p>
-            <label className="block text-sm">
-              <span className="text-slate-400">{t('wal.deposit.amount')}</span>
-              <input
-                type="number" min={1} step={1} value={depAmount}
-                onChange={(e) => setDepAmount(e.target.value)}
-                className={`${fieldClass()} mt-1 w-full`}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-slate-400">{t('wal.deposit.ref')}</span>
-              <input
-                value={depRef} onChange={(e) => setDepRef(e.target.value)}
-                placeholder={t('wal.deposit.refPlaceholder')}
-                className={`${fieldClass()} mt-1 w-full`}
-              />
-            </label>
-            <Button variant="secondary" onClick={() => void deposit()} disabled={busy || !depAmount || !depRef.trim()}>
-              {t('wal.deposit.action')}
-            </Button>
-          </div>
-        </Panel>
-      </div>
-
+      {/* ── ACTIVITY ──────────────────────────────────────────────────────── */}
       <Panel>
         <PanelHeader title={t('wal.log.title')} />
-        <div className="p-5">
-          <p className="mb-3 text-sm text-slate-400">{t('wal.log.sub')}</p>
-          {(data?.movements ?? []).length === 0
-            ? <EmptyState title={t('wal.log.empty')} />
-            : (
-              <ul className="divide-y divide-line">
-                {data!.movements.map((m) => (
-                  <li key={`${m.reference}-${m.direction}`} className="flex items-center justify-between gap-4 py-2.5 text-sm">
-                    <span className="flex min-w-0 items-center gap-2">
-                      {m.direction === 'credit'
-                        ? <ArrowDownLeft className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                        : <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
-                      <span className="truncate text-slate-300">{t(`wal.kind.${m.kind}`)}</span>
-                      {m.memo && <span className="truncate text-slate-500">· {m.memo}</span>}
-                    </span>
-                    <span className={m.direction === 'credit' ? 'text-emerald-300' : 'text-slate-300'}>
-                      {m.direction === 'credit' ? '+' : '−'}{cashText(m.amount)}
-                    </span>
+        <div className="p-2 sm:p-3">
+          {activity.length === 0 ? (
+            <div className="p-6">
+              <EmptyState title={t('wal.log.empty')} />
+            </div>
+          ) : (
+            <ul className="divide-y divide-line">
+              {activity.map((a) => {
+                const Icon = ACTIVITY_ICON[a.kind] ?? ArrowUpRight
+                const inbound = a.direction === 'in'
+                return (
+                  <li key={`${a.id}-${a.direction}-${a.at}`}>
+                    <button
+                      onClick={() => setDetail(a)}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-start transition hover:bg-surface-2"
+                    >
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${
+                        a.state === 'pending' ? 'border-amber-400/30 text-amber-200'
+                        : a.state === 'rejected' ? 'border-red-400/30 text-red-300'
+                        : inbound ? 'border-emerald-400/30 text-emerald-300'
+                        : 'border-line text-slate-300'
+                      }`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm text-slate-200">
+                          {t(`wal.kind.${a.kind}`)}
+                          {a.counterparty && <span className="text-slate-400"> · {a.counterparty}</span>}
+                        </span>
+                        <span className="block truncate text-xs text-slate-500">
+                          {a.state === 'confirmed'
+                            ? new Date(a.at).toLocaleString()
+                            : t(`wal.state.${a.state}`)}
+                          {a.memo && ` · ${a.memo}`}
+                        </span>
+                      </span>
+
+                      <span className={`shrink-0 text-sm tabular-nums ${
+                        a.state !== 'confirmed' ? 'text-slate-500'
+                        : inbound ? 'text-emerald-300' : 'text-slate-200'
+                      }`}>
+                        {inbound ? '+' : '−'}{cashText(a.amount)}
+                      </span>
+                    </button>
                   </li>
-                ))}
-              </ul>
-            )}
+                )
+              })}
+            </ul>
+          )}
         </div>
       </Panel>
+
+      {/* ── SHEETS ────────────────────────────────────────────────────────── */}
+
+      {sheet === 'send' && (
+        <Sheet title={t('wal.send.title')} onClose={() => setSheet('none')}>
+          <p className="text-sm text-slate-400">{t('wal.send.sub')}</p>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.send.to')}</span>
+            <select value={to} onChange={(e) => setTo(e.target.value)} className={`${fieldClass()} mt-1 w-full`}>
+              <option value="">{t('wal.send.toPlaceholder')}</option>
+              {(data?.payees ?? []).map((p) => (
+                <option key={p.id} value={p.id}>{p.label} · {shortAddress(p.accountNo)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.send.amount')}</span>
+            <input type="number" min={1} step={1} value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className={`${fieldClass()} mt-1 w-full text-lg tabular-nums`} />
+          </label>
+          {/* The balance, restated at the moment of spending it. */}
+          {w && <p className="text-xs text-slate-500">{t('wal.send.have', { amount: cashText(w.balance) })}</p>}
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.send.memo')}</span>
+            <input value={memo} onChange={(e) => setMemo(e.target.value)}
+              placeholder={t('wal.send.memoPlaceholder')} className={`${fieldClass()} mt-1 w-full`} />
+          </label>
+          <Button onClick={() => void send()} disabled={busy || !to || !amount}>
+            {busy ? t('wal.send.sending') : t('wal.send.action')}
+          </Button>
+        </Sheet>
+      )}
+
+      {sheet === 'receive' && (
+        <Sheet title={t('wal.receive.title')} onClose={() => setSheet('none')}>
+          <p className="text-sm text-slate-400">{t('wal.receive.sub')}</p>
+          <div className="flex flex-col items-center gap-4 py-2">
+            {qr
+              // eslint-disable-next-line @next/next/no-img-element -- a data: URI generated server-side; there is nothing for the image optimiser to fetch.
+              ? <img src={qr} alt={t('wal.receive.title')} className="h-56 w-56 rounded-xl bg-white p-2" />
+              : <div className="flex h-56 w-56 items-center justify-center rounded-xl border border-line">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+                </div>}
+            {w && (
+              <button onClick={() => copy(w.accountNo)}
+                className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 font-mono text-sm text-slate-200 hover:border-gold/40">
+                {w.accountNo}
+                {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === 'deposit' && (
+        <Sheet title={t('wal.deposit.title')} onClose={() => setSheet('none')}>
+          <p className="text-sm text-slate-400">{t('wal.deposit.sub')}</p>
+          {/* THE SENTENCE THAT PREVENTS THE BUG REPORT, said before the button
+              rather than after the press. */}
+          <p className="rounded-lg border border-amber-500/25 px-3 py-2 text-sm text-amber-100/90">
+            {t('wal.deposit.claimNote')}
+          </p>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.deposit.amount')}</span>
+            <input type="number" min={1} step={1} value={depAmount}
+              onChange={(e) => setDepAmount(e.target.value)}
+              className={`${fieldClass()} mt-1 w-full text-lg tabular-nums`} />
+          </label>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.deposit.ref')}</span>
+            <input value={depRef} onChange={(e) => setDepRef(e.target.value)}
+              placeholder={t('wal.deposit.refPlaceholder')}
+              className={`${fieldClass()} mt-1 w-full font-mono`} />
+          </label>
+          <Button variant="secondary" onClick={() => void deposit()}
+            disabled={busy || !depAmount || !depRef.trim()}>
+            {t('wal.deposit.action')}
+          </Button>
+        </Sheet>
+      )}
+
+      {/* THE RECEIPT. Every row opens one, because "what was this AED 400" is
+          the question a log exists to answer and a truncated row cannot. */}
+      {detail && (
+        <Sheet title={t('wal.tx.title')} onClose={() => setDetail(null)}>
+          <p className={`text-3xl font-semibold tabular-nums ${
+            detail.direction === 'in' ? 'text-emerald-300' : 'text-slate-100'
+          }`}>
+            {detail.direction === 'in' ? '+' : '−'}{cashText(detail.amount)}
+          </p>
+          <dl className="divide-y divide-line text-sm">
+            {([
+              ['wal.tx.what', t(`wal.kind.${detail.kind}`)],
+              ['wal.tx.status', t(`wal.state.${detail.state}`)],
+              ['wal.tx.when', new Date(detail.at).toLocaleString()],
+              ['wal.tx.who', detail.counterparty ?? t('wal.tx.house')],
+              ['wal.tx.account', detail.counterpartyAccount ?? '—'],
+              ['wal.tx.memo', detail.memo || '—'],
+              // The reference IS this system's transaction hash — the one
+              // string that identifies the movement in the ledger, in the
+              // withdraw record and in the platform invoice behind it.
+              ['wal.tx.ref', detail.id],
+            ] as const).map(([key, value]) => (
+              <div key={key} className="flex items-start justify-between gap-4 py-2.5">
+                <dt className="shrink-0 text-slate-500">{t(key)}</dt>
+                <dd className="min-w-0 break-all text-end font-mono text-xs text-slate-300">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <Button variant="ghost" onClick={() => copy(detail.id)}>
+            {copied ? t('wal.copied') : t('wal.tx.copyRef')}
+          </Button>
+        </Sheet>
+      )}
     </>
+  )
+}
+
+/**
+ * A bottom sheet on a phone, a centred card on a desktop.
+ *
+ * Wallet actions are modal on purpose: sending money is the one thing on this
+ * screen that must not be done half-looking at something else, and a form
+ * sitting permanently in a column invites exactly that.
+ */
+function Sheet({
+  title, onClose, children,
+}: {
+  title: string
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  // Escape closes it. A modal over somebody's money that traps them is worse
+  // than no modal.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6"
+      onClick={onClose} role="presentation">
+      <div
+        className="w-full max-w-md space-y-4 rounded-t-2xl border border-line bg-surface p-5 sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-base font-semibold text-white">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   )
 }
 
