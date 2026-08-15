@@ -21,7 +21,12 @@
  * screenshot months later.
  */
 
+import { createHash } from 'node:crypto'
 import { query, withTransaction, ensureOnce, type TxQuery } from '@/lib/db'
+import {
+  GENESIS_HASH, nextBlock, verifyChain,
+  type ChainedEntry, type ChainVerdict, type Hasher,
+} from '@/lib/freehold/ledger-chain'
 import {
   buildTransfer, canSend, conservationError, formatAccountNo, isValidAmount,
   TransferError, treasuryPosition,
@@ -72,9 +77,42 @@ async function ensure(): Promise<void> {
                ON freehold_wallet_postings (wallet_id, created_at DESC)`)
   await query(`CREATE INDEX IF NOT EXISTS freehold_postings_transfer_idx
                ON freehold_wallet_postings (transfer_id)`)
+
+  // ── The chain ───────────────────────────────────────────────────────────
+  //
+  // One row per MOVEMENT, not per posting: a transfer is one event and hashing
+  // it twice would let the two halves disagree. `seq` is the position and it is
+  // a primary key, so two concurrent writers cannot both take 401 — the loser
+  // gets a unique violation and retries rather than forking the history.
+  await query(`
+    CREATE TABLE IF NOT EXISTS freehold_ledger_chain (
+      seq        bigint PRIMARY KEY,
+      reference  text NOT NULL UNIQUE,
+      kind       text NOT NULL,
+      amount     bigint NOT NULL,
+      from_id    text NOT NULL,
+      to_id      text NOT NULL,
+      memo       text NOT NULL DEFAULT '',
+      actor      text NOT NULL DEFAULT '',
+      at_ms      bigint NOT NULL,
+      prev_hash  char(64) NOT NULL,
+      hash       char(64) NOT NULL UNIQUE,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `)
 }
 
 export const ensureWalletSchema = () => ensureOnce('freehold_wallets', ensure)
+
+/**
+ * The chain's hash. SHA-256 over the canonical form, and nothing else.
+ *
+ * Named and exported rather than inlined because a browser recomputing the
+ * chain for itself must use the same function, and a hash chosen in two places
+ * is a hash that will one day differ in one of them.
+ */
+export const ledgerHash: Hasher = (input) =>
+  createHash('sha256').update(input, 'utf8').digest('hex')
 
 // ── Reads ─────────────────────────────────────────────────────────────────────
 
@@ -185,7 +223,7 @@ export async function openWallet(input: {
 // ── The one write path ────────────────────────────────────────────────────────
 
 export type PostResult =
-  | { ok: true; transferId: string; duplicate: boolean }
+  | { ok: true; transferId: string; duplicate: boolean; block?: { seq: number; hash: string } }
   | { ok: false; refusal: 'invalid_amount' | 'same_wallet' | 'insufficient_funds' | 'unknown_wallet' }
 
 /**
@@ -263,8 +301,92 @@ export async function postTransfer(input: {
          input.memo ?? '', input.actor ?? null],
       )
     }
-    return { ok: true, transferId, duplicate: false }
+    // ── THE BLOCK ───────────────────────────────────────────────────────
+    //
+    // Written INSIDE the same transaction as the postings, after them, so a
+    // movement and its block are one atomic fact: there is no state where the
+    // money moved and the chain does not know, or the chain claims a movement
+    // that never happened.
+    //
+    // The head is read under an advisory lock held for the rest of this
+    // transaction. Two concurrent movements would otherwise both read block
+    // 400 as the head and both write 401 — one would lose on the primary key,
+    // which is safe but throws away a real movement. Serialising instead means
+    // the second simply waits and links to the first.
+    await q(`SELECT pg_advisory_xact_lock(hashtext($1))`, ['freehold-ledger-chain'])
+    const headRows = await q<{ seq: string; hash: string }>(
+      `SELECT seq, hash FROM freehold_ledger_chain ORDER BY seq DESC LIMIT 1`,
+    )
+    const head = headRows[0]
+      ? { seq: Number(headRows[0].seq), hash: String(headRows[0].hash) }
+      : { seq: 0, hash: GENESIS_HASH }
+
+    const block = nextBlock(ledgerHash, {
+      reference: input.reference,
+      kind: input.kind,
+      amount: input.amount,
+      fromWalletId: input.fromWalletId,
+      toWalletId: input.toWalletId,
+      memo: input.memo ?? '',
+      actor: input.actor ?? '',
+      // The clock is read ONCE and both the block and its hash use that value.
+      // Reading it twice would hash a different instant than the one stored,
+      // and the chain would fail to verify against its own row.
+      atMs: Date.now(),
+    }, head)
+
+    await q(
+      `INSERT INTO freehold_ledger_chain
+         (seq, reference, kind, amount, from_id, to_id, memo, actor, at_ms, prev_hash, hash)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [block.seq, block.reference, block.kind, block.amount, block.fromWalletId,
+       block.toWalletId, block.memo, block.actor, block.atMs, block.prevHash, block.hash],
+    )
+
+    return { ok: true, transferId, duplicate: false, block: { seq: block.seq, hash: block.hash } }
   })
+}
+
+// ── Reading and proving the chain ────────────────────────────────────────────
+
+export interface ChainBlock extends ChainedEntry {
+  createdAt: string
+}
+
+/** Every block, oldest first — the order `verifyChain` requires. */
+export async function readChain(limit = 5000): Promise<ChainBlock[]> {
+  await ensureWalletSchema()
+  const rows = await query(
+    `SELECT * FROM freehold_ledger_chain ORDER BY seq ASC LIMIT $1`,
+    [Math.min(50_000, Math.max(1, limit))],
+  )
+  return rows.map((r) => ({
+    seq: Number(r.seq),
+    reference: String(r.reference),
+    kind: String(r.kind),
+    amount: Number(r.amount),
+    fromWalletId: String(r.from_id),
+    toWalletId: String(r.to_id),
+    memo: String(r.memo ?? ''),
+    actor: String(r.actor ?? ''),
+    atMs: Number(r.at_ms),
+    prevHash: String(r.prev_hash),
+    hash: String(r.hash),
+    createdAt: String(r.created_at),
+  }))
+}
+
+/**
+ * Recompute the whole chain and report the first break.
+ *
+ * Deliberately recomputes from the ROWS rather than trusting the stored hashes:
+ * checking that each stored hash equals the next block's prev_hash would prove
+ * only that the links are consistent with each other, which an attacker editing
+ * a row and re-linking would also satisfy. Hashing the row's own contents is
+ * what makes an edit visible.
+ */
+export async function verifyLedgerChain(): Promise<ChainVerdict> {
+  return verifyChain(ledgerHash, await readChain())
 }
 
 // ── The audit ─────────────────────────────────────────────────────────────────

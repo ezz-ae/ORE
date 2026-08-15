@@ -38,11 +38,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Wallet as WalletIcon, Landmark, Loader2, ArrowDownLeft, ArrowUpRight,
   Copy, Check, Flame, PenLine, AlertTriangle, QrCode, Plus, X,
-  Sparkles, RotateCcw, Megaphone, Lock, Unlock,
+  Sparkles, RotateCcw, Megaphone, Lock, Unlock, ShieldCheck, ShieldAlert,
 } from 'lucide-react'
 import { PageHeader, StatCard, Panel, PanelHeader, EmptyState, Button, fieldClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { cashText } from '@/lib/freehold/credits-shared'
+import { shortHash } from '@/lib/freehold/ledger-chain'
 import {
   BANK_REFUSALS, IDLE_AFTER_DAYS,
   type BankRefusal, type CashState, type DepositState, type SpendKind, type UseState,
@@ -69,7 +70,15 @@ interface Activity {
   at: string
 }
 interface Payee { id: string; accountNo: string; label: string }
+
+/** What `verifyChain` answered — see lib/freehold/ledger-chain.ts. */
+type ChainVerdict =
+  | { ok: true; length: number; head: string }
+  | { ok: false; brokenAt: number; reason: string; length: number }
+
 interface WalletData {
+  /** null when the proof could not be run. NOT the same as "it failed". */
+  chain: ChainVerdict | null
   wallet: { id: string; accountNo: string; balance: number; held: number } | null
   activity: Activity[]
   payees: Payee[]
@@ -313,6 +322,7 @@ function MyWallet({
     }
   }
 
+  const chain = data?.chain
   const activity = data?.activity ?? []
   const pending = activity.filter((a) => a.state === 'pending')
   const pendingIn = pending.reduce((n, a) => n + a.amount, 0)
@@ -431,6 +441,31 @@ function MyWallet({
           )}
         </div>
       </Panel>
+
+      {/* ── THE PROOF ─────────────────────────────────────────────────────
+          Every movement is a block carrying the hash of the one before it, so
+          an edited row stops matching its own hash. This says whether that
+          check passes — and it is on a BROKER'S screen, not only a manager's,
+          because a proof only management can run is a reassurance rather than
+          a proof.
+
+          Three states, never two. "Could not check" is not "sound". */}
+      {chain === null || chain === undefined ? (
+        <p className="flex items-center gap-2 px-1 text-xs text-slate-500">
+          <ShieldAlert className="h-3.5 w-3.5" /> {t('wal.chain.unknown')}
+        </p>
+      ) : chain.ok ? (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-xs text-slate-500">
+          <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+          {t('wal.chain.ok', { n: chain.length })}
+          <span className="font-mono text-slate-600">{shortHash(chain.head)}</span>
+        </p>
+      ) : (
+        <p className="flex items-center gap-2 rounded-lg border border-red-500/30 px-3 py-2 text-xs text-red-200">
+          <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
+          {t('wal.chain.broken', { n: chain.brokenAt })}
+        </p>
+      )}
 
       {/* ── SHEETS ────────────────────────────────────────────────────────── */}
 

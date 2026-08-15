@@ -20,7 +20,7 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import {
   personId, walletFor, ensureBankWallets, sendCash, recordDeposit, spendCash, walletActivity,
 } from '@/lib/freehold/bank-db'
-import { listWallets } from '@/lib/freehold/wallet-db'
+import { listWallets, verifyLedgerChain } from '@/lib/freehold/wallet-db'
 import { isValidAmount } from '@/lib/freehold/wallet'
 import { SPEND_KINDS, type Actor, type SpendKind, type SpendProof } from '@/lib/freehold/bank'
 import { MAX_CREDIT_AMOUNT } from '@/lib/freehold/credits-shared'
@@ -49,7 +49,12 @@ export async function GET() {
       .filter((w) => w.id !== walletId && (w.kind === 'broker' || w.kind === 'operations'))
       .map((w) => ({ id: w.id, accountNo: w.accountNo, label: w.label }))
 
+    // The proof, carried with the balance. A verdict a person has to go and
+    // ask for is a verdict nobody ever asks for.
+    const chain = await verifyLedgerChain().catch(() => null)
+
     return NextResponse.json({
+      chain,
       wallet: mine && {
         id: mine.id, accountNo: mine.accountNo, balance: mine.balance, held: mine.held,
       },

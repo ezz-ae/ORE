@@ -88,6 +88,9 @@ export const wallet: Record<Locale, Dict> = {
     'wal.tx.memo': 'Note',
     'wal.tx.ref': 'Reference',
     'wal.tx.copyRef': 'Copy reference',
+    'wal.chain.ok': 'Verified · {n} movements, unbroken since the first',
+    'wal.chain.broken': 'This ledger does not verify. Movement {n} no longer matches its own record — tell management before moving anything else.',
+    'wal.chain.unknown': 'The history could not be checked just now.',
 
     // ── Refusals, in the words of the thing that refused ───────────────────
     'wal.no.notAdmin': 'Only management can do that.',
@@ -267,6 +270,9 @@ export const wallet: Record<Locale, Dict> = {
     'wal.tx.memo': 'ملاحظة',
     'wal.tx.ref': 'المرجع',
     'wal.tx.copyRef': 'نسخ المرجع',
+    'wal.chain.ok': 'مُتحقَّق منه · {n} حركة، متصلة منذ الأولى',
+    'wal.chain.broken': 'هذا السجل لا يجتاز التحقق. الحركة رقم {n} لم تعد مطابقة لقيدها — أبلغ الإدارة قبل تحريك أي مبلغ آخر.',
+    'wal.chain.unknown': 'تعذّر التحقق من السجل الآن.',
 
     'wal.no.notAdmin': 'الإدارة وحدها تستطيع ذلك.',
     'wal.no.notYourMoney': 'هذه ليست محفظتك. المال يُدفع من محفظتك أنت فقط.',
@@ -441,6 +447,9 @@ export const wallet: Record<Locale, Dict> = {
     'wal.tx.memo': 'Заметка',
     'wal.tx.ref': 'Ссылка',
     'wal.tx.copyRef': 'Копировать ссылку',
+    'wal.chain.ok': 'Проверено · {n} движений, цепочка не прерывалась',
+    'wal.chain.broken': 'Этот журнал не проходит проверку. Движение {n} больше не совпадает со своей записью — сообщите руководству, прежде чем двигать что-либо ещё.',
+    'wal.chain.unknown': 'Историю сейчас проверить не удалось.',
 
     'wal.no.notAdmin': 'Это может только руководство.',
     'wal.no.notYourMoney': 'Это не ваш кошелёк. Деньги уходят только из вашего собственного.',
