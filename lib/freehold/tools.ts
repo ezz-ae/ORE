@@ -208,10 +208,11 @@ export const TOOLS: ToolDef[] = [
   { id: 'agent.leads',     href: `${FI}/agent/leads`,     labelKey: 'tools.agent.leads',     group: 'me', app: 'agent', Icon: Users,     keywords: 'my leads mine' },
   { id: 'agent.campaigns', href: `${FI}/agent/campaigns`, labelKey: 'tools.agent.campaigns', group: 'me', app: 'agent', Icon: Megaphone, keywords: 'my campaigns my ads' },
   { id: 'agent.credits',   href: `${FI}/agent/credits`,   labelKey: 'tools.agent.credits',   group: 'me', app: 'agent', Icon: Coins,     keywords: 'my cash credits points balance' },
-  // The wallet is everybody's, so it sits in `me` beside the rest of a
-  // person's own things — the Bank inside it appears only for management, and
-  // that is decided by the server, not by which group this row is in.
-  { id: 'agent.wallet',    href: `${FI}/wallet`,          labelKey: 'tools.agent.wallet',    group: 'me', app: 'agent', Icon: WalletIcon, keywords: 'wallet cash send pay deposit bank mint burn withdraw account number' },
+  // FILED UNDER ITS OWN APP, NOT UNDER `agent`. It was registered here with
+  // app: 'agent', which is brokerOnly — so it inherited that guard and a
+  // director could not see the screen holding their own money. Everybody has a
+  // wallet; the Bank inside it is what the server gates.
+  { id: 'wallet',          href: `${FI}/wallet`,          labelKey: 'tools.wallet',          group: 'money', app: 'wallet', Icon: WalletIcon, keywords: 'wallet cash send pay deposit bank mint burn withdraw account number balance transfer' },
   { id: 'agent.ai',        href: `${FI}/agent/ai`,        labelKey: 'tools.agent.ai',        group: 'me', app: 'agent', Icon: Sparkles,  keywords: 'my ai assistant expert' },
   { id: 'agent.bio',       href: `${FI}/agent/bio`,       labelKey: 'tools.agent.bio',       group: 'me', app: 'agent', Icon: UserCircle,keywords: 'my bio public profile page' },
   { id: 'agent.account',   href: `${FI}/agent/account`,   labelKey: 'tools.agent.account',   group: 'me', app: 'agent', Icon: Settings,  keywords: 'my account password profile' },

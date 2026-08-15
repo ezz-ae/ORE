@@ -28,7 +28,7 @@ const NAV_KEYS: Record<string, string> = {
   'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
   drive: 'nav.drive', team: 'nav.team',
   integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
-  agent: 'nav.agent', calendar: 'nav.calendar',
+  agent: 'nav.agent', calendar: 'nav.calendar', wallet: 'nav.wallet',
 }
 
 export function SpacesNav() {
