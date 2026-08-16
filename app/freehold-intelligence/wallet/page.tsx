@@ -38,15 +38,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Wallet as WalletIcon, Landmark, Loader2, ArrowDownLeft, ArrowUpRight,
   Copy, Check, Flame, PenLine, AlertTriangle, QrCode, Plus, X,
-  Sparkles, RotateCcw, Megaphone, Lock, Unlock, ShieldCheck, ShieldAlert, KeyRound,
+  Sparkles, RotateCcw, Megaphone, Lock, Unlock, ShieldCheck, ShieldAlert,
   Handshake,
 } from 'lucide-react'
 import { PageHeader, StatCard, Panel, PanelHeader, EmptyState, Button, fieldClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { cashText } from '@/lib/freehold/credits-shared'
 import { shortHash } from '@/lib/freehold/ledger-chain'
-import { createKey, loadKey, signIntent, newNonce, type LocalKey } from '@/lib/freehold/wallet-key-client'
-import { SIGNATURE_REFUSALS } from '@/lib/freehold/wallet-signing'
 import {
   BANK_REFUSALS, IDLE_AFTER_DAYS,
   type BankRefusal, type CashState, type DepositState, type SpendKind, type UseState,
@@ -140,16 +138,8 @@ interface BankData {
   redenomination: { ran: false } | { ran: true; at: string; by: string | null }
 }
 
-/**
- * Every refusal the server can send, in one list.
- *
- * The signature refusals are here too: a `replayed` rendered as "that did not
- * go through" would send somebody to try again, which is the exact opposite of
- * what happened — the payment DID go through, once.
- */
-const SAYABLE: readonly string[] = [
-  ...BANK_REFUSALS, ...SIGNATURE_REFUSALS, 'notEnough', 'noSuchLot', 'error',
-]
+/** Every refusal the server can send, in one list. */
+const SAYABLE: readonly string[] = [...BANK_REFUSALS, 'notEnough', 'noSuchLot', 'error']
 const isRefusal = (s: string): boolean => SAYABLE.includes(s)
 
 /** Colour by what the state means to the reader, not by a palette order. */
@@ -305,44 +295,7 @@ function MyWallet({
   const [depAmount, setDepAmount] = useState('')
   const [depRef, setDepRef] = useState('')
 
-  // The key on this device, and whether the server will insist on one. Both
-  // come from outside: `signingRequired` is the SERVER's answer, because a
-  // screen deciding for itself whether to sign would be a screen an attacker
-  // can talk out of it.
-  const [key, setKey] = useState<LocalKey | null>(null)
-  const [signingRequired, setSigningRequired] = useState(false)
-  const [enrolling, setEnrolling] = useState(false)
-
   const w = data?.wallet ?? null
-
-  useEffect(() => {
-    void loadKey().then(setKey)
-    void fetch('/api/freehold/wallet/keys', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setSigningRequired(!!j?.signingRequired))
-      .catch(() => {})
-  }, [])
-
-  const enrol = async () => {
-    setEnrolling(true)
-    const made = await createKey()
-    if (!made) { setEnrolling(false); onNote({ tone: 'bad', text: t('wal.key.failed') }); return }
-    const res = await fetch('/api/freehold/wallet/keys', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ publicKey: made.publicKey, label: t('wal.key.thisDevice') }),
-    }).catch(() => null)
-    setEnrolling(false)
-    if (res?.ok) {
-      setKey(made); setSigningRequired(true)
-      onNote({ tone: 'ok', text: t('wal.key.done') })
-    } else {
-      // The key exists locally and the server did not take it, which would
-      // leave this device signing with something nobody accepts. Say so plainly
-      // rather than leaving a half-enrolled state to be discovered at a send.
-      const why = await res?.json().catch(() => null)
-      onNote({ tone: 'bad', text: why?.error === 'needsExistingKey' ? t('wal.key.needsExisting') : t('wal.key.failed') })
-    }
-  }
 
   // ONE KEY PER ATTEMPT, not per click, so a double-tap or a retry after a
   // dropped connection pays once.
@@ -366,40 +319,9 @@ function MyWallet({
   }
 
   const send = async () => {
-    if (!w) return
     setBusy(true)
-
-    // ONE NONCE PER ATTEMPT. It is the anti-replay token AND the ledger
-    // reference, so a retry after a dropped connection resubmits the SAME
-    // payment rather than making a second one.
-    const nonce = newNonce()
-    let signature: string | undefined
-    let signedAtMs: number | undefined
-
-    if (key) {
-      // Signed over exactly what the server will act on. The intent is built
-      // from the same fields the request carries — a signature over anything
-      // else would verify while the movement did something different.
-      signedAtMs = Date.now()
-      signature = await signIntent(key, {
-        action: 'send',
-        fromWalletId: w.id,
-        toWalletId: to,
-        amount: Number(amount),
-        memo,
-        nonce,
-        atMs: signedAtMs,
-      }).catch(() => undefined)
-      if (!signature) {
-        setBusy(false)
-        onNote({ tone: 'bad', text: t('wal.key.signFailed') })
-        return
-      }
-    }
-
     const r = await post('/api/freehold/wallet', {
-      action: 'send', toWalletId: to, amount: Number(amount), memo,
-      nonce, signature, signedAtMs, reference: idem,
+      action: 'send', toWalletId: to, amount: Number(amount), memo, reference: idem,
     })
     setBusy(false)
     if (r) {
@@ -623,24 +545,6 @@ function MyWallet({
         </Panel>
       )}
 
-      {/* ── THE KEY ────────────────────────────────────────────────────────
-          Offered, not forced. Somebody who has never been asked for a key is
-          not locked out of their own balance to enforce an upgrade they never
-          saw — but the moment they take one, the server starts insisting. */}
-      {!key && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4">
-          <span className="min-w-0 text-sm text-slate-400">
-            <KeyRound className="me-1.5 inline h-3.5 w-3.5" />
-            {signingRequired ? t('wal.key.otherDevice') : t('wal.key.offer')}
-          </span>
-          {!signingRequired && (
-            <Button size="sm" variant="secondary" disabled={enrolling} onClick={() => void enrol()}>
-              {enrolling ? t('wal.key.making') : t('wal.key.action')}
-            </Button>
-          )}
-        </div>
-      )}
-
       {/* ── SHEETS ────────────────────────────────────────────────────────── */}
 
       {sheet === 'send' && (
@@ -668,20 +572,7 @@ function MyWallet({
             <input value={memo} onChange={(e) => setMemo(e.target.value)}
               placeholder={t('wal.send.memoPlaceholder')} className={`${fieldClass()} mt-1 w-full`} />
           </label>
-          {/* THE STATE THAT MUST NOT BE DISCOVERED AT THE BUTTON. The server
-              will refuse an unsigned send from somebody who has a key, so a
-              device without the key says so here rather than failing later. */}
-          {signingRequired && !key ? (
-            <p className="rounded-lg border border-amber-500/25 px-3 py-2 text-sm text-amber-100/90">
-              {t('wal.key.otherDevice')}
-            </p>
-          ) : key ? (
-            <p className="flex items-center gap-1.5 text-xs text-slate-500">
-              <KeyRound className="h-3.5 w-3.5" /> {t('wal.key.willSign')}
-            </p>
-          ) : null}
-          <Button onClick={() => void send()}
-            disabled={busy || !to || !amount || (signingRequired && !key)}>
+          <Button onClick={() => void send()} disabled={busy || !to || !amount}>
             {busy ? t('wal.send.sending') : t('wal.send.action')}
           </Button>
         </Sheet>

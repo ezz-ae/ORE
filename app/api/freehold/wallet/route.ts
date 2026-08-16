@@ -24,8 +24,6 @@ import { listWallets, verifyLedgerChain } from '@/lib/freehold/wallet-db'
 import { walletCommissions } from '@/lib/freehold/deal-payout-db'
 import { isValidAmount } from '@/lib/freehold/wallet'
 import { SPEND_KINDS, type Actor, type SpendKind, type SpendProof } from '@/lib/freehold/bank'
-import { verifyIntent } from '@/lib/freehold/wallet-signing-db'
-import { SIGNATURE_REFUSALS, type SignedIntent } from '@/lib/freehold/wallet-signing'
 import { MAX_CREDIT_AMOUNT } from '@/lib/freehold/credits-shared'
 
 export const runtime = 'nodejs'
@@ -107,48 +105,12 @@ export async function POST(req: NextRequest) {
       const to = String(body.toWalletId ?? '').trim()
       if (!to) return NextResponse.json({ error: 'noSuchWallet' }, { status: 400 })
 
-      // ── THE SIGNATURE, CHECKED BEFORE ANYTHING MOVES ───────────────────
-      //
-      // Once this person has a key, an UNSIGNED send is refused. That rule is
-      // the whole scheme: if unsigned still worked, somebody holding a stolen
-      // cookie would simply not sign.
-      //
-      // The intent is rebuilt HERE from the fields the server is actually going
-      // to act on, never taken from the client as an object. A client-supplied
-      // intent would let the signature cover one destination while the movement
-      // used another — the signature would verify and the money would go
-      // somewhere else.
-      const memo = String(body.memo ?? '')
-      const intent: SignedIntent = {
-        action: 'send',
-        fromWalletId: walletId,
-        toWalletId: to,
-        amount,
-        memo,
-        nonce: String(body.nonce ?? ''),
-        atMs: Number(body.signedAtMs ?? 0),
-      }
-      const signed = await verifyIntent({
-        userId: personId(user),
-        walletId,
-        intent,
-        signature: body.signature ? String(body.signature) : undefined,
-        nowMs: Date.now(),
-      })
-      if (!signed.ok) {
-        return NextResponse.json({ error: signed.refusal, signature: true }, { status: 403 })
-      }
-
       const r = await sendCash({
         actor, toWalletId: to, amount,
         memo: String(body.memo ?? ''),
-        // THE NONCE IS THE REFERENCE. The anti-replay record and the ledger's
-        // idempotency spine are then the same string rather than two that could
-        // disagree about which payment this is — and a retry after a dropped
-        // connection still pays once.
-        reference: body.nonce
-          ? `send:${String(body.nonce)}`
-          : body.reference ? `send:${String(body.reference)}` : undefined,
+        // The client supplies the key, so a retry after a dropped connection
+        // pays once. Without it, "did that go through?" becomes "send it again".
+        reference: body.reference ? `send:${String(body.reference)}` : undefined,
       })
       return r.ok
         ? NextResponse.json({ ok: true, duplicate: r.duplicate ?? false })
