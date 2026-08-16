@@ -470,9 +470,20 @@ console.log('\n── the launch repairs EVERY interest, not just the base ones 
   check('the repair reads the exclusions',
     /collect\(targeting\.exclusions\?\.interests\)/.test(repair.slice(0, 3000)),
     'repairTargetingInterests does not walk exclusions')
-  check('a group left empty by the repair is dropped, never sent empty',
-    /\.filter\(\(g\) => \(g\.interests\?\.length \?\? 0\) \+ \(g\.behaviors\?\.length \?\? 0\) > 0\)/.test(repair.slice(0, 4000)),
-    'an emptied narrowing group would ship as an invalid payload')
+  // THIS ASSERTION USED TO NAME ONE LINE — the `.filter(...)` that removed any
+  // group with nothing in it. It was right about the danger (Meta rejects an
+  // empty flexible_spec entry) and wrong to lock in the mechanism, because that
+  // mechanism ALSO deleted a group emptied by our own failure to validate,
+  // which ships the campaign broad. So it now checks the two properties
+  // instead, which pull in opposite directions and must both hold.
+  check('a group that arrives empty is still never sent',
+    /if \(had === 0\) return null/.test(repair.slice(0, 4000))
+      && /\.filter\(\(g\): g is NonNullable<typeof g> => g !== null\)/.test(repair.slice(0, 4000)),
+    'an empty narrowing group would ship as an invalid payload')
+  check('…but a group emptied BY the repair is kept whole, not deleted',
+    /if \(left === 0\) \{/.test(repair.slice(0, 4000))
+      && /emptiedGroups\.push/.test(repair.slice(0, 4000)),
+    'an unvalidatable qualifier is still silently dropped, which runs the campaign broad')
 
   const launch = CLIENT.slice(CLIENT.indexOf('export async function launchFullCampaign'))
   check('the launch path runs the whole-spec repair',

@@ -1242,11 +1242,28 @@ async function resolveInterestNames(names: string[]): Promise<Map<string, string
   url.searchParams.set('access_token', token)
   const res = await fetch(url.toString())
   const json = (await res.json()) as { data?: Array<{ name: string; valid: boolean; id?: string }> }
-  return new Map(
-    (json.data ?? [])
-      .filter((d) => d.valid && d.id)
-      .map((d) => [String(d.name).toLowerCase(), String(d.id)]),
-  )
+
+  // KEYED ON WHAT WE ASKED, NOT ON WHAT META ANSWERED.
+  //
+  // This map used to be keyed on `d.name` — Meta's spelling — and the caller
+  // then looked up OUR spelling. Any difference in casing, punctuation or
+  // canonical wording missed, the interest was recorded as unrecognised, and a
+  // perfectly live targeting node was dropped from a real launch. Meta returns
+  // its answers in request order, so the query is the reliable key and the
+  // response is not.
+  const answers = json.data ?? []
+  const byQuery = new Map<string, string>()
+  names.forEach((asked, i) => {
+    const d = answers[i]
+    if (d && d.valid && d.id) byQuery.set(asked.toLowerCase(), String(d.id))
+  })
+  // Belt and braces: also accept a match on Meta's own spelling, for the case
+  // where the response is NOT in request order. Added rather than substituted,
+  // because the failure this replaces was caused by trusting one signal.
+  for (const d of answers) {
+    if (d?.valid && d.id && d.name) byQuery.set(String(d.name).toLowerCase(), String(d.id))
+  }
+  return byQuery
 }
 
 export async function validateInterests(
@@ -1295,7 +1312,7 @@ export async function validateInterests(
  */
 export async function repairTargetingInterests<T extends CampaignTargeting>(
   targeting: T,
-): Promise<{ targeting: T; dropped: string[] }> {
+): Promise<{ targeting: T; dropped: string[]; keptDespiteFailure: string[] }> {
   const names = new Set<string>()
   const collect = (xs?: { id: string; name: string }[]) => {
     for (const x of xs ?? []) if (x?.name) names.add(x.name)
@@ -1303,13 +1320,13 @@ export async function repairTargetingInterests<T extends CampaignTargeting>(
   collect(targeting.interests)
   for (const g of targeting.narrowing ?? []) collect(g.interests)
   collect(targeting.exclusions?.interests)
-  if (names.size === 0) return { targeting, dropped: [] }
+  if (names.size === 0) return { targeting, dropped: [], keptDespiteFailure: [] }
 
   let live: Map<string, string>
   try {
     live = await resolveInterestNames([...names])
   } catch {
-    return { targeting, dropped: [] } // fail-open; see doc above
+    return { targeting, dropped: [], keptDespiteFailure: [] } // fail-open; see doc above
   }
 
   const dropped: string[] = []
@@ -1320,11 +1337,47 @@ export async function repairTargetingInterests<T extends CampaignTargeting>(
       return [{ id, name: x.name }]
     })
 
+  // ── A NARROWING GROUP IS NEVER SILENTLY EMPTIED ────────────────────────
+  //
+  // The narrowing groups are the MUST rules — the real-estate qualifier rides
+  // on every audience this product builds. Dropping one does not make the
+  // audience slightly less precise; it removes the only thing making the
+  // audience about property at all, and the campaign runs BROAD.
+  //
+  // That used to happen quietly: any interest whose name failed to resolve was
+  // dropped, a group left empty was filtered out, and the sole record was a
+  // console.warn. A day of broad delivery and expensive rubbish leads, with
+  // nothing on any screen to explain it.
+  //
+  // So the inversion: if repair would empty a group that HAD content, keep the
+  // group exactly as it was and let Meta judge it. A launch Meta refuses costs
+  // one retry and says why. A launch that quietly goes broad costs a day of
+  // spend and looks like the ads simply underperformed.
+  // TWO PROPERTIES, BOTH REQUIRED, and they pull in opposite directions:
+  //
+  //   · never SEND an empty group — Meta rejects an empty flexible_spec entry,
+  //     so a group that arrives with nothing in it is still dropped exactly as
+  //     it always was;
+  //   · never EMPTY a group that had something — that is the qualifier going
+  //     broad, silently, which is what this change exists to stop.
+  //
+  // The distinction is where the emptiness came from. Arrived empty: drop it,
+  // it was never a rule. Emptied by our own failure to validate: keep it whole
+  // and let Meta be the one to refuse.
+  const emptiedGroups: string[] = []
   const narrowing = (targeting.narrowing ?? [])
-    .map((g) => ({ ...g, interests: fix(g.interests) }))
-    // A group whose every interest died is not a narrower audience — it is
-    // an invalid payload. Drop it and let the rest of the spec stand.
-    .filter((g) => (g.interests?.length ?? 0) + (g.behaviors?.length ?? 0) > 0)
+    .map((g) => {
+      const had = (g.interests?.length ?? 0) + (g.behaviors?.length ?? 0)
+      if (had === 0) return null
+      const repairedInterests = fix(g.interests)
+      const left = repairedInterests.length + (g.behaviors?.length ?? 0)
+      if (left === 0) {
+        emptiedGroups.push((g.interests ?? []).map((i) => i.name).join(' / '))
+        return g
+      }
+      return { ...g, interests: repairedInterests }
+    })
+    .filter((g): g is NonNullable<typeof g> => g !== null)
 
   const exInterests = fix(targeting.exclusions?.interests)
   const exBehaviors = targeting.exclusions?.behaviors ?? []
@@ -1339,6 +1392,10 @@ export async function repairTargetingInterests<T extends CampaignTargeting>(
         : undefined,
     },
     dropped: [...new Set(dropped)],
+    // Named separately from `dropped` because it means something far worse: a
+    // qualifier we kept ONLY because emptying it would have gone broad. The
+    // launch must say this out loud rather than log it.
+    keptDespiteFailure: [...new Set(emptiedGroups)],
   }
 }
 
@@ -3121,30 +3178,101 @@ export async function searchBehaviors(
  * lookup silently DROPS dead ids from the response instead of reporting
  * them, which would hide exactly the failure this exists to catch.
  */
+/** Walkable — what we actually learned about one catalog entry. */
+export const ENTITY_VERDICTS = ['live', 'renamed', 'dead', 'unknown'] as const
+export type EntityVerdict = (typeof ENTITY_VERDICTS)[number]
+
 export interface EntityCheck {
   id: string
   /** The name our own catalog claims for this id. */
   claimedName: string
+  /**
+   * `unknown` is not a failure of the interest — it is a failure of the CHECK,
+   * and the two must never render the same. The screen that reported eight
+   * core property interests as retired was reporting its own inability to ask.
+   */
+  verdict: EntityVerdict
   valid: boolean
-  /** Meta's own current name for the id, when valid — catches the id
-   *  drifting to mean something other than what we call it, not just
-   *  going dead outright. */
+  /** Meta's own current name for the id, when it told us one. */
   liveName: string | null
   error: string | null
 }
 
+/**
+ * VALIDATE AGAINST THE TARGETING VOCABULARY, NOT THE OBJECT GRAPH.
+ *
+ * This used to do `GET /{id}?fields=id,name` per entry. That resolves an id
+ * against whatever object in Meta's graph happens to carry it — a Page, a post,
+ * an ad — because targeting nodes are not first-class Graph objects you can
+ * fetch that way. The results were not a report on our catalog at all:
+ *
+ *   · eight core property interests came back "retired" because the GET simply
+ *     errored, which for a targeting id is the normal answer
+ *   · "Job seeking" came back RENAMED TO "Beauty" — not a rename, a different
+ *     object entirely that happens to hold that number
+ *
+ * The right endpoint is the one `resolveInterestNames` two thousand lines above
+ * has used all along: `search?type=adinterestvalid`, scoped to the targeting
+ * vocabulary. `interest_fbid_list` asks it by ID, which is what a catalog audit
+ * needs — the ids are the thing being audited.
+ *
+ * A missing answer is `unknown`, never `dead`. A checker with only two outcomes
+ * reports every one of its own failures as somebody else's.
+ */
 export async function verifyEntityIds(
   entities: Array<{ id: string; name: string }>,
 ): Promise<EntityCheck[]> {
-  return Promise.all(entities.map(async ({ id, name }) => {
-    try {
-      const node = await apiFetch<{ id?: string; name?: string }>(`/${id}`, undefined, { fields: 'id,name' })
-      return { id, claimedName: name, valid: true, liveName: node.name ?? null, error: null }
-    } catch (err) {
-      const message = err instanceof MetaApiError ? err.message : 'Meta did not answer'
-      return { id, claimedName: name, valid: false, liveName: null, error: message }
+  if (!entities.length) return []
+  const unchecked = (error: string): EntityCheck[] =>
+    entities.map((e) => ({
+      id: e.id, claimedName: e.name, verdict: 'unknown' as const,
+      valid: false, liveName: null, error,
+    }))
+
+  let answers: Array<{ id?: string; name?: string; valid?: boolean }> = []
+  try {
+    const { token } = await creds()
+    const url = new URL(`${API_BASE}/search`)
+    url.searchParams.set('type', 'adinterestvalid')
+    url.searchParams.set('interest_fbid_list', JSON.stringify(entities.map((e) => e.id)))
+    url.searchParams.set('access_token', token)
+    const res = await fetch(url.toString())
+    const json = (await res.json()) as {
+      data?: Array<{ id?: string; name?: string; valid?: boolean }>
+      error?: { message?: string }
     }
-  }))
+    if (json.error) return unchecked(json.error.message ?? 'Meta refused the check')
+    answers = json.data ?? []
+  } catch {
+    // COULD NOT ASK. Every entry is unknown — reporting a catalog as dead
+    // because our own request failed is the fault this rewrite exists for.
+    return unchecked('Meta could not be reached')
+  }
+
+  // Answers come back in request order; the id is carried too, so match on the
+  // id where it is present and fall back to position. Never on the name — that
+  // is the mistake that made a valid interest look renamed.
+  const byId = new Map<string, { id?: string; name?: string; valid?: boolean }>()
+  answers.forEach((a) => { if (a?.id) byId.set(String(a.id), a) })
+
+  return entities.map((e, i) => {
+    const a = byId.get(e.id) ?? answers[i]
+    if (!a) {
+      return { id: e.id, claimedName: e.name, verdict: 'unknown' as const,
+               valid: false, liveName: null, error: 'Meta did not answer for this id' }
+    }
+    if (!a.valid) {
+      return { id: e.id, claimedName: e.name, verdict: 'dead' as const,
+               valid: false, liveName: null, error: 'Meta no longer recognises this id' }
+    }
+    const liveName = a.name ? String(a.name) : null
+    const renamed = !!liveName && liveName.toLowerCase() !== e.name.toLowerCase()
+    return {
+      id: e.id, claimedName: e.name,
+      verdict: renamed ? ('renamed' as const) : ('live' as const),
+      valid: true, liveName, error: null,
+    }
+  })
 }
 
 /** The ad account's Custom + Lookalike audiences with real size bands. */
@@ -3394,6 +3522,16 @@ export async function launchFullCampaign(params: {
   const repaired = await repairTargetingInterests(params.targeting)
   if (repaired.dropped.length > 0) {
     console.warn('[meta/launch] dropped interests Meta no longer recognises:', repaired.dropped.join(', '))
+  }
+  // A QUALIFIER THAT SURVIVED ONLY BECAUSE WE REFUSED TO DROP IT is the loudest
+  // thing this function can learn, and it used to be a console line. It means
+  // our catalog and Meta disagree about a rule that shapes every audience —
+  // and if the ad set is then refused, THIS is the reason, not the creative.
+  if (repaired.keptDespiteFailure.length > 0) {
+    console.error(
+      '[meta/launch] TARGETING QUALIFIER COULD NOT BE VALIDATED and was sent unchanged rather than dropped:',
+      repaired.keptDespiteFailure.join(' | '),
+    )
   }
   // Lead-language narrowing: resolve the wizard's language codes to Meta's
   // real numeric locale IDs (live search — Meta publishes no static table)

@@ -194,9 +194,15 @@ export default function MetaIntegrationPage() {
   // ── Targeting health: is what the system launches with still real? ─────────
   // Checked against the SERVER's live Meta connection (the one launches
   // actually use), on demand — not on every page load.
-  type EntityCheck = { id: string; claimedName: string; valid: boolean; liveName: string | null; error: string | null }
+  // `verdict` rather than a boolean, because "we could not check" is a third
+  // answer and folding it into `!valid` is what made this screen lie.
+  type EntityCheck = {
+    id: string; claimedName: string
+    verdict: 'live' | 'renamed' | 'dead' | 'unknown'
+    valid: boolean; liveName: string | null; error: string | null
+  }
   const [targetingChecking, setTargetingChecking] = useState(false)
-  const [targetingResult, setTargetingResult] = useState<{ checked: number; dead: number; renamed: number; results: EntityCheck[] } | null>(null)
+  const [targetingResult, setTargetingResult] = useState<{ checked: number; dead: number; renamed: number; unknown?: number; results: EntityCheck[] } | null>(null)
   const [targetingErr, setTargetingErr] = useState('')
 
   async function checkTargeting() {
@@ -670,7 +676,7 @@ export default function MetaIntegrationPage() {
                 {targetingResult.dead > 0 && (
                   <p className="text-xs font-medium text-red-300">{t('pintmeta.targeting.deadCount', { n: String(targetingResult.dead) })}</p>
                 )}
-                {targetingResult.results.filter((r) => !r.valid).map((r) => (
+                {targetingResult.results.filter((r) => r.verdict === 'dead').map((r) => (
                   <div key={r.id} className="flex items-start gap-2.5 rounded-[12px] border border-red-400/20 bg-red-400/[0.05] px-4 py-3">
                     <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                     <div className="min-w-0">
@@ -679,7 +685,7 @@ export default function MetaIntegrationPage() {
                     </div>
                   </div>
                 ))}
-                {targetingResult.renamed > 0 && targetingResult.results.filter((r) => r.valid && r.liveName && r.liveName !== r.claimedName).map((r) => (
+                {targetingResult.renamed > 0 && targetingResult.results.filter((r) => r.verdict === 'renamed').map((r) => (
                   <div key={r.id} className="flex items-start gap-2.5 rounded-[12px] border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                     <div className="min-w-0">
@@ -688,6 +694,18 @@ export default function MetaIntegrationPage() {
                     </div>
                   </div>
                 ))}
+                {/* COULD NOT CHECK IS ITS OWN ANSWER. It used to render as a
+                    red X saying Meta had retired the interest — the screen
+                    reporting its own failure as somebody else's, in the most
+                    alarming words it had. */}
+                {(targetingResult.unknown ?? 0) > 0 && (
+                  <div className="flex items-start gap-2.5 rounded-[12px] border border-slate-400/20 bg-slate-400/[0.05] px-4 py-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                    <div className="min-w-0 text-sm text-slate-300">
+                      {t('pintmeta.targeting.unknownHint', { n: String(targetingResult.unknown) })}
+                    </div>
+                  </div>
+                )}
                 {targetingResult.dead === 0 && (
                   <p className="text-xs text-slate-500">{t('pintmeta.targeting.restGood', { n: String(targetingResult.checked - targetingResult.renamed) })}</p>
                 )}
