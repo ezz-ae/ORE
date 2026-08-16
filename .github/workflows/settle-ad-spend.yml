@@ -1,0 +1,95 @@
+# BILLING THE ADS HOURLY, ON A PLAN THAT ONLY ALLOWS DAILY CRONS.
+#
+# The settlement job is the only brake on real ad spend: nothing is reserved at
+# launch, so it is what bills delivered spend to a wallet and pauses a campaign
+# whose owner can no longer cover it. Every hour it does not run is an hour of
+# Meta spend the company has paid for and not billed.
+#
+# Vercel's Hobby plan permits one run per day per cron expression, and an
+# hourly expression in vercel.json does not merely get downgraded — it FAILS
+# THE WHOLE DEPLOYMENT at config validation. That is what happened: an hourly
+# entry landed and every deployment after it was rejected for two days, with no
+# failed build in the list to point at, because none was ever created.
+#
+# So the schedule lives here instead. GitHub Actions runs it hourly for free,
+# and vercel.json keeps a DAILY entry for the same endpoint as a backstop — if
+# this workflow is ever disabled, settlement degrades to once a day rather than
+# stopping. Both are safe to overlap: the job settles to a high-water mark, so
+# running it twice in a minute moves nothing the second time.
+name: Settle ad spend
+
+on:
+  schedule:
+    # Hourly, on the hour. GitHub queues scheduled runs under load, so treat
+    # this as "about hourly" — the high-water mark means a late run simply
+    # catches up rather than losing a charge.
+    - cron: '0 * * * *'
+  # So somebody can force a settlement without waiting for the hour.
+  workflow_dispatch:
+
+concurrency:
+  # Never two settlements at once. They are idempotent, but a queued pile-up
+  # after an outage would hammer Meta's API for no benefit.
+  group: settle-ad-spend
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Bill delivered ad spend
+        env:
+          BASE_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          # FAIL LOUDLY ON A MISSING SECRET. A workflow that skips quietly is
+          # exactly the failure this whole file exists to prevent: it would go
+          # green every hour while nothing was billed.
+          if [ -z "${BASE_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::PRODUCTION_URL and CRON_SECRET must be set as repository secrets."
+            echo "Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            --max-time 300 \
+            -H "authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL%/}/api/cron/settle-ad-spend")
+
+          echo "HTTP ${code}"
+          cat /tmp/out.json
+          echo
+
+          # A 502 is Meta being unreachable — the job billed nothing and paused
+          # nothing, deliberately, rather than stopping working campaigns over
+          # our own failed read. Surface it without failing the run, so a Meta
+          # blip does not read as a broken pipeline.
+          if [ "$code" = "502" ]; then
+            echo "::warning::Meta could not be read this hour. Nothing billed, nothing paused."
+            exit 0
+          fi
+          if [ "$code" != "200" ]; then
+            echo "::error::Settlement failed with HTTP ${code}."
+            exit 1
+          fi
+
+          # The number that matters is what could NOT be billed — money already
+          # paid to the platform. Lift it into the run summary so it is visible
+          # without opening logs.
+          unbilled=$(python3 -c "import json,sys; print(json.load(open('/tmp/out.json')).get('unbilledAed', 0))" 2>/dev/null || echo 0)
+          settled=$(python3 -c "import json,sys; print(json.load(open('/tmp/out.json')).get('settledAed', 0))" 2>/dev/null || echo 0)
+          paused=$(python3 -c "import json,sys; print(json.load(open('/tmp/out.json')).get('paused', 0))" 2>/dev/null || echo 0)
+          {
+            echo "### Ad spend settled"
+            echo ""
+            echo "| billed | unbilled | campaigns paused |"
+            echo "|---|---|---|"
+            echo "| AED ${settled} | AED ${unbilled} | ${paused} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${unbilled}" != "0" ]; then
+            echo "::warning::AED ${unbilled} of delivered spend could not be billed to a wallet."
+          fi
