@@ -3249,14 +3249,28 @@ export async function verifyEntityIds(
     return unchecked('Meta could not be reached')
   }
 
-  // Answers come back in request order; the id is carried too, so match on the
-  // id where it is present and fall back to position. Never on the name — that
-  // is the mistake that made a valid interest look renamed.
+  // MATCHED STRICTLY BY ID.
+  //
+  // There was a `?? answers[i]` positional fallback here, and it is what put
+  // the name "Beauty" on two unrelated interests at once. Meta does not always
+  // echo the id back; when it does not, `byId` is empty and EVERY entity fell
+  // through to position, so a short or reordered `data` array married each id
+  // to somebody else's answer and the screen reported renames that never
+  // happened — the same false alarm, from a different direction, as the bare
+  // GET this function replaced.
+  //
+  // A position is a guess. This function exists because a guess was once
+  // dressed up as an answer, so it does not get to keep one.
   const byId = new Map<string, { id?: string; name?: string; valid?: boolean }>()
   answers.forEach((a) => { if (a?.id) byId.set(String(a.id), a) })
 
-  return entities.map((e, i) => {
-    const a = byId.get(e.id) ?? answers[i]
+  // Nothing to match on at all. Unchecked beats inventing an alignment.
+  if (byId.size === 0) {
+    return unchecked('Meta answered without saying which id each answer belongs to')
+  }
+
+  return entities.map((e) => {
+    const a = byId.get(e.id)
     if (!a) {
       return { id: e.id, claimedName: e.name, verdict: 'unknown' as const,
                valid: false, liveName: null, error: 'Meta did not answer for this id' }

@@ -72,8 +72,32 @@ console.log('\n── the check asks the targeting vocabulary, not the object gr
     /interest_fbid_list/.test(verify))
 
   // MATCHING BY NAME IS WHAT MADE A LIVE INTEREST LOOK RENAMED.
-  check('answers are matched by id, never by name',
-    /byId\.get\(e\.id\) \?\? answers\[i\]/.test(verify))
+  check('answers are matched by id', /const a = byId\.get\(e\.id\)/.test(verify))
+
+  // AND NEVER BY POSITION. This assertion used to REQUIRE the positional
+  // fallback `?? answers[i]`, which is how the screen came to report two
+  // unrelated interests both renamed to "Beauty": Meta does not always echo
+  // the id, and when it does not, every entity fell through to position and
+  // was married to somebody else's answer. The guard was pinning the bug.
+  check('…and never by position, which manufactures renames',
+    !/answers\[i\]/.test(verify),
+    'the positional fallback is back — a short or reordered answer array will invent renames')
+  check('…and a batch with no ids to match on is unchecked, not aligned by guesswork',
+    /if \(byId\.size === 0\)/.test(verify))
+}
+
+console.log('\n── an unknown is never counted as a live one ──')
+{
+  // THE CONTRADICTION THAT SHIPPED. The footer subtracted only `renamed`, so
+  // the screen printed "Meta could not be asked about 7 of these" and directly
+  // beneath it "the other 7 are live and valid" — about the same seven. An
+  // unknown reported as good is this panel's original fault wearing a
+  // different hat.
+  check('the footer excludes the unchecked from the good count',
+    /checked - targetingResult\.renamed - \(targetingResult\.unknown \?\? 0\)/.test(page),
+    'unchecked entries are still being counted as live and valid')
+  check('…and says nothing at all rather than "0 are live"',
+    /- \(targetingResult\.unknown \?\? 0\) > 0 &&/.test(page))
 }
 
 console.log('\n── "could not check" is its own answer ──')

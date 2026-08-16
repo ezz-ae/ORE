@@ -706,8 +706,18 @@ export default function MetaIntegrationPage() {
                     </div>
                   </div>
                 )}
-                {targetingResult.dead === 0 && (
-                  <p className="text-xs text-slate-500">{t('pintmeta.targeting.restGood', { n: String(targetingResult.checked - targetingResult.renamed) })}</p>
+                {/* ONLY THE ONES META ACTUALLY CONFIRMED.
+                    This subtracted `renamed` alone, so every unchecked entry
+                    was counted as live — the screen printed "Meta could not be
+                    asked about 7 of these" and, one line below, "the other 7
+                    are live and valid" about THE SAME SEVEN. Reporting an
+                    unknown as good is the whole fault this panel was rebuilt
+                    to stop, and it survived here in the footer. */}
+                {targetingResult.dead === 0
+                  && targetingResult.checked - targetingResult.renamed - (targetingResult.unknown ?? 0) > 0 && (
+                  <p className="text-xs text-slate-500">{t('pintmeta.targeting.restGood', {
+                    n: String(targetingResult.checked - targetingResult.renamed - (targetingResult.unknown ?? 0)),
+                  })}</p>
                 )}
               </div>
             )}
