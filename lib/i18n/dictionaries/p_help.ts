@@ -131,6 +131,57 @@ export const p_help: Record<Locale, Dict> = {
     'help.inventory.a3': "They grade how complete a project's data is (photos, prices, payment plan…). High scores make better ads and landing pages; the Data quality page shows exactly what's missing.",
     'help.inventory.l3': 'Data quality',
     // ── Deals, commission & finance ──
+    // ── Cash & the Wallet ──────────────────────────────────────────────────
+    // Written for somebody who has never been told what Cash is and has just
+    // noticed a number on their wallet. No ledger, no double entry, no
+    // "issuance" — those words are in the code, which is where they belong.
+    'help.cash.title': 'Cash & your wallet',
+    'help.cash.l1': 'Open my wallet',
+    'help.cash.l6': 'My campaigns',
+    'help.cash.l10': 'Open the Bank',
+
+    'help.cash.q1': 'What is Cash?',
+    'help.cash.a1': 'Cash is company money you can spend inside the system. One Cash is one dirham — always, with nothing to convert. If your wallet says 400, the company is holding AED 400 for you and you can spend it here.\n\nIt is not money you can withdraw at a machine. It pays for the things this system buys on your behalf — mostly ads — and it is how the company pays you what you have earned.',
+
+    'help.cash.q2': 'Where do I see mine?',
+    'help.cash.a2': 'The Wallet tab at the top. The big number is what you hold and can spend right now. Underneath it is your account number — the thing somebody types or scans to pay you, like an IBAN.\n\nTwo smaller lines can appear beside the balance and they are deliberately NOT added into it: money on its way that has not been confirmed, and money already committed to ads that are running. Both are still yours. Neither can be spent today, so neither is in the number.',
+
+    'help.cash.q3': 'How do I send Cash to somebody?',
+    'help.cash.a3': 'Wallet → Send. Pick the person or paste their account number, type the amount, and send. It lands in their wallet immediately.\n\nAnyone can send to anyone — there is no chain of command in a payment. What nobody can do, at any level, is take money OUT of somebody else\'s wallet. Money is only ever pushed from your own.',
+
+    'help.cash.q4': 'How do I get more Cash?',
+    'help.cash.a4': 'Three ways, and they are different.\n\n1. Somebody sends it to you — usually your manager, from their own wallet.\n2. You pay the company for it. Wallet → Top up, enter the amount and the transaction number from your transfer. Read the next answer before you rely on this one.\n3. You earn it. Closed deals pay your commission straight into your wallet, and accurate lead ratings pay a little back.',
+
+    'help.cash.q5': 'I recorded a payment and my balance did not change. Why?',
+    'help.cash.a5': 'Because recording a payment is you telling us money arrived — it is not the money arriving. Finance matches it against the bank statement, usually the same day, and it becomes spendable Cash then.\n\nUntil then it shows in your activity as "waiting to be matched" and sits beside your balance rather than inside it. If we credited it the moment somebody typed a number, anybody could type any number.',
+
+    'help.cash.q6': 'How do ads spend my Cash?',
+    'help.cash.a6': 'You are charged what the ads ACTUALLY spend, not what you budgeted. Every AED 10 Meta or Google genuinely delivers moves 10 Cash from your wallet.\n\nSo a campaign set to AED 300 a day that only delivers AED 40 costs you 40, not 300. Nothing is taken at launch and nothing is held back. What we do check at launch is that you hold at least two days of your budget — a campaign whose owner cannot cover it gets paused within hours, after the platform has already charged for the impressions.',
+
+    'help.cash.q7': 'What happens if I run out while an ad is running?',
+    'help.cash.a7': 'The campaign is paused. Not when you hit zero — the moment your wallet cannot cover what the ad has already delivered, because by then the money has genuinely been spent.\n\nTop up or ask for Cash and start it again. Nothing is lost: the ad, the audience and the creative are all still there.',
+
+    'help.cash.q8': 'When do I get my commission?',
+    'help.cash.a8': 'As the client pays, not when the deal is signed. Your share of every instalment goes into your wallet as that instalment reaches the agency.\n\nSo a deal collected over five months pays you over five months. Your wallet shows each payment with its date, what your share of it was, and how much is still waiting on the client — which is the part you can actually plan around.',
+
+    'help.cash.q9': 'Can somebody take Cash back out of my wallet?',
+    'help.cash.a9': 'No. There is no such button, for anybody, at any level — it is not a permission somebody could be given, it simply does not exist in the system.\n\nMoney only ever moves out of a wallet because its holder sent it, or because they spent it on something. Every movement is recorded on both sides with who did it and when, and you can read your whole history in your wallet.',
+
+    'help.cash.q10': 'Where does Cash come from in the first place?',
+    'help.cash.a10': 'The Bank, which is a tab inside the Wallet for management only. It has two doors and the difference between them matters more than anything else on the screen.\n\nDEPOSIT is real money: somebody paid the company and it carries the transaction number. MINT is the company creating Cash with no money behind it — a promotion, a top-up, a line of credit for a broker who has earned one.\n\nBoth become spendable Cash and the Bank NEVER adds them into one total, because the gap between them is exactly how much of what everyone is holding is a promise rather than money in the account.',
+
+    'help.cash.q11': 'How do I give a broker Cash?',
+    'help.cash.a11': 'Three visible steps, on purpose. Mint it in the Bank if there is none sitting there, sign it out to your own wallet, then send it to them from your wallet like anybody else.\n\nThere is deliberately no button that puts money straight from the Bank into somebody else\'s hands. The middle step puts a named person between the company\'s money and a broker\'s balance, and that name is on the record forever.',
+
+    'help.cash.q12': 'What is a cheque, and who can destroy Cash?',
+    'help.cash.a12': 'Cash sitting in the Bank that nobody has signed out belongs to nobody, so any admin can burn it.\n\nThe moment you sign it out it becomes a cheque with your name on it. From then on only you can destroy it, however far it travels afterwards — and only while you still hold it. If you have sent it on, it is not yours to destroy any more.\n\nBurning is permanent. The money does not come back.',
+
+    'help.cash.q13': 'Somebody paid us — how do I turn that into their Cash?',
+    'help.cash.a13': 'They record it themselves from their wallet with the transaction number. It appears in the Bank as "waiting on the statement".\n\nYou check it against the bank statement and press "Match it". That is the moment the Cash exists. If the money never arrived, reject it — nothing was ever created, so there is nothing to unwind.',
+
+    'help.cash.q14': 'How do I see who is sitting on money they were given?',
+    'help.cash.a14': 'The Bank tab, "Who is using what they were given". Anybody holding Cash they have not touched for fourteen days is marked and sorted to the top.\n\nThat is the finding the report exists for. Overspending announces itself — a campaign runs, a balance drops, somebody notices. Money that was sent and never used is invisible until a quarter later when the pipeline is thin and nobody can say why.',
+
     'help.finance.title': 'Deals, commission & finance',
     'help.finance.q1': 'How do I record a deal?',
     'help.finance.a1': 'Close the lead on the CRM board (the deal window opens itself), or add it manually in Management → Deals — project and broker autofill.',
@@ -372,6 +423,53 @@ export const p_help: Record<Locale, Dict> = {
     'help.inventory.a3': 'تقيّم اكتمال بيانات المشروع (صور، أسعار، خطة دفع…). الدرجات العالية تصنع إعلانات وصفحات هبوط أفضل؛ وصفحة جودة البيانات تعرض بالضبط ما الناقص.',
     'help.inventory.l3': 'جودة البيانات',
     // ── Deals, commission & finance ──
+    'help.cash.title': 'الكاش ومحفظتك',
+    'help.cash.l1': 'افتح محفظتي',
+    'help.cash.l6': 'حملاتي',
+    'help.cash.l10': 'افتح البنك',
+
+    'help.cash.q1': 'ما هو الكاش؟',
+    'help.cash.a1': 'الكاش هو أموال الشركة التي يمكنك إنفاقها داخل النظام. 1 كاش = 1 درهم دائماً، بلا أي تحويل. إذا كانت محفظتك تقول 400، فالشركة تحتفظ لك بـ 400 درهم ويمكنك إنفاقها هنا.\n\nهي ليست أموالاً تسحبها من الصراف. إنها تدفع ثمن ما يشتريه هذا النظام نيابة عنك — الإعلانات في الأساس — وهي الطريقة التي تدفع بها الشركة لك ما كسبته.',
+
+    'help.cash.q2': 'أين أرى رصيدي؟',
+    'help.cash.a2': 'تبويب «المحفظة» في الأعلى. الرقم الكبير هو ما تملكه ويمكنك إنفاقه الآن. وتحته رقم حسابك — ما يكتبه أو يمسحه من يريد الدفع لك، مثل الآيبان.\n\nقد يظهر سطران صغيران بجانب الرصيد، وهما عمداً غير مضافين إليه: أموال في الطريق لم تُؤكَّد بعد، وأموال مخصصة لإعلانات قيد التشغيل. كلاهما ما زال ملكك، ولا يمكن إنفاق أي منهما اليوم — لذلك لا يظهران داخل الرقم.',
+
+    'help.cash.q3': 'كيف أرسل كاش لشخص ما؟',
+    'help.cash.a3': 'المحفظة ← إرسال. اختر الشخص أو ألصق رقم حسابه، اكتب المبلغ، وأرسل. يصل إلى محفظته فوراً.\n\nأي شخص يستطيع الإرسال لأي شخص — لا يوجد تسلسل إداري في الدفع. أما ما لا يستطيعه أحد، مهما كان منصبه، فهو أخذ المال من محفظة غيره. المال يُدفع من محفظتك أنت فقط.',
+
+    'help.cash.q4': 'كيف أحصل على المزيد من الكاش؟',
+    'help.cash.a4': 'ثلاث طرق، وهي مختلفة.\n\n1. يرسله لك أحدهم — عادةً مديرك، من محفظته هو.\n2. تدفع للشركة مقابله. المحفظة ← شحن، أدخل المبلغ ورقم عملية التحويل. اقرأ الإجابة التالية قبل الاعتماد على هذه الطريقة.\n3. تكسبه. الصفقات المغلقة تدفع عمولتك مباشرة إلى محفظتك، وتقييمات العملاء الدقيقة تعيد لك جزءاً صغيراً.',
+
+    'help.cash.q5': 'سجّلت دفعة ولم يتغير رصيدي. لماذا؟',
+    'help.cash.a5': 'لأن تسجيل الدفعة هو إخبارنا بأن المال وصل — وليس وصول المال نفسه. تطابقه المالية مع كشف الحساب البنكي، عادةً في اليوم نفسه، وعندها يصبح كاشاً قابلاً للإنفاق.\n\nحتى ذلك الحين يظهر في نشاطك كـ«بانتظار المطابقة» ويجلس بجانب رصيدك لا داخله. لو أضفناه لحظة كتابة أي رقم، لاستطاع أي شخص كتابة أي رقم.',
+
+    'help.cash.q6': 'كيف تُنفق الإعلانات كاشي؟',
+    'help.cash.a6': 'تُحاسَب على ما أنفقته الإعلانات فعلياً، لا على ما خصصته كميزانية. كل 10 دراهم تصرفها ميتا أو جوجل حقيقةً تنقل 10 كاش من محفظتك.\n\nفحملة بميزانية 300 درهم يومياً لم تصرف سوى 40 درهماً تكلفك 40 لا 300. لا يُخصم شيء عند الإطلاق ولا يُحجز شيء. ما نتحقق منه عند الإطلاق هو أن لديك ما يغطي يومين من ميزانيتك على الأقل — فالحملة التي لا يستطيع صاحبها تغطيتها تتوقف خلال ساعات، بعد أن تكون المنصة قد حاسبت على الظهور بالفعل.',
+
+    'help.cash.q7': 'ماذا يحدث إذا نفد رصيدي وإعلاني يعمل؟',
+    'help.cash.a7': 'تتوقف الحملة مؤقتاً. ليس عند وصولك إلى الصفر، بل في اللحظة التي لا تعود محفظتك تغطي ما صرفه الإعلان فعلاً — لأن المال حينها قد أُنفق حقيقةً.\n\nاشحن رصيدك أو اطلب كاشاً وشغّلها من جديد. لا يضيع شيء: الإعلان والجمهور والتصميم كلها ما زالت موجودة.',
+
+    'help.cash.q8': 'متى أستلم عمولتي؟',
+    'help.cash.a8': 'مع دفع العميل، لا عند توقيع الصفقة. حصتك من كل دفعة تدخل محفظتك عندما تصل تلك الدفعة إلى الوكالة.\n\nفالصفقة التي تُحصَّل على خمسة أشهر تدفع لك على خمسة أشهر. تعرض محفظتك كل دفعة بتاريخها، وحصتك منها، وكم ما زال بانتظار العميل — وهو الجزء الذي يمكنك التخطيط على أساسه فعلاً.',
+
+    'help.cash.q9': 'هل يستطيع أحد سحب كاش من محفظتي؟',
+    'help.cash.a9': 'لا. لا يوجد زر كهذا لأي شخص مهما كان منصبه — وهي ليست صلاحية يمكن منحها لأحد، بل ببساطة غير موجودة في النظام.\n\nالمال لا يخرج من محفظة إلا لأن صاحبها أرسله أو أنفقه. كل حركة مسجّلة على الطرفين مع من قام بها ومتى، ويمكنك قراءة سجلك كاملاً في محفظتك.',
+
+    'help.cash.q10': 'من أين يأتي الكاش أصلاً؟',
+    'help.cash.a10': 'من البنك، وهو تبويب داخل المحفظة للإدارة فقط. له بابان، والفرق بينهما أهم من أي شيء آخر على الشاشة.\n\nالإيداع مال حقيقي: شخص دفع للشركة ويحمل رقم العملية. أما السك فهو إنشاء الشركة لكاش بلا مال خلفه — عرض ترويجي، أو شحن، أو خط ائتمان لوسيط استحقه.\n\nكلاهما يصبح كاشاً قابلاً للإنفاق، والبنك لا يجمعهما في رقم واحد أبداً، لأن الفارق بينهما هو بالضبط مقدار ما يحمله الناس وهو وعد لا مال في الحساب.',
+
+    'help.cash.q11': 'كيف أمنح وسيطاً كاشاً؟',
+    'help.cash.a11': 'ثلاث خطوات ظاهرة، عن قصد. اسكّه في البنك إن لم يكن هناك رصيد، أخرِجه إلى محفظتك أنت، ثم أرسله إليه من محفظتك كأي شخص آخر.\n\nلا يوجد عمداً زر ينقل المال من البنك مباشرة إلى يد شخص آخر. الخطوة الوسطى تضع اسم إنسان محدد بين أموال الشركة ورصيد الوسيط، وذلك الاسم يبقى في السجل إلى الأبد.',
+
+    'help.cash.q12': 'ما هو «الشيك»، ومن يستطيع إتلاف الكاش؟',
+    'help.cash.a12': 'الكاش الجالس في البنك ولم يُخرجه أحد لا يملكه أحد، لذا يستطيع أي مسؤول إتلافه.\n\nلحظة إخراجك له يصبح شيكاً باسمك. من تلك اللحظة أنت وحدك من يستطيع إتلافه، مهما انتقل بعد ذلك — وطالما كان ما زال بحوزتك. فإن أرسلته لغيرك، لم يعد لك أن تتلفه.\n\nالإتلاف نهائي. المال لا يعود.',
+
+    'help.cash.q13': 'دفع لنا أحدهم — كيف أحوّل ذلك إلى كاش له؟',
+    'help.cash.a13': 'هو يسجّله بنفسه من محفظته مع رقم العملية. فيظهر في البنك بحالة «بانتظار كشف الحساب».\n\nتتحقق أنت منه مقابل كشف الحساب البنكي وتضغط «طابِقه». تلك هي اللحظة التي يوجد فيها الكاش. وإذا لم يصل المال أصلاً، ارفضه — لم يُنشأ شيء، فلا شيء يحتاج إلى تراجع.',
+
+    'help.cash.q14': 'كيف أرى من يجلس على مال أُعطي له؟',
+    'help.cash.a14': 'تبويب البنك، «من يستخدم ما أُرسل إليه». كل من يحمل كاشاً لم يمسّه منذ أربعة عشر يوماً يُوسم ويُرفع إلى الأعلى.\n\nهذا هو الاكتشاف الذي وُجد التقرير من أجله. الإفراط في الإنفاق يُعلن عن نفسه — حملة تعمل، ورصيد ينزل، وأحدهم ينتبه. أما المال الذي أُرسل ولم يُستخدم فيبقى خفياً حتى يأتي ربع سنة لاحق ويكون خط العملاء ضعيفاً ولا أحد يعرف السبب.',
+
     'help.finance.title': 'الصفقات والعمولات والمالية',
     'help.finance.q1': 'كيف أسجّل صفقة؟',
     'help.finance.a1': 'أغلق العميل على لوحة إدارة العملاء (تفتح نافذة الصفقة تلقائياً)، أو أضفها يدوياً في الإدارة ← الصفقات — المشروع والوسيط يُملآن تلقائياً.',
@@ -613,6 +711,53 @@ export const p_help: Record<Locale, Dict> = {
     'help.inventory.a3': 'Они оценивают полноту данных проекта (фото, цены, план оплаты…). Высокие оценки дают лучшую рекламу и страницы; страница «Качество данных» показывает, чего именно не хватает.',
     'help.inventory.l3': 'Качество данных',
     // ── Deals, commission & finance ──
+    'help.cash.title': 'Кэш и ваш кошелёк',
+    'help.cash.l1': 'Открыть мой кошелёк',
+    'help.cash.l6': 'Мои кампании',
+    'help.cash.l10': 'Открыть Банк',
+
+    'help.cash.q1': 'Что такое кэш?',
+    'help.cash.a1': 'Кэш — это деньги компании, которые вы можете тратить внутри системы. 1 кэш = 1 дирхам, всегда, ничего пересчитывать не нужно. Если в кошельке 400, компания держит для вас 400 дирхамов, и вы можете потратить их здесь.\n\nЭто не деньги, которые снимают в банкомате. Ими оплачивается то, что система покупает от вашего имени — прежде всего реклама, — и через них компания платит вам заработанное.',
+
+    'help.cash.q2': 'Где посмотреть свой?',
+    'help.cash.a2': 'Вкладка «Кошелёк» наверху. Большое число — то, что у вас есть и можно потратить прямо сейчас. Под ним номер вашего счёта — то, что набирает или сканирует человек, который вам платит, как IBAN.\n\nРядом с балансом могут появиться две строки поменьше, и они намеренно НЕ входят в него: деньги в пути, ещё не подтверждённые, и деньги, занятые работающей рекламой. И то и другое — ваше. Ни то ни другое сегодня потратить нельзя, поэтому в числе их нет.',
+
+    'help.cash.q3': 'Как отправить кэш другому человеку?',
+    'help.cash.a3': 'Кошелёк → Отправить. Выберите человека или вставьте номер его счёта, укажите сумму и отправьте. Деньги окажутся у него сразу.\n\nЛюбой может отправить любому — в платеже нет иерархии. Чего не может никто и ни на каком уровне — это забрать деньги ИЗ чужого кошелька. Деньги уходят только из вашего собственного.',
+
+    'help.cash.q4': 'Как получить больше кэша?',
+    'help.cash.a4': 'Три способа, и они разные.\n\n1. Вам его отправляют — обычно руководитель, из своего кошелька.\n2. Вы платите компании. Кошелёк → Пополнить, сумма и номер операции вашего перевода. Прочитайте следующий ответ, прежде чем на это рассчитывать.\n3. Вы его зарабатываете. Закрытые сделки платят комиссию прямо в кошелёк, а точные оценки лидов возвращают понемногу.',
+
+    'help.cash.q5': 'Я записал платёж, а баланс не изменился. Почему?',
+    'help.cash.a5': 'Потому что запись платежа — это ваше сообщение о том, что деньги пришли, а не сам приход денег. Финансы сверяют его с банковской выпиской, обычно в тот же день, и тогда он становится кэшем, который можно тратить.\n\nДо этого он виден в активности как «ждёт сверки» и стоит рядом с балансом, а не внутри него. Если бы мы зачисляли деньги в момент, когда кто-то набрал число, любой мог бы набрать любое.',
+
+    'help.cash.q6': 'Как реклама тратит мой кэш?',
+    'help.cash.a6': 'С вас списывают то, что реклама РЕАЛЬНО потратила, а не то, что вы заложили в бюджет. Каждые 10 дирхамов, которые Meta или Google действительно открутили, переносят 10 кэша из вашего кошелька.\n\nКампания с бюджетом 300 дирхамов в день, открутившая 40, стоит вам 40, а не 300. При запуске ничего не списывается и ничего не блокируется. При запуске мы проверяем другое: что у вас есть хотя бы два дня бюджета — кампания, которую владелец не может покрыть, будет остановлена за считаные часы, уже после того как площадка выставила счёт за показы.',
+
+    'help.cash.q7': 'Что будет, если кэш кончится во время работы рекламы?',
+    'help.cash.a7': 'Кампанию остановят. Не в момент нуля, а в тот момент, когда кошелёк перестаёт покрывать уже открученное, — потому что к этому моменту деньги действительно потрачены.\n\nПополните или попросите кэш и запустите снова. Ничего не теряется: объявление, аудитория и креатив на месте.',
+
+    'help.cash.q8': 'Когда я получу свою комиссию?',
+    'help.cash.a8': 'По мере того как платит клиент, а не при подписании сделки. Ваша доля каждого платежа попадает в кошелёк, когда этот платёж доходит до агентства.\n\nСделка, которую собирают пять месяцев, платит вам пять месяцев. Кошелёк показывает каждый платёж с датой, вашу долю в нём и сколько ещё ждёт от клиента — именно то, на что можно планировать.',
+
+    'help.cash.q9': 'Может ли кто-то забрать кэш из моего кошелька?',
+    'help.cash.a9': 'Нет. Такой кнопки нет ни у кого и ни на каком уровне — это не право, которое можно кому-то выдать, его просто нет в системе.\n\nДеньги уходят из кошелька только потому, что владелец их отправил или на что-то потратил. Каждое движение записано с обеих сторон, с именем и временем, и всю свою историю вы читаете в кошельке.',
+
+    'help.cash.q10': 'Откуда кэш берётся вообще?',
+    'help.cash.a10': 'Из Банка — это вкладка внутри Кошелька, только для руководства. У него две двери, и разница между ними важнее всего остального на экране.\n\nДЕПОЗИТ — это реальные деньги: кто-то заплатил компании, и запись несёт номер операции. ВЫПУСК — это когда компания создаёт кэш, за которым денег нет: акция, пополнение, кредитная линия брокеру, который её заслужил.\n\nИ то и другое становится тратимым кэшем, и Банк НИКОГДА не складывает их в один итог, потому что разрыв между ними — это ровно та часть денег на руках, которая является обещанием, а не суммой на счёте.',
+
+    'help.cash.q11': 'Как выдать брокеру кэш?',
+    'help.cash.a11': 'Три видимых шага, намеренно. Выпустите его в Банке, если там ничего нет, выпишите на свой кошелёк, затем отправьте ему из своего кошелька, как любой другой человек.\n\nКнопки, которая кладёт деньги из Банка прямо в чужие руки, намеренно нет. Средний шаг ставит конкретное имя между деньгами компании и балансом брокера, и это имя остаётся в записи навсегда.',
+
+    'help.cash.q12': 'Что такое «чек» и кто может уничтожить кэш?',
+    'help.cash.a12': 'Кэш, лежащий в Банке и никем не выписанный, не принадлежит никому — уничтожить его может любой администратор.\n\nВ момент, когда вы его выписали, он становится чеком с вашим именем. С этого момента уничтожить его можете только вы, куда бы он ни ушёл дальше, — и только пока он ещё у вас. Если вы его передали, уничтожать его уже не вам.\n\nУничтожение необратимо. Деньги не возвращаются.',
+
+    'help.cash.q13': 'Нам заплатили — как превратить это в его кэш?',
+    'help.cash.a13': 'Он записывает платёж сам из своего кошелька, с номером операции. В Банке он появляется как «ждёт выписки».\n\nВы сверяете его с банковской выпиской и нажимаете «Сверить». Именно в этот момент кэш и возникает. Если деньги не приходили — отклоните: ничего не создавалось, значит и отматывать нечего.',
+
+    'help.cash.q14': 'Как увидеть, кто сидит на выданных деньгах?',
+    'help.cash.a14': 'Вкладка Банка, «Кто пользуется тем, что получил». Каждый, кто держит кэш и не трогал его четырнадцать дней, помечается и поднимается наверх.\n\nРади этого отчёт и существует. Перерасход заявляет о себе сам — кампания крутится, баланс падает, кто-то замечает. А деньги, которые отправили и не тронули, невидимы до следующего квартала, когда воронка тонкая и никто не может объяснить почему.',
+
     'help.finance.title': 'Сделки, комиссии и финансы',
     'help.finance.q1': 'Как записать сделку?',
     'help.finance.a1': 'Закройте лид на доске CRM (окно сделки откроется само) или добавьте вручную в Менеджмент → Сделки — проект и брокер заполнятся сами.',

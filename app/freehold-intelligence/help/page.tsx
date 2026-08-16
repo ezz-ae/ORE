@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   BookOpen, Compass, Play, Link2, Search, Sparkles, ChevronDown, Loader2,
   ArrowRight, Users, Megaphone, Package, DollarSign, TrendingUp, ShieldCheck,
-  Settings, UserCircle, Rocket, CheckCircle2, Circle,
+  Settings, UserCircle, Rocket, CheckCircle2, Circle, Wallet as WalletIcon,
 } from 'lucide-react'
 import { useCoach } from '@/components/freehold/coach/coach-marks'
 import { howtosForRole, ESSENTIAL_HOWTOS, type HowToFlow } from '@/lib/freehold/howto'
@@ -134,6 +134,35 @@ const SECTIONS: QASection[] = [
     items: [
       { q: 'help.creative.q1', a: 'help.creative.a1', links: [{ label: 'help.creative.l1', href: `${FI}/creative-studio` }] },
       { q: 'help.creative.q2', a: 'help.creative.a2', roles: MGMT_MKT },
+    ],
+  },
+  // ── Cash & the Wallet ──────────────────────────────────────────────────────
+  //
+  // FIRST AMONG THE MONEY SECTIONS AND OPEN TO EVERY ROLE, because everybody
+  // holds Cash and almost nobody was told what it is. The order inside is the
+  // order somebody meets it: what the number means, how to get some, how to
+  // move it, what happens when they advertise — and only then the bank
+  // questions, which are management's.
+  {
+    id: 'cash',
+    title: 'help.cash.title',
+    Icon: WalletIcon,
+    items: [
+      { q: 'help.cash.q1', a: 'help.cash.a1', links: [{ label: 'help.cash.l1', href: `${FI}/wallet` }] },
+      { q: 'help.cash.q2', a: 'help.cash.a2', links: [{ label: 'help.cash.l1', href: `${FI}/wallet` }] },
+      { q: 'help.cash.q3', a: 'help.cash.a3', flow: 'send-cash', links: [{ label: 'help.cash.l1', href: `${FI}/wallet` }] },
+      { q: 'help.cash.q4', a: 'help.cash.a4', flow: 'top-up-cash', links: [{ label: 'help.cash.l1', href: `${FI}/wallet` }] },
+      { q: 'help.cash.q5', a: 'help.cash.a5' },
+      { q: 'help.cash.q6', a: 'help.cash.a6', links: [{ label: 'help.cash.l6', href: `${FI}/lead-machine/campaigns` }] },
+      { q: 'help.cash.q7', a: 'help.cash.a7' },
+      { q: 'help.cash.q8', a: 'help.cash.a8', links: [{ label: 'help.cash.l1', href: `${FI}/wallet` }] },
+      { q: 'help.cash.q9', a: 'help.cash.a9' },
+      // From here down it is the bank, and the bank is management's.
+      { q: 'help.cash.q10', a: 'help.cash.a10', links: [{ label: 'help.cash.l10', href: `${FI}/wallet` }], roles: MGMT },
+      { q: 'help.cash.q11', a: 'help.cash.a11', roles: MGMT },
+      { q: 'help.cash.q12', a: 'help.cash.a12', roles: MGMT },
+      { q: 'help.cash.q13', a: 'help.cash.a13', roles: MGMT },
+      { q: 'help.cash.q14', a: 'help.cash.a14', roles: MGMT },
     ],
   },
   {

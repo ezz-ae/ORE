@@ -121,6 +121,32 @@ export const HOWTOS: HowToFlow[] = [
     ],
   },
 
+  // ── Cash & Wallet ─────────────────────────────────────────────────────────
+  //
+  // No role restriction on either: everybody has a wallet, so everybody gets
+  // the walkthrough. The bank inside it is gated by the server, not by whether
+  // somebody was shown how to send money.
+  {
+    id: 'send-cash',
+    titleKey: 'howto.sendCash.name',
+    section: 'finance',
+    steps: [
+      { key: 'howto.sendCash.s1', href: `${FI}/wallet` },
+      { key: 'howto.sendCash.s2', href: `${FI}/wallet` },
+      { key: 'howto.sendCash.s3', href: `${FI}/wallet` },
+    ],
+  },
+  {
+    id: 'top-up-cash',
+    titleKey: 'howto.topUpCash.name',
+    section: 'finance',
+    steps: [
+      { key: 'howto.topUpCash.s1', href: `${FI}/wallet` },
+      { key: 'howto.topUpCash.s2', href: `${FI}/wallet` },
+      { key: 'howto.topUpCash.s3', href: `${FI}/wallet` },
+    ],
+  },
+
   // ── Finance ───────────────────────────────────────────────────────────────
   {
     id: 'commission',
