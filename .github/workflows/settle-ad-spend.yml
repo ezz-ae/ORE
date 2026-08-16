@@ -79,17 +79,39 @@ jobs:
           # The number that matters is what could NOT be billed — money already
           # paid to the platform. Lift it into the run summary so it is visible
           # without opening logs.
-          unbilled=$(python3 -c "import json,sys; print(json.load(open('/tmp/out.json')).get('unbilledAed', 0))" 2>/dev/null || echo 0)
-          settled=$(python3 -c "import json,sys; print(json.load(open('/tmp/out.json')).get('settledAed', 0))" 2>/dev/null || echo 0)
-          paused=$(python3 -c "import json,sys; print(json.load(open('/tmp/out.json')).get('paused', 0))" 2>/dev/null || echo 0)
+          field() {
+            python3 -c "import json;print(json.load(open('/tmp/out.json')).get('$1', 0))" 2>/dev/null || echo 0
+          }
+          unbilled=$(field unbilledAed)
+          settled=$(field settledAed)
+          paused=$(field paused)
+          # HOW MANY CAMPAIGNS THIS RUN COULD EVEN SEE, and how many it walked
+          # past for having no wallet behind them. Without these, a run where
+          # every live campaign was unattributed prints "AED 0 / AED 0 / 0" —
+          # identical to a night with no spend — and the job goes green while
+          # the company pays Meta for campaigns no balance reflects.
+          seen=$(field campaignsSeen)
+          unattributed=$(field unattributed)
+          unattributedAed=$(field unattributedAed)
           {
             echo "### Ad spend settled"
             echo ""
             echo "| billed | unbilled | campaigns paused |"
             echo "|---|---|---|"
             echo "| AED ${settled} | AED ${unbilled} | ${paused} |"
+            echo ""
+            echo "| campaigns seen | spending with no wallet | their spend |"
+            echo "|---|---|---|"
+            echo "| ${seen} | ${unattributed} | AED ${unattributedAed} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "${unbilled}" != "0" ]; then
             echo "::warning::AED ${unbilled} of delivered spend could not be billed to a wallet."
+          fi
+
+          # Not a failure of this job — there is no wallet to bill — but it is
+          # spend leaving the company that nothing on the system accounts for,
+          # and it is invisible in every other number on this page.
+          if [ "${unattributed}" != "0" ]; then
+            echo "::warning::${unattributed} campaign(s) spending AED ${unattributedAed} have no wallet attached. They are never billed and never paused. Launch through the system, or attribute them, or they spend unwatched."
           fi

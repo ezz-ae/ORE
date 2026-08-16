@@ -156,7 +156,53 @@ console.log('\n── what needs to run more often runs somewhere that allows it
     const daily = crons.find((c) => String(c.path) === '/api/cron/settle-ad-spend')
     check('…while vercel.json keeps a daily backstop', !!daily,
       'disabling the workflow would stop settlement entirely')
+
+    // A GREEN RUN REPORTING ZERO MUST MEAN THERE WAS NOTHING TO BILL.
+    //
+    // The first real run of this workflow printed "AED 0 billed, AED 0
+    // unbilled, 0 paused" while live campaigns were spending. Both zeros were
+    // honest — the route bills only campaigns carrying a meta_campaign_brokers
+    // row, written by our launch route, and every campaign built by hand in
+    // Ads Manager lacks one. It skipped all of them, correctly, and said
+    // nothing about having done so. "Nothing to bill" and "nobody is being
+    // billed for any of it" arrived as the same summary.
+    check('…and the summary says how many campaigns were seen at all',
+      /campaignsSeen/.test(yml),
+      'a run that saw nothing and a run that billed none of forty both print 0')
+    check('…and how much spend had no wallet behind it',
+      /unattributedAed/.test(yml))
+    check('…and warns about it, because no other number on the page shows it',
+      /::warning::\$\{unattributed\} campaign\(s\) spending/.test(yml))
   }
+}
+
+console.log('\n── the settlement can tell "nothing to do" from "nothing seen" ──')
+{
+  const routePath = join(root, 'app/api/cron/settle-ad-spend/route.ts')
+  const route = readFileSync(routePath, { encoding: 'utf8' })
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  // Skipping an unattributed campaign is right — there is no wallet to bill and
+  // inventing one would take money from whoever happened to be first in the
+  // table. Skipping it SILENTLY is what made a spending account look idle.
+  check('an unattributed campaign is counted, not merely skipped',
+    /unattributed \+= 1/.test(route),
+    'the skip is still silent')
+  check('…with its spend, so the amount is knowable',
+    /unattributedAed \+= spendAed/.test(route))
+
+  // The count is only possible if spend is read BEFORE the owner check. The
+  // original order returned early and threw the number away.
+  const loop = route.slice(route.indexOf('for (const c of campaigns)'))
+  const spendAt = loop.indexOf('const spendAed')
+  const ownerAt = loop.indexOf('const owner =')
+  check('spend is read before attribution is checked',
+    spendAt >= 0 && ownerAt >= 0 && spendAt < ownerAt,
+    'the owner check returns first, so unattributed spend cannot be measured')
+
+  // A read failure must still never be reported as a quiet night.
+  check('an unreachable Meta is still a 502, not a zero',
+    /status: 502/.test(route))
 }
 
 if (failures > 0) {

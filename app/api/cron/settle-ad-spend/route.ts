@@ -65,15 +65,35 @@ export async function GET(req: NextRequest) {
   const owners = await ownersByCampaign()
   const outcomes = []
 
+  // SPEND THIS JOB DELIBERATELY WALKED PAST.
+  //
+  // Attribution is written by our launch route, so a campaign built by hand in
+  // Ads Manager has no row in meta_campaign_brokers and is skipped below. That
+  // skip is correct — there is genuinely no wallet to bill — but counting it
+  // is not optional: without these two numbers a run where EVERY campaign was
+  // unattributed reports "AED 0 billed, AED 0 unbilled", which is the same
+  // summary as a night with no spend at all. The job then goes green every
+  // hour while the company pays Meta for campaigns nothing is watching, and
+  // the wallet brake never engages on any of them.
+  let unattributed = 0
+  let unattributedAed = 0
+
   for (const c of campaigns) {
+    // Spend is read BEFORE the owner check so an unattributed campaign can be
+    // counted with the money attached to it. Skipping first made the amount
+    // unknowable at exactly the moment it mattered.
+    const spendAed = Number(insights.get(c.id)?.spend ?? 0)
+    if (!Number.isFinite(spendAed) || spendAed <= 0) continue
+
     const owner = owners.get(c.id)
     // UNATTRIBUTED CAMPAIGNS ARE THE COMPANY'S OWN. There is no wallet to bill
     // and no broker to pause, and inventing one would take money from whoever
     // happened to be first in the table.
-    if (!owner) continue
-
-    const spendAed = Number(insights.get(c.id)?.spend ?? 0)
-    if (!Number.isFinite(spendAed) || spendAed <= 0) continue
+    if (!owner) {
+      unattributed += 1
+      unattributedAed += spendAed
+      continue
+    }
 
     const report: SpendReport = {
       campaignId: c.id,
@@ -105,11 +125,19 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     campaigns: outcomes.length,
+    // How many campaigns Meta reported at all. A run that saw nothing and a run
+    // that saw forty and billed none of them are different events, and both
+    // used to arrive as "0".
+    campaignsSeen: campaigns.length,
     // What was billed, and — the number that matters more — what could not be.
     // Unbilled spend is money the company has already paid Meta, so a run that
     // reported only its successes would hide its own loss.
     settledAed: moved,
     unbilledAed: short,
+    // Spend on campaigns with no wallet behind them: not a failure of this job,
+    // but money leaving the company that no balance will ever reflect.
+    unattributed,
+    unattributedAed: Math.round(unattributedAed * 100) / 100,
     paused: outcomes.filter((o) => o.paused).length,
     restated: outcomes.filter((o) => o.verdict === 'restated').length,
     outcomes,

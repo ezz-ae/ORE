@@ -236,8 +236,22 @@ console.log('\n── and it is wired where it says it is ──')
   // a query broke costs a broker their leads for a fault that was never theirs.
   check('the cron gives up rather than pausing when Meta cannot be read',
     /status: 502/.test(cron) && /paused: 0/.test(cron))
-  check('a campaign with no owner is never billed to anybody',
-    /if \(!owner\) continue/.test(cron))
+  // THE RULE IS THAT AN UNATTRIBUTED CAMPAIGN IS NEVER BILLED — not that the
+  // skip is written on one particular line. This assertion used to pin the
+  // exact text `if (!owner) continue`, and it broke the day the skip started
+  // counting itself, which changed nothing about who gets charged. Pin the
+  // property: between the owner check and the charge there must be a way out.
+  {
+    const at = cron.indexOf('if (!owner)')
+    const settleAt = cron.indexOf('settleCampaign(', at)
+    check('a campaign with no owner is never billed to anybody',
+      at >= 0 && settleAt > at && /\bcontinue\b/.test(cron.slice(at, settleAt)),
+      at < 0 ? 'there is no owner check at all' : 'the unattributed path can reach settleCampaign')
+    // …and the charge is built from that owner, so it cannot be billed to a
+    // stand-in picked up from somewhere else.
+    check('…and the charge is addressed to the owner that was found',
+      /ownerId: owner\b/.test(cron))
+  }
   check('the run reports what it could NOT bill, not only what it did',
     /unbilledAed/.test(cron))
 }
