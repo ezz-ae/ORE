@@ -534,6 +534,17 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         })
         raw = stripThinking(sdk.raw)
         toolsUsed.push(...sdk.toolsUsed)
+        // THE RESULTS, NOT ONLY THE NAMES. Without this the grounding audit had
+        // nothing but the static context to trace against, so every figure the
+        // model correctly read out of a tool was "ungrounded" and a real answer
+        // was replaced by a self-accusation — under a chip saying the check had
+        // run. Same summariser as the legacy loop, so both paths say the same
+        // thing about the same result.
+        for (const r of sdk.toolResults) {
+          toolResultsText += ' ' + JSON.stringify(r.output)
+          const note = summarizeToolResult(r.output)
+          if (note) resultNotes.push(`• ${note}`)
+        }
       } catch (err) {
         // The SDK path is opt-in and unproven against every tool schema — never
         // let it break the chat: capture why, then fall through to the legacy
@@ -543,7 +554,20 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
       }
     }
 
-    if (raw === undefined) {
+    // FALL THROUGH ON AN EMPTY ANSWER, NOT ONLY ON A THROWN ONE.
+    //
+    // The SDK path was fatal-on-throw and trusting-on-return, so a run that
+    // came back with `raw: ''` — the model spending its whole step budget on
+    // tools and never writing the final text — ended as "I lost my train of
+    // thought there, ask me that once more". A dead end that asks the user to
+    // repeat the thing that just failed.
+    //
+    // ONLY WHEN NO TOOL RAN, though. If tools did run, re-running the whole
+    // turn through the legacy loop would execute them a second time, and some
+    // of them move money or create campaigns. That case is not a retry, it is
+    // a report: the "here is what I did" fallback downstream now has real
+    // result notes to say it with.
+    if (raw === undefined || (!raw.trim() && toolsUsed.length === 0)) {
       // ── Legacy path: JSON tool_call loop (also the AI-SDK fallback) ────────
       let loopHistory = durableHistory
       raw = stripThinking(await queryServerAgent(message, {
@@ -768,9 +792,16 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
             (evidence.verdict === 'fabricated'
               ? 'I have to correct myself — none of the figures I was about to show came from your live data, so I will not present them. '
               : `I have to correct myself — some of those figures (${untraceable.slice(0, 4).join(', ')}) did not come from your live data, so I will not present the report with them in it. `) +
+            // NEVER CONTRADICT THE CHIP ABOVE IT. "No data-returning check
+            // completed this turn" printed under a chip reading "Checked your
+            // campaigns" is the reply calling itself a liar, and it sends the
+            // user round a loop: it asks them to run again the thing it has
+            // just told them did not run.
             (resultNotes.length
               ? `What actually happened this turn:\n${resultNotes.join('\n')}\n\nAsk me to check again and I will report only figures I can trace — and say so plainly if there are none.`
-              : 'No data-returning check completed this turn. Ask me to check the campaigns again and I will report only figures I can trace — and say so plainly if there are none.'),
+              : toolsUsed.length
+                ? `The checks ran (${Array.from(new Set(toolsUsed)).join(', ')}) but came back without figures I can quote. Ask me again and I will report only what I can trace — and say plainly if there is nothing.`
+                : 'No check ran this turn, so I have nothing to quote. Ask me to check the campaigns and I will report only figures I can trace.'),
         }]
       }
     }
