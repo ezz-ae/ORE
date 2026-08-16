@@ -56,6 +56,7 @@ import {
 } from '../lib/freehold/bank'
 import { POSTING_KINDS } from '../lib/freehold/wallet'
 import { SIGNATURE_REFUSALS } from '../lib/freehold/wallet-signing'
+import { PAYOUT_STATES } from '../lib/freehold/deal-payout'
 
 import { wallet as walletDict } from '../lib/i18n/dictionaries/wallet'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
@@ -328,6 +329,8 @@ console.log('\n── the wallet and the bank ──')
   family('bank.deposit', 'bank.deposit.', DEPOSIT_STATES, walletDict)
   family('bank.kind', 'bank.kind.', SPEND_KINDS, walletDict)
   family('bank.use.state', 'bank.use.state.', USE_STATES, walletDict)
+  // The commission panel renders t(`wal.comm.state.${c.state}`) per deal.
+  family('wal.comm.state', 'wal.comm.state.', PAYOUT_STATES, walletDict)
 }
 
 if (failures > 0) {

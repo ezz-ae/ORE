@@ -39,6 +39,7 @@ import {
   Wallet as WalletIcon, Landmark, Loader2, ArrowDownLeft, ArrowUpRight,
   Copy, Check, Flame, PenLine, AlertTriangle, QrCode, Plus, X,
   Sparkles, RotateCcw, Megaphone, Lock, Unlock, ShieldCheck, ShieldAlert, KeyRound,
+  Handshake,
 } from 'lucide-react'
 import { PageHeader, StatCard, Panel, PanelHeader, EmptyState, Button, fieldClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
@@ -78,9 +79,29 @@ type ChainVerdict =
   | { ok: true; length: number; head: string }
   | { ok: false; brokenAt: number; reason: string; length: number }
 
+/** One commission payment that actually arrived, with its date. */
+interface CommissionPayment {
+  amountAed: number
+  receivedAt: string
+  payoutAed: number
+  reference: string
+}
+/** A deal this person closed, and where their money on it stands. */
+interface Commission {
+  dealId: string
+  dealName: string
+  status: string
+  entitledAed: number
+  paidAed: number
+  awaitingAed: number
+  state: string
+  payments: CommissionPayment[]
+}
+
 interface WalletData {
   /** null when the proof could not be run. NOT the same as "it failed". */
   chain: ChainVerdict | null
+  commissions: Commission[]
   wallet: { id: string; accountNo: string; balance: number; held: number } | null
   activity: Activity[]
   payees: Payee[]
@@ -400,6 +421,7 @@ function MyWallet({
   }
 
   const chain = data?.chain
+  const commissions = data?.commissions ?? []
   const activity = data?.activity ?? []
   const pending = activity.filter((a) => a.state === 'pending')
   const pendingIn = pending.reduce((n, a) => n + a.amount, 0)
@@ -542,6 +564,63 @@ function MyWallet({
           <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
           {t('wal.chain.broken', { n: chain.brokenAt })}
         </p>
+      )}
+
+      {/* ── COMMISSION ─────────────────────────────────────────────────────
+          The deal row always knew what a broker had earned; the wallet could
+          not say WHEN any of it was coming, which is the only part of it
+          anybody can plan around. A broker is paid pro rata on what the agency
+          has actually received, so this shows both: what has landed, and what
+          is still waiting on a payment that has not arrived yet. */}
+      {commissions.length > 0 && (
+        <Panel>
+          <PanelHeader title={t('wal.comm.title')} icon={<Handshake className="h-4 w-4" />} />
+          <div className="p-5">
+            <p className="mb-4 text-sm text-slate-400">{t('wal.comm.sub')}</p>
+            <ul className="space-y-4">
+              {commissions.map((c) => (
+                <li key={c.dealId} className="rounded-xl border border-line p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="min-w-0 truncate text-sm text-slate-200">{c.dealName}</span>
+                    <span className={`text-xs ${
+                      c.state === 'paid' ? 'text-emerald-300'
+                      : c.state === 'partly' ? 'text-amber-200' : 'text-slate-500'
+                    }`}>{t(`wal.comm.state.${c.state}`)}</span>
+                  </div>
+
+                  {/* Paid and awaited, side by side and never summed — the
+                      awaited half is money the agency has not been given yet,
+                      and showing one total would promise it. */}
+                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                    <span className="text-slate-300">
+                      {t('wal.comm.paid')} <span className="tabular-nums">{cashText(c.paidAed)}</span>
+                    </span>
+                    {c.awaitingAed > 0 && (
+                      <span className="text-slate-500">
+                        {t('wal.comm.awaiting')} <span className="tabular-nums">{cashText(c.awaitingAed)}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {c.payments.length > 0 && (
+                    <ul className="mt-3 space-y-1 border-t border-line pt-2">
+                      {c.payments.map((p, i) => (
+                        <li key={`${c.dealId}-${p.receivedAt}-${i}`}
+                          className="flex items-center justify-between gap-3 text-xs">
+                          <span className="text-slate-500">
+                            {new Date(p.receivedAt).toLocaleDateString()}
+                            {p.reference && <span className="ms-2 font-mono">{p.reference}</span>}
+                          </span>
+                          <span className="tabular-nums text-emerald-300">+{cashText(p.payoutAed)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Panel>
       )}
 
       {/* ── THE KEY ────────────────────────────────────────────────────────
