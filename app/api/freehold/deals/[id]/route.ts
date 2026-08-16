@@ -17,6 +17,7 @@ import {
 } from "@/lib/deals"
 import { reportDealCloseToMeta } from "@/lib/freehold/lead-writeback"
 import { earnCreditsForDeal } from "@/lib/freehold/credits-db"
+import { payoutDeal, recordCommissionPayment } from "@/lib/freehold/deal-payout-db"
 import { notify } from "@/lib/freehold/notifications"
 
 export const runtime = "nodejs"
@@ -48,6 +49,46 @@ async function awardDealCredits(deal: Deal | null) {
     }
   } catch (error) {
     console.error("[deals] earnCreditsForDeal failed", error)
+  }
+}
+
+/**
+ * THE COMMISSION ITSELF, INTO THE BROKER'S WALLET.
+ *
+ * Separate from the ad-budget reward above and not a replacement for it: that
+ * is a bonus measured in ad spend, this is the money they earned on the sale.
+ * Conflating them would pay somebody their commission and call it a marketing
+ * allowance.
+ *
+ * Paid PRO RATA on what the agency has actually received (deal-payout.ts), so a
+ * deal collected in instalments pays the broker in instalments. Idempotent on a
+ * reference derived from the total, so approve and close can both call it, and
+ * a retry moves nothing.
+ *
+ * A failure here must never fail the approval. The mark did not move, so the
+ * next payment — or the next approval — pays what is owed.
+ */
+async function payBrokerCommission(deal: Deal | null) {
+  if (!deal || !deal.agentId) return
+  try {
+    const r = await payoutDeal({
+      dealId: deal.id,
+      dealName: deal.projectName || deal.leadName || deal.id,
+      brokerId: deal.agentId,
+      basis: {
+        status: deal.status,
+        agencyCommissionAed: deal.agencyCommissionAed,
+        commissionReceivedAed: deal.commissionReceivedAed,
+        brokerCommissionAed: deal.brokerCommissionAed,
+      },
+    })
+    if (!r.ok) {
+      console.error("[deals] commission payout did not complete", {
+        dealId: deal.id, agentId: deal.agentId, reason: r.reason,
+      })
+    }
+  } catch (error) {
+    console.error("[deals] commission payout failed", error)
   }
 }
 
@@ -109,6 +150,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const deal = await finalApproveDeal(id, { name: user.name }, String(body.notes || ""))
         if (!deal) return NextResponse.json({ error: "Deal is not awaiting final approval" }, { status: 409 })
         await awardDealCredits(deal)
+        await payBrokerCommission(deal)
         // The moment money became real: Meta hears the Purchase with the
         // deal's value, and the lead carries it for future seeds.
         void reportDealCloseToMeta({ leadId: deal.leadId, propertyValueAed: deal.propertyValueAed })
@@ -137,6 +179,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           return NextResponse.json({ error: "A non-zero amount is required" }, { status: 400 })
         }
         const deal = await recordDealPayment(id, amount)
+
+        // WHEN IT ARRIVED, not just how much. The deal row carried a running
+        // total and no dates, so a broker could see AED 40,000 outstanding and
+        // not when any of it was due — the only part they can plan around.
+        await recordCommissionPayment({
+          dealId: id,
+          amountAed: amount,
+          receivedAt: typeof body.receivedAt === "string" ? body.receivedAt : undefined,
+          reference: typeof body.reference === "string" ? body.reference : "",
+          note: typeof body.note === "string" ? body.note : "",
+          by: sessionId(user),
+        }).catch(() => 0)
+
+        // PAID ON EVERY INSTALMENT, not only at close. A deal collected over
+        // five months would otherwise leave the broker's share sitting in the
+        // company's account until the last payment landed, which is precisely
+        // the arrangement they are owed money to avoid.
+        await payBrokerCommission(deal)
+
         // Management-created deals skip final_approve and jump to approved →
         // closed; the close is their first "final" moment (idempotent anyway).
         if (deal?.status === "closed") {

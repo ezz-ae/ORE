@@ -21,6 +21,7 @@ import {
   personId, walletFor, ensureBankWallets, sendCash, recordDeposit, spendCash, walletActivity,
 } from '@/lib/freehold/bank-db'
 import { listWallets, verifyLedgerChain } from '@/lib/freehold/wallet-db'
+import { walletCommissions } from '@/lib/freehold/deal-payout-db'
 import { isValidAmount } from '@/lib/freehold/wallet'
 import { SPEND_KINDS, type Actor, type SpendKind, type SpendProof } from '@/lib/freehold/bank'
 import { verifyIntent } from '@/lib/freehold/wallet-signing-db'
@@ -55,8 +56,17 @@ export async function GET() {
     // ask for is a verdict nobody ever asks for.
     const chain = await verifyLedgerChain().catch(() => null)
 
+    // WHAT IS STILL COMING, AND WHEN IT HAS BEEN ARRIVING. A broker could see
+    // a commission outstanding on the deal page and had no way to tell when any
+    // of it was due — the only part of it they can plan around. Keyed on the
+    // broker id the deals are filed under, which for a broker session is not
+    // the wallet's own key.
+    const brokerId = user.brokerId ?? user.email
+    const commissions = await walletCommissions(brokerId).catch(() => [])
+
     return NextResponse.json({
       chain,
+      commissions,
       wallet: mine && {
         id: mine.id, accountNo: mine.accountNo, balance: mine.balance, held: mine.held,
       },
