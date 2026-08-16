@@ -221,10 +221,44 @@ export function checkCampaignSetup(
       out.push({ level: 'ok', key: 'property', adSet: where })
     }
 
-    // Meta going outside the audience that was chosen.
+    // ── Is Meta staying inside the audience that was chosen? ────────────────
+    //
+    // THE ONE THAT COST A DAY OF LEADS. An ad set built by hand in Ads Manager
+    // carries Advantage+ audience by DEFAULT, and in that mode the targeting
+    // spec is advisory: Meta reads the narrowing groups as a hint and buys
+    // outside them whenever it prefers. Ads Manager says so in small print
+    // under the box — "inclusions are always suggestions" — which is easy to
+    // read past when every field above it looks right.
+    //
+    // The tell is the estimate. A real narrowing group takes a UAE audience
+    // from millions to hundreds of thousands; the live one moved 2.4M → 2.0M
+    // when a property qualifier was made the MUST rule, which is no narrowing
+    // at all. Only the location, the language and the excluded custom audience
+    // were binding. An hour of interest tuning had changed nothing.
+    //
+    // So ABSENCE IS NOT OFF. `targeting_automation` is a subfield of
+    // `targeting`; a spec that never set it reads back without it, which is
+    // indistinguishable from a value we were simply not given. Treating a
+    // missing field as "off" is how a check goes permanently quiet on the
+    // exact case it exists for — the same fault as a verifier with no verdict
+    // for "could not check". The three states are kept apart, and the unknown
+    // one is said out loud rather than rendered as silence.
     const auto = t.targeting_automation as Record<string, unknown> | undefined
-    if (auto && Number(auto.advantage_audience) === 1) {
-      out.push({ level: 'wrong', key: 'expansion', adSet: where })
+    if (!auto || Object.keys(auto).length === 0) {
+      out.push({ level: 'watch', key: 'expansionUnknown', adSet: where })
+    } else {
+      // Every `advantage_*` switch, not only advantage_audience. Meta adds
+      // these over time and each new one arrives ON by default, so a check that
+      // names them one at a time is blind to the next one by construction.
+      // `no-advantage.ts` applies the same rule to outbound payloads.
+      const on = Object.entries(auto)
+        .filter(([k, v]) => k.startsWith('advantage') && Number(v) === 1)
+        .map(([k]) => k)
+      if (on.length > 0) {
+        out.push({ level: 'wrong', key: 'expansion', vars: { fields: on.join(', ') }, adSet: where })
+      } else {
+        out.push({ level: 'ok', key: 'noExpansion', adSet: where })
+      }
     }
 
     const ageMin = Number(t.age_min) || 0

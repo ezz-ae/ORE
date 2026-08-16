@@ -43,6 +43,12 @@ const good: AdSetForCheck = {
     publisher_platforms: ['instagram'],
     instagram_positions: ['stream'],
     narrowing: [{ interests: [{ id: '1', name: 'Property' }, { id: '2', name: 'Real estate investing' }] }],
+    // The launcher sends this on every ad set (client.ts, ADVANTAGE_AUDIENCE_OFF)
+    // and refuses to launch without it, so a fixture claiming to be "exactly as
+    // this product launches one" has to carry it. It is also what makes the
+    // read-back MEAN something: with the opt-out present, an ad set that comes
+    // back without it was not built here.
+    targeting_automation: { advantage_audience: 0 },
   },
 }
 const at = (over: Partial<AdSetForCheck>, targeting?: Record<string, unknown>): AdSetForCheck => ({
@@ -79,9 +85,53 @@ console.log('\n── money going somewhere nobody chose ──')
   const expanded = at({ id: 'a5' }, { ...good.targeting, targeting_automation: { advantage_audience: 1 } })
   check('Meta expanding past the chosen audience is wrong',
     keys(checkCampaignSetup(CAMPAIGN, [expanded])).includes('wrong:expansion'))
+  check('…and it names the switch that is on, because there is more than one',
+    checkCampaignSetup(CAMPAIGN, [expanded]).find((x) => x.key === 'expansion')?.vars?.fields === 'advantage_audience')
+
   const notExpanded = at({ id: 'a6' }, { ...good.targeting, targeting_automation: { advantage_audience: 0 } })
   check('…and the opt-out is not mistaken for it',
     !keys(checkCampaignSetup(CAMPAIGN, [notExpanded])).includes('wrong:expansion'))
+
+  // AN OPT-OUT IS A RESULT, NOT A NON-EVENT. Every other rule here reports both
+  // ways; expansion used to report only the bad half, so "off" and "never
+  // looked" rendered identically — as nothing at all.
+  check('…and staying inside the audience is stated, not left blank',
+    keys(checkCampaignSetup(CAMPAIGN, [notExpanded])).includes('ok:noExpansion'),
+    keys(checkCampaignSetup(CAMPAIGN, [notExpanded])).join(' | '))
+
+  // THE CASE THAT COST A DAY OF LEADS. An ad set built by hand in Ads Manager
+  // has Advantage+ audience on by default, and there the narrowing groups are
+  // advisory — Meta buys outside them. `targeting_automation` is a subfield of
+  // `targeting`: a spec that never set it reads back WITHOUT it, exactly like
+  // one Meta declined to tell us about. Reading missing as "off" is how this
+  // check stays silent on the only case it exists for.
+  const unsaid = at({ id: 'a10' }, {
+    geo_locations: good.targeting!.geo_locations, age_min: 30, age_max: 65,
+    publisher_platforms: ['instagram'], instagram_positions: ['stream'],
+    narrowing: good.targeting!.narrowing,
+  })
+  check('a spec that never mentions expansion is unverified, not fine',
+    keys(checkCampaignSetup(CAMPAIGN, [unsaid])).includes('watch:expansionUnknown'),
+    keys(checkCampaignSetup(CAMPAIGN, [unsaid])).join(' | '))
+  check('…and an empty automation block counts as unsaid too',
+    keys(checkCampaignSetup(CAMPAIGN, [at({ id: 'a11' }, { ...good.targeting, targeting_automation: {} })]))
+      .includes('watch:expansionUnknown'))
+  check('…but it is a watch, not a wrong — we do not know that it is broken',
+    setupProblemCount(checkCampaignSetup(CAMPAIGN, [unsaid])) === 0,
+    keys(checkCampaignSetup(CAMPAIGN, [unsaid])).join(' | '))
+
+  // Meta keeps adding advantage_* switches and each arrives ON by default, so
+  // naming them one at a time means the next one ships unseen. Same rule as
+  // no-advantage.ts applies to outbound payloads.
+  const futureSwitch = at({ id: 'a12' }, {
+    ...good.targeting,
+    targeting_automation: { advantage_audience: 0, advantage_something_new: 1 },
+  })
+  check('an Advantage switch we have never heard of is caught anyway',
+    keys(checkCampaignSetup(CAMPAIGN, [futureSwitch])).includes('wrong:expansion'),
+    keys(checkCampaignSetup(CAMPAIGN, [futureSwitch])).join(' | '))
+  check('…and is named so the reader knows which one to turn off',
+    checkCampaignSetup(CAMPAIGN, [futureSwitch]).find((x) => x.key === 'expansion')?.vars?.fields === 'advantage_something_new')
 }
 
 console.log('\n── the one rule: these people must be interested in property ──')

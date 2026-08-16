@@ -109,7 +109,8 @@ console.log('\n── setup-check findings ──')
   const SETUP_KEYS = [
     'noAdSets', 'adSetPaused', 'noAds', 'noLiveAd', 'noTargeting',
     'noPlace', 'place', 'manyCountries', 'visitors', 'residents',
-    'noProperty', 'property', 'expansion', 'youngAge', 'age',
+    'noProperty', 'property', 'expansion', 'noExpansion', 'expansionUnknown',
+    'youngAge', 'age',
     'anyPlacement', 'offPlatform', 'loosePlacement', 'placements',
     'softGoal', 'noBudget', 'capped', 'capChoking',
   ]
