@@ -82,12 +82,37 @@ function allSignals(t?: Record<string, unknown> | null): string[] {
  * trusting. Matched on wording, because the ids are re-resolved at launch and
  * an id proves nothing about what it means today.
  */
-const PROPERTY_WORDS = ['propert', 'real estate', 'realestate', 'mortgage', 'apartment', 'villa', 'investing', 'investment', 'investor']
-function hasPropertyIntent(t?: Record<string, unknown> | null): boolean {
-  return allSignals(t).some((n) => {
+// PROPERTY INTENT IS A PROPERTY WORD, NOT A MONEY WORD.
+//
+// This list carried `investing`, `investment` and `investor` until a live ad
+// set was found qualifying on "Investor (investing)" alone, with no property
+// anywhere in it. That is not a near miss: those three substrings match most
+// of Meta's finance vocabulary, so the one gate that is supposed to make an
+// audience about real estate was being satisfied by an interest in money.
+//
+// `investing` is not lost by removing it — it still matches inside "Real
+// estate investing" on the `real estate` root, which is the whole point. What
+// no longer counts is the money word standing on its own.
+const PROPERTY_WORDS = ['propert', 'real estate', 'realestate', 'mortgage', 'apartment', 'villa']
+
+// The money words are still worth RECOGNISING, because an ad set carrying only
+// these is a different mistake from one carrying nothing. It was aimed — just
+// at investors in general instead of at property — and telling its owner they
+// targeted nothing would be both wrong and useless. It earns its own sentence.
+const MONEY_WORDS = ['investing', 'investment', 'investor']
+
+const matches = (t: Record<string, unknown> | null | undefined, words: string[]): boolean =>
+  allSignals(t).some((n) => {
     const s = n.toLowerCase()
-    return PROPERTY_WORDS.some((w) => s.includes(w))
+    return words.some((w) => s.includes(w))
   })
+
+function hasPropertyIntent(t?: Record<string, unknown> | null): boolean {
+  return matches(t, PROPERTY_WORDS)
+}
+/** Aimed at money, with no property root anywhere to make it about housing. */
+function hasMoneyIntentOnly(t?: Record<string, unknown> | null): boolean {
+  return !matches(t, PROPERTY_WORDS) && matches(t, MONEY_WORDS)
 }
 
 /**
@@ -215,10 +240,15 @@ export function checkCampaignSetup(
         : { level: 'ok', key: 'residents', adSet: where })
     }
 
-    if (!hasPropertyIntent(t)) {
-      out.push({ level: 'wrong', key: 'noProperty', adSet: where })
-    } else {
+    // Both failures are blockers — neither ad set is buying property intent —
+    // but they are not the same fault, and a broker can only act on the one
+    // that describes what they actually did.
+    if (hasPropertyIntent(t)) {
       out.push({ level: 'ok', key: 'property', adSet: where })
+    } else if (hasMoneyIntentOnly(t)) {
+      out.push({ level: 'wrong', key: 'moneyNotProperty', adSet: where })
+    } else {
+      out.push({ level: 'wrong', key: 'noProperty', adSet: where })
     }
 
     // ── Is Meta staying inside the audience that was chosen? ────────────────

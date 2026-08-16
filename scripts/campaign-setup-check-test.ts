@@ -159,6 +159,53 @@ console.log('\n── the one rule: these people must be interested in property 
   })
   check('a behaviour counts too, not only an interest',
     !keys(checkCampaignSetup(CAMPAIGN, [behaviour])).includes('wrong:noProperty'))
+
+  // ── THE INVESTOR LOOPHOLE ────────────────────────────────────────────────
+  //
+  // `investing`, `investment` and `investor` used to sit in PROPERTY_WORDS, so
+  // an ad set qualifying on "Investor (investing)" alone passed as a property
+  // audience with no property in it. A live ad set was running exactly that
+  // shape. Those three substrings match most of Meta's finance vocabulary, so
+  // the gate that makes an audience about real estate was satisfied by an
+  // interest in money.
+  const moneyOnly = at({ id: 'a13' }, {
+    ...good.targeting,
+    interests: [{ id: '20', name: 'Investment' }, { id: '21', name: 'Business class (air travel)' }],
+    narrowing: [{ interests: [{ id: '22', name: 'Investor (investing)' }] }],
+  })
+  check('money words alone no longer pass as property intent',
+    !keys(checkCampaignSetup(CAMPAIGN, [moneyOnly])).includes('ok:property'),
+    keys(checkCampaignSetup(CAMPAIGN, [moneyOnly])).join(' | '))
+
+  // …AND IT IS TOLD APART FROM TARGETING NOTHING. The owner aimed this ad set;
+  // they aimed it at investors instead of at housing. "You targeted no
+  // property signal" would be true and useless — it does not describe what
+  // they did, so it cannot tell them what to change.
+  check('…and it is reported as aimed at money, not as aimed at nothing',
+    keys(checkCampaignSetup(CAMPAIGN, [moneyOnly])).includes('wrong:moneyNotProperty'),
+    keys(checkCampaignSetup(CAMPAIGN, [moneyOnly])).join(' | '))
+  check('…while an ad set with no signal at all keeps the plainer sentence',
+    keys(checkCampaignSetup(CAMPAIGN, [noProperty])).includes('wrong:noProperty')
+      && !keys(checkCampaignSetup(CAMPAIGN, [noProperty])).includes('wrong:moneyNotProperty'))
+  check('…and both are blockers, because neither buys property intent',
+    setupProblemCount(checkCampaignSetup(CAMPAIGN, [moneyOnly])) > 0)
+
+  // REMOVING THE WORD MUST NOT COST THE REAL INTEREST. "Real estate investing"
+  // is the qualifier this product actually uses, and it survives on the
+  // `real estate` root — that is why dropping the bare money words is safe.
+  const realEstateInvesting = at({ id: 'a14' }, {
+    ...good.targeting,
+    interests: [{ id: '20', name: 'Investment' }],
+    narrowing: [{ interests: [{ id: '23', name: 'Real estate investing (investing)' }] }],
+  })
+  check('"Real estate investing" still qualifies, on the property root',
+    keys(checkCampaignSetup(CAMPAIGN, [realEstateInvesting])).includes('ok:property'),
+    keys(checkCampaignSetup(CAMPAIGN, [realEstateInvesting])).join(' | '))
+  check('…and so does a mortgage signal',
+    keys(checkCampaignSetup(CAMPAIGN, [at({ id: 'a15' }, {
+      ...good.targeting,
+      narrowing: [{ interests: [{ id: '24', name: 'Mortgage loan' }] }],
+    })])).includes('ok:property'))
 }
 
 console.log('\n── the campaign that looks alive and spends nothing ──')
