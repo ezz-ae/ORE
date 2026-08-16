@@ -43,13 +43,22 @@ export async function GET() {
   const catalog = [...seen.values()]
 
   const results = await verifyEntityIds(catalog)
-  const dead = results.filter((r) => !r.valid)
-  const renamed = results.filter((r) => r.valid && r.liveName && r.liveName !== r.claimedName)
+  // COUNTED FROM THE VERDICT, not from `valid`. `!valid` used to mean "dead",
+  // which quietly folded "we could not check" into "Meta retired this" — and
+  // that is how a screen came to report eight live property interests as
+  // retired when the truth was that the request never worked.
+  const dead = results.filter((r) => r.verdict === 'dead')
+  const renamed = results.filter((r) => r.verdict === 'renamed')
+  const unknown = results.filter((r) => r.verdict === 'unknown')
 
   return NextResponse.json({
     checked: results.length,
     dead: dead.length,
     renamed: renamed.length,
+    // Reported separately and never as a problem with the catalog. If this is
+    // the whole list, the answer on screen is "the check did not run", not
+    // "your targeting is dead".
+    unknown: unknown.length,
     results,
   })
 }
