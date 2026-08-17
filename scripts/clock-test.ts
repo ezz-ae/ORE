@@ -162,6 +162,45 @@ console.log('\n── the timezone-blind renders cannot grow ──')
   }
 }
 
+console.log('\n── the day BUCKETS are the operation\'s day too ──')
+{
+  // Rendering the right hour is half of it. The other half is which day a
+  // record is COUNTED under, and three places got that from UTC:
+  //
+  //   · the CRM activity feed sliced the ISO string (`iso.slice(0,10)`), which
+  //     is the UTC date, and compared it against a UTC "today" — so between
+  //     midnight and 04:00 Dubai a broker's own calls appeared under
+  //     "Yesterday". Every night.
+  //   · the tasks page counted "due today" the same way.
+  //   · the Ads Machine daily series used `to_char(created_at, …)`, and
+  //     Postgres formats a timestamptz in the SESSION's zone — UTC on Neon —
+  //     so the series was on UTC days while Meta reports on Dubai days.
+  const src = (p: string) => readFileSync(p, { encoding: 'utf8' })
+
+  const activity = src('app/freehold-intelligence/crm/activity/page.tsx')
+  check('the activity feed buckets by the operation\'s day',
+    /return dayKey\(iso\)/.test(activity) && !/iso\.slice\(0, 10\)/.test(activity),
+    'it is still slicing the UTC date out of the ISO string')
+  check('…and "today" is the operation\'s today',
+    /const TODAY {5}= dayKey\(Date\.now\(\)\)/.test(activity))
+
+  const tasks = src('app/freehold-intelligence/tasks/page.tsx')
+  check('"due today" is the operation\'s today',
+    /const todayIso = dayKey\(Date\.now\(\)\)/.test(tasks),
+    'tasks due today are counted on UTC days')
+
+  const machine = src('lib/freehold/ads-machine.ts')
+  check('the daily verdict series is grouped in the operation\'s zone',
+    /to_char\(created_at AT TIME ZONE \$2, 'YYYY-MM-DD'\)/.test(machine),
+    'Postgres is grouping on the session zone, which is UTC')
+  // Passed as a parameter, not interpolated. It is a trusted env var today,
+  // and building the habit of interpolating one into SQL is how an untrusted
+  // one gets interpolated tomorrow.
+  check('…with the zone passed as a parameter, never interpolated',
+    /\[machineId, OPERATION_TZ\]/.test(machine)
+      && !/AT TIME ZONE '\$\{/.test(machine))
+}
+
 if (failures > 0) {
   console.error(`\n${failures} clock rule(s) broken.`)
   console.error('A time with no zone is not precise, it is ambiguous in a font that looks precise.')

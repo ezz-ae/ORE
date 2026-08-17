@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { dayKey } from '@/lib/freehold/clock'
 import { CheckSquare, AlertCircle, Clock, CheckCircle2, User, ArrowUpRight, Sparkles, Plus, X } from 'lucide-react'
 import Link from 'next/link'
 import { useT } from '@/lib/i18n/provider'
@@ -119,7 +120,9 @@ export default function TasksPage() {
     const critical = tasks.filter(t => t.priority === 'critical').length
     const blocked = tasks.filter(t => effectiveStatus(t) === 'blocked').length
     // Match a literal "Today" label OR a real ISO date equal to today.
-    const todayIso = new Date().toISOString().slice(0, 10)
+    // The operation's today, not UTC's: between midnight and 04:00 Dubai the
+    // two are different days, and "due today" quietly meant "due yesterday".
+    const todayIso = dayKey(Date.now())
     const dueToday = tasks.filter(t => effectiveStatus(t) !== 'done' && t.dueDate
       && (t.dueDate === 'Today' || t.dueDate.slice(0, 10) === todayIso)).length
     return { open, critical, blocked, dueToday }

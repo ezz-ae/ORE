@@ -14,6 +14,7 @@
  * caller (activity logging), throw-through where silence would lie (CRUD).
  */
 import { randomUUID } from 'node:crypto'
+import { OPERATION_TZ } from './clock'
 import { ensureOnce, query } from '@/lib/db'
 import type { MachinePlan } from './ads-machine-planner'
 
@@ -793,7 +794,10 @@ export async function getVerdictAggregates(machineId: string): Promise<VerdictAg
       [machineId],
     ),
     query<{ day: string; answered: number; yes: number; no: number; pending: number }>(
-      `SELECT to_char(created_at, 'YYYY-MM-DD') AS day,
+      // GROUPED IN THE OPERATION'S ZONE. Postgres formats a timestamptz in the
+      // SESSION's timezone, which is UTC on Neon — so this daily series was on
+      // UTC days while Meta reports on Dubai days, and the two never lined up.
+      `SELECT to_char(created_at AT TIME ZONE $2, 'YYYY-MM-DD') AS day,
               COUNT(*) FILTER (WHERE answered_at IS NOT NULL)::int AS answered,
               COUNT(*) FILTER (WHERE verdict = 'yes')::int AS yes,
               COUNT(*) FILTER (WHERE verdict = 'no')::int  AS no,
@@ -803,7 +807,7 @@ export async function getVerdictAggregates(machineId: string): Promise<VerdictAg
        GROUP BY 1
        ORDER BY 1 DESC
        LIMIT 30`,
-      [machineId],
+      [machineId, OPERATION_TZ],
     ),
   ])
   return {

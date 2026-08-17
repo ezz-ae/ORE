@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { formatInstant } from '@/lib/freehold/clock'
+import { formatInstant, dayKey } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import {
   Activity,
@@ -131,12 +131,19 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
+// THE DAY AN ACTIVITY BELONGS TO, in the operation's zone.
+//
+// This read the first ten characters of the ISO string, which is the UTC date,
+// and compared it against a UTC "today". Between midnight and 04:00 Dubai the
+// two disagree: a call logged at 01:00 was filed under YESTERDAY, so a broker
+// working late saw their own morning's work under the wrong heading every
+// single night.
 function toDateKey(iso: string): string {
-  return iso.slice(0, 10)
+  return dayKey(iso)
 }
 
-const TODAY     = new Date().toISOString().slice(0, 10)
-const YESTERDAY = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+const TODAY     = dayKey(Date.now())
+const YESTERDAY = dayKey(Date.now() - 86400000)
 
 function dateLabel(key: string, t: TFn, dateLocale: string): string {
   if (key === TODAY)     return t('crm.today')
