@@ -49,6 +49,9 @@ import {
   placementSpecFor, ADVANTAGE_AUDIENCE_OFF, CREATIVE_ENHANCEMENTS_OFF,
   findAdvantageInAdSet, describeViolations,
 } from './no-advantage'
+import {
+  readInvariants, withoutPlacement, placementKeys, type PlacementWriteOutcome,
+} from './placement-write'
 import type { MetaInsightActions } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -3003,6 +3006,92 @@ export async function updateAdSet(
     }
   }
   return apiPost(`/${adSetId}`, body)
+}
+
+/**
+ * DROP ONE PLACEMENT FROM A LIVE AD SET, AND PROVE IT HAPPENED.
+ *
+ * `updateAdSet` above must never be used for this. It builds a targeting
+ * object from a CampaignTargeting shape — geo, ages, publisher_platforms,
+ * interests — and Meta REPLACES the whole targeting object on write, so
+ * everything not in that shape is deleted: flexible_spec (the property
+ * qualifier), exclusions (the do-not-target audience), locales (the Arabic
+ * narrowing), the position lists, and targeting_automation (the Advantage
+ * opt-out, whose absence Meta reads as opt-IN). One such call turns a bounded
+ * property audience into everybody with Advantage back on.
+ *
+ * That was harmless while nothing called it with targeting on a live ad set.
+ * It stops being harmless the moment a person can press Accept, which is what
+ * this function exists to make safe:
+ *
+ *   read the live spec → change only the placement fields → write the SAME
+ *   object back → read it again and check both that the placement went and
+ *   that nothing else did.
+ *
+ * A 200 from Meta means "request accepted", not "field changed" — this product
+ * has already been caught by that with location_types. So nothing is reported
+ * as done until Meta says it is, and a write that did not land comes back as a
+ * failure rather than an assumption. The rules live in ./placement-write.ts,
+ * pure, so they are asserted without a network.
+ */
+export async function dropPlacement(
+  adSetId: string, drop: string,
+): Promise<PlacementWriteOutcome> {
+  let live: Record<string, unknown>
+  try {
+    const res = await apiFetch<{ targeting?: Record<string, unknown> }>(
+      `/${adSetId}`, undefined, { fields: 'targeting' },
+    )
+    if (!res?.targeting) return { ok: false, reason: 'unreadable', detail: 'Meta returned no targeting spec' }
+    live = res.targeting
+  } catch (err) {
+    return { ok: false, reason: 'unreadable', detail: err instanceof Error ? err.message : 'read failed' }
+  }
+
+  const before = readInvariants(live)
+  const next = withoutPlacement(live, drop)
+  if (!next) {
+    return {
+      ok: false, reason: 'would_empty',
+      detail: 'Removing this would leave no placements, and an empty placement list lets Meta choose — including Audience Network.',
+    }
+  }
+
+  try {
+    await apiPost(`/${adSetId}`, { targeting: next })
+  } catch (err) {
+    return { ok: false, reason: 'write_rejected', detail: err instanceof Error ? err.message : 'Meta refused the change' }
+  }
+
+  let after: Record<string, unknown>
+  try {
+    const res = await apiFetch<{ targeting?: Record<string, unknown> }>(
+      `/${adSetId}`, undefined, { fields: 'targeting' },
+    )
+    after = res?.targeting ?? {}
+  } catch (err) {
+    return { ok: false, reason: 'not_applied', detail: `could not confirm the change: ${err instanceof Error ? err.message : 'read failed'}` }
+  }
+
+  const now = placementKeys(after)
+  if (now.includes(drop)) {
+    return { ok: false, reason: 'not_applied', detail: `Meta accepted the request but ${drop} is still on the ad set` }
+  }
+
+  // THE REASON THIS FUNCTION EXISTS. If the qualifier, the exclusions, the
+  // languages or the Advantage opt-out moved with the placement, the fix cost
+  // more than it saved and the person is told, not congratulated.
+  const post = readInvariants(after)
+  const lost: string[] = []
+  if (post.flexibleGroups < before.flexibleGroups) lost.push('the narrowing groups')
+  if (before.hasExclusions && !post.hasExclusions) lost.push('the exclusions')
+  if (post.locales < before.locales) lost.push('the language targeting')
+  if (before.advantageAudienceOff && !post.advantageAudienceOff) lost.push('the Advantage opt-out')
+  if (lost.length > 0) {
+    return { ok: false, reason: 'collateral_damage', detail: `the placement changed but so did ${lost.join(', ')}` }
+  }
+
+  return { ok: true, placements: now }
 }
 
 export async function getAdSet(adSetId: string): Promise<MetaAdSet> {
