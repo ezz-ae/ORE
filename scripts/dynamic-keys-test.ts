@@ -36,6 +36,7 @@ import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { CONTENT_REFUSALS } from '../lib/freehold/content-authority'
+import { ACTION_KEYS, ACTION_SEVERITIES } from '../lib/freehold/campaign-action'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
@@ -118,6 +119,16 @@ console.log('\n── setup-check findings ──')
     'softGoal', 'noBudget', 'capped', 'capChoking',
   ]
   family('lm.setupCheck', 'lm.setupCheck.', SETUP_KEYS)
+}
+
+console.log('\n── auto targeting guard: one action per campaign ──')
+{
+  // The guard renders t(`lm.guard.action.${key}`) and t(`lm.guard.sev.${s}`).
+  // A verdict without a sentence is a verdict nobody can act on, which is the
+  // entire failure mode this guard was built to replace — a list instead of an
+  // instruction.
+  family('lm.guard.action', 'lm.guard.action.', [...ACTION_KEYS])
+  family('lm.guard.sev', 'lm.guard.sev.', [...ACTION_SEVERITIES])
 }
 
 console.log('\n── content-admin refusals ──')

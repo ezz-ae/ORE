@@ -84,6 +84,17 @@ console.log('\n── the check asks the targeting vocabulary, not the object gr
     'the positional fallback is back — a short or reordered answer array will invent renames')
   check('…and a batch with no ids to match on is unchecked, not aligned by guesswork',
     /if \(byId\.size === 0\)/.test(verify))
+
+  // A PANEL THAT ONLY EVER SAYS "UNKNOWN" IS A PANEL NOBODY READS, and then
+  // the one time an interest really is retired, nobody looks. When the batch
+  // cannot be matched, each id is asked for alone — one request, one possible
+  // answer, so the pairing holds by construction rather than by trusting Meta
+  // to have preserved an order.
+  check('an unmatchable batch is retried one id at a time',
+    /await ask\(\[e\.id\]\)/.test(verify),
+    'the whole catalog reports unknown whenever Meta omits the ids')
+  check('…and each single answer is the only one its request could have returned',
+    /one\[0\] \?\? null/.test(verify))
 }
 
 console.log('\n── an unknown is never counted as a live one ──')
@@ -112,7 +123,13 @@ console.log('\n── "could not check" is its own answer ──')
   // A REQUEST THAT NEVER WORKED must not indict the catalog.
   check('an unreachable Meta marks everything unknown, not dead',
     /return unchecked\('Meta could not be reached'\)/.test(verify))
-  check('…and so does an error from Meta', /if \(json\.error\) return unchecked\(/.test(verify))
+  // Pins the RULE — a refusal from Meta marks everything unknown — not the
+  // line that implements it. The literal `if (json.error) return unchecked(`
+  // broke when the request moved into a reusable `ask()`, though who gets
+  // called dead did not change.
+  check('…and so does an error from Meta',
+    /if \(json\.error\) return \{ error:/.test(verify)
+      && /if \('error' in batch\) return unchecked\(batch\.error\)/.test(verify))
   check('…and so does a missing answer for one id',
     /'Meta did not answer for this id'/.test(verify))
 

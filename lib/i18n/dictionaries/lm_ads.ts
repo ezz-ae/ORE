@@ -6,6 +6,29 @@ type Dict = Record<string, string>
 
 export const lm_ads: Record<Locale, Dict> = {
   en: {
+    // ── The auto targeting guard: one instruction per campaign ───────────
+    // "Stop" is reserved for money reaching the wrong people while you read
+    // it. Everything else is a fix, so that the stop still means something.
+    'lm.guard.title': 'Targeting guard',
+    'lm.guard.sub': 'Runs on its own against live Meta. Says what to do, not what it found.',
+    'lm.guard.sev.stop_now': 'Stop this now',
+    'lm.guard.sev.fix_today': 'Fix today',
+    'lm.guard.sev.watch': 'Unverified',
+    'lm.guard.sev.ok': 'Fine',
+    'lm.guard.allClear': 'Nothing needs stopping.',
+    'lm.guard.stops': '{n} campaigns need stopping now',
+    'lm.guard.action.stopExpanding': 'STOP THIS NOW — Meta is ignoring your targeting on this campaign and buying outside it. Your interests are being treated as a suggestion, so you are paying property-ad prices for whoever is cheapest. AED {spend} has gone through it already. Pause it, switch the ad set to the original audience options, then restart.',
+    'lm.guard.action.stopNoProperty': 'STOP THIS NOW — nothing in this campaign says property. It is buying general attention at property-ad prices, and AED {spend} has already gone. Pause it and put a property interest in the "must also match" box before it runs again.',
+    'lm.guard.action.stopDeadSignal': 'STOP THIS NOW — Meta has retired {n} of the targeting signals this campaign runs on ({signals}). It is delivering against whatever is left, which is not the audience you chose. Pause it and replace them.',
+    'lm.guard.action.stopOffPlatform': 'STOP THIS NOW — this campaign is buying third-party apps and sites, not Facebook and Instagram. That inventory does not convert for property and AED {spend} has gone into it. Pause it and set the placements explicitly.',
+    'lm.guard.action.fixExpanding': 'Not spending, but Meta would ignore your targeting the moment it restarts. Switch the ad set to the original audience options before it runs again.',
+    'lm.guard.action.fixNoProperty': 'Not spending, but nothing in it says property. Add a property interest to the "must also match" box before it runs again.',
+    'lm.guard.action.fixDeadSignal': 'Not spending, but {n} of its targeting signals have been retired by Meta ({signals}). Replace them before it runs again.',
+    'lm.guard.action.fixGoal': 'This is set to buy views rather than customers. The budget will go to people who watch and never enquire. Rebuild it with a leads objective.',
+    'lm.guard.action.fixLocation': 'This ad set uses a location setting Meta has deprecated. Delivery continues, but every edit you make from now on is silently refused until it is republished with the supported setting.',
+    'lm.guard.action.watchUnverified': 'We could not read whether Meta is staying inside your audience on this one. That is unverified, not fine — open the ad set and confirm it is not using Advantage+ audience.',
+    'lm.guard.action.ok': 'Delivering to the audience you chose.',
+
     // ---- Ads launcher (ads/page.tsx) ----
     'lm.ads.title': 'Ads',
     'lm.ads.subtitle': 'Every advertising tool in one place — Meta, Google, forms, creatives & live performance',
@@ -1142,6 +1165,26 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.review.cta.CALL_NOW': 'Call now',
   },
   ar: {
+    'lm.guard.title': 'حارس الاستهداف',
+    'lm.guard.sub': 'يعمل تلقائياً مقابل ميتا الحيّة. يقول ماذا تفعل، لا ماذا وجد.',
+    'lm.guard.sev.stop_now': 'أوقف هذا الآن',
+    'lm.guard.sev.fix_today': 'أصلحه اليوم',
+    'lm.guard.sev.watch': 'غير مُتحقَّق',
+    'lm.guard.sev.ok': 'سليم',
+    'lm.guard.allClear': 'لا شيء يحتاج إلى إيقاف.',
+    'lm.guard.stops': '{n} حملات تحتاج إلى إيقاف الآن',
+    'lm.guard.action.stopExpanding': 'أوقف هذا الآن — ميتا تتجاهل استهدافك في هذه الحملة وتشتري خارجه. اهتماماتك تُعامَل كاقتراح، فأنت تدفع أسعار إعلانات العقارات لمن هو أرخص. مرّ عبرها {spend} درهم بالفعل. أوقفها، وحوّل مجموعة الإعلان إلى خيارات الجمهور الأصلية، ثم أعد التشغيل.',
+    'lm.guard.action.stopNoProperty': 'أوقف هذا الآن — لا شيء في هذه الحملة يدل على العقارات. إنها تشتري انتباهاً عاماً بأسعار إعلانات العقارات، وذهب {spend} درهم بالفعل. أوقفها وضع اهتماماً عقارياً في خانة «يجب أن يطابق أيضاً» قبل أن تعمل ثانية.',
+    'lm.guard.action.stopDeadSignal': 'أوقف هذا الآن — أوقفت ميتا {n} من إشارات الاستهداف التي تعمل عليها هذه الحملة ({signals}). إنها تُوصَّل وفق ما تبقّى، وهو ليس الجمهور الذي اخترته. أوقفها واستبدلها.',
+    'lm.guard.action.stopOffPlatform': 'أوقف هذا الآن — هذه الحملة تشتري تطبيقات ومواقع خارجية، لا فيسبوك وإنستغرام. هذا المخزون لا يحوّل في العقارات وذهب فيه {spend} درهم. أوقفها وحدّد مواضع الإعلان صراحةً.',
+    'lm.guard.action.fixExpanding': 'لا تُنفق الآن، لكن ميتا ستتجاهل استهدافك لحظة إعادة تشغيلها. حوّل مجموعة الإعلان إلى خيارات الجمهور الأصلية قبل أن تعمل ثانية.',
+    'lm.guard.action.fixNoProperty': 'لا تُنفق الآن، لكن لا شيء فيها يدل على العقارات. أضف اهتماماً عقارياً إلى خانة «يجب أن يطابق أيضاً» قبل أن تعمل ثانية.',
+    'lm.guard.action.fixDeadSignal': 'لا تُنفق الآن، لكن {n} من إشارات استهدافها أوقفتها ميتا ({signals}). استبدلها قبل أن تعمل ثانية.',
+    'lm.guard.action.fixGoal': 'هذه مضبوطة لشراء المشاهدات لا العملاء. ستذهب الميزانية إلى من يشاهد ولا يستفسر أبداً. أعد بناءها بهدف العملاء المحتملين.',
+    'lm.guard.action.fixLocation': 'تستخدم مجموعة الإعلان هذه إعداد موقع أوقفته ميتا. يستمر العرض، لكن كل تعديل تجريه من الآن يُرفض بصمت حتى يُعاد نشرها بالإعداد المدعوم.',
+    'lm.guard.action.watchUnverified': 'لم نتمكن من قراءة ما إذا كانت ميتا تبقى داخل جمهورك في هذه. هذا غير مُتحقَّق منه وليس سليماً — افتح مجموعة الإعلان وتأكد أنها لا تستخدم جمهور Advantage+.',
+    'lm.guard.action.ok': 'تُوصَّل إلى الجمهور الذي اخترته.',
+
     // ---- Ads launcher ----
     'lm.ads.title': 'الإعلانات',
     'lm.ads.subtitle': 'كل أدوات الإعلان في مكان واحد — Meta وGoogle والنماذج والتصاميم والأداء المباشر',
@@ -2262,6 +2305,26 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.review.cta.CALL_NOW': 'اتصل الآن',
   },
   ru: {
+    'lm.guard.title': 'Страж таргетинга',
+    'lm.guard.sub': 'Работает сам против живой Meta. Говорит, что делать, а не что нашёл.',
+    'lm.guard.sev.stop_now': 'Остановить немедленно',
+    'lm.guard.sev.fix_today': 'Исправить сегодня',
+    'lm.guard.sev.watch': 'Не проверено',
+    'lm.guard.sev.ok': 'В порядке',
+    'lm.guard.allClear': 'Останавливать нечего.',
+    'lm.guard.stops': '{n} кампаний нужно остановить сейчас',
+    'lm.guard.action.stopExpanding': 'ОСТАНОВИТЕ НЕМЕДЛЕННО — Meta игнорирует ваш таргетинг в этой кампании и покупает за его пределами. Ваши интересы считаются подсказкой, поэтому вы платите цену рекламы недвижимости за тех, кто дешевле. Через неё уже прошло {spend} AED. Поставьте на паузу, переключите группу объявлений на исходные настройки аудитории и перезапустите.',
+    'lm.guard.action.stopNoProperty': 'ОСТАНОВИТЕ НЕМЕДЛЕННО — ничто в этой кампании не говорит о недвижимости. Она покупает общее внимание по цене рекламы недвижимости, и {spend} AED уже потрачено. Поставьте на паузу и добавьте интерес к недвижимости в поле «должно также совпадать».',
+    'lm.guard.action.stopDeadSignal': 'ОСТАНОВИТЕ НЕМЕДЛЕННО — Meta отключила {n} сигналов таргетинга, на которых работает эта кампания ({signals}). Она доставляется по тому, что осталось, а это не выбранная вами аудитория. Поставьте на паузу и замените их.',
+    'lm.guard.action.stopOffPlatform': 'ОСТАНОВИТЕ НЕМЕДЛЕННО — эта кампания покупает сторонние приложения и сайты, а не Facebook и Instagram. Этот инвентарь не конвертирует в недвижимости, и в него ушло {spend} AED. Поставьте на паузу и задайте плейсменты явно.',
+    'lm.guard.action.fixExpanding': 'Сейчас не тратит, но Meta проигнорирует ваш таргетинг в момент перезапуска. Переключите группу объявлений на исходные настройки аудитории.',
+    'lm.guard.action.fixNoProperty': 'Сейчас не тратит, но ничто в ней не говорит о недвижимости. Добавьте интерес к недвижимости в поле «должно также совпадать».',
+    'lm.guard.action.fixDeadSignal': 'Сейчас не тратит, но {n} её сигналов таргетинга отключены Meta ({signals}). Замените их до следующего запуска.',
+    'lm.guard.action.fixGoal': 'Настроено на покупку просмотров, а не клиентов. Бюджет уйдёт на тех, кто смотрит и никогда не обращается. Пересоберите с целью «лиды».',
+    'lm.guard.action.fixLocation': 'Эта группа объявлений использует устаревшую настройку локации. Показы продолжаются, но каждое ваше изменение молча отклоняется, пока она не будет опубликована с поддерживаемой настройкой.',
+    'lm.guard.action.watchUnverified': 'Мы не смогли прочитать, остаётся ли Meta внутри вашей аудитории в этой кампании. Это не проверено, а не «в порядке» — откройте группу объявлений и убедитесь, что не используется аудитория Advantage+.',
+    'lm.guard.action.ok': 'Доставляется выбранной вами аудитории.',
+
     // ---- Ads launcher ----
     'lm.ads.title': 'Реклама',
     'lm.ads.subtitle': 'Все рекламные инструменты в одном месте — Meta, Google, формы, креативы и эффективность в реальном времени',

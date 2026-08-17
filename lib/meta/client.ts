@@ -3229,42 +3229,75 @@ export async function verifyEntityIds(
       valid: false, liveName: null, error,
     }))
 
-  let answers: Array<{ id?: string; name?: string; valid?: boolean }> = []
-  try {
-    const { token } = await creds()
-    const url = new URL(`${API_BASE}/search`)
-    url.searchParams.set('type', 'adinterestvalid')
-    url.searchParams.set('interest_fbid_list', JSON.stringify(entities.map((e) => e.id)))
-    url.searchParams.set('access_token', token)
-    const res = await fetch(url.toString())
-    const json = (await res.json()) as {
-      data?: Array<{ id?: string; name?: string; valid?: boolean }>
-      error?: { message?: string }
-    }
-    if (json.error) return unchecked(json.error.message ?? 'Meta refused the check')
-    answers = json.data ?? []
-  } catch {
+  type Answer = { id?: string; name?: string; valid?: boolean }
+
+  let token: string
+  try { ({ token } = await creds()) } catch {
     // COULD NOT ASK. Every entry is unknown — reporting a catalog as dead
     // because our own request failed is the fault this rewrite exists for.
     return unchecked('Meta could not be reached')
+  }
+
+  const ask = async (ids: string[]): Promise<Answer[] | { error: string }> => {
+    try {
+      const url = new URL(`${API_BASE}/search`)
+      url.searchParams.set('type', 'adinterestvalid')
+      url.searchParams.set('interest_fbid_list', JSON.stringify(ids))
+      url.searchParams.set('access_token', token)
+      const res = await fetch(url.toString())
+      const json = (await res.json()) as { data?: Answer[]; error?: { message?: string } }
+      if (json.error) return { error: json.error.message ?? 'Meta refused the check' }
+      return json.data ?? []
+    } catch {
+      return { error: 'Meta could not be reached' }
+    }
+  }
+
+  const batch = await ask(entities.map((e) => e.id))
+  if ('error' in batch) return unchecked(batch.error)
+
+  const byId = new Map<string, Answer>()
+  batch.forEach((a) => { if (a?.id) byId.set(String(a.id), a) })
+
+  // ── WHEN THE BATCH CANNOT BE MATCHED, ASK ONE AT A TIME ──────────────────
+  //
+  // Meta does not always echo the id back. With nothing to match on, the batch
+  // is unusable — and answering "could not check" for the whole catalog is
+  // honest but worthless, which is its own kind of failure: a panel that says
+  // "unknown" every time is a panel nobody reads, and then the one time an
+  // interest really is dead, nobody looks.
+  //
+  // So each id is asked for on its own. One request carrying one id has
+  // exactly one possible answer, so `singles[i]` belongs to `entities[i]` BY
+  // CONSTRUCTION — not by assuming Meta preserved an order across a list.
+  // That is the difference between this and the `answers[i]` fallback that put
+  // the name "Beauty" on two unrelated interests: there, position was a guess
+  // about a multi-item response; here, there is only one item it could be.
+  if (byId.size === 0) {
+    const singles = await Promise.all(entities.map(async (e) => {
+      const one = await ask([e.id])
+      return 'error' in one ? null : (one[0] ?? null)
+    }))
+    entities.forEach((e, i) => {
+      const a = singles[i]
+      if (a) byId.set(e.id, a)
+    })
   }
 
   // MATCHED STRICTLY BY ID.
   //
   // There was a `?? answers[i]` positional fallback here, and it is what put
   // the name "Beauty" on two unrelated interests at once. Meta does not always
-  // echo the id back; when it does not, `byId` is empty and EVERY entity fell
+  // echo the id back; when it does not, `byId` was empty and EVERY entity fell
   // through to position, so a short or reordered `data` array married each id
   // to somebody else's answer and the screen reported renames that never
   // happened — the same false alarm, from a different direction, as the bare
   // GET this function replaced.
   //
-  // A position is a guess. This function exists because a guess was once
-  // dressed up as an answer, so it does not get to keep one.
-  const byId = new Map<string, { id?: string; name?: string; valid?: boolean }>()
-  answers.forEach((a) => { if (a?.id) byId.set(String(a.id), a) })
-
-  // Nothing to match on at all. Unchecked beats inventing an alignment.
+  // A position inside a multi-item response is a guess. This function exists
+  // because a guess was once dressed up as an answer, so it does not keep one.
+  //
+  // If even the one-at-a-time pass came back with nothing, say so.
   if (byId.size === 0) {
     return unchecked('Meta answered without saying which id each answer belongs to')
   }
