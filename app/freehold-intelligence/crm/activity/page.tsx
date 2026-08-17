@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import {
   Activity,
@@ -140,7 +141,7 @@ const YESTERDAY = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 function dateLabel(key: string, t: TFn, dateLocale: string): string {
   if (key === TODAY)     return t('crm.today')
   if (key === YESTERDAY) return t('crm.yesterday')
-  return new Date(key).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })
+  return formatInstant(key, dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function timeAgo(iso: string, t: TFn): string {
@@ -156,7 +157,7 @@ function timeAgo(iso: string, t: TFn): string {
 }
 
 function formatTimestamp(iso: string, dateLocale: string): string {
-  return new Date(iso).toLocaleString(dateLocale, {
+  return formatInstant(iso, dateLocale, {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai',
   })
 }

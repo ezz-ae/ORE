@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatInstant, formatInstantZoned } from '@/lib/freehold/clock'
 import { notFound } from 'next/navigation'
 import {
   ArrowLeft, Phone, Mail, Brain,
@@ -86,6 +87,7 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       lastContactAt: r.last_contact_at ?? r.created_at, nextBestAction: '', suggestedMessage: '',
       aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
       viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
+      createdAt: r.created_at,
       leadCode: r.lead_code ?? null, snoozeUntil: r.snooze_until ?? null,
       valueRating: r.value_rating ?? null,
       behaviourScore: r.behaviour_score, buyerIntent: r.buyer_intent,
@@ -143,7 +145,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const snoozedUntil = lead.snoozeUntil && new Date(lead.snoozeUntil).getTime() > Date.now()
     ? new Date(lead.snoozeUntil) : null
   const nextBestAction = snoozedUntil
-    ? t('crm.nba.snoozedUntil', { date: snoozedUntil.toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' }) })
+    ? t('crm.nba.snoozedUntil', { date: formatInstant(snoozedUntil, dateLocale) })
     : lead.pipelineStage === 'new'
     ? t('crm.nba.firstContact')
     : lead.pipelineStage === 'qualified'
@@ -222,6 +224,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
           {lead.name}
         </h1>
+        {/* WHEN THIS PERSON ACTUALLY ARRIVED, with the zone said out loud.
+            It used to be absent from this screen, and everywhere it did appear
+            it was rendered in whatever zone the reader's browser was set to —
+            so "12:32" meant a different moment to a broker in Dubai than to
+            the same page rendered on a UTC server. Naming the zone costs one
+            word and settles it against Ads Manager. */}
+        <p className="mt-1.5 text-xs text-slate-500">
+          {t('crm.registeredAt', {
+            when: formatInstantZoned(lead.createdAt, dateLocale),
+          })}
+        </p>
         <p className="mt-3 text-sm text-slate-400">
           {lead.assignedAgent ? t('crm.assignedTo', { agent: lead.assignedAgent }) : t('crm.unassigned')}
         </p>
@@ -370,7 +383,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 { label: t('crm.source'),      value: lead.source },
                 { label: t('crm.stage'),       value: lead.stage },
                 { label: t('crm.agent'),       value: lead.assignedAgent },
-                { label: t('crm.lastContact'), value: new Date(lead.lastContactAt).toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' }) },
+                { label: t('crm.lastContact'), value: formatInstant(lead.lastContactAt, dateLocale, { dateStyle: 'medium', timeStyle: 'short' }) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-start justify-between gap-3">
                   <span className="text-xs text-slate-500 shrink-0">{label}</span>
@@ -506,7 +519,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-slate-300 leading-snug">{event.content}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">{event.actor} · {new Date(event.createdAt).toLocaleDateString(dateLocale, { dateStyle: 'medium' })}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{event.actor} · {formatInstant(event.createdAt, dateLocale, { dateStyle: 'medium' })}</p>
                       </div>
                     </div>
                   )

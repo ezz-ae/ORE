@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { CalendarPlus, Home, HandCoins, CheckCircle, XCircle, Clock, X } from 'lucide-react'
@@ -115,7 +116,7 @@ export function LeadViewingsCard({ leadId, leadName, brokerId, projectSlug, date
   }
 
   const input = 'w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40'
-  const fmt = (iso: string) => new Date(iso).toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' })
+  const fmt = (iso: string) => formatInstant(iso, dateLocale, { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
     <div className="rounded-xl border border-line bg-surface p-5">

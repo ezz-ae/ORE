@@ -170,6 +170,9 @@ export const crm: Record<Locale, Dict> = {
     'crm.addLeadForm.creating': 'Creating…',
     'crm.addLeadForm.nameRequired': 'Please enter a name',
     'crm.addLeadForm.created': 'Lead created',
+    // Named zone, deliberately. "Registered at 12:32" read as local time to
+    // every reader and was whatever zone their browser happened to be in.
+    'crm.registeredAt': 'Lead registered at {when}',
     'crm.addLeadForm.failed': 'Could not create the lead',
     'crm.nav.dailyWork': 'Daily work',
     'crm.nav.allLeads': 'All Leads',
@@ -789,6 +792,7 @@ export const crm: Record<Locale, Dict> = {
     'crm.addLeadForm.creating': 'جارٍ الإنشاء…',
     'crm.addLeadForm.nameRequired': 'يرجى إدخال الاسم',
     'crm.addLeadForm.created': 'تم إنشاء العميل المحتمل',
+    'crm.registeredAt': 'سُجّل العميل في {when}',
     'crm.addLeadForm.failed': 'تعذّر إنشاء العميل المحتمل',
     'crm.nav.dailyWork': 'العمل اليومي',
     'crm.nav.allLeads': 'جميع العملاء المحتملين',
@@ -1395,6 +1399,7 @@ export const crm: Record<Locale, Dict> = {
     'crm.addLeadForm.creating': 'Создание…',
     'crm.addLeadForm.nameRequired': 'Введите имя',
     'crm.addLeadForm.created': 'Лид создан',
+    'crm.registeredAt': 'Лид зарегистрирован в {when}',
     'crm.addLeadForm.failed': 'Не удалось создать лид',
     'crm.nav.dailyWork': 'Ежедневная работа',
     'crm.nav.allLeads': 'Все лиды',

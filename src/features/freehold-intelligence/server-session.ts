@@ -80,6 +80,12 @@ export type IntegrationSyncStatus = {
 }
 
 export type CRMLeadIntelligence = {
+  /**
+   * When the lead actually arrived, as a true instant (created_at is
+   * timestamptz). Rendered through clock.ts so the hour shown is the
+   * operation's, not the reader's browser's — see lib/freehold/clock.ts.
+   */
+  createdAt?: string
   id: string
   hubspotLeadId: string
   name: string
