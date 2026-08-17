@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatInstant } from '@/lib/freehold/clock'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
@@ -352,7 +353,7 @@ export default async function FormsPage() {
                         </span>
                       )}
                       <span>
-                        {t('lm.forms.created')} <span className="text-slate-400">{new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</span>
+                        {t('lm.forms.created')} <span className="text-slate-400">{formatInstant(form.created_time, 'en-AE', { dateStyle: 'medium' })}</span>
                       </span>
                       {/* Which Facebook Page this form lives on. The list now
                           spans every accessible Page, so without this two

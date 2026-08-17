@@ -11,6 +11,7 @@
  * accuracy warning FIRST, and the per-member / per-day answer aggregates.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
@@ -906,7 +907,7 @@ export default function MachineDashboardPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
                       <span className={`text-xs font-semibold ${meta.color}`}>{t(meta.labelKey)}</span>
-                      <span className="text-[11px] text-slate-500" title={new Date(a.createdAt).toLocaleString(dateLocale)}>
+                      <span className="text-[11px] text-slate-500" title={formatInstant(a.createdAt, dateLocale, { dateStyle: 'medium' })}>
                         {relTime(a.createdAt, locale)}
                       </span>
                     </div>
@@ -980,7 +981,7 @@ export default function MachineDashboardPage() {
                       {v.ownerEmail ?? t('lm.machine.queue.unassigned')}
                     </span>
                     {v.leadArrivedAt && (
-                      <span>{t('lm.machine.queue.arrived', { date: new Date(v.leadArrivedAt).toLocaleDateString(dateLocale, { dateStyle: 'medium' }) })}</span>
+                      <span>{t('lm.machine.queue.arrived', { date: formatInstant(v.leadArrivedAt, dateLocale, { dateStyle: 'medium' }) })}</span>
                     )}
                   </div>
                   <p className="mt-2.5 text-sm text-slate-200">{question}</p>

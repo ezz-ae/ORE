@@ -35,6 +35,7 @@
  * The rules are pure and live in lib/freehold/bank.ts. This screen reads.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { formatInstant, formatInstantZoned } from '@/lib/freehold/clock'
 import {
   Wallet as WalletIcon, Landmark, Loader2, ArrowDownLeft, ArrowUpRight,
   Copy, Check, Flame, PenLine, AlertTriangle, QrCode, Plus, X,
@@ -443,7 +444,7 @@ function MyWallet({
                         </span>
                         <span className="block truncate text-xs text-slate-500">
                           {a.state === 'confirmed'
-                            ? new Date(a.at).toLocaleString()
+                            ? formatInstant(a.at, 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })
                             : t(`wal.state.${a.state}`)}
                           {a.memo && ` · ${a.memo}`}
                         </span>
@@ -531,7 +532,7 @@ function MyWallet({
                         <li key={`${c.dealId}-${p.receivedAt}-${i}`}
                           className="flex items-center justify-between gap-3 text-xs">
                           <span className="text-slate-500">
-                            {new Date(p.receivedAt).toLocaleDateString()}
+                            {formatInstant(p.receivedAt, 'en-GB', { dateStyle: 'medium' })}
                             {p.reference && <span className="ms-2 font-mono">{p.reference}</span>}
                           </span>
                           <span className="tabular-nums text-emerald-300">+{cashText(p.payoutAed)}</span>
@@ -640,7 +641,7 @@ function MyWallet({
             {([
               ['wal.tx.what', t(`wal.kind.${detail.kind}`)],
               ['wal.tx.status', t(`wal.state.${detail.state}`)],
-              ['wal.tx.when', new Date(detail.at).toLocaleString()],
+              ['wal.tx.when', formatInstantZoned(detail.at, 'en-GB')],
               ['wal.tx.who', detail.counterparty ?? t('wal.tx.house')],
               ['wal.tx.account', detail.counterpartyAccount ?? '—'],
               ['wal.tx.memo', detail.memo || '—'],
@@ -943,7 +944,7 @@ function TheBank({
                       <td className="py-2.5 pr-4 text-slate-200">{cashText(w.amount)}</td>
                       <td className="py-2.5 pr-4 font-mono text-xs text-slate-400">{w.reference}</td>
                       <td className="py-2.5 pr-4 text-slate-400">{w.userName ?? w.userId}</td>
-                      <td className="py-2.5 text-slate-500">{new Date(w.at).toLocaleDateString()}</td>
+                      <td className="py-2.5 text-slate-500">{formatInstant(w.at, 'en-GB', { dateStyle: 'medium' })}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -965,7 +966,7 @@ function TheBank({
           <p className="text-sm text-slate-400">{t('bank.redenom.sub')}</p>
           {data.redenomination.ran ? (
             <p className="text-sm text-slate-500">
-              {t('bank.redenom.ran', { date: new Date(data.redenomination.at).toLocaleDateString() })}
+              {t('bank.redenom.ran', { date: formatInstant(data.redenomination.at, 'en-GB', { dateStyle: 'medium' }) })}
             </p>
           ) : (
             <Button

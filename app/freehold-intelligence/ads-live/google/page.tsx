@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { ArrowUpRight, RefreshCw, AlertCircle, Zap, Copy, Pencil, Check, X } from 'lucide-react'
@@ -83,7 +84,7 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
       <div className="mt-2 flex justify-between">
         {sorted.filter((_, i) => i === 0 || i === Math.floor(sorted.length / 2) || i === sorted.length - 1).map((d) => (
           <span key={d.date} className="text-xs text-slate-500">
-            {new Date(d.date).toLocaleDateString('en-AE', { month: 'short', day: 'numeric' })}
+            {formatInstant(d.date, 'en-AE', { month: 'short', day: 'numeric' })}
           </span>
         ))}
       </div>

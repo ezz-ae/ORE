@@ -141,7 +141,7 @@ console.log('\n── the timezone-blind renders cannot grow ──')
   }
 
   // Lower this number when you convert call sites. It must never go up.
-  const BASELINE = 46
+  const BASELINE = 30
   check(`no new timezone-blind date renders (${offenders.length} ≤ ${BASELINE})`,
     offenders.length <= BASELINE,
     `${offenders.length} found — new one(s): ${offenders.slice(BASELINE).join(', ')}`)
@@ -151,9 +151,23 @@ console.log('\n── the timezone-blind renders cannot grow ──')
 
   // THE SURFACES THE COMPLAINT WAS ABOUT must be clean, not merely capped.
   const converted = [
+    // The lead-timing surfaces the original complaint was about…
     'app/freehold-intelligence/crm/activity/page.tsx',
     'app/freehold-intelligence/crm/leads/[id]/page.tsx',
     'app/freehold-intelligence/crm/leads/[id]/_components/LeadViewingsCard.tsx',
+    // …and the money and ads screens, which are the ones read side by side
+    // with Ads Manager and with the bank. A date that disagrees there is a
+    // reconciliation argument, not a cosmetic complaint.
+    'app/freehold-intelligence/wallet/page.tsx',
+    'app/freehold-intelligence/agent/credits/page.tsx',
+    'app/freehold-intelligence/finance/credits/page.tsx',
+    'app/freehold-intelligence/finance/wallets/page.tsx',
+    'app/freehold-intelligence/ads-live/meta/[id]/page.tsx',
+    'app/freehold-intelligence/ads-live/google/page.tsx',
+    'app/freehold-intelligence/lead-machine/forms/[formId]/page.tsx',
+    'app/freehold-intelligence/lead-machine/forms/page.tsx',
+    'app/freehold-intelligence/lead-machine/ads-machine/[id]/page.tsx',
+    'app/freehold-intelligence/lead-machine/campaigns/optimize/page.tsx',
   ]
   for (const f of converted) {
     check(`${f.split('/').slice(-2).join('/')} renders every date through the clock`,

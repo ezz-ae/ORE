@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -731,7 +732,7 @@ export default function CampaignCommandPage() {
     lines.push(`ID: ${id}`)
     lines.push(`Status: ${active ? t('lm.cmd.live') : t('lm.cmd.paused')}`)
     if (c.objective) lines.push(`Objective: ${c.objective.replace(/_/g, ' ')}`)
-    if (c.created_time) lines.push(`Created: ${new Date(c.created_time).toLocaleDateString()}`)
+    if (c.created_time) lines.push(`Created: ${formatInstant(c.created_time, 'en-GB', { dateStyle: 'medium' })}`)
     lines.push('')
     lines.push('Performance')
     lines.push(`Spend: ${kpis.spend > 0 ? fmtAED(kpis.spend) : '—'}`)
@@ -1643,7 +1644,7 @@ export default function CampaignCommandPage() {
               </div>
             )}
             {advisor.generatedAt && (
-              <p className="mt-2 text-[10px] text-slate-600">{t('lm.cmd.advisorGenerated', { time: new Date(advisor.generatedAt).toLocaleTimeString() })}</p>
+              <p className="mt-2 text-[10px] text-slate-600">{t('lm.cmd.advisorGenerated', { time: formatInstant(advisor.generatedAt, 'en-GB', { dateStyle: 'medium' }) })}</p>
             )}
           </div>
         )}

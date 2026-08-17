@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText, Gauge, Megaphone } from 'lucide-react'
 import { isMetaConfigErrorMessage } from '@/lib/meta/error-messages'
@@ -241,7 +242,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           {form.name}
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          {t('pforms.detail.created', { date: new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' }) })}
+          {t('pforms.detail.created', { date: formatInstant(form.created_time, 'en-AE', { dateStyle: 'medium' }) })}
           {' · '}
           <span className={statusColor}>{statusLabel}</span>
         </p>
@@ -486,7 +487,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                       </div>
                       <div className="shrink-0 flex items-center gap-1 text-xs text-slate-500">
                         <Clock className="h-3 w-3" />
-                        {new Date(lead.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}
+                        {formatInstant(lead.created_time, 'en-AE', { dateStyle: 'medium' })}
                       </div>
                     </div>
                   )

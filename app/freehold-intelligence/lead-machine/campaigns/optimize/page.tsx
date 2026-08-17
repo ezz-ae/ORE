@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Zap, TrendingDown, TrendingUp, PlugZap, ArrowUpRight, Loader2, Pause, History, ShieldCheck, Sparkles, Check } from 'lucide-react'
@@ -372,7 +373,7 @@ export default function CampaignOptimizePage() {
                         <div className="truncate text-sm font-medium text-slate-200">{a.campaignName || a.campaignId || a.action} <span className="text-slate-500">· {a.platform || a.source || ''}</span></div>
                         <div className="mt-0.5 text-xs text-slate-500">{a.detail}</div>
                       </div>
-                      <span className="shrink-0 text-[11px] text-slate-500">{new Date(a.createdAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
+                      <span className="shrink-0 text-[11px] text-slate-500">{formatInstant(a.createdAt, 'en-AE', { day: 'numeric', month: 'short' })}</span>
                     </div>
                   )
                 })}

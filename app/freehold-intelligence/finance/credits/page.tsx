@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useState, useEffect } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -231,7 +232,7 @@ export default function AgentCreditsPage() {
                     </span>
                     <span className="text-xs text-slate-500">
                       {agent.cycle_end
-                        ? t('finance.credits.resets', { date: new Date(agent.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' }) })
+                        ? t('finance.credits.resets', { date: formatInstant(agent.cycle_end, 'en-AE', { day: 'numeric', month: 'short' }) })
                         : '—'}
                     </span>
                   </div>
@@ -360,7 +361,7 @@ export default function AgentCreditsPage() {
                                 {signed > 0 ? `+${signed.toLocaleString()}` : signed.toLocaleString()}
                               </div>
                               <div className="mt-0.5 text-[10px] text-slate-500">
-                                {new Date(entry.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}
+                                {formatInstant(entry.created_at, 'en-AE', { day: 'numeric', month: 'short' })}
                                 {entry.created_by ? ` · ${entry.created_by}` : ''}
                               </div>
                             </div>

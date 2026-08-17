@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import { toast } from 'sonner'
 import {
   Landmark, Wallet as WalletIcon, ArrowRightLeft, AlertTriangle, ShieldCheck,
@@ -256,7 +257,7 @@ export default function WalletsPage() {
                     </span>
                   </span>
                   <time className="shrink-0 text-[10px] tabular-nums text-slate-600">
-                    {new Date(p.createdAt).toLocaleDateString()}
+                    {formatInstant(p.createdAt, 'en-GB', { dateStyle: 'medium' })}
                   </time>
                 </li>
               ))}

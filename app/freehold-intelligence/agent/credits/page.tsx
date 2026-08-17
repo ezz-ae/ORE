@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -97,7 +98,7 @@ export default function AgentCreditsPage() {
   const remaining = balance?.balance ?? 0
   const spentPct = allocated > 0 ? (spent / allocated) * 100 : 0
   const cycleEndLabel = balance?.cycle_end
-    ? new Date(balance.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' })
+    ? formatInstant(balance.cycle_end, 'en-AE', { day: 'numeric', month: 'long' })
     : null
   const tierName = balance?.tier
   const monthlyQuota = TIER_MONTHLY_QUOTA[isCreditTier(tierName) ? tierName : 'Starter']
@@ -274,7 +275,7 @@ export default function AgentCreditsPage() {
                       {signed > 0 ? `+${signed.toLocaleString()}` : signed.toLocaleString()}
                     </div>
                     <div className="mt-0.5 text-xs text-slate-500">
-                      {new Date(entry.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}
+                      {formatInstant(entry.created_at, 'en-AE', { day: 'numeric', month: 'short' })}
                     </div>
                   </div>
                 </div>
