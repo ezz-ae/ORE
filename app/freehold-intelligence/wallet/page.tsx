@@ -168,6 +168,9 @@ export default function WalletPage() {
   // once the server has actually let us read it, so nobody is offered a door
   // that will close in their face.
   const [canBank, setCanBank] = useState<boolean | null>(null)
+  // WHY THE TAB IS NOT THERE, when it is not there for a reason other than
+  // "this is not your tab". Null while it is genuinely not yours.
+  const [bankError, setBankError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
   const [note, setNote] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null)
@@ -188,10 +191,32 @@ export default function WalletPage() {
 
     // Asked separately and allowed to fail. A broker gets a 403 here and that
     // is not an error on their screen — it is simply not their tab.
+    // A REFUSAL AND A FAILURE ARE NOT THE SAME ANSWER.
+    //
+    // This treated every non-200 as "not your tab", so a bank that threw a 500
+    // vanished exactly like one a broker is not allowed to see — and the only
+    // thing on screen was an absence. Somebody who IS management then has no
+    // way to tell "I lack the role" from "it is broken", and no error to send
+    // anybody. That is the same fault as a check with no way to say "I do not
+    // know", one screen further out.
     try {
       const res = await fetch('/api/freehold/bank', { cache: 'no-store' })
-      if (res.ok) { setBank(await res.json()); setCanBank(true) } else { setCanBank(false) }
-    } catch { setCanBank(false) }
+      if (res.ok) {
+        setBank(await res.json()); setCanBank(true); setBankError(null)
+      } else if (res.status === 401 || res.status === 403) {
+        // Genuinely not your tab. Show nothing — an explanation here would be
+        // telling a broker about a door that is not theirs.
+        setCanBank(false); setBankError(null)
+      } else {
+        // It IS your tab and it failed. Say so, with what the server said.
+        const d = (await res.json().catch(() => ({}))) as { error?: string }
+        setCanBank(true)
+        setBankError(d.error ?? `The bank could not be read (HTTP ${res.status}).`)
+      }
+    } catch (err) {
+      setCanBank(true)
+      setBankError(err instanceof Error ? err.message : 'The bank could not be reached.')
+    }
   }, [])
 
   useEffect(() => { void load() }, [load])
@@ -240,6 +265,16 @@ export default function WalletPage() {
             </button>
           ))}
         </div>
+      )}
+
+      {/* THE BANK IS YOURS AND IT BROKE. Printed here rather than swallowed,
+          because the alternative is a manager staring at a missing tab with
+          nothing to send anybody. */}
+      {bankError && (
+        <p className="flex items-start gap-2.5 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-4 py-2.5 text-sm text-red-200">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{t('bank.readFailed', { error: bankError })}</span>
+        </p>
       )}
 
       {note && (

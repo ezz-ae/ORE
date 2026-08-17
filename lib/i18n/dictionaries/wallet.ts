@@ -15,6 +15,8 @@ export const wallet: Record<Locale, Dict> = {
     // already has a history can take thousands on the next run. The safe
     // option is the default and the other one names its price where it is
     // chosen — not in a confirmation after the fact.
+    // Shown when the bank read failed for somebody who IS allowed to read it.
+    'bank.readFailed': 'The Bank could not be loaded: {error}. This is a fault on our side, not a permission — send this line on and it can be traced.',
     'attr.title': 'Ad spend nobody is being billed for',
     'attr.sub': 'These campaigns were built in Ads Manager, so no wallet is attached to them. Nothing is charged for what they deliver, and they are never paused when funds run out.',
     'attr.total': '{n} campaigns · {aed} spent with no wallet behind it',
@@ -231,6 +233,7 @@ export const wallet: Record<Locale, Dict> = {
   },
 
   ar: {
+    'bank.readFailed': 'تعذّر تحميل البنك: {error}. هذا خلل من جانبنا وليس مسألة صلاحيات — أرسل هذا السطر ليمكن تتبّعه.',
     'attr.title': 'إنفاق إعلاني لا يُحاسَب عليه أحد',
     'attr.sub': 'أُنشئت هذه الحملات في مدير الإعلانات، فلا محفظة مرتبطة بها. لا يُخصم شيء مقابل ما تعرضه، ولا تتوقف أبداً عند نفاد الرصيد.',
     'attr.total': '{n} حملات · {aed} أُنفقت بلا محفظة خلفها',
@@ -433,6 +436,7 @@ export const wallet: Record<Locale, Dict> = {
   },
 
   ru: {
+    'bank.readFailed': 'Не удалось загрузить Банк: {error}. Это сбой на нашей стороне, а не вопрос прав — перешлите эту строку, и её можно будет отследить.',
     'attr.title': 'Рекламные расходы, за которые никого не выставляют',
     'attr.sub': 'Эти кампании созданы в Ads Manager, поэтому к ним не привязан кошелёк. За их показы ничего не списывается, и они никогда не ставятся на паузу при нехватке средств.',
     'attr.total': '{n} кампаний · {aed} потрачено без кошелька',
