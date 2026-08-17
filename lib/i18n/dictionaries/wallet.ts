@@ -10,6 +10,27 @@ type Dict = Record<string, string>
 
 export const wallet: Record<Locale, Dict> = {
   en: {
+    // ── Campaigns with no wallet behind them ─────────────────────────────
+    // Billing is a high-water mark, so attaching a wallet to a campaign that
+    // already has a history can take thousands on the next run. The safe
+    // option is the default and the other one names its price where it is
+    // chosen — not in a confirmation after the fact.
+    'attr.title': 'Ad spend nobody is being billed for',
+    'attr.sub': 'These campaigns were built in Ads Manager, so no wallet is attached to them. Nothing is charged for what they deliver, and they are never paused when funds run out.',
+    'attr.total': '{n} campaigns · {aed} spent with no wallet behind it',
+    'attr.allAttached': 'Every campaign on the account has a wallet behind it.',
+    'attr.spent': '{aed} spent',
+    'attr.brokerPlaceholder': 'Who pays for this (their email)',
+    'attr.attach': 'Attach wallet',
+    'attr.attached': '{name} is now billed to that wallet. {charge} will be taken on the next settlement run.',
+    'attr.start.now': 'Start billing from now. Nothing already spent is taken — the wallet is charged only for what the campaign delivers from this moment.',
+    'attr.start.beginning': 'Charge the whole history too. {aed} will be taken from their wallet on the next run, and the campaign is paused if it cannot cover it.',
+    'attr.refusal.insufficient_role': 'Only management can decide who pays for a campaign.',
+    'attr.refusal.no_such_campaign': 'That campaign is not on the ad account any more.',
+    'attr.refusal.no_such_broker': 'Nobody on the system has that email, so there is no wallet to bill.',
+    'attr.refusal.already_attributed': 'This campaign already has somebody paying for it. Moving it to another wallet is a separate decision — what the first payer already paid has to be settled first.',
+    'attr.refusal.spend_unknown': 'Meta could not tell us what this campaign has spent, and attaching without that figure could bill the whole history by accident. Try again in a minute.',
+
     // ── The wallet everybody has ───────────────────────────────────────────
     'wal.title': 'Wallet',
     'wal.subtitle': 'Your Cash, where it came from and where it went. 1 Cash = 1 dirham.',
@@ -210,6 +231,22 @@ export const wallet: Record<Locale, Dict> = {
   },
 
   ar: {
+    'attr.title': 'إنفاق إعلاني لا يُحاسَب عليه أحد',
+    'attr.sub': 'أُنشئت هذه الحملات في مدير الإعلانات، فلا محفظة مرتبطة بها. لا يُخصم شيء مقابل ما تعرضه، ولا تتوقف أبداً عند نفاد الرصيد.',
+    'attr.total': '{n} حملات · {aed} أُنفقت بلا محفظة خلفها',
+    'attr.allAttached': 'كل حملة على الحساب لها محفظة خلفها.',
+    'attr.spent': 'أُنفق {aed}',
+    'attr.brokerPlaceholder': 'من يدفع مقابلها (بريده الإلكتروني)',
+    'attr.attach': 'اربط محفظة',
+    'attr.attached': 'أصبحت {name} تُحاسَب على تلك المحفظة. سيُخصم {charge} في دورة التسوية القادمة.',
+    'attr.start.now': 'ابدأ المحاسبة من الآن. لا يُخصم شيء مما أُنفق سابقاً — تُحاسَب المحفظة فقط على ما تعرضه الحملة من هذه اللحظة.',
+    'attr.start.beginning': 'احتسب التاريخ كاملاً أيضاً. سيُخصم {aed} من محفظته في الدورة القادمة، وتتوقف الحملة إن لم يكفِ رصيده.',
+    'attr.refusal.insufficient_role': 'الإدارة وحدها تقرّر من يدفع مقابل حملة.',
+    'attr.refusal.no_such_campaign': 'لم تعد هذه الحملة موجودة على الحساب الإعلاني.',
+    'attr.refusal.no_such_broker': 'لا أحد في النظام بهذا البريد، فلا توجد محفظة للمحاسبة.',
+    'attr.refusal.already_attributed': 'هذه الحملة لها بالفعل من يدفع مقابلها. نقلها إلى محفظة أخرى قرار منفصل — يجب أولاً تسوية ما دفعه الأول.',
+    'attr.refusal.spend_unknown': 'لم تخبرنا ميتا بما أنفقته هذه الحملة، والربط بدون هذا الرقم قد يحتسب التاريخ كاملاً بالخطأ. أعد المحاولة بعد دقيقة.',
+
     'wal.title': 'المحفظة',
     'wal.subtitle': 'الكاش الخاص بك، من أين جاء وإلى أين ذهب. 1 كاش = 1 درهم.',
     'wal.eyebrow': 'أموالك',
@@ -396,6 +433,22 @@ export const wallet: Record<Locale, Dict> = {
   },
 
   ru: {
+    'attr.title': 'Рекламные расходы, за которые никого не выставляют',
+    'attr.sub': 'Эти кампании созданы в Ads Manager, поэтому к ним не привязан кошелёк. За их показы ничего не списывается, и они никогда не ставятся на паузу при нехватке средств.',
+    'attr.total': '{n} кампаний · {aed} потрачено без кошелька',
+    'attr.allAttached': 'У каждой кампании на аккаунте есть кошелёк.',
+    'attr.spent': 'потрачено {aed}',
+    'attr.brokerPlaceholder': 'Кто платит за неё (email)',
+    'attr.attach': 'Привязать кошелёк',
+    'attr.attached': '{name} теперь списывается с этого кошелька. {charge} будет списано на следующем прогоне.',
+    'attr.start.now': 'Начать списания с этого момента. Уже потраченное не взимается — кошелёк платит только за то, что кампания покажет дальше.',
+    'attr.start.beginning': 'Списать и всю историю. {aed} будет снято с кошелька на следующем прогоне, и кампания встанет на паузу, если средств не хватит.',
+    'attr.refusal.insufficient_role': 'Только руководство решает, кто платит за кампанию.',
+    'attr.refusal.no_such_campaign': 'Этой кампании больше нет на рекламном аккаунте.',
+    'attr.refusal.no_such_broker': 'В системе нет никого с таким email, значит нет и кошелька.',
+    'attr.refusal.already_attributed': 'За эту кампанию уже кто-то платит. Перенос на другой кошелёк — отдельное решение: сначала нужно закрыть то, что уплатил первый.',
+    'attr.refusal.spend_unknown': 'Meta не сообщила, сколько потратила эта кампания, а привязка без этой цифры может случайно списать всю историю. Повторите через минуту.',
+
     'wal.title': 'Кошелёк',
     'wal.subtitle': 'Ваш кэш, откуда он пришёл и куда ушёл. 1 кэш = 1 дирхам.',
     'wal.eyebrow': 'Ваши деньги',

@@ -38,6 +38,8 @@ import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { CONTENT_REFUSALS } from '../lib/freehold/content-authority'
 import { ACTION_KEYS, ACTION_SEVERITIES } from '../lib/freehold/campaign-action'
 import { PROPOSAL_KINDS, PROPOSAL_RESPONSES, PROPOSAL_STATES } from '../lib/freehold/proposal'
+import { ATTRIBUTION_REFUSALS, BILLING_STARTS } from '../lib/freehold/campaign-attribution'
+import { wallet } from '../lib/i18n/dictionaries/wallet'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
@@ -120,6 +122,15 @@ console.log('\n── setup-check findings ──')
     'softGoal', 'noBudget', 'capped', 'capChoking',
   ]
   family('lm.setupCheck', 'lm.setupCheck.', SETUP_KEYS)
+}
+
+console.log('\n── attribution refusals ──')
+{
+  // The panel renders t(`attr.refusal.${refusal}`). Attaching a wallet decides
+  // who owes money, so a refusal without a sentence is a person told "no"
+  // about their own bill with no way to learn why.
+  family('attr.refusal', 'attr.refusal.', [...ATTRIBUTION_REFUSALS], wallet)
+  family('attr.start', 'attr.start.', [...BILLING_STARTS], wallet)
 }
 
 console.log('\n── proposals: every finding ends in a decision ──')

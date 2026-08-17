@@ -45,6 +45,7 @@ import { PageHeader, StatCard, Panel, PanelHeader, EmptyState, Button, fieldClas
 import { useT } from '@/lib/i18n/provider'
 import { cashText } from '@/lib/freehold/credits-shared'
 import { shortHash } from '@/lib/freehold/ledger-chain'
+import { AttributionPanel } from './attribution-panel'
 import {
   BANK_REFUSALS, IDLE_AFTER_DAYS,
   type BankRefusal, type CashState, type DepositState, type SpendKind, type UseState,
@@ -951,6 +952,11 @@ function TheBank({
           )}
         </div>
       </Panel>
+
+      {/* THE SPEND NO WALLET IS CARRYING. Campaigns built in Ads Manager have
+          no payer, so settlement walks past them: never billed, never paused,
+          and absent from every figure above. This is where that is closed. */}
+      <AttributionPanel onNote={onNote} />
 
       {/* The one-off migration, offered only while it would do something. */}
       <Panel>
