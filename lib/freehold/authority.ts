@@ -60,6 +60,15 @@ export type AuthorityAction =
   | 'campaign.edit'
   | 'member.role'
   | 'member.suspend'
+  // Content acts. Added when projects and developers first became editable and
+  // deletable at all — before that the only way to remove a listing was to
+  // open the production database, which left no record of who did it or why.
+  | 'project.edit'
+  | 'project.archive'
+  | 'project.restore'
+  | 'project.delete'
+  | 'developer.edit'
+  | 'developer.delete'
 
 /** Reason codes. The UI translates these; they are never shown raw. */
 export type AuthorityReason =

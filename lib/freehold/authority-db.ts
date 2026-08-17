@@ -65,7 +65,7 @@ export async function logAuthority(entry: {
   actorEmail: string
   actorRole: string
   action: AuthorityAction
-  targetType: 'lead' | 'campaign' | 'member'
+  targetType: 'lead' | 'campaign' | 'member' | 'project' | 'developer'
   targetId: string
   decision: AuthorityDecision
   detail?: string

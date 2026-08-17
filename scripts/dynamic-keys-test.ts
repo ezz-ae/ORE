@@ -35,6 +35,7 @@ import { AD_GROUP_KINDS, PLAN_WITHHELD } from '../lib/google/keyword-plan'
 import { REC_KEYS, REC_ACTION_LABELS } from '../lib/freehold/recommendations'
 import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
+import { CONTENT_REFUSALS } from '../lib/freehold/content-authority'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
@@ -59,6 +60,7 @@ import { PAYOUT_STATES } from '../lib/freehold/deal-payout'
 
 import { wallet as walletDict } from '../lib/i18n/dictionaries/wallet'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
+import { inventory } from '../lib/i18n/dictionaries/inventory'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 import { p_ads_google } from '../lib/i18n/dictionaries/p_ads_google'
@@ -116,6 +118,18 @@ console.log('\n── setup-check findings ──')
     'softGoal', 'noBudget', 'capped', 'capChoking',
   ]
   family('lm.setupCheck', 'lm.setupCheck.', SETUP_KEYS)
+}
+
+console.log('\n── content-admin refusals ──')
+{
+  // The manage panel renders t(`inv.manage.refusal.${refusal}`). Derived from
+  // the walkable const so a new way to refuse a delete cannot ship without the
+  // sentence that tells the person what to do instead — which is the whole
+  // point of the refusal.
+  // The fourth argument matters: family() defaults to lm_ads, and a family
+  // living in another dictionary reports every member missing if it is not
+  // passed — a true failure about the wrong thing.
+  family('inv.manage.refusal', 'inv.manage.refusal.', [...CONTENT_REFUSALS], inventory)
 }
 
 console.log('\n── geo delivery findings ──')

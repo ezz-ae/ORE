@@ -5,6 +5,37 @@ import type { Locale } from '../config'
 type Dict = Record<string, string>
 
 const en: Dict = {
+  // ── Managing a listing: edit, take down, put back, destroy ──────────────
+  // The refusals are the important half. A listing carries other people's
+  // records — leads, deals, campaigns — and each sentence has to say what is
+  // in the way AND what the person can do instead, or they go looking for
+  // database access, which is how this was done before there was a screen.
+  'inv.manage.title': 'Manage this listing',
+  'inv.manage.edit': 'Edit details',
+  'inv.manage.save': 'Save changes',
+  'inv.manage.saved': 'Saved.',
+  'inv.manage.archive': 'Take off the website',
+  'inv.manage.archiveHint': 'Stops it appearing on the public site. Everything attached to it — leads, deals, campaigns — keeps working, and you can put it back at any time.',
+  'inv.manage.restore': 'Put back on the website',
+  'inv.manage.archived': 'Taken off the website.',
+  'inv.manage.restored': 'Back on the website.',
+  'inv.manage.delete': 'Delete permanently',
+  'inv.manage.deleteHint': 'Destroys the listing and its landing pages. This cannot be undone.',
+  'inv.manage.deleteConfirm': 'Type the project name to confirm',
+  'inv.manage.deleted': 'Deleted.',
+  'inv.manage.attached': '{leads} leads · {deals} deals · {campaigns} campaigns',
+  'inv.manage.nothingAttached': 'Nothing is attached to this listing.',
+  'inv.manage.refusal.not_found': 'There is no listing with that address any more — it may already have been removed.',
+  'inv.manage.refusal.insufficient_role': 'Deleting permanently is a management action. You can take the listing off the website instead, which does the same job for a visitor and can be undone.',
+  'inv.manage.refusal.has_leads': 'Real people enquired about this listing, and deleting it would leave their enquiries pointing at nothing. Take it off the website instead — visitors stop seeing it and the enquiries keep working.',
+  'inv.manage.refusal.has_deals': 'A deal was closed against this listing, so deleting it would break a commission record. Take it off the website instead.',
+  'inv.manage.refusal.has_campaigns': 'Ads have been run against this listing and the spend history points at it. Take it off the website instead.',
+  'inv.manage.refusal.has_projects': 'This developer still has listings. Remove or reassign them first, then the developer can go.',
+  'inv.manage.devTitle': 'Manage this developer',
+  'inv.manage.devDelete': 'Delete developer',
+  'inv.manage.devDeleted': 'Developer deleted.',
+  'inv.manage.devProjects': 'Owns {n} listings',
+
   // shell / layout
   'inv.apps': 'Apps',
   'inv.inventory': 'Inventory',
@@ -420,6 +451,32 @@ const en: Dict = {
 }
 
 const ar: Dict = {
+  'inv.manage.title': 'إدارة هذا العرض',
+  'inv.manage.edit': 'تعديل التفاصيل',
+  'inv.manage.save': 'حفظ التغييرات',
+  'inv.manage.saved': 'تم الحفظ.',
+  'inv.manage.archive': 'إزالة من الموقع',
+  'inv.manage.archiveHint': 'يوقف ظهوره على الموقع العام. كل ما هو مرتبط به — العملاء والصفقات والحملات — يبقى يعمل، ويمكنك إعادته في أي وقت.',
+  'inv.manage.restore': 'إعادة إلى الموقع',
+  'inv.manage.archived': 'أُزيل من الموقع.',
+  'inv.manage.restored': 'عاد إلى الموقع.',
+  'inv.manage.delete': 'حذف نهائي',
+  'inv.manage.deleteHint': 'يدمّر العرض وصفحاته. لا يمكن التراجع عن هذا.',
+  'inv.manage.deleteConfirm': 'اكتب اسم المشروع للتأكيد',
+  'inv.manage.deleted': 'تم الحذف.',
+  'inv.manage.attached': '{leads} عميل · {deals} صفقة · {campaigns} حملة',
+  'inv.manage.nothingAttached': 'لا شيء مرتبط بهذا العرض.',
+  'inv.manage.refusal.not_found': 'لم يعد هناك عرض بهذا العنوان — ربما أُزيل بالفعل.',
+  'inv.manage.refusal.insufficient_role': 'الحذف النهائي إجراء إداري. يمكنك بدلاً من ذلك إزالة العرض من الموقع، وهو يؤدي الغرض نفسه بالنسبة للزائر ويمكن التراجع عنه.',
+  'inv.manage.refusal.has_leads': 'استفسر أشخاص حقيقيون عن هذا العرض، وحذفه سيترك استفساراتهم معلّقة بلا مرجع. أزِله من الموقع بدلاً من ذلك — يتوقف الزوار عن رؤيته وتبقى الاستفسارات تعمل.',
+  'inv.manage.refusal.has_deals': 'أُغلقت صفقة على هذا العرض، وحذفه سيكسر سجل عمولة. أزِله من الموقع بدلاً من ذلك.',
+  'inv.manage.refusal.has_campaigns': 'شُغِّلت إعلانات على هذا العرض وسجل الإنفاق يشير إليه. أزِله من الموقع بدلاً من ذلك.',
+  'inv.manage.refusal.has_projects': 'لا يزال لدى هذا المطوّر عروض. أزِلها أو انقلها أولاً، ثم يمكن حذف المطوّر.',
+  'inv.manage.devTitle': 'إدارة هذا المطوّر',
+  'inv.manage.devDelete': 'حذف المطوّر',
+  'inv.manage.devDeleted': 'حُذف المطوّر.',
+  'inv.manage.devProjects': 'يملك {n} عرضاً',
+
   'inv.apps': 'التطبيقات',
   'inv.inventory': 'المخزون',
   'inv.tab.projects': 'المشاريع',
@@ -819,6 +876,32 @@ const ar: Dict = {
 }
 
 const ru: Dict = {
+  'inv.manage.title': 'Управление объектом',
+  'inv.manage.edit': 'Изменить данные',
+  'inv.manage.save': 'Сохранить изменения',
+  'inv.manage.saved': 'Сохранено.',
+  'inv.manage.archive': 'Убрать с сайта',
+  'inv.manage.archiveHint': 'Объект перестаёт показываться на публичном сайте. Всё связанное с ним — заявки, сделки, кампании — продолжает работать, и вы можете вернуть его в любой момент.',
+  'inv.manage.restore': 'Вернуть на сайт',
+  'inv.manage.archived': 'Убрано с сайта.',
+  'inv.manage.restored': 'Возвращено на сайт.',
+  'inv.manage.delete': 'Удалить навсегда',
+  'inv.manage.deleteHint': 'Уничтожает объект и его посадочные страницы. Отменить нельзя.',
+  'inv.manage.deleteConfirm': 'Введите название проекта для подтверждения',
+  'inv.manage.deleted': 'Удалено.',
+  'inv.manage.attached': '{leads} заявок · {deals} сделок · {campaigns} кампаний',
+  'inv.manage.nothingAttached': 'К этому объекту ничего не привязано.',
+  'inv.manage.refusal.not_found': 'Объекта по этому адресу больше нет — возможно, он уже удалён.',
+  'inv.manage.refusal.insufficient_role': 'Удаление навсегда — управленческое действие. Вместо этого вы можете убрать объект с сайта: для посетителя результат тот же, и это обратимо.',
+  'inv.manage.refusal.has_leads': 'По этому объекту обращались реальные люди, и удаление оставит их заявки без привязки. Уберите объект с сайта — посетители перестанут его видеть, а заявки продолжат работать.',
+  'inv.manage.refusal.has_deals': 'По этому объекту закрыта сделка, и удаление разрушит запись о комиссии. Уберите его с сайта.',
+  'inv.manage.refusal.has_campaigns': 'По этому объекту запускалась реклама, и история расходов ссылается на него. Уберите его с сайта.',
+  'inv.manage.refusal.has_projects': 'У этого застройщика ещё есть объекты. Сначала удалите или перенесите их, затем можно удалить застройщика.',
+  'inv.manage.devTitle': 'Управление застройщиком',
+  'inv.manage.devDelete': 'Удалить застройщика',
+  'inv.manage.devDeleted': 'Застройщик удалён.',
+  'inv.manage.devProjects': 'Владеет {n} объектами',
+
   'inv.apps': 'Приложения',
   'inv.inventory': 'Каталог',
   'inv.tab.projects': 'Проекты',

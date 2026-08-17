@@ -23,6 +23,7 @@ import { getServerT } from '@/lib/i18n/server'
 import { OpportunityRefreshButton } from './opportunity-refresh'
 import { ProfileGenerateButton } from './profile-generate'
 import { PermitCard } from './permit-card'
+import { ManageCard } from './manage-card'
 
 function fmtAed(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -264,6 +265,18 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             permitExpiry={prop.permitExpiry ?? null}
             canEdit={canLaunchAds}
           />
+
+          {/* THE WAY OUT. Before this card, taking one listing off the site
+              needed production database credentials — so nobody could do it,
+              or one person could do anything, and neither left a record. */}
+          {canLaunchAds && (
+            <ManageCard
+              slug={prop.slug}
+              name={prop.name}
+              status={prop.status ?? null}
+              canDestroy={isManagement}
+            />
+          )}
 
           <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
