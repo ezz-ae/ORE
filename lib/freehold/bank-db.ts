@@ -593,9 +593,21 @@ export interface WithdrawalRow {
 export async function listWithdrawals(opts: { kind?: SpendKind; limit?: number } = {}): Promise<WithdrawalRow[]> {
   await ensureBankSchema()
   const rows = await query(
+    // WRONG TABLE AND WRONG COLUMN, and it broke the whole Bank screen.
+    //
+    // There is no `users` table in this schema — people live in
+    // freehold_site_users — so this query threw `relation "users" does not
+    // exist` on every call, which meant GET /api/freehold/bank 500'd, which
+    // meant the Wallet page hid the Bank tab entirely. A join written for a
+    // display name took the feature off the screen.
+    //
+    // The key was wrong too: freehold_withdrawals.user_id holds personId(),
+    // which is a LOWERCASED EMAIL, not a row id. Fixing only the table name
+    // would have joined email against id and quietly shown every withdrawal
+    // with a blank name.
     `SELECT w.*, u.name AS user_name
        FROM freehold_withdrawals w
-       LEFT JOIN users u ON u.id = w.user_id
+       LEFT JOIN freehold_site_users u ON lower(u.email) = w.user_id
       WHERE ($1::text IS NULL OR w.kind = $1)
       ORDER BY w.created_at DESC
       LIMIT $2`,
