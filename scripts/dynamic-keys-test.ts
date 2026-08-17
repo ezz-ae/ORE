@@ -37,6 +37,7 @@ import { LAUNCHABLE_PLACEMENTS } from '../lib/freehold/placement-memory'
 import { AD_FORMATS } from '../lib/meta/adset-placements'
 import { CONTENT_REFUSALS } from '../lib/freehold/content-authority'
 import { ACTION_KEYS, ACTION_SEVERITIES } from '../lib/freehold/campaign-action'
+import { PROPOSAL_KINDS, PROPOSAL_RESPONSES, PROPOSAL_STATES } from '../lib/freehold/proposal'
 import { SIGNAL_IDS, SIGNAL_ACTIONS } from '../lib/freehold/live-signals'
 import { LAB_ANGLES, WITHHELD_REASONS, RECIPE_VERDICTS } from '../lib/freehold/creative-lab'
 import { LOOP_STEPS, LOOP_STATES } from '../lib/freehold/rating-loop'
@@ -119,6 +120,17 @@ console.log('\n── setup-check findings ──')
     'softGoal', 'noBudget', 'capped', 'capChoking',
   ]
   family('lm.setupCheck', 'lm.setupCheck.', SETUP_KEYS)
+}
+
+console.log('\n── proposals: every finding ends in a decision ──')
+{
+  // The panel renders t(`lm.propose.kind.${kind}`), t(`lm.propose.${response}`)
+  // and t(`lm.propose.state.${state}`). A proposal whose sentence is missing
+  // is a decision with no question attached — worse than the narration it
+  // replaced, because it carries a button.
+  family('lm.propose.kind', 'lm.propose.kind.', [...PROPOSAL_KINDS])
+  family('lm.propose', 'lm.propose.', [...PROPOSAL_RESPONSES])
+  family('lm.propose.state', 'lm.propose.state.', [...PROPOSAL_STATES])
 }
 
 console.log('\n── auto targeting guard: one action per campaign ──')

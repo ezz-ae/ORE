@@ -6,6 +6,25 @@ type Dict = Record<string, string>
 
 export const lm_ads: Record<Locale, Dict> = {
   en: {
+    // ── Proposals: the product asks instead of narrating ─────────────────
+    // Every sentence here ends in a decision. "Draining your budget" told the
+    // reader a fact and left them the whole job; these hand them one answer.
+    'lm.propose.accept': 'Accept',
+    'lm.propose.later': 'Later',
+    'lm.propose.recheck': 'Recheck',
+    'lm.propose.laterHint': 'Comes back tomorrow, re-measured. If the reason has gone by then, it withdraws itself.',
+    'lm.propose.kind.placementShift': '{best} is bringing in leads at about AED {bestCpl} each. {worst} is costing about AED {worstCpl} for the same thing, and has taken AED {spend} so far. Move the budget to {best}?',
+    'lm.propose.kind.placementStop': '{placement} has spent AED {spend} and returned no leads at all. Stop buying it?',
+    'lm.propose.kind.notYet': '{best} looks cheaper than {worst} — about AED {bestCpl} against AED {worstCpl} — but there are not enough leads yet for that gap to be real rather than luck. Not worth moving money on today.',
+    'lm.propose.blocked.thin_evidence': 'Not enough evidence to act on yet.',
+    'lm.propose.blocked.not_executable': 'This one has to be done in Ads Manager — the system cannot make this change for you.',
+    'lm.propose.state.open': 'Waiting on you',
+    'lm.propose.state.deferred': 'Back tomorrow',
+    'lm.propose.state.accepted': 'Accepted',
+    'lm.propose.state.done': 'Done',
+    'lm.propose.state.failed': 'Tried and failed — nothing changed',
+    'lm.propose.state.withdrawn': 'No longer true, so we withdrew it',
+
     // ── The auto targeting guard: one instruction per campaign ───────────
     // "Stop" is reserved for money reaching the wrong people while you read
     // it. Everything else is a fix, so that the stop still means something.
@@ -1165,6 +1184,22 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.review.cta.CALL_NOW': 'Call now',
   },
   ar: {
+    'lm.propose.accept': 'موافق',
+    'lm.propose.later': 'لاحقاً',
+    'lm.propose.recheck': 'أعد الفحص',
+    'lm.propose.laterHint': 'يعود غداً بعد إعادة القياس. إذا زال السبب حتى ذلك الحين، يسحب نفسه.',
+    'lm.propose.kind.placementShift': '{best} يجلب العملاء بنحو {bestCpl} درهم لكل عميل. {worst} يكلّف نحو {worstCpl} درهم للشيء نفسه، وأخذ {spend} درهم حتى الآن. هل ننقل الميزانية إلى {best}؟',
+    'lm.propose.kind.placementStop': 'أنفق {placement} مبلغ {spend} درهم ولم يُرجع أي عميل. هل نتوقف عن شرائه؟',
+    'lm.propose.kind.notYet': 'يبدو {best} أرخص من {worst} — نحو {bestCpl} درهم مقابل {worstCpl} درهم — لكن عدد العملاء لا يكفي بعد ليكون هذا الفارق حقيقياً لا مجرد صدفة. لا يستحق نقل المال اليوم.',
+    'lm.propose.blocked.thin_evidence': 'الأدلة لا تكفي للتصرف بعد.',
+    'lm.propose.blocked.not_executable': 'هذا يجب تنفيذه في مدير الإعلانات — لا يستطيع النظام إجراء هذا التغيير نيابةً عنك.',
+    'lm.propose.state.open': 'بانتظارك',
+    'lm.propose.state.deferred': 'يعود غداً',
+    'lm.propose.state.accepted': 'تمت الموافقة',
+    'lm.propose.state.done': 'تم',
+    'lm.propose.state.failed': 'حاولنا وفشل — لم يتغيّر شيء',
+    'lm.propose.state.withdrawn': 'لم يعد صحيحاً، فسحبناه',
+
     'lm.guard.title': 'حارس الاستهداف',
     'lm.guard.sub': 'يعمل تلقائياً مقابل ميتا الحيّة. يقول ماذا تفعل، لا ماذا وجد.',
     'lm.guard.sev.stop_now': 'أوقف هذا الآن',
@@ -2305,6 +2340,22 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.machine.review.cta.CALL_NOW': 'اتصل الآن',
   },
   ru: {
+    'lm.propose.accept': 'Принять',
+    'lm.propose.later': 'Позже',
+    'lm.propose.recheck': 'Перепроверить',
+    'lm.propose.laterHint': 'Вернётся завтра, с новыми замерами. Если причина к тому времени исчезнет, предложение снимет себя само.',
+    'lm.propose.kind.placementShift': '{best} приносит заявки примерно по {bestCpl} AED. {worst} обходится примерно в {worstCpl} AED за то же самое и забрал уже {spend} AED. Перевести бюджет на {best}?',
+    'lm.propose.kind.placementStop': '{placement} потратил {spend} AED и не принёс ни одной заявки. Прекратить его покупать?',
+    'lm.propose.kind.notYet': '{best} выглядит дешевле {worst} — примерно {bestCpl} AED против {worstCpl} AED — но заявок пока слишком мало, чтобы этот разрыв был реальным, а не случайным. Сегодня переносить деньги не стоит.',
+    'lm.propose.blocked.thin_evidence': 'Пока недостаточно данных, чтобы действовать.',
+    'lm.propose.blocked.not_executable': 'Это нужно сделать в Ads Manager — система не может внести это изменение за вас.',
+    'lm.propose.state.open': 'Ждёт вашего решения',
+    'lm.propose.state.deferred': 'Вернётся завтра',
+    'lm.propose.state.accepted': 'Принято',
+    'lm.propose.state.done': 'Готово',
+    'lm.propose.state.failed': 'Попробовали — не сработало, ничего не изменилось',
+    'lm.propose.state.withdrawn': 'Больше не соответствует данным, снято',
+
     'lm.guard.title': 'Страж таргетинга',
     'lm.guard.sub': 'Работает сам против живой Meta. Говорит, что делать, а не что нашёл.',
     'lm.guard.sev.stop_now': 'Остановить немедленно',
