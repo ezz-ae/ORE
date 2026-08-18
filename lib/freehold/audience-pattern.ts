@@ -298,8 +298,36 @@ export const speakerLocales = (speakers: SpeakerBundle[]): string[] =>
 export const REAL_ESTATE_MUST: TargetingEntity[] = [
   { id: '6003105898571', name: 'Property' },
   { id: '6003051380892', name: 'Real estate investing' },
-  { id: '6004132891184', name: 'Investment' },
 ]
+
+/**
+ * `Investment` USED TO BE IN THAT LIST, AND IT DISSOLVED THE GATE.
+ *
+ * A live campaign went out reaching 2.2–2.5M with `Luxury goods` as its only
+ * MUST rule. The chain that produced it:
+ *
+ *   · the `investment` motive binds and becomes a group,
+ *     [Real estate investing, Investment]
+ *   · hardenRealEstate then asks "is a real-estate group already here?" and
+ *     tests `ids.every(id => RE_MUST_IDS.has(id))`
+ *   · with `Investment` in the set, BOTH ids matched, the answer was yes, and
+ *     no property gate was added
+ *
+ * But a narrowing group is an OR. "Real estate investing OR Investment" is
+ * satisfied by plain `Investment` — millions of people who have never looked
+ * at a property. So the check meant to guarantee the gate accepted a group
+ * that had none, and the only rule left binding was a money proxy.
+ *
+ * Rebuilt by hand with a real property interest as the MUST, the same ad set
+ * fell to 728k–857k. Two thirds of that audience was never the audience.
+ *
+ * This is the third time the same word has done this. `Investment` and
+ * `investor` were removed from PROPERTY_WORDS in campaign-setup-check.ts for
+ * exactly this reason, and the setup check still reported "Property buyers" on
+ * the broken ad set because it looks for the word anywhere rather than asking
+ * whether it BINDS. A finance interest is not a property interest, in any list,
+ * at any layer.
+ */
 const RE_MUST_IDS = new Set(REAL_ESTATE_MUST.map((e) => e.id))
 
 /**

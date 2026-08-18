@@ -190,6 +190,53 @@ console.log('\n── the one rule: these people must be interested in property 
   check('…and both are blockers, because neither buys property intent',
     setupProblemCount(checkCampaignSetup(CAMPAIGN, [moneyOnly])) > 0)
 
+  // ── THE AD SET THAT SHIPPED, AND WHAT IT COST ────────────────────────────
+  //
+  // Read out of Ads Manager on a live campaign:
+  //
+  //   People who match:     Investment or Real estate investing
+  //   And must also match:  Luxury goods
+  //
+  // The old check reported "ok:property" on that, because a property word was
+  // present SOMEWHERE. It was in the top box — an OR that plain `Investment`
+  // satisfies on its own — so the only binding rule was a money proxy, and the
+  // audience came out at 2.2-2.5M. Rebuilt by hand with a property interest as
+  // the MUST, the same ad set fell to 728k. The check has to tell those apart.
+  const propertyOnlyOnTop = at({ id: 'a16' }, {
+    ...good.targeting,
+    interests: [{ id: '1', name: 'Real estate investing' }, { id: '2', name: 'Investment' }],
+    narrowing: [{ interests: [{ id: '3', name: 'Luxury goods' }] }],
+  })
+  check('a property word in the top box only is NOT a property audience',
+    !keys(checkCampaignSetup(CAMPAIGN, [propertyOnlyOnTop])).includes('ok:property'),
+    keys(checkCampaignSetup(CAMPAIGN, [propertyOnlyOnTop])).join(' | '))
+  check('…and it is reported as present-but-not-narrowing, not as missing',
+    keys(checkCampaignSetup(CAMPAIGN, [propertyOnlyOnTop])).includes('wrong:propertyNotBinding'),
+    'the fix is to MOVE the interest, not to add one — the sentence has to say which')
+
+  // ONE NON-PROPERTY MEMBER IS A DOOR OUT OF THE GATE. An OR group of
+  // [Real estate investing, Investment] is satisfied by Investment alone, so it
+  // gates nothing — which is precisely how `Investment` sitting in
+  // REAL_ESTATE_MUST convinced hardenRealEstate the gate already existed.
+  const leakyGate = at({ id: 'a17' }, {
+    ...good.targeting,
+    interests: [],
+    narrowing: [{ interests: [{ id: '1', name: 'Real estate investing' }, { id: '2', name: 'Investment' }] }],
+  })
+  check('a MUST group with a finance interest beside the property one does not count',
+    !keys(checkCampaignSetup(CAMPAIGN, [leakyGate])).includes('ok:property'),
+    keys(checkCampaignSetup(CAMPAIGN, [leakyGate])).join(' | '))
+
+  // …AND THE SHAPE THAT ACTUALLY WORKED gets the pass.
+  const realGate = at({ id: 'a18' }, {
+    ...good.targeting,
+    interests: [{ id: '1', name: 'Real estate investing' }],
+    narrowing: [{ interests: [{ id: '4', name: 'Penthouse apartment' }] }],
+  })
+  check('the 728k shape — property alone in the must box — passes',
+    keys(checkCampaignSetup(CAMPAIGN, [realGate])).includes('ok:property'),
+    keys(checkCampaignSetup(CAMPAIGN, [realGate])).join(' | '))
+
   // REMOVING THE WORD MUST NOT COST THE REAL INTEREST. "Real estate investing"
   // is the qualifier this product actually uses, and it survives on the
   // `real estate` root — that is why dropping the bare money words is safe.

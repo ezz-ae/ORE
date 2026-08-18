@@ -110,6 +110,52 @@ const matches = (t: Record<string, unknown> | null | undefined, words: string[])
 function hasPropertyIntent(t?: Record<string, unknown> | null): boolean {
   return matches(t, PROPERTY_WORDS)
 }
+
+/**
+ * IS THE PROPERTY SIGNAL ACTUALLY DOING THE GATING?
+ *
+ * The check above asks whether a property word appears ANYWHERE in the spec,
+ * and that is not the same question. A live ad set read:
+ *
+ *   People who match:      Investment or Real estate investing
+ *   And must also match:   Luxury goods
+ *
+ * `Real estate investing` is present, so the old check reported
+ * "✓ Property buyers" — and the audience was 2.2–2.5M, because the top layer
+ * is an OR that `Investment` satisfies on its own and the only binding rule
+ * was a money proxy. Rebuilt with a property interest as the MUST, the same
+ * ad set fell to 728k.
+ *
+ * So presence is not the property. BINDING is. Meta applies flexible_spec as
+ * (group 1) AND (group 2) AND …, with an OR inside each group, so a signal
+ * only narrows if it sits in one of the AND-groups after the first — and the
+ * first group is the base list, which narrows nothing on its own.
+ *
+ * A check that passes on a qualifier that cannot bind is worse than no check:
+ * it is the sentence somebody quotes when they say the targeting was verified.
+ */
+function propertyIsBinding(t?: Record<string, unknown> | null): boolean {
+  for (const key of ['flexible_spec', 'narrowing']) {
+    const groups = arr(t?.[key])
+    // flexible_spec's FIRST entry is the base group — an OR list that widens
+    // rather than narrows. Only the groups after it are AND rules. `narrowing`
+    // arrives already stripped of the base, so every entry there binds.
+    const binding = key === 'flexible_spec' ? groups.slice(1) : groups
+    for (const g of binding) {
+      const grp = g as Record<string, unknown>
+      const inGroup = [...names(grp?.interests), ...names(grp?.behaviors)]
+      // EVERY member has to be property. One non-property member in an OR
+      // group is a door out of the gate — which is exactly how `Investment`
+      // sitting beside `Real estate investing` opened this audience to
+      // everyone interested in money.
+      if (inGroup.length > 0 && inGroup.every((n) => {
+        const s = n.toLowerCase()
+        return PROPERTY_WORDS.some((w) => s.includes(w))
+      })) return true
+    }
+  }
+  return false
+}
 /** Aimed at money, with no property root anywhere to make it about housing. */
 function hasMoneyIntentOnly(t?: Record<string, unknown> | null): boolean {
   return !matches(t, PROPERTY_WORDS) && matches(t, MONEY_WORDS)
@@ -243,8 +289,13 @@ export function checkCampaignSetup(
     // Both failures are blockers — neither ad set is buying property intent —
     // but they are not the same fault, and a broker can only act on the one
     // that describes what they actually did.
-    if (hasPropertyIntent(t)) {
+    if (hasPropertyIntent(t) && propertyIsBinding(t)) {
       out.push({ level: 'ok', key: 'property', adSet: where })
+    } else if (hasPropertyIntent(t)) {
+      // Present but powerless. Named separately because the fix is different:
+      // nothing needs adding to the spec, the qualifier needs MOVING into the
+      // "must also match" box where it can bind.
+      out.push({ level: 'wrong', key: 'propertyNotBinding', adSet: where })
     } else if (hasMoneyIntentOnly(t)) {
       out.push({ level: 'wrong', key: 'moneyNotProperty', adSet: where })
     } else {
