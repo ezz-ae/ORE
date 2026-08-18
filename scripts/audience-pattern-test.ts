@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs'
 import {
   planPattern, describePattern, emptyPattern, parsePattern, BUNDLE,
   STRICT_ALL, STRICT_DEFINING, REAL_ESTATE_MUST, hardenRealEstate,
-  allCatalogEntities, type AudiencePattern,
+  allCatalogEntities, MASS_ENTITY_IDS, type AudiencePattern,
 } from '../lib/freehold/audience-pattern'
 import { forClient, combineSpecs } from '../lib/freehold/audiences'
 import { UAE_INTERESTS } from '../lib/meta/targeting-catalog'
@@ -512,6 +512,41 @@ console.log('\n── the launch repairs EVERY interest, not just the base ones 
   check('the four placements the owner buys are all present',
     ['igFeed', 'igStory', 'reels', 'fbFeed'].every((k) => new RegExp(`^\\s*${k}:`, 'm').test(map)),
     map)
+}
+
+console.log('\n── the gate is made of signals only a buyer carries ──')
+{
+  // TWO IDS DISSOLVED THIS GATE, ONE AFTER THE OTHER, and both were caught only
+  // by watching a real audience estimate refuse to move.
+  //
+  //   `Investment`  — made hardenRealEstate believe a gate already existed, so
+  //                   none was added. Live campaign: 2.2-2.5M.
+  //   `Property`    — the gate existed and did not narrow, because a narrowing
+  //                   group is an OR and this module already flags `Property`
+  //                   as `mass: true` on three motives. Ready-buyer card:
+  //                   2.7M-3.2M to 1.8M-2.2M, against ~2.5-3M Arabic speakers
+  //                   in the whole country.
+  //
+  // The same ad set rebuilt by hand around `Penthouse apartment` came out at
+  // 728k. That is the shape a gate has to have.
+  const inGate = REAL_ESTATE_MUST.filter((e) => MASS_ENTITY_IDS.has(e.id))
+  check('no mass interest sits in the property gate',
+    inGate.length === 0,
+    inGate.map((e) => e.name).join(', ') + ' — an OR group is as wide as its widest member')
+
+  check('…and `Property` specifically is gone',
+    !REAL_ESTATE_MUST.some((e) => e.name === 'Property'),
+    'the gate is as wide as the whole property market')
+  check('…as is `Investment`',
+    !REAL_ESTATE_MUST.some((e) => e.name === 'Investment'),
+    'a finance interest in the gate satisfies it without any property intent')
+
+  // A GATE STILL HAS TO EXIST. Emptying the list would pass both checks above
+  // and remove the qualifier entirely, which is the failure these guard.
+  check('the gate is not empty', REAL_ESTATE_MUST.length > 0)
+  check('…and every member is a property signal, not a proxy for one',
+    REAL_ESTATE_MUST.every((e) => /propert|real estate|apartment|villa|mortgage|penthouse/i.test(e.name)),
+    REAL_ESTATE_MUST.map((e) => e.name).join(', '))
 }
 
 if (failures > 0) {

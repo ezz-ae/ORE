@@ -296,9 +296,46 @@ export const speakerLocales = (speakers: SpeakerBundle[]): string[] =>
  * Meta no longer knows drops out quietly rather than failing the launch.
  */
 export const REAL_ESTATE_MUST: TargetingEntity[] = [
-  { id: '6003105898571', name: 'Property' },
   { id: '6003051380892', name: 'Real estate investing' },
 ]
+
+/**
+ * `Property` CAME OUT FOR THE SAME REASON `Investment` DID, ONE LEVEL DOWN.
+ *
+ * With Investment removed the gate finally existed — and barely narrowed. The
+ * ready-buyer card for Arabic-speaking UAE cash investors moved 2.7M–3.2M to
+ * 1.8M–2.2M. Arabic speakers in the UAE are roughly 2.5–3M in total, so a gate
+ * that leaves 2M standing is removing almost nobody.
+ *
+ * Because a narrowing group is an OR, and an OR is as large as its LARGEST
+ * member. `Property` was in it — and this file already says what `Property` is:
+ *
+ *     first_home:  { entities: [Property], mass: true }
+ *     upgrade:     { entities: [Property], mass: true }
+ *     relocation:  { entities: [Property], mass: true }
+ *
+ * `mass: true` is this module's own word for an interest so wide it does not
+ * narrow. The product knew, flagged it in three places, and then used it as
+ * the gate. `[Property OR Real estate investing]` is `Property`.
+ *
+ * The same ad set rebuilt by hand with `Penthouse apartment` as its MUST came
+ * out at 728k. A gate has to be made of signals somebody only carries if they
+ * are actually shopping for property.
+ *
+ * THE RULE, now enforced rather than assumed: no entity marked `mass` may
+ * appear in this list. A gate containing a mass interest is not a gate.
+ */
+export const MASS_ENTITY_IDS: ReadonlySet<string> = new Set(
+  Object.values(MOTIVE).filter((m) => m.mass).flatMap((m) => m.entities.map((e) => e.id)),
+)
+for (const e of REAL_ESTATE_MUST) {
+  if (MASS_ENTITY_IDS.has(e.id)) {
+    throw new Error(
+      `REAL_ESTATE_MUST contains "${e.name}", which this module marks as a mass interest. ` +
+      `A narrowing group is an OR, so one mass member makes the whole gate as wide as the market.`,
+    )
+  }
+}
 
 /**
  * `Investment` USED TO BE IN THAT LIST, AND IT DISSOLVED THE GATE.
