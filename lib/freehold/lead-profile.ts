@@ -301,7 +301,7 @@ ABSOLUTE RULES — a single false fact on this profile destroys trust in the who
   // don't report as two while one overwrites the other.
   const seenKeys = new Set<string>()
   const clean = cleanAll.filter((f) => {
-    const k = `${f.key} ${f.key === 'other' ? f.label : ''}`
+    const k = `${f.key}\u0000${f.key === 'other' ? f.label : ''}`
     if (seenKeys.has(k)) return false
     seenKeys.add(k)
     return true

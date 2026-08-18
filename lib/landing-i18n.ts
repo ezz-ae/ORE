@@ -850,7 +850,7 @@ export async function translateLandingContent(
   const originals = collectPage(page)
   if (!originals.length) return { page, translated: true }
 
-  const key = `${page.slug}:${lang}:${stableHash(originals.join(""))}`
+  const key = `${page.slug}:${lang}:${stableHash(originals.join("\u0001"))}`
   const cached = translationCache.get(key)
   if (cached) return cached
 
