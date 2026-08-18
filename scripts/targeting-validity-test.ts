@@ -182,6 +182,29 @@ console.log('\n── the resolver is keyed on the question, not the answer ─�
       || /for \(const d of answers\)/.test(resolve))
 }
 
+console.log('\n── the reach number describes the audience that launches ──')
+{
+  // A ready-buyer card advertised 2.7M-3.2M for Arabic-speaking UAE investors.
+  // The ad set it launches carries Arabic; the estimate did not. Two different
+  // audiences, one number, and the number was the larger one — which is how a
+  // gallery of buyer cards comes to read as decoration.
+  const est = between(client, 'export async function getReachEstimate', 'export interface CustomAudienceSummary')
+
+  check('the estimate resolves the same language codes the launch does',
+    /resolveLeadLanguageLocaleIds\(langCodes\)/.test(est),
+    'the estimate is still built without locales, so it measures a different audience')
+  check('…through the same merge helper, not a second reading of the field',
+    /mergeLeadLanguages\(undefined, targeting\.leadLanguages\)/.test(est))
+  check('…and the locales reach the spec',
+    /locales: merged/.test(est))
+
+  // WITHHELD BEATS TOO LARGE. Callers already render null as "no live number";
+  // an unnarrowed figure is a budget somebody sets from a wrong premise.
+  check('an unresolvable language withholds the estimate rather than widening it',
+    /if \(langCodes\.length > 0 && localeIds\.length === 0\) return null/.test(est),
+    'a failed locale lookup would print the audience without its language')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} targeting rule(s) broken.`)
   console.error('A check that cannot say "I do not know" reports its own failure as yours.')

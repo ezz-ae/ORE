@@ -814,6 +814,28 @@ export async function getReachEstimate(
       ...(targeting.interests.length ? { interests: targeting.interests } : {}),
       ...(targeting.behaviors?.length ? { behaviors: targeting.behaviors } : {}),
     }
+    // ── LANGUAGE, OR NO NUMBER AT ALL ───────────────────────────────────
+    //
+    // This spec was built without `locales`, and the launch path applies them.
+    // Two different audiences, one number, and the number was the bigger one:
+    // a ready-buyer card for Arabic-speaking UAE investors advertised
+    // 2.7M–3.2M reach, while the ad set it launches carries Arabic and reaches
+    // a fraction of that.
+    //
+    // A reach figure that omits a filter the launch WILL apply is not an
+    // estimate of this audience. It is an estimate of a different one, printed
+    // in the same typeface — which is how the buyer cards came to read as
+    // decoration.
+    //
+    // So the language is resolved here too, through the same resolver the
+    // launch uses. And when it cannot be resolved, the estimate is WITHHELD
+    // rather than returned unnarrowed: callers already treat null as "no live
+    // number", and a too-large number is worse than no number when somebody is
+    // choosing a budget from it.
+    const langCodes = mergeLeadLanguages(undefined, targeting.leadLanguages)
+    const localeIds = langCodes.length ? await resolveLeadLanguageLocaleIds(langCodes) : []
+    if (langCodes.length > 0 && localeIds.length === 0) return null
+
     const spec: Record<string, unknown> = {
       // Through the ONE builder, so the reach number describes the audience the
       // ad will actually buy — residents, not residents plus tourists.
@@ -825,6 +847,12 @@ export async function getReachEstimate(
       age_min: targeting.ageMin,
       age_max: targeting.ageMax,
       ...(targeting.genders && targeting.genders.length ? { genders: targeting.genders } : {}),
+      // Both halves: any locale ids already on the spec, plus the ones just
+      // resolved from the language codes. Same merge the launch performs.
+      ...((() => {
+        const merged = Array.from(new Set([...(targeting.locales ?? []), ...localeIds]))
+        return merged.length > 0 ? { locales: merged } : {}
+      })()),
       ...(narrowing.length
         ? {
             flexible_spec: [
