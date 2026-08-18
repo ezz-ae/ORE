@@ -85,6 +85,12 @@ export default function LiveCampaignsWidget() {
       ) : (
         <div className="mt-3 space-y-2">
           {live.map((c) => {
+            // NO INSIGHTS ROW IS NOT ZERO SPEND. A campaign Meta has not
+            // answered for printed AED 0 · 0 LEADS in the same weight as a
+            // campaign that genuinely delivered nothing — and while its own
+            // detail page, reading the ads directly, showed AED 42 and two
+            // leads. The dash is the one true thing to print here.
+            const known = c.insights != null
             const spend = Number(c.insights?.spend) || 0
             const leads = metaLeadCount(c.insights?.actions)
             const d = deliveryOf({ status: c.status, effectiveStatus: c.effective_status })
@@ -99,16 +105,16 @@ export default function LiveCampaignsWidget() {
                 </div>
                 <div className="flex shrink-0 items-center gap-4 text-end">
                   <div>
-                    <div className="text-[13px] font-semibold tabular-nums text-white">{aed(spend)}</div>
+                    <div className="text-[13px] font-semibold tabular-nums text-white">{known ? aed(spend) : '—'}</div>
                     <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('lm.w.live.spend')}</div>
                   </div>
                   <div>
-                    <div className="text-[13px] font-semibold tabular-nums text-gold">{leads}</div>
+                    <div className="text-[13px] font-semibold tabular-nums text-gold">{known ? leads : '—'}</div>
                     <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('lm.w.live.leads')}</div>
                   </div>
                   {/* Cost per lead only where both halves are real — a CPL from
                       zero leads is a division by nothing dressed as a metric. */}
-                  {leads > 0 && spend > 0 && (
+                  {known && leads > 0 && spend > 0 && (
                     <div>
                       <div className="text-[13px] font-semibold tabular-nums text-white">{aed(spend / leads)}</div>
                       <div className="text-[10px] uppercase tracking-wider text-slate-500">{t('lm.w.live.cpl')}</div>

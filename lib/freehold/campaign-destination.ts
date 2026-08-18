@@ -58,6 +58,8 @@ export interface AdDestination {
   url: string | null
   /** Meta instant-form id, when the ad uses one. */
   leadFormId: string | null
+  /** The form's own NAME, when Meta gave us one. Never its id — see below. */
+  leadFormName?: string | null
   /** ACTIVE / PAUSED — a paused ad's destination is still worth reporting,
    *  because it is what will run when somebody turns it back on. */
   active: boolean
@@ -78,6 +80,8 @@ export interface DestinationRead {
   /** True when the URL carries an id that is NOT this campaign's. */
   mistagged: boolean
   active: boolean
+  /** For an instant form: which form, by name. Empty when Meta did not say. */
+  formName?: string
 }
 
 /** Is this host one of ours? Compared on the registrable domain so that
@@ -113,7 +117,30 @@ export function readDestination(
   const base = { adId: ad.adId, adName: ad.adName, url: ad.url, active: ad.active }
 
   if (ad.leadFormId) {
-    return { ...base, kind: 'form', attribution: 'attributed', taggedCampaignId: null, mistagged: false }
+    // AN INSTANT FORM HAS NO DESTINATION URL, and the one on the creative is
+    // not where anybody goes.
+    //
+    // A lead-form ad still carries a link — the display link on the creative,
+    // or Meta's own `fb.me/` stub — and the panel used to print it under the
+    // ad's name as though a click landed there. It does not: the form opens
+    // inside Facebook. So the reader was shown `www.freeholdproperty.ae` for
+    // an ad that never sends anybody to the website, and `fb.me/` for one that
+    // sends them nowhere at all. Both are worse than saying nothing, because
+    // both are readable and wrong.
+    //
+    // The url is dropped here rather than in the screen so no other consumer
+    // can make the same mistake. What replaces it is the FORM'S NAME, which is
+    // the fact a person can actually act on — and never its id, for the same
+    // reason the CRM stopped printing `meta_form:120251…`.
+    return {
+      ...base,
+      url: null,
+      kind: 'form',
+      attribution: 'attributed',
+      taggedCampaignId: null,
+      mistagged: false,
+      formName: (ad.leadFormName ?? '').trim(),
+    }
   }
 
   const url = (ad.url ?? '').trim()

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
-import { getFormLeads, listAccessiblePages, adNamesByIds } from '@/lib/meta/client'
+import { getFormLeads, listAccessiblePages, namesByIds } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
 import { captureForLead } from '@/lib/freehold/snapshot-capture'
@@ -131,7 +131,7 @@ export async function syncLeadsToCrm(
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_name text`)
 
   // One request for every distinct ad in this batch, not one per lead.
-  const adNames = await adNamesByIds(leads.map((l) => l.ad_id ?? '').filter(Boolean))
+  const adNames = await namesByIds(leads.map((l) => l.ad_id ?? '').filter(Boolean))
 
   // The dedupe guarantee. `INSERT ... WHERE NOT EXISTS` is not atomic: the cron
   // sweep and the on-view sync can both pass the check for the same Meta lead

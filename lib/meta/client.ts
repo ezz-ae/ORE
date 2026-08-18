@@ -489,20 +489,35 @@ export async function getCampaignDailySeries(campaignId: string): Promise<Array<
  * the campaign page's headline numbers use, so the two screens cannot
  * disagree. One Graph call rather than one per campaign.
  *
+ * ── EVERY PAGE, NOT THE FIRST ONE ───────────────────────────────────────
+ *
+ * This read a SINGLE page and stopped. Meta pages this edge by its own rules
+ * and does not honour `limit` as a promise — an account with history returns a
+ * cursor, and every campaign after the cut simply had no row. Downstream that
+ * is indistinguishable from "this campaign spent nothing", and it printed as
+ * AED 0 on a campaign that had spent money that morning while the same
+ * campaign's ads, read from a different call, showed the real figure. Three
+ * screens, three stories, and the wrong one was the confident one.
+ *
  * Returns an empty map rather than throwing: a list that loses its numbers is
- * still a usable list, and every consumer already renders a missing row as
- * "never delivered".
+ * still a usable list, and every consumer must render a missing row as
+ * "we have no figure", NEVER as a zero — see the money panel, where that
+ * distinction is the whole point.
  */
 export async function getAccountCampaignInsights(): Promise<Map<string, MetaInsights>> {
   try {
     const { adAccountId } = await creds()
-    const res = await apiFetch<{ data: CampaignInsightRow[] }>(`/${adAccountId}/insights`, undefined, {
-      fields: 'campaign_id,impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm,frequency,reach',
-      level: 'campaign',
-      date_preset: HEADLINE_WINDOW,
-      limit: '200',
-    })
-    return indexInsightsByCampaign(res.data)
+    const rows = await apiFetchAllPages<CampaignInsightRow>(
+      `/${adAccountId}/insights`,
+      {
+        fields: 'campaign_id,impressions,clicks,spend,actions,cost_per_action_type,cpc,cpm,frequency,reach',
+        level: 'campaign',
+        date_preset: HEADLINE_WINDOW,
+        limit: '200',
+      },
+      2000,
+    )
+    return indexInsightsByCampaign(rows)
   } catch {
     return new Map()
   }
@@ -2306,21 +2321,24 @@ export async function updateAdPlacementCreative(
 }
 
 /**
- * Ad NAMES for a set of ad ids, in one request.
+ * NAMES for a set of Graph ids, in one request.
  *
- * A lead carries an ad_id and nothing else, so the CRM could only ever show
- * the number. That is fine until somebody runs two ads in one campaign with a
+ * Works for any node that answers `id,name` — ads and lead forms are the two
+ * callers, and both have the same problem: the object we hold carries an id
+ * and nothing else, so a screen could only ever show the number.
+ *
+ * That is tolerable until somebody runs two ads in one campaign with a
  * different form on each — which is the correct way to stop your own ads
  * competing — and then the campaign name identifies nothing and the id
  * identifies nothing a person can read.
  *
- * Batched through `?ids=` because a lead sweep can see dozens of distinct ads
- * and one request per ad would spend the whole rate limit on labels. Failure
- * is empty, never partial-with-blanks: a name we could not fetch is absent, so
- * the caller keeps the id it already had rather than storing an empty string
- * that looks like a name nobody set.
+ * Batched through `?ids=` because a lead sweep can see dozens of distinct
+ * objects and one request each would spend the whole rate limit on labels.
+ * Failure is empty, never partial-with-blanks: a name we could not fetch is
+ * absent, so the caller keeps the id it already had rather than storing an
+ * empty string that looks like a name nobody set.
  */
-export async function adNamesByIds(ids: string[]): Promise<Map<string, string>> {
+export async function namesByIds(ids: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   const unique = [...new Set(ids.filter(Boolean))]
   if (unique.length === 0) return out

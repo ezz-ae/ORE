@@ -162,6 +162,33 @@ console.log('\n── every kind and state is reachable ──')
   check('every attribution state can happen', ms.length === 0, ms.join(','))
 }
 
+console.log('\n── an instant form has no link, and is named rather than numbered ──')
+{
+  // WHAT THE SCREEN SHOWED. A lead-form ad still carries a URL — the display
+  // link on the creative, or Meta's own `fb.me/` stub — and the panel printed
+  // it under the ad's name as though a click landed there. It does not: the
+  // form opens inside Facebook. So a reader saw `www.freeholdproperty.ae` for
+  // an ad that sends nobody to the website, and `fb.me/` for one that sends
+  // them nowhere at all. Readable, and wrong, which is worse than blank.
+  const withLink = read({ leadFormId: '120251276961280734', url: 'https://www.freeholdproperty.ae/' })
+  check('a form ad carries no destination url', withLink.url === null, String(withLink.url))
+  check('…and is still perfectly attributed', withLink.attribution === 'attributed')
+
+  // AND IT IS NAMED. The id is never printed as a label, for the same reason
+  // the CRM stopped printing `meta_form:120251…` — see lib/freehold/lead-origin.ts.
+  const named = read({ leadFormId: '120251276961280734', leadFormName: 'Cash offer | A+ Audiences' })
+  check('the form is identified by its name', named.formName === 'Cash offer | A+ Audiences', String(named.formName))
+  const unnamed = read({ leadFormId: '120251276961280734' })
+  check('…and an unresolved name is empty, never the number',
+    unnamed.formName === '' && !JSON.stringify(unnamed).includes('120251276961280734'),
+    JSON.stringify(unnamed))
+
+  // The link is still read for every OTHER kind — dropping it there would take
+  // the attribution check with it.
+  const landing = read({ url: `https://${'freeholdproperty.ae'}/lp/x?utm_id=c1` })
+  check('a landing page keeps its url', !!landing.url, String(landing.url))
+}
+
 if (failures > 0) {
   console.error(`\n${failures} campaign-destination rule(s) broken.`)
   process.exit(1)

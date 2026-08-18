@@ -114,7 +114,7 @@ console.log('\n── the names are written at sync, and old rows are repaired �
   check('the form name comes in as an argument, not from a per-render lookup',
     /formName\?: string \| null/.test(sync))
   check('ad names are resolved once per batch, not once per lead',
-    /adNamesByIds\(leads\.map/.test(sync),
+    /namesByIds\(leads\.map/.test(sync),
     'a per-lead lookup means one Meta call per lead on every sweep')
   check('both names are written on insert',
     /meta_form_name, meta_ad_name/.test(sync))
@@ -135,10 +135,10 @@ console.log('\n── the names are written at sync, and old rows are repaired �
   // "Beauty" (scripts/targeting-validity-test.ts).
   const client = code('lib/meta/client.ts')
   check('the ad-name lookup keys answers by the id Meta returned',
-    /export async function adNamesByIds/.test(client) && /out\.set\(String\(\w+\.id\)/.test(client),
+    /export async function namesByIds/.test(client) && /out\.set\(String\(\w+\.id\)/.test(client),
     'names are being paired with ads by position or by request order')
   check('…and never by the position of the id we asked about',
-    !/batch\[i\]|unique\[i\]/.test(between(client, 'export async function adNamesByIds', 'export async function listAds')),
+    !/batch\[i\]|unique\[i\]/.test(between(client, 'export async function namesByIds', 'export async function listAds')),
     'a short or reordered answer would hang somebody else\'s ad name on this lead')
 }
 

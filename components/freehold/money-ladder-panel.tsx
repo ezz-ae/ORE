@@ -28,6 +28,8 @@ interface Row {
   name: string
   isThis: boolean
   spendAed: number
+  /** False when Meta returned no insights row. Withheld, never printed as 0. */
+  spendKnown?: boolean
   leads: number
   qualified: number
   deals: number
@@ -117,7 +119,11 @@ export default function MoneyLadderPanel({ campaignId }: { campaignId: string })
       {/* THE LADDER. Four steps and the money, in the order they happen. */}
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-5">
         {([
-          ['spend', aed(me.spendAed)],
+          // WITHHELD, NOT ZERO. "AED 0" beside "2 LEADS" is a sentence that
+          // cannot be true, and it was being printed because a missing
+          // insights row was coerced to a number. A dash says the one true
+          // thing: we do not have this figure yet.
+          ['spend', me.spendKnown === false ? '—' : aed(me.spendAed)],
           ['leads', String(me.leads)],
           ['qualified', String(me.qualified)],
           ['deals', String(me.deals)],

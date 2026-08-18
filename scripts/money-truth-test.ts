@@ -36,6 +36,10 @@ const ok = (m: string) => console.log(`  ✓ ${m}`)
 const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}\n      got: ${got}`) }
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
+const code = (p: string): string =>
+  readFileSync(join(process.cwd(), p), { encoding: 'utf8' })
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
 const row = (o: Partial<CampaignMoney> & { campaignId: string }): CampaignMoney => ({
   spendAed: 1000, leads: 0, qualified: 0, deals: 0, revenueAed: 0, ageDays: 60, ...o,
 })
@@ -319,8 +323,47 @@ console.log('\n── the machine actually reads it ──')
     'revenue is summed outside the won branch')
 }
 
+console.log('\n── a number Meta never gave us is withheld, never printed as zero ──')
+{
+  // THE THREE-STORY BUG, seen on a live account in one screenshot: the money
+  // card said SPENT AED 0 beside LEADS 2, the designs list on the SAME page
+  // said AED 42, and the home widget said AED 0 · 0 leads. Nothing was
+  // computing a wrong figure — a MISSING insights row was being coerced to
+  // zero, and the zero then read as authoritative.
+  //
+  // "AED 0" and "we have no figure" are different facts, and printing the
+  // first when you mean the second is the same failure this whole product
+  // keeps re-learning: a system with no way to say "I do not know" reports its
+  // own gap as somebody else's result.
+  const route = code('app/api/meta/campaigns/[id]/money/route.ts')
+  check('a missing insights row is reported as unknown, not as zero spend',
+    /const spendKnown = row\?\.spend != null/.test(route),
+    'a campaign Meta did not answer for is being given a spend of 0')
+  check('…and the flag reaches the screen', /spendKnown: m\.spendKnown/.test(route))
+
+  const panel = code('components/freehold/money-ladder-panel.tsx')
+  check('the money card withholds the figure rather than printing AED 0',
+    /me\.spendKnown === false \? '—'/.test(panel),
+    'the ladder still prints a zero it was never told')
+
+  const widget = code('components/freehold/lead-machine/live-campaigns-widget.tsx')
+  check('the home widget withholds it too',
+    /const known = c\.insights != null/.test(widget) && /known \? aed\(spend\) : '—'/.test(widget),
+    'the home screen and the campaign page can disagree again')
+  check('…and never computes a cost per lead from a figure it does not have',
+    /known && leads > 0 && spend > 0/.test(widget))
+
+  // THE CAUSE, not only the symptom. One page of the account insights edge was
+  // read and the rest dropped, so campaigns past the cut simply had no row.
+  const client = code('lib/meta/client.ts')
+  check('every page of the account campaign insights is read',
+    /apiFetchAllPages<CampaignInsightRow>/.test(client),
+    'a single page is read again — campaigns past the cut lose their numbers silently')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} money rule(s) broken.`)
+  console.error('A figure nobody gave us is not a zero.')
   process.exit(1)
 }
 console.log('\nA campaign is judged on the money it made, on a rung it had time to reach.\n')

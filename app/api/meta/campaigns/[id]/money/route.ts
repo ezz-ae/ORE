@@ -60,13 +60,24 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       getAccountCampaignInsights(),
     ])
 
-    const rows = await Promise.all(chosen.map(async (c): Promise<CampaignMoney & { name: string }> => {
+    const rows = await Promise.all(chosen.map(async (c): Promise<CampaignMoney & { name: string; spendKnown: boolean }> => {
       const quality = await getCampaignQuality(c.id, c.name ?? '').catch(() => null)
       const created = c.created_time ? Date.parse(c.created_time) : NaN
+      // AED 0 AND "WE HAVE NO FIGURE" ARE DIFFERENT FACTS.
+      //
+      // A campaign with no insights row printed AED 0 SPENT beside 2 LEADS,
+      // while the designs list on the same page showed AED 42 — because a
+      // missing row was coerced to zero here and the zero then read as
+      // authoritative. Zero is now only claimed when Meta actually answered
+      // zero; a missing row is reported as unknown and the panel withholds
+      // the number instead of inventing one.
+      const row = insightsById.get(c.id)
+      const spendKnown = row?.spend != null && row.spend !== ''
       return {
         campaignId: c.id,
         name: c.name ?? c.id,
-        spendAed: Number(insightsById.get(c.id)?.spend ?? 0) || 0,
+        spendKnown,
+        spendAed: spendKnown ? Number(row?.spend) || 0 : 0,
         // The CRM-attributed count, always. The rungs below a lead are CRM
         // facts, and dividing Meta-reported leads into CRM-qualified ones
         // would be counting two different populations.
@@ -89,12 +100,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       medianDealAed: basis.medianDealAed,
       closedDeals: basis.closedDeals,
       rows: standings.map((s) => {
-        const m = byId.get(s.campaignId) as CampaignMoney & { name: string }
+        const m = byId.get(s.campaignId) as CampaignMoney & { name: string; spendKnown: boolean }
         return {
           campaignId: s.campaignId,
           name: m.name,
           isThis: s.campaignId === id,
           spendAed: m.spendAed,
+          /** False when Meta returned no row — the panel says so rather than 0. */
+          spendKnown: m.spendKnown,
           leads: m.leads,
           qualified: m.qualified,
           deals: m.deals,

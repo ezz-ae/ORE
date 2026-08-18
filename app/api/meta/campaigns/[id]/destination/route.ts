@@ -15,7 +15,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { listAdSets, listAds, getAdWithCreative, isMetaConfigured } from '@/lib/meta/client'
+import { listAdSets, listAds, getAdWithCreative, isMetaConfigured, namesByIds } from '@/lib/meta/client'
 import { BRAND } from '@/lib/freehold/brand'
 import { summariseDestinations, type AdDestination } from '@/lib/freehold/campaign-destination'
 
@@ -59,9 +59,22 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       }),
     )
 
+    // THE FORM'S NAME, NOT ITS NUMBER. An instant-form ad has no destination
+    // URL a person can act on — the form opens inside Facebook — so the only
+    // useful thing to print is which form it was, and the panel used to print
+    // the creative's display link instead. One batched request for the whole
+    // campaign; a name we cannot fetch is simply absent.
+    const formNames = await namesByIds(
+      snaps.map((s) => s.leadFormId ?? '').filter(Boolean),
+    ).catch(() => new Map<string, string>())
+    const named = snaps.map((s) => ({
+      ...s,
+      leadFormName: s.leadFormId ? (formNames.get(s.leadFormId) ?? null) : null,
+    }))
+
     return NextResponse.json({
       connected: true,
-      ...summariseDestinations(snaps, { campaignId: id, domain: BRAND.domain }),
+      ...summariseDestinations(named, { campaignId: id, domain: BRAND.domain }),
       // Never silent: a cap that is not reported reads as "these are all of
       // them", which is the same class of quiet lie this panel exists to end.
       capped,

@@ -38,7 +38,7 @@ export const DELIVERY_STATES = [
   'inReview', 'rejected', 'billing', 'issue',
   'learning', 'learningLimited', 'delivering', 'notDelivering',
   'pausedByAdSet', 'pausedByCampaign', 'paused', 'archived',
-  'finished', 'unknown',
+  'finished', 'on', 'unknown',
 ] as const
 
 export type DeliveryState = (typeof DELIVERY_STATES)[number]
@@ -57,6 +57,19 @@ export const LEARNING_TARGET = 50
 
 const TONE: Record<DeliveryState, DeliveryTone> = {
   delivering: 'good',
+  // SWITCHED ON COUNTS AS RUNNING, AND IS COLOURED LIKE IT.
+  //
+  // This state used to be folded into `unknown`, which is `idle` — the same
+  // amber as Paused. So a campaign that had just been turned on and was
+  // spending money sat in the list wearing the colour of a campaign that was
+  // doing nothing, and there was no way to tell at a glance what was live.
+  //
+  // It is `good` rather than `delivering` in name only: the label still says
+  // "On" and never "Delivering", because we have not been told it is reaching
+  // anybody. Meta reporting zero impressions still overrides this to
+  // `notDelivering` — the amber here was never protecting against that, it was
+  // just failing to distinguish on from off.
+  on: 'good',
   // An ad set that reached its end date did what it was told. Reading it as a
   // fault would put the Trakheesi permit stop — the thing we WANT to happen —
   // in the same red as an ad reaching nobody.
@@ -118,7 +131,11 @@ export function deliveryOf(input: DeliveryInput): Delivery {
       case 'ARCHIVED':
       case 'DELETED':              return 'archived'
       case 'ACTIVE':               break
-      default:                     return raw ? 'unknown' : 'unknown'
+      // A STATUS WORD WE DO NOT RECOGNISE, or none at all. Genuinely unknown —
+      // kept apart from `on` because "Meta said something we cannot read" and
+      // "it is switched on" are different facts, and the first must never be
+      // painted as the second.
+      default:                     return 'unknown'
     }
 
     // ACTIVE is where the real answer lives — but an ad set past its end date
@@ -139,9 +156,9 @@ export function deliveryOf(input: DeliveryInput): Delivery {
     if (typeof input.impressions === 'number' && input.impressions <= 0) return 'notDelivering'
     if (typeof input.impressions === 'number' && input.impressions > 0) return 'delivering'
 
-    // Switched on, nothing else known. "Active" is all that can honestly be
-    // said, and it is said as itself rather than dressed up as delivering.
-    return 'unknown'
+    // Switched on, nothing else known. "On" is all that can honestly be said,
+    // and it is said as itself rather than dressed up as delivering.
+    return 'on'
   })()
 
   const out: Delivery = { state, tone: TONE[state] }

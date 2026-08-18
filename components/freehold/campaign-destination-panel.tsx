@@ -95,6 +95,15 @@ export default function CampaignDestinationPanel({ campaignId }: { campaignId: s
                       what will run when somebody turns it back on. */}
                   {!r.active && <span className="text-[10px] text-slate-600">{t('dest.paused')}</span>}
                 </div>
+                {/* An instant form has no url to show — the form opens inside
+                    Facebook, and the link on the creative is a display link or
+                    Meta's own stub. It used to be printed here under the ad's
+                    name, which read as "this is where the click lands" about a
+                    place nobody goes. `readDestination` drops it; what a person
+                    can act on is WHICH FORM, so that is what this says. */}
+                {r.formName && (
+                  <div className="mt-0.5 truncate text-[10px] text-slate-500">{r.formName}</div>
+                )}
                 {r.url && (
                   <a href={r.url} target="_blank" rel="noopener noreferrer"
                     className="mt-0.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] text-slate-500 transition hover:text-gold">

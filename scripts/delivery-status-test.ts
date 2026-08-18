@@ -82,9 +82,27 @@ console.log('\n── the switch that stopped it may be one level up ──')
 
 console.log('\n── nothing is inferred from a status alone ──')
 {
+  // ACTIVE WITH NO NUMBERS IS "ON", AND IT IS NOT "DELIVERING".
+  //
+  // This assertion used to require `unknown` — which shares the `idle` tone
+  // with Paused, so a campaign that had just been switched on and was spending
+  // money wore the colour of one that was doing nothing. The rule it was
+  // protecting is that nothing is promoted to `delivering` without evidence,
+  // and that rule is unchanged: `on` says switched on and claims no reach.
   check('ACTIVE with no numbers is not promoted to "delivering"',
-    deliveryOf({ effectiveStatus: 'ACTIVE' }).state === 'unknown',
+    deliveryOf({ effectiveStatus: 'ACTIVE' }).state !== 'delivering',
     JSON.stringify(deliveryOf({ effectiveStatus: 'ACTIVE' })))
+  check('…it reads as switched on',
+    deliveryOf({ effectiveStatus: 'ACTIVE' }).state === 'on',
+    JSON.stringify(deliveryOf({ effectiveStatus: 'ACTIVE' })))
+  check('…and is coloured as running, not as idle',
+    deliveryOf({ effectiveStatus: 'ACTIVE' }).tone === 'good',
+    'a live campaign wears the same colour as a paused one')
+  // A STATUS WE CANNOT READ IS NOT "ON". Two different facts, and painting the
+  // first as the second is how a broken campaign passes for a healthy one.
+  check('…and an unreadable status is kept apart from it',
+    deliveryOf({ effectiveStatus: 'SOMETHING_NEW' }).state === 'unknown'
+      && deliveryOf({ effectiveStatus: 'SOMETHING_NEW' }).tone !== 'good')
   check('…an unknown impression count is not evidence of zero',
     deliveryOf({ effectiveStatus: 'ACTIVE', impressions: null }).state !== 'notDelivering')
   check('what Meta will DO beats what was asked for',
