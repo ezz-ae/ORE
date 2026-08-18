@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Ads Coin — the bank.
+ * The Bank — company money, where it came from and where it went.
  *
  * "treat the credit as a bank dashboard: it has capital, liquidity, in use,
  * transactions, requests. Each wallet has a clear account number, so if you

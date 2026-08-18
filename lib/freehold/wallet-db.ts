@@ -1,5 +1,5 @@
 /**
- * The Ads Coin ledger, on Postgres.
+ * The Cash ledger, on Postgres.
  *
  * The pure half (lib/freehold/wallet.ts) guarantees a transfer is balanced.
  * This half guarantees it is atomic and happens once. Those are different

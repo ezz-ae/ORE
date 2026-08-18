@@ -1,5 +1,5 @@
 /**
- * Ads Coin — the ledger, as a bank would keep it.
+ * Cash — the ledger, as a bank would keep it.
  *
  * What this replaces is the reason it exists. Credits were a number on a
  * broker's row: `allocation +100` added to it, `spend -40` took away. Coin
@@ -25,7 +25,7 @@
  * database, so all of it is tested.
  */
 
-/** Ads Coin is integral. There is no half-coin, and no floating point anywhere. */
+/** Cash is integral. There is no half-coin, and no floating point anywhere. */
 export type Coins = number
 
 export type WalletKind =
@@ -286,7 +286,7 @@ export function treasuryPosition(wallets: Wallet[]): TreasuryPosition {
 // ── Dirhams, as an asset ──────────────────────────────────────────────────────
 
 /**
- * AED is recorded but NOT spendable. Ads Coin is the only token any part of
+ * AED is recorded but NOT spendable. Cash is the only token any part of
  * the system will accept, which keeps one question — "can this campaign run?"
  * — answerable from one number. Dirhams sit beside the coin as the asset that
  * backs it and as what the postpaid statement is denominated in.

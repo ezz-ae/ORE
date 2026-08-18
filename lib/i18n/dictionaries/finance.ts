@@ -369,8 +369,8 @@ export const finance: Record<Locale, Dict> = {
     'cr.action.increase_budget': 'Budget increase',
     'cr.action.hold': 'Held',
 
-    // ── Ads Coin bank ──
-    'bank.eyebrow': 'Ads Coin',
+    // ── The Bank ──
+    'bank.eyebrow': 'Company money',
     'bank.title': 'The bank',
     'bank.subtitle': 'Wallets, account numbers and transfers.',
     'bank.capital': 'Capital',
@@ -784,8 +784,8 @@ export const finance: Record<Locale, Dict> = {
     'cr.action.increase_budget': 'زيادة الميزانية',
     'cr.action.hold': 'مُعلَّق',
 
-    // ── Ads Coin bank ──
-    'bank.eyebrow': 'عملة الإعلانات',
+    // ── The Bank ──
+    'bank.eyebrow': 'أموال الشركة',
     'bank.title': 'البنك',
     'bank.subtitle': 'المحافظ وأرقام الحسابات والتحويلات.',
     'bank.capital': 'رأس المال',
@@ -1199,8 +1199,8 @@ export const finance: Record<Locale, Dict> = {
     'cr.action.increase_budget': 'Увеличение бюджета',
     'cr.action.hold': 'Удержано',
 
-    // ── Ads Coin bank ──
-    'bank.eyebrow': 'Ads Coin',
+    // ── The Bank ──
+    'bank.eyebrow': 'Деньги компании',
     'bank.title': 'Банк',
     'bank.subtitle': 'Кошельки, номера счетов и переводы.',
     'bank.capital': 'Капитал',

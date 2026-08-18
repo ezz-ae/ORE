@@ -1,5 +1,5 @@
 /**
- * NO QUERY JOINS A TABLE CALLED `users` — locked.
+ * NAMES THAT REACH PRODUCTION MEANING SOMETHING ELSE — locked.
  *
  * One join took the entire Bank off the screen:
  *
@@ -27,6 +27,18 @@
  *
  * So this checks the one name that actually shipped and is the most likely
  * to be reached for again. Narrow and true beats broad and noisy.
+ *
+ * ── AND THE SAME SHAPE ONE LAYER UP ──────────────────────────────────────
+ *
+ * A second name failed the same way for the same reason. The spendable unit
+ * was renamed from "Ads Coin" to Cash, and the rename missed the Finance bank
+ * screen and a navigation entry — so two adjacent screens called one thing two
+ * different names for months. The i18n audit passed throughout: it proves
+ * every key resolves in three languages, never that the words still describe
+ * what the system does.
+ *
+ * Both checks are the same idea. A name is a promise about what a thing is,
+ * and a stale one is a lie the compiler cannot read.
  *
  * Pure — reads source, no database. Runs in `pnpm guards`.
  */
@@ -80,6 +92,31 @@ console.log('\n── and the withdraw join is keyed on what the column holds �
     'the display name will come back blank for every withdrawal')
   check('…and personId is still an email, which is why',
     /personId = \(u: \{ email: string \}\): string => u\.email\.trim\(\)\.toLowerCase\(\)/.test(bank))
+}
+
+console.log('\n── a renamed unit has one name, not two ──')
+{
+  // The unit was renamed from "Ads Coin" to Cash, and the rename missed the
+  // Finance bank screen and the navigation entry — so the product called the
+  // same thing two different names, months apart, on adjacent screens. A
+  // person who learns one name and meets the other has to work out whether
+  // they are looking at a second currency.
+  //
+  // Nothing could see it. The i18n audit checks that every key resolves in
+  // three languages, not that the words still mean what the system means.
+  const dicts = execSync("git ls-files 'lib/i18n/dictionaries/*.ts'", { encoding: 'utf8' })
+    .split('\n').filter(Boolean)
+  const stale: string[] = []
+  for (const f of dicts) {
+    const src = readFileSync(f, { encoding: 'utf8' })
+    for (const [i, line] of src.split('\n').entries()) {
+      if (/^\s*\/\//.test(line)) continue
+      if (/Ads Coin|عملة الإعلانات|Ads Coin/i.test(line)) stale.push(`${f}:${i + 1}`)
+    }
+  }
+  check('no user-facing string still says "Ads Coin"',
+    stale.length === 0,
+    stale.join(' · ') + ' — the unit is Cash (credits-shared.ts); two names for one thing is two currencies to whoever reads it')
 }
 
 if (failures > 0) {
