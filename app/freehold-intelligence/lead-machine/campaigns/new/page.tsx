@@ -49,7 +49,13 @@ import { explainMetaError, splitLaunchStep } from '@/lib/meta/error-advice'
 // `spec` is ABSENT for pattern audiences — the server never sends the recipe
 // to the browser. Typing it as required let `{ ...undefined }` compile and
 // launch a campaign with no audience at all.
-interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec?: CampaignTargeting; reach?: { lower: number; upper: number } }
+interface SavedAudienceOption {
+  id: string; name: string; kind: string; description: string
+  spec?: CampaignTargeting; reach?: { lower: number; upper: number }
+  /** Present when this saved audience's property gate is built from an
+   *  interest so wide it does not narrow — see `massGateRead`. */
+  massGate?: { stale: true; names: string[] }
+}
 import { useT } from '@/lib/i18n/provider'
 import { READY_BUYERS } from '@/lib/freehold/ready-buyers'
 
@@ -2155,6 +2161,18 @@ export default function NewCampaignPage() {
                       <span className={`text-[13px] font-semibold ${on ? 'text-gold' : 'text-white'}`}>{a.name}</span>
                       <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">{t('lm.newCampaign.s2.card.saved')}</span>
                       {a.reach && <span className="mt-1 text-[11px] text-slate-400">{t('lm.aud.ready.reach')}: {fmtReach(a.reach.lower)}–{fmtReach(a.reach.upper)}</span>}
+                      {/* A SAVED AUDIENCE IS A SPEC FROZEN WHEN IT WAS MADE.
+                          Fixing how audiences are BUILT did nothing for the
+                          ones already stored, and those are the ones somebody
+                          reuses without re-reading. This one still carries the
+                          gate that reached 2.2M. Marked, never silently
+                          rewritten — editing somebody's saved decision behind
+                          their back is worse than the fault. */}
+                      {a.massGate && (
+                        <span className="mt-1.5 rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] leading-snug text-amber-200">
+                          {t('lm.aud.massGate', { names: a.massGate.names.join(', ') })}
+                        </span>
+                      )}
                     </button>
                   )
                 })}

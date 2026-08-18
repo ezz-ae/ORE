@@ -10,14 +10,26 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.ready.title': 'Ready buyers',
     'lm.aud.ready.sub': 'Save one and launch — or make your own in Audiences.',
     'lm.aud.ready.save': 'Save this buyer',
+    // Shown on a SAVED audience whose property gate is made of an interest so
+    // wide it does not narrow. It names the interest, because "rebuild this"
+    // with no reason given is an instruction nobody follows.
+    'lm.aud.massGate': 'Built with {names} — a gate made of that reaches almost the whole market. Rebuild this audience before spending on it.',
     'lm.aud.ready.reach': 'Est. reach',
     'lm.aud.ready.cpl': 'Expected CPL',
     'lm.aud.ready.budget': 'Suggested budget',
     'lm.aud.ready.perDay': '/day',
     'lm.aud.ready.estimateNote': 'Estimates — your own results replace them once campaigns run.',
-    'lm.aud.ready.arabicCashUAE.name': 'Local Emirati investor — cash',
+    // NAMED FOR WHAT IT ACTUALLY TARGETS. These two read "Local Emirati
+    // investor", and the pattern behind them is `speakers: ['arabic'],
+    // residency: ['resident']` — a language and a place of residence, with no
+    // nationality anywhere in it, because nationality is not a Meta field and
+    // this product never narrows on one. A label that names a nationality the
+    // spec cannot express is both wrong about the audience and the exact
+    // framing lib/freehold/audience-pattern.ts exists to keep out. The rest of
+    // the gallery already reads "<language>-speaking resident"; these now match.
+    'lm.aud.ready.arabicCashUAE.name': 'Arabic-speaking resident — cash',
     'lm.aud.ready.arabicCashUAE.desc': 'Arabic speakers living in the UAE, buying to invest, paying cash. Small, expensive per lead, and worth every dirham.',
-    'lm.aud.ready.arabicPlanUAE.name': 'Local Emirati investor — payment plan',
+    'lm.aud.ready.arabicPlanUAE.name': 'Arabic-speaking resident — payment plan',
     'lm.aud.ready.arabicPlanUAE.desc': 'Arabic speakers in the UAE investing through a developer plan. The volume end of the local market.',
     'lm.aud.ready.arabicGoldenVisa.name': 'Golden Visa buyer — UAE',
     'lm.aud.ready.arabicGoldenVisa.desc': 'Arabic speakers in the UAE buying at the Golden Visa threshold — residency is the motive, cash is the money.',
@@ -411,14 +423,15 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.ready.title': 'مشترون جاهزون',
     'lm.aud.ready.sub': 'احفظ واحدًا وأطلق — أو أنشئ جمهورك في صفحة الجماهير.',
     'lm.aud.ready.save': 'احفظ هذا المشتري',
+    'lm.aud.massGate': 'مبني على {names} — وحاجز بهذا الاتساع يصل إلى السوق كله تقريباً. أعد بناء هذا الجمهور قبل الإنفاق عليه.',
     'lm.aud.ready.reach': 'الوصول التقديري',
     'lm.aud.ready.cpl': 'التكلفة المتوقعة للعميل',
     'lm.aud.ready.budget': 'الميزانية المقترحة',
     'lm.aud.ready.perDay': '/اليوم',
     'lm.aud.ready.estimateNote': 'تقديرات — نتائجك الفعلية تحل محلها بعد تشغيل الحملات.',
-    'lm.aud.ready.arabicCashUAE.name': 'مستثمر محلي في الإمارات — كاش',
+    'lm.aud.ready.arabicCashUAE.name': 'مقيم ناطق بالعربية — كاش',
     'lm.aud.ready.arabicCashUAE.desc': 'ناطقون بالعربية مقيمون في الإمارات، يشترون للاستثمار ويدفعون كاش. جمهور صغير ومكلف للعميل الواحد — ويستحق كل درهم.',
-    'lm.aud.ready.arabicPlanUAE.name': 'مستثمر محلي في الإمارات — خطة دفع',
+    'lm.aud.ready.arabicPlanUAE.name': 'مقيم ناطق بالعربية — خطة دفع',
     'lm.aud.ready.arabicPlanUAE.desc': 'ناطقون بالعربية في الإمارات يستثمرون عبر خطة مطوّر. الطرف الأكبر حجمًا من السوق المحلي.',
     'lm.aud.ready.arabicGoldenVisa.name': 'مشتري الإقامة الذهبية — الإمارات',
     'lm.aud.ready.arabicGoldenVisa.desc': 'ناطقون بالعربية في الإمارات يشترون عند حد الإقامة الذهبية — الإقامة هي الدافع والكاش هو المال.',
@@ -800,14 +813,15 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.ready.title': 'Готовые покупатели',
     'lm.aud.ready.sub': 'Сохраните и запускайте — или создайте свою аудиторию на странице «Аудитории».',
     'lm.aud.ready.save': 'Сохранить покупателя',
+    'lm.aud.massGate': 'Построена на {names} — такой фильтр охватывает почти весь рынок. Пересоберите эту аудиторию, прежде чем тратить на неё бюджет.',
     'lm.aud.ready.reach': 'Оценка охвата',
     'lm.aud.ready.cpl': 'Ожидаемый CPL',
     'lm.aud.ready.budget': 'Рекомендуемый бюджет',
     'lm.aud.ready.perDay': '/день',
     'lm.aud.ready.estimateNote': 'Оценки — ваши реальные результаты заменят их после запуска кампаний.',
-    'lm.aud.ready.arabicCashUAE.name': 'Местный инвестор в ОАЭ — наличные',
+    'lm.aud.ready.arabicCashUAE.name': 'Арабоязычный резидент — наличные',
     'lm.aud.ready.arabicCashUAE.desc': 'Арабоязычные жители ОАЭ, покупают для инвестиции, платят наличными. Аудитория маленькая, лид дорогой — и стоит каждого дирхама.',
-    'lm.aud.ready.arabicPlanUAE.name': 'Местный инвестор в ОАЭ — рассрочка',
+    'lm.aud.ready.arabicPlanUAE.name': 'Арабоязычный резидент — рассрочка',
     'lm.aud.ready.arabicPlanUAE.desc': 'Арабоязычные в ОАЭ, инвестируют через план застройщика. Объёмная часть местного рынка.',
     'lm.aud.ready.arabicGoldenVisa.name': 'Покупатель золотой визы — ОАЭ',
     'lm.aud.ready.arabicGoldenVisa.desc': 'Арабоязычные в ОАЭ, покупают на пороге золотой визы — мотив резидентство, деньги наличные.',

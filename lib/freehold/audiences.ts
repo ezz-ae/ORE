@@ -3,7 +3,7 @@ import { query, ensureOnce as dbEnsureOnce } from '@/lib/db'
 import type { CampaignTargeting } from '@/lib/meta/types'
 import { REACHABLE_LEAD_LANGUAGES, SUPPORTED_LEAD_LANGUAGES, type LeadLanguage } from '@/lib/meta/lead-language'
 import { normalizeLocationTypes } from '@/lib/meta/geo-spec'
-import { planPattern, parsePattern, describePattern } from '@/lib/freehold/audience-pattern'
+import { planPattern, parsePattern, describePattern, massGateRead } from '@/lib/freehold/audience-pattern'
 
 // ─── Saved audiences ──────────────────────────────────────────────────────────
 // The persistent home for audience work. Everything a marketer builds — a
@@ -274,12 +274,29 @@ const mapRow = (r: Record<string, unknown>): SavedAudience => ({
  * Audiences the operator built by hand keep their spec — it is theirs, they
  * typed it, and the screens that show it are showing them their own work.
  */
-export type PublicAudience = Omit<SavedAudience, 'spec'> & { spec?: CampaignTargeting }
+export type PublicAudience = Omit<SavedAudience, 'spec'> & {
+  spec?: CampaignTargeting
+  /**
+   * Set when this audience's property gate is built from an interest so wide
+   * it does not narrow — see `massGateRead`. Carried even for pattern
+   * audiences, whose spec never leaves the server: the verdict is not the
+   * recipe, and an audience the system is telling you to rebuild has to say
+   * which interest is the reason.
+   */
+  massGate?: { stale: true; names: string[] }
+}
 
 export function forClient(a: SavedAudience): PublicAudience {
-  if (a.kind !== 'pattern') return a
+  // COMPUTED HERE, at the one chokepoint every screen reads through, so no
+  // consumer can forget to check and quietly attach a gate that reaches the
+  // whole market. A saved audience is a spec frozen when it was created; the
+  // fix to how audiences are BUILT did nothing for the ones already stored,
+  // and those are the ones somebody reuses without re-reading.
+  const gate = massGateRead(a.spec as { narrowing?: Array<{ interests?: Array<{ id?: string; name?: string }> }> })
+  const mass = gate.stale ? { massGate: { stale: true as const, names: gate.names } } : {}
+  if (a.kind !== 'pattern') return { ...a, ...mass }
   const { spec: _spec, ...rest } = a
-  return rest
+  return { ...rest, ...mass }
 }
 
 export async function listAudiences(): Promise<SavedAudience[]> {

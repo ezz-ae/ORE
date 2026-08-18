@@ -138,8 +138,50 @@ console.log('\n── asked for and not applied is a refusal ──')
     'a campaign with no language narrowing would be blocked too')
 }
 
+console.log('\n── an audience is named for what it targets, never for a nationality ──')
+{
+  // THE RULE, WITH ITS HISTORY. Targeting narrows by LANGUAGE and BEHAVIOUR,
+  // never by nationality or origin — language is a real Meta field and the
+  // only honest reason to narrow; nationality is not a field at all, only a
+  // proxy stack that is wrong at the edges. See lib/freehold/audience-pattern.ts.
+  //
+  // The rule held in the SPECS and broke in the LABELS. Two ready-buyer cards
+  // read "Local Emirati investor" over a pattern of `speakers: ['arabic'],
+  // residency: ['resident']` — a language and a place of residence, with no
+  // nationality expressible anywhere in it. That is two faults at once: the
+  // card described an audience the system does not build, and it taught the
+  // reader that nationality is a thing this product targets on.
+  //
+  // A label is not decoration here. It is what an operator picks from, and
+  // what they will ask for more of next month.
+  const dict = readFileSync('lib/i18n/dictionaries/lm_audiences.ts', 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  // Demonyms for the nationalities this market is tempted to name. A country
+  // as a PLACE is legitimate — "Saudi investor" over a Saudi-Arabia geo is a
+  // statement about where somebody lives, which Meta does target — so only
+  // the ready-buyer NAME keys are scanned, and only for words that describe a
+  // person's origin rather than their address.
+  const FORBIDDEN = ['emirati', 'khaleeji', 'gcc national', 'expatriate of', 'nationality']
+  const nameLines = dict.split('\n').filter((l) => /'lm\.aud\.ready\.[a-zA-Z]+\.name'/.test(l))
+  check('there are ready-buyer names to check at all', nameLines.length > 0, String(nameLines.length))
+  for (const word of FORBIDDEN) {
+    const hit = nameLines.find((l) => l.toLowerCase().includes(word))
+    check(`no ready-buyer card is named "${word}"`, !hit,
+      (hit ?? '').trim() + ' — this names an origin the targeting cannot and must not use')
+  }
+
+  // …and the specs behind them still carry no such field, which is what makes
+  // the labels checkable in the first place.
+  const buyers = readFileSync('lib/freehold/ready-buyers.ts', 'utf8')
+  check('no ready-buyer pattern carries a nationality field',
+    !/nationality|citizenship|ethnicity|origin:/i.test(buyers),
+    'a nationality reached the targeting spec itself')
+}
+
 if (failures > 0) {
   console.error(`\n${failures} audience-language rule(s) broken.`)
+  console.error('An audience named for an origin teaches the reader we target on one.')
   process.exit(1)
 }
 console.log('\nAll audience-language rules hold.\n')

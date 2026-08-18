@@ -1200,7 +1200,12 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.newCampaign.nav.launching': 'Launching…',
     'lm.newCampaign.receipt.campaign': 'Campaign',
     'lm.newCampaign.receipt.status': 'Status',
-    'lm.newCampaign.receipt.statusLive': 'Live — delivering',
+    // NOT "delivering". Nothing delivers the second it is created: Meta reviews
+    // every new ad first, and a receipt that claims delivery at t=0 is claiming
+    // something it cannot have been told. The same rule the campaign screens
+    // follow — see lib/meta/delivery-status.ts, where "on" and "delivering" are
+    // deliberately different words.
+    'lm.newCampaign.receipt.statusLive': 'Switched on — Meta reviews it before it starts showing',
     'lm.newCampaign.receipt.statusPaused': 'Paused — review it, then set it live',
     'lm.newCampaign.receipt.statusDemo': 'Saved locally — not on Meta',
     'lm.newCampaign.receipt.budget': 'Daily budget',
@@ -1209,7 +1214,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.newCampaign.receipt.placements': 'Placements',
     'lm.newCampaign.receipt.placementsStandard': 'Facebook + Instagram — the standard set',
     'lm.newCampaign.success.title': 'Campaign created',
-    'lm.newCampaign.success.liveMsg': 'Your campaign is now live on Meta and Instagram.',
+    'lm.newCampaign.success.liveMsg': 'Your campaign is switched on. Meta reviews every new ad before it starts showing — usually within a few hours. The campaign page reports what it is actually doing.',
     'lm.newCampaign.success.demoMsg': 'Saved as a local campaign — it is NOT running on Meta yet.',
     'lm.newCampaign.success.demoWarn': 'Meta is not connected, so nothing was created on Facebook. Everything you set up is saved here — connect Meta and launch again to put it live.',
     'lm.newCampaign.success.demoConnect': 'Connect Meta →',
@@ -2800,7 +2805,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.newCampaign.nav.launching': 'جارٍ الإطلاق…',
     'lm.newCampaign.receipt.campaign': 'الحملة',
     'lm.newCampaign.receipt.status': 'الحالة',
-    'lm.newCampaign.receipt.statusLive': 'مباشرة — قيد العرض',
+    'lm.newCampaign.receipt.statusLive': 'مُفعّلة — تراجعها «ميتا» قبل أن تبدأ بالظهور',
     'lm.newCampaign.receipt.statusPaused': 'متوقفة — راجعها ثم فعّلها',
     'lm.newCampaign.receipt.statusDemo': 'محفوظة محلياً — ليست على «ميتا»',
     'lm.newCampaign.receipt.budget': 'الميزانية اليومية',
@@ -2809,7 +2814,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.newCampaign.receipt.placements': 'المواضع',
     'lm.newCampaign.receipt.placementsStandard': 'فيسبوك + إنستغرام — المجموعة القياسية',
     'lm.newCampaign.success.title': 'تم إنشاء الحملة',
-    'lm.newCampaign.success.liveMsg': 'حملتك مباشرة الآن على Meta وInstagram.',
+    'lm.newCampaign.success.liveMsg': 'حملتك مُفعّلة. و«ميتا» تراجع كل إعلان جديد قبل أن يبدأ بالظهور — عادةً خلال ساعات. وصفحة الحملة تعرض ما تفعله فعلاً.',
     'lm.newCampaign.success.demoMsg': 'حُفظت كحملة محلية — لم تُطلق على Meta بعد.',
     'lm.newCampaign.success.demoWarn': 'حساب Meta غير متصل، لذلك لم يُنشأ أي شيء على فيسبوك. كل ما أعددته محفوظ هنا — اربط Meta ثم أطلق مجددًا لتصبح مباشرة.',
     'lm.newCampaign.success.demoConnect': 'ربط Meta ←',
@@ -4362,7 +4367,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.newCampaign.nav.launching': 'Запуск…',
     'lm.newCampaign.receipt.campaign': 'Кампания',
     'lm.newCampaign.receipt.status': 'Статус',
-    'lm.newCampaign.receipt.statusLive': 'В эфире — показывается',
+    'lm.newCampaign.receipt.statusLive': 'Включена — Meta проверяет её перед началом показа',
     'lm.newCampaign.receipt.statusPaused': 'На паузе — проверьте и запустите',
     'lm.newCampaign.receipt.statusDemo': 'Сохранена локально — не на Meta',
     'lm.newCampaign.receipt.budget': 'Дневной бюджет',
@@ -4371,7 +4376,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.newCampaign.receipt.placements': 'Плейсменты',
     'lm.newCampaign.receipt.placementsStandard': 'Facebook + Instagram — стандартный набор',
     'lm.newCampaign.success.title': 'Кампания создана',
-    'lm.newCampaign.success.liveMsg': 'Ваша кампания запущена на Meta и Instagram.',
+    'lm.newCampaign.success.liveMsg': 'Кампания включена. Meta проверяет каждое новое объявление перед началом показа — обычно за несколько часов. Страница кампании показывает, что происходит на самом деле.',
     'lm.newCampaign.success.demoMsg': 'Сохранено как локальная кампания — она ещё НЕ запущена в Meta.',
     'lm.newCampaign.success.demoWarn': 'Meta не подключена, поэтому на Facebook ничего не создано. Все настройки сохранены здесь — подключите Meta и запустите снова.',
     'lm.newCampaign.success.demoConnect': 'Подключить Meta →',

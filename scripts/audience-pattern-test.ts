@@ -17,10 +17,11 @@
  * Pure — no model, no database, no network. Runs in `pnpm guards`.
  */
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   planPattern, describePattern, emptyPattern, parsePattern, BUNDLE,
   STRICT_ALL, STRICT_DEFINING, REAL_ESTATE_MUST, hardenRealEstate,
-  allCatalogEntities, MASS_ENTITY_IDS, type AudiencePattern,
+  allCatalogEntities, MASS_ENTITY_IDS, massGateRead, type AudiencePattern,
 } from '../lib/freehold/audience-pattern'
 import { forClient, combineSpecs } from '../lib/freehold/audiences'
 import { UAE_INTERESTS } from '../lib/meta/targeting-catalog'
@@ -547,6 +548,55 @@ console.log('\n── the gate is made of signals only a buyer carries ──')
   check('…and every member is a property signal, not a proxy for one',
     REAL_ESTATE_MUST.every((e) => /propert|real estate|apartment|villa|mortgage|penthouse/i.test(e.name)),
     REAL_ESTATE_MUST.map((e) => e.name).join(', '))
+}
+
+console.log('\n── the audiences already saved are checked, not quietly left ──')
+{
+  // FIXING HOW AUDIENCES ARE BUILT DID NOTHING FOR THE ONES ALREADY STORED,
+  // and those are the dangerous half: a saved audience is a spec frozen at the
+  // moment it was created, and the entire point of saving one is that somebody
+  // reuses it without re-reading it. Three of this account's saved audiences
+  // were built while `Property` and `Investment` were still in the gate.
+  // Attach one and the campaign runs at 2.2M — the code is fixed, the money
+  // still goes.
+  const massId = [...MASS_ENTITY_IDS][0]
+  check('there is a mass interest to test against at all', !!massId, String(massId))
+
+  const stale = massGateRead({ narrowing: [{ interests: [{ id: massId, name: 'Property' }] }] })
+  check('a saved gate built from a mass interest is caught', stale.stale)
+  check('…and names the interest, because "rebuild this" needs a reason',
+    stale.names.includes('Property'), stale.names.join(','))
+
+  const good = massGateRead({ narrowing: [{ interests: REAL_ESTATE_MUST.map((e) => ({ id: e.id, name: e.name })) }] })
+  check('the current gate is not flagged', !good.stale, good.names.join(','))
+
+  // MATCHED ON ID, NEVER ON NAME. Meta relabels interests — `Job seeking` came
+  // back as `Beauty` once — so a name match would miss a renamed entity and
+  // flag an innocent one that happens to share a word.
+  const renamed = massGateRead({ narrowing: [{ interests: [{ id: massId, name: 'Something Else Entirely' }] }] })
+  check('a renamed mass interest is still caught', renamed.stale)
+  const lookalike = massGateRead({ narrowing: [{ interests: [{ id: '999999999', name: 'Property' }] }] })
+  check('…and an unrelated interest merely called "Property" is not',
+    !lookalike.stale, lookalike.names.join(','))
+
+  // Degenerate shapes must read as clean rather than throw — this runs on
+  // every audience the screens list.
+  check('no narrowing at all is clean', !massGateRead({}).stale)
+  check('a null spec is clean', !massGateRead(null).stale)
+  check('an empty group is clean', !massGateRead({ narrowing: [{ interests: [] }] }).stale)
+
+  // NOTHING IS REWRITTEN. Silently editing somebody's saved decision is worse
+  // than the fault, because then nobody knows which of their audiences changed
+  // under them.
+  const src = readFileSync(join(process.cwd(), 'lib/freehold/audiences.ts'), 'utf8')
+  const forClientBody = src.slice(src.indexOf('export function forClient'))
+  check('the verdict is computed at the one chokepoint every screen reads through',
+    forClientBody.startsWith('export function forClient')
+      && forClientBody.slice(0, forClientBody.indexOf('\n}')).includes('massGateRead('),
+    'a consumer could forget to check and attach a market-wide gate')
+  check('…and no migration rewrites a stored spec',
+    !/UPDATE freehold_site_audiences[\s\S]{0,200}narrowing/.test(src),
+    'saved audiences are being edited behind their owners\' backs')
 }
 
 if (failures > 0) {

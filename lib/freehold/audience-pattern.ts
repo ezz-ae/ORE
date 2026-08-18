@@ -708,3 +708,51 @@ export function describePattern(p: AudiencePattern): string {
   if (WORD[p.readiness]) bits.push(WORD[p.readiness])
   return bits.join(', ').replace(/^./, (s) => s.toUpperCase()) + '.'
 }
+
+/**
+ * DOES THIS SAVED AUDIENCE STILL CARRY THE GATE THAT DID NOT NARROW?
+ *
+ * The fix above changed how new audiences are BUILT. It changed nothing about
+ * the ones already sitting in the database, and those are the dangerous half:
+ * a saved audience is a spec frozen at the moment it was created, and the whole
+ * point of saving one is that somebody reuses it without re-reading it.
+ *
+ * Three of this account's saved audiences were built while `Property` and
+ * `Investment` were still in `REAL_ESTATE_MUST`. Attach one and the campaign
+ * runs with the same gate that reached 2.2M — the code is fixed, the money
+ * still goes.
+ *
+ * So the check is a READ, not a migration. Nothing is rewritten: an audience is
+ * somebody's saved decision and silently editing it would be worse than the
+ * fault, because then nobody would know which of their audiences had changed
+ * under them. The screens mark it, name the interest responsible, and the
+ * operator rebuilds or deletes it.
+ *
+ * Structural rather than typed against CampaignTargeting so this module stays
+ * free of the Meta types — it is imported by pure guards and by the browser.
+ */
+export interface MassGateRead {
+  /** True when a narrowing group contains an interest this module calls mass. */
+  stale: boolean
+  /** The offending interests, by name, so the screen can say which. */
+  names: string[]
+}
+
+export function massGateRead(spec: {
+  narrowing?: Array<{ interests?: Array<{ id?: string; name?: string }> | null }> | null
+} | null | undefined): MassGateRead {
+  const names: string[] = []
+  for (const group of spec?.narrowing ?? []) {
+    for (const e of group?.interests ?? []) {
+      const id = String(e?.id ?? '')
+      // Matched on ID, never on name. Meta relabels interests — `Job seeking`
+      // came back as `Beauty` once — and a name match would both miss renamed
+      // entities and flag innocent ones that happen to share a word.
+      if (id && MASS_ENTITY_IDS.has(id)) {
+        const label = String(e?.name ?? '').trim() || id
+        if (!names.includes(label)) names.push(label)
+      }
+    }
+  }
+  return { stale: names.length > 0, names }
+}
