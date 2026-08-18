@@ -5,6 +5,7 @@ import { UserCog, CheckCircle2, Users, AlertCircle, Clock, TrendingUp } from 'lu
 import { toast } from 'sonner'
 import type { CRMInboxLead, CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { useT } from '@/lib/i18n/provider'
 import { Monogram } from '@/components/freehold/monogram'
 
@@ -242,7 +243,8 @@ export default function AssignmentPage() {
         name: l.name,
         phone: l.phone,
         email: l.email ?? '',
-        source: l.source,
+        // The form's name — see lib/freehold/lead-origin.ts.
+        source: leadOriginLabel(l, t('crm.source.instantForm')),
         intentScore: l.intentScore,
         urgency: l.urgency,
         arrivedAt: l.lastContactAt,

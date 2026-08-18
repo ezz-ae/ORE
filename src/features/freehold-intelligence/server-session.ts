@@ -103,6 +103,14 @@ export type CRMLeadIntelligence = {
    *  "what did they see before they gave us their number" was unanswerable
    *  from the CRM. */
   adId?: string
+  /** The LEAD FORM'S NAME and the AD'S NAME, frozen into the row at sync time
+   *  (freehold_site_leads.meta_form_name / meta_ad_name). The correct way to
+   *  run two offers is two ads in one campaign, each with its own form, so the
+   *  ads do not bid against each other — and then the campaign name identifies
+   *  neither of them. These two do. Stored rather than resolved on render, so
+   *  the lead can outlive the form it came through. See lib/freehold/lead-origin.ts. */
+  formName?: string
+  adName?: string
   stage: string
   pipelineStage: PipelineStage
   temperature: LeadTemperature

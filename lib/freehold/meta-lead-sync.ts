@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
-import { getFormLeads, listAccessiblePages } from '@/lib/meta/client'
+import { getFormLeads, listAccessiblePages, adNamesByIds } from '@/lib/meta/client'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
 import { captureForLead } from '@/lib/freehold/snapshot-capture'
@@ -92,7 +92,11 @@ function ensureMetaLeadUnique(): Promise<void> {
   return metaLeadUniqueEnsured
 }
 
-export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Promise<SyncOutcome> {
+export async function syncLeadsToCrm(
+  formId: string,
+  leads: MetaFormLead[],
+  formName?: string | null,
+): Promise<SyncOutcome> {
   if (!leads.length) return { synced: 0, skipped: 0 }
   await ensureLeadsTable()
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_lead_id text`)
@@ -110,6 +114,24 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
   // setup insight, and it is only computable if the ad id survives the sync.
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_id text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_adset_id text`)
+
+  // THE NAMES, NOT THE NUMBERS.
+  //
+  // A lead arrived carrying `meta_form:120251…` and that is what the CRM
+  // showed. Unreadable on its own, and useless in the case that matters: two
+  // ads in one campaign, a different form on each, run that way deliberately so
+  // the ads do not compete with each other. The campaign name then identifies
+  // nothing and the id identifies nothing a person can say out loud.
+  //
+  // Resolved once at sync and STORED, rather than looked up when a screen
+  // renders. A name fetched on read is a Meta call on every page load, and it
+  // disappears the day the form is deleted — the lead outlives the form, and
+  // the record of where it came from has to outlive it too.
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_name text`)
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_name text`)
+
+  // One request for every distinct ad in this batch, not one per lead.
+  const adNames = await adNamesByIds(leads.map((l) => l.ad_id ?? '').filter(Boolean))
 
   // The dedupe guarantee. `INSERT ... WHERE NOT EXISTS` is not atomic: the cron
   // sweep and the on-view sync can both pass the check for the same Meta lead
@@ -137,10 +159,11 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
     const inserted = await query<{ id: string }>(
       `INSERT INTO freehold_site_leads (
          id, name, phone, email, source, status, meta_lead_id, meta_form_id, utm_id,
-         meta_ad_id, meta_adset_id, created_at, updated_at
+         meta_ad_id, meta_adset_id, meta_form_name, meta_ad_name, created_at, updated_at
        )
        SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, NULLIF($9, ''),
-              NULLIF($10, ''), NULLIF($11, ''), COALESCE($8::timestamptz, now()), now()
+              NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''),
+              COALESCE($8::timestamptz, now()), now()
        WHERE NOT EXISTS (
          SELECT 1 FROM freehold_site_leads WHERE meta_lead_id = $6
        )
@@ -157,6 +180,8 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
         lead.campaign_id || '',
         lead.ad_id || '',
         lead.adset_id || '',
+        formName || '',
+        (lead.ad_id ? adNames.get(lead.ad_id) : '') || '',
       ],
     ).catch((error) => {
       console.error('[meta-leads] CRM sync insert failed', error)
@@ -172,6 +197,25 @@ export async function syncLeadsToCrm(formId: string, leads: MetaFormLead[]): Pro
           WHERE meta_lead_id = $1 AND meta_ad_id IS NULL`,
         [lead.id, lead.ad_id, lead.adset_id || '', lead.campaign_id || ''],
       ).catch((error) => console.error('[meta-leads] ad-id backfill failed', error))
+    }
+
+    // The same self-healing sweep for the names. Every lead already in the CRM
+    // predates these columns, so without this the fix would only apply to leads
+    // that have not arrived yet — and the ones somebody is looking at today
+    // would keep showing a number forever. COALESCE, so a name is filled once
+    // and never overwritten by a later blank.
+    if (!inserted.length) {
+      const adName = (lead.ad_id ? adNames.get(lead.ad_id) : '') || ''
+      if (formName || adName) {
+        await query(
+          `UPDATE freehold_site_leads
+              SET meta_form_name = COALESCE(meta_form_name, NULLIF($2, '')),
+                  meta_ad_name   = COALESCE(meta_ad_name,   NULLIF($3, ''))
+            WHERE meta_lead_id = $1
+              AND (meta_form_name IS NULL OR meta_ad_name IS NULL)`,
+          [lead.id, formName || '', adName],
+        ).catch((error) => console.error('[meta-leads] name backfill failed', error))
+      }
     }
     if (inserted.length) {
       synced += 1
@@ -340,7 +384,7 @@ export async function syncAllMetaLeads(): Promise<{
         form.page_id ? pageTokens.get(form.page_id) : undefined,
         watermarks.get(form.id),
       )
-      const { synced, skipped } = await syncLeadsToCrm(form.id, leads)
+      const { synced, skipped } = await syncLeadsToCrm(form.id, leads, form.name)
       perForm.push({ formId: form.id, formName: form.name, synced, skipped })
       totalSynced += synced
       totalSkipped += skipped

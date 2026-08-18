@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { useT } from '@/lib/i18n/provider'
 
@@ -207,7 +208,10 @@ export default function CrmPipelinePage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-white group-hover:text-white">{lead.name}</div>
-                        <div className="mt-0.5 truncate text-xs text-slate-400">{lead.source}</div>
+                        {/* The form's name — see lib/freehold/lead-origin.ts. */}
+                        <div className="mt-0.5 truncate text-xs text-slate-400">
+                          {leadOriginLabel(lead, t('crm.source.instantForm'))}
+                        </div>
                       </div>
                       <span className="shrink-0 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-0.5 text-xs font-medium text-gold">
                         {lead.intentScore}

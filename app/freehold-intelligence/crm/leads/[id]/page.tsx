@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { formatInstant, formatInstantZoned } from '@/lib/freehold/clock'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { notFound } from 'next/navigation'
 import {
   ArrowLeft, Phone, Mail, Brain,
@@ -31,6 +32,10 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS click_intent text`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS duplicate_dismissed_at timestamptz`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
+    // meta-lead-sync writes these; a workspace read before its first sync must
+    // still open a lead rather than 404 on a missing column.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_name text`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_name text`).catch(() => undefined)
     const queryParams: unknown[] = [id]
     let ownerFilter = ''
     if (ownerKeys && ownerKeys.length) { queryParams.push(ownerKeys); ownerFilter = ' AND assigned_broker_id = ANY($2)' }
@@ -47,12 +52,14 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       click_intent: string | null;
       duplicate_dismissed_at: string | null;
       value_rating: number | null;
+      meta_form_name: string | null;
+      meta_ad_name: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
               utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text,
               behaviour_score, buyer_intent, purchase_probability, budget_confidence, click_intent,
-              duplicate_dismissed_at::text, value_rating
+              duplicate_dismissed_at::text, value_rating, meta_form_name, meta_ad_name
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -93,6 +100,11 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       behaviourScore: r.behaviour_score, buyerIntent: r.buyer_intent,
       purchaseProbability: r.purchase_probability, budgetConfidence: r.budget_confidence,
       clickIntent: r.click_intent,
+      // THE FORM AND THE AD, BY NAME. `source` is `meta_form:120251…` — a
+      // number nobody can read, and the wrong answer anyway when two ads in one
+      // campaign carry a form each on purpose.
+      formName: r.meta_form_name ?? '',
+      adName: r.meta_ad_name ?? '',
     } as unknown as CRMLeadIntelligence
   } catch { return null }
 }
@@ -128,6 +140,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
+  // One sentence for the whole page — the header and the details card must
+  // never disagree about where this person came from.
+  const leadOrigin = leadOriginLabel(
+    { source: lead.source, formName: lead.formName, adName: lead.adName },
+    t('crm.source.instantForm'),
+  )
   const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
 
   // Landing-page attribution: which campaign page produced this lead (live data).
@@ -214,7 +232,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <span className="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-sm text-slate-400">
             {lead.stage}
           </span>
-          <span className="text-sm text-slate-500">{lead.source}</span>
+          {/* WHERE THEY CAME FROM, BY NAME. This printed `meta_form:120251…`
+              — the id of the form, which nobody can read and nobody can act
+              on. The names are on the row (see lib/freehold/lead-origin.ts);
+              when neither has been resolved yet the answer is what kind of
+              thing it was, never which number. */}
+          <span className="text-sm text-slate-500">{leadOrigin}</span>
           {lead.leadCode && (
             <span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2.5 py-0.5 font-mono text-xs text-gold/80">
               {lead.leadCode}
@@ -380,7 +403,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('crm.leadDetails')}</p>
             <div className="space-y-3">
               {[
-                { label: t('crm.source'),      value: lead.source },
+                { label: t('crm.source'),      value: leadOrigin },
                 { label: t('crm.stage'),       value: lead.stage },
                 { label: t('crm.agent'),       value: lead.assignedAgent },
                 { label: t('crm.lastContact'), value: formatInstant(lead.lastContactAt, dateLocale, { dateStyle: 'medium', timeStyle: 'short' }) },

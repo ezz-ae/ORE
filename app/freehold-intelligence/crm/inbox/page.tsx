@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Inbox, Clock, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
 import type { CRMInboxLead } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { useSession } from '@/lib/freehold/use-session'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
@@ -75,7 +76,8 @@ export default function CrmInboxPage() {
           name: l.name,
           phone: l.phone,
           email: l.email,
-          source: l.source,
+          // The form's name — see lib/freehold/lead-origin.ts.
+          source: leadOriginLabel(l, t('crm.source.instantForm')),
           intentScore: l.intentScore,
           urgency: l.urgency,
           arrivedAt: l.lastContactAt,

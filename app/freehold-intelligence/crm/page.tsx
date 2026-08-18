@@ -66,25 +66,6 @@ function fmtAedShort(n: number): string {
 }
 
 
-/**
- * Where the lead came from, in words a human uses. The raw `source` is a
- * machine string ("meta_form:1203…", "Direct", a landing slug) and was only
- * ever used as a hidden search key — never shown. Knowing a lead came from a
- * paid Meta ad rather than the website changes how it is worked and what it
- * cost, so it belongs on the row.
- */
-function sourceLabel(raw: string): string {
-  const s = (raw || '').trim()
-  if (!s) return '—'
-  if (s.startsWith('meta_form:')) return 'Meta lead form'
-  if (/^meta|facebook|instagram/i.test(s)) return 'Meta'
-  if (/^google/i.test(s)) return 'Google'
-  if (/^whatsapp/i.test(s)) return 'WhatsApp'
-  if (/^direct$/i.test(s)) return 'Direct'
-  if (/^lp[:/]|^landing/i.test(s)) return 'Landing page'
-  return s.length > 24 ? `${s.slice(0, 24)}…` : s
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeholdCrmPage() {
@@ -201,7 +182,11 @@ export default function FreeholdCrmPage() {
     const q = query.trim().toLowerCase()
     return leads
       .filter(l => stageFilter === 'all' || l.pipelineStage === stageFilter)
-      .filter(l => !q || [l.name, l.projectInterest, l.assignedAgent, l.source].some(f => f.toLowerCase().includes(q)))
+      // The form and ad names are searchable because they are what somebody
+      // types: "show me the leads from cashoffer B" is a question about a form,
+      // and it used to be unanswerable because the name was never on the row.
+      .filter(l => !q || [l.name, l.projectInterest, l.assignedAgent, l.source, l.formName ?? '', l.adName ?? '']
+        .some(f => f.toLowerCase().includes(q)))
       .sort((a, b) => rankByValue
         ? (a.valueRating ?? 99) - (b.valueRating ?? 99)
         : b.intentScore - a.intentScore)
@@ -471,6 +456,8 @@ export default function FreeholdCrmPage() {
                       campaignId={lead.campaignId ?? ''}
                       campaignName={lead.campaignName ?? ''}
                       adId={lead.adId ?? ''}
+                      formName={lead.formName ?? ''}
+                      adName={lead.adName ?? ''}
                     />
                   </div>
 

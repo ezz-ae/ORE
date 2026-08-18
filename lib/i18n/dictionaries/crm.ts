@@ -128,6 +128,9 @@ export const crm: Record<Locale, Dict> = {
     'crm.source.seeAd': 'See ad',
     'crm.source.adTitle': 'What they saw',
     'crm.source.adGone': 'Meta has no preview for this ad any more — it may have been deleted.',
+    // Said when no form or ad name has been resolved for a Meta lead. It names
+    // the KIND of door they came through; the id is never shown as a label.
+    'crm.source.instantForm': 'Instant form',
     'crm.noLeadsMatchFilter': 'No leads match this filter.',
     'crm.call': 'Call',
     'crm.integrations': 'Integrations',
@@ -751,6 +754,7 @@ export const crm: Record<Locale, Dict> = {
     'crm.source.seeAd': 'شاهد الإعلان',
     'crm.source.adTitle': 'ما الذي شاهدوه',
     'crm.source.adGone': 'لم تعد ميتا تعرض معاينة لهذا الإعلان — ربما حُذف.',
+    'crm.source.instantForm': 'نموذج فوري',
     'crm.noLeadsMatchFilter': 'لا يوجد عملاء محتملون يطابقون هذا الفلتر.',
     'crm.call': 'اتصال',
     'crm.integrations': 'التكاملات',
@@ -1358,6 +1362,7 @@ export const crm: Record<Locale, Dict> = {
     'crm.source.seeAd': 'Смотреть объявление',
     'crm.source.adTitle': 'Что они видели',
     'crm.source.adGone': 'У Meta больше нет превью этого объявления — возможно, оно удалено.',
+    'crm.source.instantForm': 'Мгновенная форма',
     'crm.noLeadsMatchFilter': 'Нет лидов, соответствующих этому фильтру.',
     'crm.call': 'Звонок',
     'crm.integrations': 'Интеграции',

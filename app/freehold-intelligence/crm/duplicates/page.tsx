@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Copy, AlertCircle, CheckCircle2, ArrowUpRight, Phone, Mail, User, GitMerge } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { useT } from '@/lib/i18n/provider'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
@@ -75,7 +76,11 @@ export default function CrmDuplicatesPage() {
   // "not a duplicate" (persisted on the lead rows) are excluded.
   const allClusters = useMemo<DuplicateCluster[]>(() => {
     const card = (l: typeof leads[number]) => ({
-      id: l.id, name: l.name, phone: l.phone, email: l.email, source: l.source,
+      id: l.id, name: l.name, phone: l.phone, email: l.email,
+      // The form's name — see lib/freehold/lead-origin.ts. "Two leads, two
+      // different forms" is a real signal in a duplicate cluster, and it was
+      // being read off two unreadable ids.
+      source: leadOriginLabel(l, t('crm.source.instantForm')),
       stage: l.stage, intentScore: l.intentScore, assignedAgent: l.assignedAgent || 'Unassigned',
       arrivedAt: l.lastContactAt,
     })

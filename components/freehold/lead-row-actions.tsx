@@ -34,6 +34,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Star, X, Eye, UserPlus } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 
 const FI = '/freehold-intelligence'
 
@@ -194,10 +195,13 @@ export function LeadAssign({ leadId, agent, canAssign, agents, onAssigned }: {
 
 // ── WHERE THEY CAME FROM ────────────────────────────────────────────────────
 
-export function LeadSource({ campaignId, campaignName, adId }: {
+export function LeadSource({ campaignId, campaignName, adId, formName, adName }: {
   campaignId: string
   campaignName: string
   adId: string
+  /** The lead form's and the ad's own names, frozen onto the row at sync. */
+  formName?: string
+  adName?: string
 }) {
   const t = useT()
   const [preview, setPreview] = useState<string[] | null>(null)
@@ -216,12 +220,26 @@ export function LeadSource({ campaignId, campaignName, adId }: {
     setLoading(false)
   }
 
+  // A name is only shown when one was resolved; nothing here falls back to an
+  // id, and an unnamed origin simply contributes no line.
+  const origin = leadOriginLabel({ formName, adName }, '')
+
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5" onClick={(e) => e.stopPropagation()}>
+      {/* WHICH FORM, AND WHICH AD — the two names that identify a lead when the
+          campaign name cannot. Two ads in one campaign with a form each is the
+          right way to run two offers without bidding against yourself, and it
+          leaves the campaign name describing both of them equally. This line
+          used to be omitted on the reasoning that an ad's name tells nobody
+          anything the picture does not; that holds for one ad, and fails for
+          two. Names only — an id is never printed as a label. */}
+      {origin && (
+        <span className="w-full truncate text-[11px] text-slate-300">{origin}</span>
+      )}
+
       {/* THE AD, IN PLACE. The question "what did this person see before they
           gave us their number" is asked while reading the row — answering it
-          by navigating loses the row. The ad's NAME is deliberately absent:
-          "cashoffer - creative 2" tells nobody anything the picture does not. */}
+          by navigating loses the row. */}
       {adId && (
         <button type="button" onClick={() => void seeAd()}
           className="inline-flex items-center gap-1 text-[11px] text-gold/80 transition hover:text-gold">

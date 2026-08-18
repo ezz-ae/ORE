@@ -2305,6 +2305,42 @@ export async function updateAdPlacementCreative(
   return { adId, creativeId: created.id }
 }
 
+/**
+ * Ad NAMES for a set of ad ids, in one request.
+ *
+ * A lead carries an ad_id and nothing else, so the CRM could only ever show
+ * the number. That is fine until somebody runs two ads in one campaign with a
+ * different form on each — which is the correct way to stop your own ads
+ * competing — and then the campaign name identifies nothing and the id
+ * identifies nothing a person can read.
+ *
+ * Batched through `?ids=` because a lead sweep can see dozens of distinct ads
+ * and one request per ad would spend the whole rate limit on labels. Failure
+ * is empty, never partial-with-blanks: a name we could not fetch is absent, so
+ * the caller keeps the id it already had rather than storing an empty string
+ * that looks like a name nobody set.
+ */
+export async function adNamesByIds(ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  const unique = [...new Set(ids.filter(Boolean))]
+  if (unique.length === 0) return out
+  // Meta caps the batch; 50 keeps us well inside it and under the URL limit.
+  for (let i = 0; i < unique.length; i += 50) {
+    const batch = unique.slice(i, i + 50)
+    try {
+      const res = await apiFetch<Record<string, { id?: string; name?: string }>>(
+        '', undefined, { ids: batch.join(','), fields: 'id,name' },
+      )
+      for (const v of Object.values(res ?? {})) {
+        if (v?.id && v.name) out.set(String(v.id), String(v.name))
+      }
+    } catch {
+      // Names are a nicety; the sync must not fail because a label did.
+    }
+  }
+  return out
+}
+
 export async function listAds(adSetId: string): Promise<MetaAd[]> {
   const res = await apiFetch<{ data: MetaAd[] }>(`/${adSetId}/ads`, undefined, {
     fields: 'id,name,status,effective_status,creative{id,name},issues_info,ad_review_feedback',

@@ -78,6 +78,8 @@ interface DbLead {
   utm_campaign: string | null
   value_rating: number | null
   meta_ad_id?: string | null
+  meta_form_name?: string | null
+  meta_ad_name?: string | null
   archived: boolean | null
   blocked: boolean | null
 }
@@ -122,6 +124,13 @@ function dbLeadToCRM(
     // nothing has ever surfaced it — so "what did this person see before they
     // gave us their number" was unanswerable from the CRM.
     adId: row.meta_ad_id ?? '',
+    // AND WHAT IT WAS CALLED. Two ads in one campaign, one lead form each, is
+    // the correct way to run two offers without bidding against yourself — and
+    // it is exactly the case the campaign name cannot describe. meta-lead-sync
+    // freezes both names onto the row when the lead arrives, so this costs
+    // nothing here and survives the form being deleted.
+    formName: row.meta_form_name ?? '',
+    adName: row.meta_ad_name ?? '',
     stage: stage.charAt(0).toUpperCase() + stage.slice(1),
     pipelineStage: stageMap[stage] ?? 'new',
     temperature,
@@ -245,6 +254,10 @@ export async function GET() {
     await ensureLeadsTable()
     await ensureDismissColumn()
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
+    // Written by meta-lead-sync, but a workspace whose first read beats its
+    // first sync would 500 on a missing column and show no leads at all.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_name text`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_name text`).catch(() => undefined)
     const isBroker = user.role === 'broker'
     const ownerKeys = brokerOwnerKeys(user)
 
@@ -253,7 +266,8 @@ export async function GET() {
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
                       snooze_until::text, lead_code, duplicate_dismissed_at::text,
-                      utm_id, utm_campaign, value_rating, meta_ad_id, archived, blocked
+                      utm_id, utm_campaign, value_rating, meta_ad_id,
+                      meta_form_name, meta_ad_name, archived, blocked
                FROM freehold_site_leads`
 
     if (isBroker && ownerKeys.length) {

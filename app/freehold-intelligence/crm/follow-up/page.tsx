@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, BellOff, X, Timer, Archive, ChevronDown, ChevronUp } from 'lucide-react'
 import type { CRMFollowUpItem } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { LeadValueChips } from '@/components/freehold/lead-value-chips'
@@ -162,7 +163,9 @@ export default function FollowUpQueuePage() {
           urgency:       l.urgency,
           intentScore:   l.intentScore,
           stage:         l.stage,
-          source:        l.source,
+          // THE FORM'S NAME, not `meta_form:120251…`. Same rule everywhere a
+          // lead's origin is shown — see lib/freehold/lead-origin.ts.
+          source:        leadOriginLabel(l, t('crm.source.instantForm')),
           lastContactAt: l.lastContactAt,
           dueAt:         new Date(dueMs).toISOString(),
           overdueHours:  overdue,
