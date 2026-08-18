@@ -162,7 +162,7 @@ export const p_help: Record<Locale, Dict> = {
     'help.cash.a7': 'The campaign is paused. Not when you hit zero — the moment your wallet cannot cover what the ad has already delivered, because by then the money has genuinely been spent.\n\nTop up or ask for Cash and start it again. Nothing is lost: the ad, the audience and the creative are all still there.',
 
     'help.cash.q8': 'When do I get my commission?',
-    'help.cash.a8': 'As the client pays, not when the deal is signed. Your share of every instalment goes into your wallet as that instalment reaches the agency.\n\nSo a deal collected over five months pays you over five months. Your wallet shows each payment with its date, what your share of it was, and how much is still waiting on the client — which is the part you can actually plan around.',
+    'help.cash.a8': 'Commission is credited once the buyer completes the required amounts. Whoever sets the deal terms decides what those are — this system records what was credited, it does not set the rule.\n\nYour wallet shows each credit with its date and amount, and what is still outstanding on the deal — which is the part you can plan around.',
 
     'help.cash.q9': 'Can somebody take Cash back out of my wallet?',
     'help.cash.a9': 'No. There is no such button, for anybody, at any level — it is not a permission somebody could be given, it simply does not exist in the system.\n\nMoney only ever moves out of a wallet because its holder sent it, or because they spent it on something. Every movement is recorded on both sides with who did it and when, and you can read your whole history in your wallet.',
@@ -450,7 +450,7 @@ export const p_help: Record<Locale, Dict> = {
     'help.cash.a7': 'تتوقف الحملة مؤقتاً. ليس عند وصولك إلى الصفر، بل في اللحظة التي لا تعود محفظتك تغطي ما صرفه الإعلان فعلاً — لأن المال حينها قد أُنفق حقيقةً.\n\nاشحن رصيدك أو اطلب كاشاً وشغّلها من جديد. لا يضيع شيء: الإعلان والجمهور والتصميم كلها ما زالت موجودة.',
 
     'help.cash.q8': 'متى أستلم عمولتي؟',
-    'help.cash.a8': 'مع دفع العميل، لا عند توقيع الصفقة. حصتك من كل دفعة تدخل محفظتك عندما تصل تلك الدفعة إلى الوكالة.\n\nفالصفقة التي تُحصَّل على خمسة أشهر تدفع لك على خمسة أشهر. تعرض محفظتك كل دفعة بتاريخها، وحصتك منها، وكم ما زال بانتظار العميل — وهو الجزء الذي يمكنك التخطيط على أساسه فعلاً.',
+    'help.cash.a8': 'تُقيَّد العمولة بعد إتمام المشتري للمبالغ المطلوبة. ومن يضع شروط الصفقة هو من يحدد تلك المبالغ — هذا النظام يسجّل ما قُيِّد، ولا يضع القاعدة.\n\nتعرض محفظتك كل قيد بتاريخه ومبلغه، وما زال مستحقاً على الصفقة — وهو الجزء الذي يمكنك التخطيط على أساسه.',
 
     'help.cash.q9': 'هل يستطيع أحد سحب كاش من محفظتي؟',
     'help.cash.a9': 'لا. لا يوجد زر كهذا لأي شخص مهما كان منصبه — وهي ليست صلاحية يمكن منحها لأحد، بل ببساطة غير موجودة في النظام.\n\nالمال لا يخرج من محفظة إلا لأن صاحبها أرسله أو أنفقه. كل حركة مسجّلة على الطرفين مع من قام بها ومتى، ويمكنك قراءة سجلك كاملاً في محفظتك.',
@@ -738,7 +738,7 @@ export const p_help: Record<Locale, Dict> = {
     'help.cash.a7': 'Кампанию остановят. Не в момент нуля, а в тот момент, когда кошелёк перестаёт покрывать уже открученное, — потому что к этому моменту деньги действительно потрачены.\n\nПополните или попросите кэш и запустите снова. Ничего не теряется: объявление, аудитория и креатив на месте.',
 
     'help.cash.q8': 'Когда я получу свою комиссию?',
-    'help.cash.a8': 'По мере того как платит клиент, а не при подписании сделки. Ваша доля каждого платежа попадает в кошелёк, когда этот платёж доходит до агентства.\n\nСделка, которую собирают пять месяцев, платит вам пять месяцев. Кошелёк показывает каждый платёж с датой, вашу долю в нём и сколько ещё ждёт от клиента — именно то, на что можно планировать.',
+    'help.cash.a8': 'Комиссия начисляется после того, как покупатель вносит требуемые суммы. Какими они будут, решает тот, кто определяет условия сделки — эта система записывает начисленное, а не устанавливает правило.\n\nКошелёк показывает каждое начисление с датой и суммой и то, что ещё не закрыто по сделке — именно на это и можно планировать.',
 
     'help.cash.q9': 'Может ли кто-то забрать кэш из моего кошелька?',
     'help.cash.a9': 'Нет. Такой кнопки нет ни у кого и ни на каком уровне — это не право, которое можно кому-то выдать, его просто нет в системе.\n\nДеньги уходят из кошелька только потому, что владелец их отправил или на что-то потратил. Каждое движение записано с обеих сторон, с именем и временем, и всю свою историю вы читаете в кошельке.',

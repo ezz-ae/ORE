@@ -20,8 +20,12 @@ import { MGMT_ROLES } from '@/lib/freehold/apps'
 import {
   personId, ensureBankWallets, walletFor, listLots, readBacking, listWithdrawals,
   spendAnalysis, bankLog, mintCash, clearDeposit, rejectDeposit, moveFromBank, burnCash,
+  BANK_WALLET_ID,
 } from '@/lib/freehold/bank-db'
 import { listWallets, auditConservation } from '@/lib/freehold/wallet-db'
+import { listRequestsOfBank, decideCashRequest } from '@/lib/freehold/cash-request-db'
+import type { RequestActor } from '@/lib/freehold/cash-request'
+import { getUserProfileByEmail } from '@/lib/data'
 import { redenominateToCash, redenominationStatus } from '@/lib/freehold/credits-db'
 import { isValidAmount } from '@/lib/freehold/wallet'
 import { bankImbalance, type Actor } from '@/lib/freehold/bank'
@@ -34,11 +38,17 @@ export async function GET() {
   const auth = await requireSession(MGMT_ROLES)
   if ('res' in auth) return auth.res
 
+  const { user } = auth
   try {
     await ensureBankWallets()
-    const [wallets, lots, back, withdrawals, use, log, audit, redenom] = await Promise.all([
+    const myWalletId = await walletFor(personId(user), user.name || user.email)
+    const [wallets, lots, back, withdrawals, use, log, audit, redenom, requests] = await Promise.all([
       listWallets(), listLots({ limit: 200 }), readBacking(), listWithdrawals({ limit: 120 }),
       spendAnalysis(), bankLog({ limit: 120 }), auditConservation(), redenominationStatus(),
+      // THE BANK'S OWN QUEUE. Everything anybody has asked the bank for, still
+      // pending at the top. Fails soft: a bank that cannot read its requests is
+      // still a bank, and an empty list is honest about what it could load.
+      listRequestsOfBank(BANK_WALLET_ID).catch(() => []),
     ])
 
     const bank = wallets.find((w) => w.kind === 'bank')
@@ -62,6 +72,10 @@ export async function GET() {
         burnedAed: burned, withdrawnAed: withdrawn, heldAed: held,
       }),
       lots, withdrawals, use, log, audit, wallets, redenomination: redenom,
+      requests, bankWalletId: BANK_WALLET_ID,
+      // The signing admin, so the bank screen shows the sentence that gets
+      // stored rather than a paraphrase of it — see lib/freehold/signature.ts.
+      me: { id: personId(user), name: user.name || user.email, walletId: myWalletId },
     })
   } catch (err) {
     return NextResponse.json(
@@ -81,7 +95,10 @@ export async function POST(req: NextRequest) {
 
   const action = String(body.action ?? '')
   const walletId = await walletFor(personId(user), user.name || user.email)
-  const actor: Actor = { userId: personId(user), role: user.role, walletId }
+  const actor: Actor = {
+    userId: personId(user), role: user.role, walletId, name: user.name || user.email,
+  }
+  const requestActor: RequestActor = { userId: personId(user), walletId, isAdmin: true }
   const lotId = String(body.lotId ?? '')
 
   const said = (r: { ok: boolean; refusal?: string; lotId?: string; duplicate?: boolean }) =>
@@ -105,9 +122,58 @@ export async function POST(req: NextRequest) {
       return said(await rejectDeposit({ actor, lotId, reason: String(body.reason ?? '') }))
     }
 
-    // SIGNING A PARCEL OUT. This is what turns float into a cheque and writes
-    // this admin's name on it — from here only they can burn it.
-    if (action === 'move') return said(await moveFromBank({ actor, lotId }))
+    // SIGNING A PARCEL OUT, TO A NAMED BENEFICIARY. This is what turns float
+    // into a cheque and writes this admin's name on it — from here only they
+    // can burn it, however far it travels. The beneficiary may be any wallet
+    // including their own; omitting it still means their own, so an admin
+    // taking float into their own hands does not have to name themselves.
+    if (action === 'move') {
+      return said(await moveFromBank({
+        actor, lotId, toWalletId: String(body.toWalletId ?? '').trim() || null,
+      }))
+    }
+
+    // ANSWERING WHAT WAS ASKED OF THE BANK. The same call the wallet route
+    // makes — one implementation, so "approved" means the same thing and moves
+    // the same money whichever screen it was pressed on.
+    if (action === 'decideRequest') {
+      const r = await decideCashRequest({
+        actor: requestActor,
+        actorName: user.name || user.email,
+        id: String(body.id ?? ''),
+        approve: body.approve === true,
+        bankWalletId: BANK_WALLET_ID,
+        atMs: Date.now(),
+      })
+      return r.ok
+        ? NextResponse.json({ ok: true, state: r.state })
+        : NextResponse.json({ error: r.refusal }, { status: 400 })
+    }
+
+    // OPEN A WALLET FOR SOMEBODY.
+    //
+    // Keyed on the EMAIL, which is the same key `personId` uses everywhere
+    // else — so a wallet opened for somebody who has no account yet becomes
+    // theirs the moment they sign in with that address. That is the whole
+    // reason this is allowed to run ahead of the account: a new joiner can be
+    // funded before their first login instead of after it.
+    //
+    // Idempotent by construction: `walletFor` opens or returns, so pressing it
+    // twice cannot give one person two wallets and split their balance.
+    if (action === 'createWallet') {
+      const email = String(body.email ?? '').trim().toLowerCase()
+      if (!email || !email.includes('@')) {
+        return NextResponse.json({ error: 'badEmail' }, { status: 400 })
+      }
+      const profile = await getUserProfileByEmail(email).catch(() => null)
+      const label = String(body.label ?? '').trim() || profile?.name || email
+      const id = await walletFor(email, label)
+      const wallet = (await listWallets()).find((w) => w.id === id) ?? null
+      // Reported, never hidden: a wallet whose person has no account cannot be
+      // opened by them yet, and a screen that did not say so would look as
+      // though it had done more than it had.
+      return NextResponse.json({ ok: true, wallet, hasAccount: !!profile })
+    }
 
     if (action === 'burn') {
       const amount = Number(body.amount)

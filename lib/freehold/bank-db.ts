@@ -49,8 +49,10 @@ import {
   type Actor, type ActivityState, type CashLot, type CashOrigin, type DepositState,
   type SpendKind, type SpendProof, type BankRefusal, type AccountUse, type Backing,
 } from '@/lib/freehold/bank'
-import { openWallet, postTransfer, listPostings } from '@/lib/freehold/wallet-db'
+import { openWallet, postTransfer, listPostings, listWallets } from '@/lib/freehold/wallet-db'
 import { isValidAmount, type Coins } from '@/lib/freehold/wallet'
+import { signMovement } from '@/lib/freehold/signature-db'
+import type { Beneficiary, SignedAction } from '@/lib/freehold/signature'
 import { randomUUID } from 'node:crypto'
 
 /** The one bank account. Cash that exists and has not been signed out lives here. */
@@ -157,6 +159,54 @@ export async function walletFor(userId: string, label: string): Promise<string> 
   const id = `w_u_${userId}`
   await openWallet({ id, kind: 'broker', ownerId: userId, label })
   return id
+}
+
+/**
+ * WHO A MOVEMENT IS FOR, in the words that will be on its receipt.
+ *
+ * The label and account number are read NOW and frozen into the signature. A
+ * receipt that re-resolves them shows today's name against a payment made two
+ * years ago — which is not a record of what was agreed, it is a render of what
+ * is true this morning.
+ *
+ * A wallet that cannot be read still gets a beneficiary: the id, and empty
+ * names. Refusing to sign because a label lookup failed would mean refusing to
+ * MOVE, and losing a payment over a missing display string is the wrong trade.
+ */
+async function beneficiaryOf(walletId: string): Promise<Beneficiary> {
+  try {
+    const w = (await listWallets()).find((x) => x.id === walletId)
+    if (w) return { walletId: w.id, label: w.label, accountNo: w.accountNo }
+  } catch { /* fall through — an unnamed beneficiary beats an unmade payment */ }
+  return { walletId, label: '', accountNo: '' }
+}
+
+/**
+ * Sign a movement that has already posted.
+ *
+ * AFTER the money, never before: a signature on a transfer that then failed
+ * would be a promise nobody kept, sitting in the record looking authoritative.
+ * Keyed on the movement's own reference, so a retry signs the same terms once.
+ *
+ * Never throws and never changes the caller's result — see signature-db.
+ */
+async function sign(input: {
+  reference: string
+  action: SignedAction
+  amount: Coins
+  fromWalletId: string
+  toWalletId: string
+  actor: Actor
+}): Promise<void> {
+  await signMovement(input.reference, {
+    action: input.action,
+    amount: input.amount,
+    fromWalletId: input.fromWalletId,
+    beneficiary: await beneficiaryOf(input.toWalletId),
+    signerId: input.actor.userId,
+    signerName: input.actor.name || input.actor.userId,
+    atMs: Date.now(),
+  })
 }
 
 // ── Reads ────────────────────────────────────────────────────────────────────
@@ -376,6 +426,13 @@ export async function mintCash(input: {
       memo: input.note ? `Minted · ${input.note}` : 'Minted',
       actor: input.actor.userId,
     })
+    if (posted.ok) {
+      // Creating money is the movement most worth having a name on.
+      await sign({
+        reference: `mint:${id}`, action: 'mint', amount: input.amount,
+        fromWalletId: TREASURY_WALLET_ID, toWalletId: BANK_WALLET_ID, actor: input.actor,
+      })
+    }
     if (!posted.ok) {
       // The lot exists and the coin does not. Mark it rejected rather than
       // deleting it: a mint that failed is a thing that happened, and a bank
@@ -390,15 +447,28 @@ export async function mintCash(input: {
 // ── Signing Cash out of the bank ─────────────────────────────────────────────
 
 /**
- * Move a WHOLE lot from the bank into the admin's own wallet.
+ * Sign a WHOLE lot out of the bank, to a named beneficiary.
  *
  * This is the act that turns float into a cheque and writes a name on it. It
  * moves the whole parcel — see the header on why half a cheque is not a thing
  * this model can represent.
+ *
+ * THE BENEFICIARY MAY BE ANY WALLET, INCLUDING THE ADMIN'S OWN. It used to be
+ * forced to the admin's own, so that paying somebody took a second, visible
+ * step; the effect was that the record never said who the money was FOR, and
+ * the ordinary case — the bank paying a broker — was indistinguishable from an
+ * admin paying themselves. The beneficiary is now stated and signed for. See
+ * the `move` case in bank.ts for the full reasoning.
+ *
+ * `movedBy` still records the ADMIN, not the beneficiary, so the burn rule is
+ * untouched: exactly one name against every destroyed dirham, and it is never
+ * the recipient's.
  */
 export async function moveFromBank(input: {
   actor: Actor
   lotId: string
+  /** Where it goes. Defaults to the admin's own wallet. */
+  toWalletId?: string | null
 }): Promise<BankResult> {
   try {
     await ensureBankSchema()
@@ -409,22 +479,35 @@ export async function moveFromBank(input: {
     if (lot.movedBy) return { ok: true, lotId: lot.id, duplicate: true }
     if (!isValidAmount(lot.remaining)) return { ok: false, refusal: 'badAmount' }
 
+    const to = (input.toWalletId ?? '').trim() || input.actor.walletId
+    if (!to) return { ok: false, refusal: 'noSuchWallet' }
+    // A beneficiary that does not exist would post into a wallet nobody can
+    // read — the ledger would balance and the money would be unreachable.
+    const known = (await listWallets()).some((w) => w.id === to)
+    if (!known) return { ok: false, refusal: 'noSuchWallet' }
+
     const check = authorise(input.actor, {
       action: 'move', amount: lot.remaining,
-      fromWalletId: BANK_WALLET_ID, toWalletId: input.actor.walletId,
+      fromWalletId: BANK_WALLET_ID, toWalletId: to,
     })
     if (!check.ok) return { ok: false, refusal: check.refusal }
 
+    const reference = `move:${lot.id}`
     const posted = await postTransfer({
-      reference: `move:${lot.id}`,
+      reference,
       kind: 'transfer',
       amount: lot.remaining,
       fromWalletId: BANK_WALLET_ID,
-      toWalletId: input.actor.walletId!,
+      toWalletId: to,
       memo: 'Signed out of the bank',
       actor: input.actor.userId,
     })
     if (!posted.ok) return fromLedger(posted.refusal)
+
+    await sign({
+      reference, action: 'move', amount: lot.remaining,
+      fromWalletId: BANK_WALLET_ID, toWalletId: to, actor: input.actor,
+    })
 
     // Stamped only after the money actually moved. The other order would name
     // an owner for a cheque that was never signed out.
@@ -456,8 +539,9 @@ export async function sendCash(input: {
 
   try {
     await ensureBankSchema()
+    const reference = input.reference ?? `send:${randomUUID()}`
     const posted = await postTransfer({
-      reference: input.reference ?? `send:${randomUUID()}`,
+      reference,
       kind: 'transfer',
       amount: input.amount,
       fromWalletId: input.actor.walletId!,
@@ -465,9 +549,12 @@ export async function sendCash(input: {
       memo: input.memo ?? '',
       actor: input.actor.userId,
     })
-    return posted.ok
-      ? { ok: true, duplicate: posted.duplicate }
-      : fromLedger(posted.refusal)
+    if (!posted.ok) return fromLedger(posted.refusal)
+    await sign({
+      reference, action: 'send', amount: input.amount,
+      fromWalletId: input.actor.walletId!, toWalletId: input.toWalletId, actor: input.actor,
+    })
+    return { ok: true, duplicate: posted.duplicate }
   } catch { return { ok: false, refusal: 'error' } }
 }
 
@@ -502,8 +589,9 @@ export async function burnCash(input: {
     const from = lot.movedBy ? input.actor.walletId : BANK_WALLET_ID
     if (!from) return { ok: false, refusal: 'noSuchWallet' }
 
+    const reference = `burn:${lot.id}:${lot.amount - lot.remaining + input.amount}`
     const posted = await postTransfer({
-      reference: `burn:${lot.id}:${lot.amount - lot.remaining + input.amount}`,
+      reference,
       kind: 'burn',
       amount: input.amount,
       fromWalletId: from,
@@ -512,6 +600,13 @@ export async function burnCash(input: {
       actor: input.actor.userId,
     })
     if (!posted.ok) return fromLedger(posted.refusal)
+    // Destroying money leaves a name behind exactly as creating it does. The
+    // beneficiary is the treasury because that is where the coin goes to stop
+    // existing — a burn has no recipient, and inventing one would be worse.
+    await sign({
+      reference, action: 'burn', amount: input.amount,
+      fromWalletId: from, toWalletId: TREASURY_WALLET_ID, actor: input.actor,
+    })
     if (posted.duplicate) return { ok: true, lotId: lot.id, duplicate: true }
 
     await query(
@@ -552,8 +647,9 @@ export async function spendCash(input: {
     await ensureBankSchema()
     await ensureBankWallets()
     const filed = withdrawalReference(input.proof)
+    const reference = input.reference ?? `spend:${randomUUID()}`
     const posted = await postTransfer({
-      reference: input.reference ?? `spend:${randomUUID()}`,
+      reference,
       kind: 'spend',
       amount: input.amount,
       fromWalletId: input.actor.walletId!,
@@ -562,6 +658,10 @@ export async function spendCash(input: {
       actor: input.actor.userId,
     })
     if (!posted.ok) return fromLedger(posted.refusal)
+    await sign({
+      reference, action: 'spend', amount: input.amount,
+      fromWalletId: input.actor.walletId!, toWalletId: OPERATIONS_WALLET_ID, actor: input.actor,
+    })
     if (posted.duplicate) return { ok: true, duplicate: true }
 
     await query(

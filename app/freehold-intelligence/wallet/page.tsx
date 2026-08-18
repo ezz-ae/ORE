@@ -40,7 +40,7 @@ import {
   Wallet as WalletIcon, Landmark, Loader2, ArrowDownLeft, ArrowUpRight,
   Copy, Check, Flame, PenLine, AlertTriangle, QrCode, Plus, X,
   Sparkles, RotateCcw, Megaphone, Lock, Unlock, ShieldCheck, ShieldAlert,
-  Handshake,
+  Handshake, HandCoins, PenTool, UserPlus,
 } from 'lucide-react'
 import { PageHeader, StatCard, Panel, PanelHeader, EmptyState, Button, fieldClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
@@ -51,6 +51,7 @@ import {
   BANK_REFUSALS, IDLE_AFTER_DAYS,
   type BankRefusal, type CashState, type DepositState, type SpendKind, type UseState,
 } from '@/lib/freehold/bank'
+import { REQUEST_REFUSALS } from '@/lib/freehold/cash-request'
 
 /**
  * One row of the wallet's own history.
@@ -71,8 +72,20 @@ interface Activity {
   memo: string
   state: 'confirmed' | 'pending' | 'rejected'
   at: string
+  /** Absent on movements made before signatures existed — unsigned, not forged. */
+  signature?: {
+    signerName: string
+    signerId: string
+    beneficiary: string
+    beneficiaryAccount: string
+    statement: string
+    digest: string
+    /** Recomputed server-side. False means a stored field no longer matches. */
+    holds: boolean
+    authority: string
+  }
 }
-interface Payee { id: string; accountNo: string; label: string }
+interface Payee { id: string; accountNo: string; label: string; kind?: string }
 
 /** What `verifyChain` answered — see lib/freehold/ledger-chain.ts. */
 type ChainVerdict =
@@ -98,6 +111,20 @@ interface Commission {
   payments: CommissionPayment[]
 }
 
+/** One ask, either direction. Mirrors lib/freehold/cash-request.ts. */
+interface CashRequest {
+  id: string
+  askedOfWalletId: string
+  beneficiaryWalletId: string
+  amount: number
+  reason: string
+  state: 'pending' | 'approved' | 'declined' | 'cancelled'
+  requestedBy: string
+  decidedBy: string | null
+  decidedAt: string | null
+  createdAt: string
+}
+
 interface WalletData {
   /** null when the proof could not be run. NOT the same as "it failed". */
   chain: ChainVerdict | null
@@ -105,6 +132,11 @@ interface WalletData {
   wallet: { id: string; accountNo: string; balance: number; held: number } | null
   activity: Activity[]
   payees: Payee[]
+  /** The signer, so the screen shows the sentence that will be stored. */
+  me?: { id: string; name: string }
+  /** Split server-side by the same rule the bank uses — see splitRequests. */
+  requests?: { waitingOnMe: CashRequest[]; waitingOnThem: CashRequest[]; settled: CashRequest[] }
+  bankWalletId?: string
 }
 
 interface Lot {
@@ -129,6 +161,7 @@ interface Use {
   fundedAed: number; spentAed: number; balanceAed: number
   daysSinceSpend: number | null; state: UseState
 }
+interface BankWallet { id: string; accountNo: string; kind: string; label: string; ownerId: string | null }
 interface BankData {
   backing: { depositedAed: number; mintedAed: number; claimedAed: number }
   inBank: number
@@ -138,10 +171,24 @@ interface BankData {
   withdrawals: Withdrawal[]
   use: Use[]
   redenomination: { ran: false } | { ran: true; at: string; by: string | null }
+  /** Every account on the system — the beneficiary list, and who can be opened. */
+  wallets?: BankWallet[]
+  /** Everything anybody has asked the bank for, still pending at the top. */
+  requests?: CashRequest[]
+  bankWalletId?: string
+  me?: { id: string; name: string; walletId: string }
 }
 
-/** Every refusal the server can send, in one list. */
-const SAYABLE: readonly string[] = [...BANK_REFUSALS, 'notEnough', 'noSuchLot', 'error']
+/**
+ * Every refusal the server can send, in one list.
+ *
+ * Built from the walkable unions rather than typed out, so a refusal added to
+ * a rule module cannot arrive on screen as a raw code nobody can read. That is
+ * the whole reason both lists are `as const`.
+ */
+const SAYABLE: readonly string[] = [
+  ...BANK_REFUSALS, ...REQUEST_REFUSALS, 'notEnough', 'noSuchLot', 'error',
+]
 const isRefusal = (s: string): boolean => SAYABLE.includes(s)
 
 /** Colour by what the state means to the reader, not by a palette order. */
@@ -320,7 +367,7 @@ function MyWallet({
   post: (url: string, body: Record<string, unknown>) => Promise<Record<string, unknown> | null>
   onNote: (n: { tone: 'ok' | 'bad'; text: string } | null) => void
 }) {
-  const [sheet, setSheet] = useState<'none' | 'send' | 'receive' | 'deposit'>('none')
+  const [sheet, setSheet] = useState<'none' | 'send' | 'receive' | 'deposit' | 'request'>('none')
   const [detail, setDetail] = useState<Activity | null>(null)
   const [copied, setCopied] = useState(false)
   const [qr, setQr] = useState<string | null>(null)
@@ -331,8 +378,19 @@ function MyWallet({
   const [busy, setBusy] = useState(false)
   const [depAmount, setDepAmount] = useState('')
   const [depRef, setDepRef] = useState('')
+  // THE SIGNING STEP. False until the sender has read the sentence they are
+  // about to put their name to. A transfer that posts on the same press that
+  // filled the form has nothing anybody agreed to — the signature would name a
+  // person against figures they never saw as a sentence.
+  const [signing, setSigning] = useState(false)
+  const [reqTo, setReqTo] = useState('')
+  const [reqAmount, setReqAmount] = useState('')
+  const [reqReason, setReqReason] = useState('')
 
   const w = data?.wallet ?? null
+  const payees = data?.payees ?? []
+  const payeeOf = (id: string): Payee | null => payees.find((p) => p.id === id) ?? null
+  const requests = data?.requests ?? { waitingOnMe: [], waitingOnThem: [], settled: [] }
 
   // ONE KEY PER ATTEMPT, not per click, so a double-tap or a retry after a
   // dropped connection pays once.
@@ -363,8 +421,40 @@ function MyWallet({
     setBusy(false)
     if (r) {
       onNote({ tone: 'ok', text: t(r.duplicate ? 'wal.send.duplicate' : 'wal.send.done') })
-      setAmount(''); setMemo(''); setSheet('none')
+      setAmount(''); setMemo(''); setSigning(false); setSheet('none')
     }
+  }
+
+  /** Ask somebody, or the bank. Moves nothing until they sign. */
+  const askFor = async () => {
+    setBusy(true)
+    const r = await post('/api/freehold/wallet', {
+      action: 'requestCash', askedOfWalletId: reqTo, amount: Number(reqAmount), reason: reqReason,
+    })
+    setBusy(false)
+    if (r) {
+      onNote({ tone: 'ok', text: t('wal.req.sent') })
+      setReqAmount(''); setReqReason(''); setSheet('none')
+    }
+  }
+
+  /**
+   * Answer one. Approving IS the transfer and the signature — the button says
+   * so, because "Approve" alone reads like filing an expense claim rather than
+   * paying it.
+   */
+  const decide = async (id: string, approve: boolean) => {
+    setBusy(true)
+    const r = await post('/api/freehold/wallet', { action: 'decideRequest', id, approve })
+    setBusy(false)
+    if (r) onNote({ tone: 'ok', text: t(approve ? 'wal.req.approved' : 'wal.req.declined') })
+  }
+
+  const withdraw = async (id: string) => {
+    setBusy(true)
+    const r = await post('/api/freehold/wallet', { action: 'cancelRequest', id })
+    setBusy(false)
+    if (r) onNote({ tone: 'ok', text: t('wal.req.cancelled') })
   }
 
   const deposit = async () => {
@@ -422,10 +512,15 @@ function MyWallet({
           </button>
         )}
 
-        {/* Three actions, equal weight, always in the same order. */}
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        {/* Four actions, equal weight, always in the same order.
+            REQUEST sits beside TRANSFER because they are the same act from the
+            two ends — money is pushed and never pulled, so the only way to be
+            paid by somebody is to ask them. Leaving it off the row is what made
+            topping up a broker a conversation on WhatsApp. */}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {([
             ['send', ArrowUpRight, 'wal.act.send'],
+            ['request', HandCoins, 'wal.act.request'],
             ['receive', QrCode, 'wal.act.receive'],
             ['deposit', Plus, 'wal.act.topUp'],
           ] as const).map(([id, Icon, key]) => (
@@ -443,6 +538,86 @@ function MyWallet({
           ))}
         </div>
       </div>
+
+      {/* ── WHAT IS BEING ASKED ───────────────────────────────────────────
+          Above the log, because the log is history and this is a decision
+          somebody is waiting on. Two piles, split by what the reader can DO
+          about each: a to-do list and a receipt. A single "requests" list mixes
+          them, the actionable rows drown, and the queue becomes something
+          nobody opens. */}
+      {(requests.waitingOnMe.length > 0 || requests.waitingOnThem.length > 0) && (
+        <Panel>
+          <PanelHeader title={t('wal.req.title')} />
+          <div className="space-y-3 p-4">
+            {requests.waitingOnMe.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-amber-200/80">
+                  {t('wal.req.waitingOnMe')}
+                </p>
+                {requests.waitingOnMe.map((r) => (
+                  <div key={r.id} className="rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm text-slate-100">
+                          {t('wal.req.asksYou', {
+                            who: payeeOf(r.beneficiaryWalletId)?.label || r.requestedBy,
+                            amount: cashText(r.amount),
+                          })}
+                        </p>
+                        {r.reason && <p className="mt-0.5 text-xs text-slate-400">{r.reason}</p>}
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <Button onClick={() => void decide(r.id, true)} disabled={busy}>
+                          {t('wal.req.approve')}
+                        </Button>
+                        <button
+                          onClick={() => void decide(r.id, false)}
+                          disabled={busy}
+                          className="rounded-lg border border-line px-3 py-1.5 text-xs text-slate-300 transition hover:border-red-400/40 hover:text-red-200 disabled:opacity-40"
+                        >
+                          {t('wal.req.decline')}
+                        </button>
+                      </div>
+                    </div>
+                    {/* WHAT APPROVING ACTUALLY DOES, said before it is pressed.
+                        "Approve" on its own reads like filing a claim; this one
+                        moves the money and signs for it in the same press. */}
+                    <p className="mt-2 text-[11px] text-amber-200/70">{t('wal.req.approveMeans')}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {requests.waitingOnThem.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  {t('wal.req.waitingOnThem')}
+                </p>
+                {requests.waitingOnThem.map((r) => (
+                  <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-2/40 p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-slate-300">
+                        {t('wal.req.youAsked', {
+                          who: payeeOf(r.askedOfWalletId)?.label || r.askedOfWalletId,
+                          amount: cashText(r.amount),
+                        })}
+                      </p>
+                      {r.reason && <p className="mt-0.5 text-xs text-slate-500">{r.reason}</p>}
+                    </div>
+                    <button
+                      onClick={() => void withdraw(r.id)}
+                      disabled={busy}
+                      className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+                    >
+                      {t('wal.req.cancel')}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Panel>
+      )}
 
       {/* ── ACTIVITY ──────────────────────────────────────────────────────── */}
       <Panel>
@@ -609,8 +784,81 @@ function MyWallet({
             <input value={memo} onChange={(e) => setMemo(e.target.value)}
               placeholder={t('wal.send.memoPlaceholder')} className={`${fieldClass()} mt-1 w-full`} />
           </label>
-          <Button onClick={() => void send()} disabled={busy || !to || !amount}>
-            {busy ? t('wal.send.sending') : t('wal.send.action')}
+          {/* ── THE SIGNATURE ─────────────────────────────────────────────
+              What you see is what you sign. The sentence is built from the same
+              fields the server hashes (lib/freehold/signature.ts), so the line
+              somebody reads and the line kept on the receipt cannot drift
+              apart. Two presses rather than one, deliberately: a transfer that
+              posts on the same press that filled the form has nothing anybody
+              agreed to, and a name against figures never read as a sentence is
+              a signature in appearance only. */}
+          {!signing ? (
+            <Button onClick={() => setSigning(true)} disabled={!to || !amount}>
+              {t('wal.sign.review')}
+            </Button>
+          ) : (
+            <div className="space-y-3 rounded-xl border border-gold/25 bg-gold/[0.04] p-4">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-gold/80">
+                <PenTool className="h-3.5 w-3.5" /> {t('wal.sign.title')}
+              </div>
+              <p className="text-sm leading-relaxed text-slate-100">
+                {t('wal.sign.line.send', {
+                  who: data?.me?.name ?? '',
+                  amount: cashText(Number(amount) || 0),
+                  to: payeeOf(to)?.label ?? '',
+                  account: payeeOf(to)?.accountNo ?? '',
+                })}
+              </p>
+              {/* Said once, plainly. A screen that let "signature" imply a key
+                  pair would be selling a guarantee this design does not make. */}
+              <p className="text-[11px] text-slate-400">{t('wal.sign.note')}</p>
+              <div className="flex gap-2">
+                <Button onClick={() => void send()} disabled={busy}>
+                  {busy ? t('wal.send.sending') : t('wal.sign.action')}
+                </Button>
+                <button
+                  onClick={() => setSigning(false)}
+                  disabled={busy}
+                  className="rounded-lg border border-line px-3 py-1.5 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+                >
+                  {t('wal.sign.back')}
+                </button>
+              </div>
+            </div>
+          )}
+        </Sheet>
+      )}
+
+      {/* ── ASKING ─────────────────────────────────────────────────────────
+          Anybody, or the bank. It moves nothing: the money arrives when the
+          person asked signs for it. You may only ask for money for YOURSELF —
+          see lib/freehold/cash-request.ts for why a request that could name a
+          third party turns an approval into a payment nobody chose. */}
+      {sheet === 'request' && (
+        <Sheet title={t('wal.req.newTitle')} onClose={() => setSheet('none')}>
+          <p className="text-sm text-slate-400">{t('wal.req.newSub')}</p>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.req.askWho')}</span>
+            <select value={reqTo} onChange={(e) => setReqTo(e.target.value)} className={`${fieldClass()} mt-1 w-full`}>
+              <option value="">{t('wal.req.askWhoPlaceholder')}</option>
+              {payees.map((p) => (
+                <option key={p.id} value={p.id}>{p.label} · {shortAddress(p.accountNo)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.send.amount')}</span>
+            <input type="number" min={1} step={1} value={reqAmount}
+              onChange={(e) => setReqAmount(e.target.value)}
+              className={`${fieldClass()} mt-1 w-full text-lg tabular-nums`} />
+          </label>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.req.reason')}</span>
+            <input value={reqReason} onChange={(e) => setReqReason(e.target.value)}
+              placeholder={t('wal.req.reasonPlaceholder')} className={`${fieldClass()} mt-1 w-full`} />
+          </label>
+          <Button onClick={() => void askFor()} disabled={busy || !reqTo || !reqAmount}>
+            {busy ? t('wal.send.sending') : t('wal.req.action')}
           </Button>
         </Sheet>
       )}
@@ -691,6 +939,39 @@ function MyWallet({
               </div>
             ))}
           </dl>
+          {/* ── WHO PUT THEIR NAME ON IT ──────────────────────────────────
+              The question a finance team actually asks about a payment, and
+              the one the ledger could not answer: it proved the movement had
+              not been edited, and said nothing about who authorised it.
+              Absent on movements made before signatures existed — those read
+              as unsigned, which is a different fact from tampered with and
+              must not be dressed as one. */}
+          {detail.signature && (
+            <div className={`rounded-xl border p-4 ${
+              detail.signature.holds
+                ? 'border-line bg-surface-2/40'
+                : 'border-red-500/40 bg-red-500/[0.06]'
+            }`}>
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                <PenTool className="h-3.5 w-3.5" /> {t('wal.sign.onRecord')}
+              </div>
+              <p className="mt-2 text-sm text-slate-200">{detail.signature.statement}</p>
+              {detail.signature.authority && (
+                <p className="mt-1 text-xs text-slate-500">{detail.signature.authority}</p>
+              )}
+              <p className="mt-2 break-all font-mono text-[10px] text-slate-600">{detail.signature.digest}</p>
+              {/* A recomputed digest that no longer matches is the only thing a
+                  signature can detect, and the entire reason to keep one. */}
+              {!detail.signature.holds && (
+                <p className="mt-2 flex items-center gap-2 text-xs text-red-200">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {t('wal.sign.broken')}
+                </p>
+              )}
+            </div>
+          )}
+          {!detail.signature && (
+            <p className="text-xs text-slate-500">{t('wal.sign.none')}</p>
+          )}
           <Button variant="ghost" onClick={() => copy(detail.id)}>
             {copied ? t('wal.copied') : t('wal.tx.copyRef')}
           </Button>
@@ -754,6 +1035,11 @@ function TheBank({
   const [mintAmount, setMintAmount] = useState('')
   const [mintNote, setMintNote] = useState('')
   const [busy, setBusy] = useState(false)
+  /** The parcel being signed out, and to whom. Null while nothing is open. */
+  const [releasing, setReleasing] = useState<Lot | null>(null)
+  const [releaseTo, setReleaseTo] = useState('')
+  const [newWalletEmail, setNewWalletEmail] = useState('')
+  const [newWalletName, setNewWalletName] = useState('')
 
   const act = async (body: Record<string, unknown>, okKey?: string) => {
     setBusy(true)
@@ -766,6 +1052,27 @@ function TheBank({
   if (!data) return <EmptyState title={t('wal.unavailable')} />
 
   const b = data.backing
+  // EVERY ACCOUNT IS A POSSIBLE BENEFICIARY, INCLUDING THE ADMIN'S OWN. An
+  // admin taking float into their own hands is an ordinary movement, not a
+  // special case — and a list that excluded them would push that movement into
+  // looking like something else. The treasury is left out because it is the
+  // ledger's own counterparty for creating and destroying Cash, not an account
+  // anybody holds. The bank itself is left out because signing money out of the
+  // bank INTO the bank is not a movement.
+  const beneficiaries = (data.wallets ?? [])
+    .filter((x) => x.kind !== 'treasury' && x.id !== (data.bankWalletId ?? 'w_bank'))
+  const beneficiaryOf = (id: string): BankWallet | null => beneficiaries.find((x) => x.id === id) ?? null
+  const requests = data.requests ?? []
+  const pendingRequests = requests.filter((r) => r.state === 'pending')
+
+  /** Sign a parcel out to whoever is named. Defaults to the admin's own wallet. */
+  const release = async () => {
+    if (!releasing) return
+    const r = await act({
+      action: 'move', lotId: releasing.id, toWalletId: releaseTo || data.me?.walletId || '',
+    }, 'bank.act.moveDone')
+    if (r) { setReleasing(null); setReleaseTo('') }
+  }
   return (
     <>
       {/* THE THREE FIGURES, KEPT APART. A single blended total is not a bank
@@ -790,6 +1097,89 @@ function TheBank({
           {t('bank.imbalance', { amount: cashText(Math.abs(data.imbalance)) })}
         </p>
       )}
+
+      {/* ── WHAT HAS BEEN ASKED OF THE BANK ────────────────────────────────
+          Above minting, because answering somebody who is waiting is more
+          urgent than creating money nobody has asked for — and because a queue
+          placed below the fold is a queue that grows. Approving IS the transfer
+          and the signature: one press, one movement, one name. */}
+      {pendingRequests.length > 0 && (
+        <Panel>
+          <PanelHeader title={t('bank.req.title')} icon={<HandCoins className="h-4 w-4" />} />
+          <div className="space-y-2 p-5">
+            <p className="text-sm text-slate-400">{t('bank.req.sub')}</p>
+            {pendingRequests.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-100">
+                    {t('bank.req.asks', {
+                      who: beneficiaryOf(r.beneficiaryWalletId)?.label || r.requestedBy,
+                      amount: cashText(r.amount),
+                    })}
+                  </p>
+                  {r.reason && <p className="mt-0.5 text-xs text-slate-400">{r.reason}</p>}
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" disabled={busy}
+                    onClick={() => void act({ action: 'decideRequest', id: r.id, approve: true }, 'wal.req.approved')}>
+                    {t('wal.req.approve')}
+                  </Button>
+                  <Button size="sm" variant="ghost" disabled={busy}
+                    onClick={() => void act({ action: 'decideRequest', id: r.id, approve: false }, 'wal.req.declined')}>
+                    {t('wal.req.decline')}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {/* ── OPEN AN ACCOUNT FOR SOMEBODY ───────────────────────────────────
+          Keyed on the email, which is the same key everything else in this
+          ledger uses — so a wallet opened before somebody's first sign-in is
+          already theirs when they arrive. That is the point: a new joiner can
+          be funded before their first login instead of after it. */}
+      <Panel>
+        <PanelHeader title={t('bank.newWallet.title')} icon={<UserPlus className="h-4 w-4" />} />
+        <div className="space-y-3 p-5">
+          <p className="text-sm text-slate-400">{t('bank.newWallet.sub')}</p>
+          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <label className="block text-sm">
+              <span className="text-slate-400">{t('bank.newWallet.email')}</span>
+              <input type="email" value={newWalletEmail}
+                onChange={(e) => setNewWalletEmail(e.target.value)}
+                placeholder={t('bank.newWallet.emailPlaceholder')}
+                className={`${fieldClass()} mt-1 w-full`} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-slate-400">{t('bank.newWallet.name')}</span>
+              <input value={newWalletName} onChange={(e) => setNewWalletName(e.target.value)}
+                placeholder={t('bank.newWallet.namePlaceholder')}
+                className={`${fieldClass()} mt-1 w-full`} />
+            </label>
+            <Button
+              disabled={busy || !newWalletEmail.includes('@')}
+              onClick={async () => {
+                const r = await act({
+                  action: 'createWallet', email: newWalletEmail, label: newWalletName,
+                })
+                if (!r) return
+                // SAID, NEVER HIDDEN. A wallet whose person has no account
+                // cannot be opened by them yet, and a screen that stayed quiet
+                // about it would look as though it had done more than it had.
+                onNote({
+                  tone: 'ok',
+                  text: t(r.hasAccount ? 'bank.newWallet.done' : 'bank.newWallet.doneNoAccount', {
+                    account: String((r.wallet as { accountNo?: string } | null)?.accountNo ?? ''),
+                  }),
+                })
+                setNewWalletEmail(''); setNewWalletName('')
+              }}
+            >{t('bank.newWallet.action')}</Button>
+          </div>
+        </div>
+      </Panel>
 
       <Panel>
         <PanelHeader title={t('bank.mint.title')} icon={<PenLine className="h-4 w-4" />} />
@@ -872,9 +1262,13 @@ function TheBank({
                           )}
                           {lot.state === 'inBank' && lot.deposit === 'cleared' && (
                             <>
+                              {/* Opens the signing sheet rather than moving on
+                                  the press. Signing Cash out of the bank names
+                                  a beneficiary and puts an admin's name on the
+                                  parcel forever — that is not a one-click act. */}
                               <Button size="sm" variant="secondary" disabled={busy}
                                 title={t('bank.act.moveNote')}
-                                onClick={() => void act({ action: 'move', lotId: lot.id })}>
+                                onClick={() => { setReleasing(lot); setReleaseTo(data.me?.walletId ?? '') }}>
                                 {t('bank.act.move')}
                               </Button>
                               <Button size="sm" variant="ghost" disabled={busy}
@@ -1020,6 +1414,50 @@ function TheBank({
           )}
         </div>
       </Panel>
+
+      {/* ── SIGNING A PARCEL OUT ───────────────────────────────────────────
+          Naming the beneficiary and reading the sentence are the same step, and
+          both happen before anything moves. The beneficiary may be the admin's
+          own wallet — it is prefilled that way, because taking float into your
+          own hands is the common case and should not require a decision, while
+          paying somebody else should require naming them. */}
+      {releasing && (
+        <Sheet title={t('bank.release.title')} onClose={() => setReleasing(null)}>
+          <p className="text-sm text-slate-400">{t('bank.release.sub')}</p>
+          <p className="text-2xl font-semibold tabular-nums text-white">{cashText(releasing.remaining)}</p>
+          <label className="block text-sm">
+            <span className="text-slate-400">{t('wal.send.to')}</span>
+            <select value={releaseTo} onChange={(e) => setReleaseTo(e.target.value)}
+              className={`${fieldClass()} mt-1 w-full`}>
+              {beneficiaries.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.label} · {shortAddress(x.accountNo)}
+                  {x.id === data.me?.walletId ? ` — ${t('bank.release.yourself')}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="space-y-3 rounded-xl border border-gold/25 bg-gold/[0.04] p-4">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-gold/80">
+              <PenTool className="h-3.5 w-3.5" /> {t('wal.sign.title')}
+            </div>
+            <p className="text-sm leading-relaxed text-slate-100">
+              {t('wal.sign.line.move', {
+                who: data.me?.name ?? '',
+                amount: cashText(releasing.remaining),
+                to: beneficiaryOf(releaseTo)?.label ?? '',
+                account: beneficiaryOf(releaseTo)?.accountNo ?? '',
+              })}
+            </p>
+            {/* The consequence that outlives the movement: from here only this
+                admin can destroy this parcel, wherever it travels next. */}
+            <p className="text-[11px] text-slate-400">{t('bank.release.chequeNote')}</p>
+            <Button onClick={() => void release()} disabled={busy || !releaseTo}>
+              {busy ? t('wal.send.sending') : t('wal.sign.action')}
+            </Button>
+          </div>
+        </Sheet>
+      )}
     </>
   )
 }

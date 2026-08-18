@@ -91,6 +91,11 @@ export default function TeamRosterPage() {
   const [inviteName, setInviteName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<string>('broker')
+  // OFF BY DEFAULT. Opening a wallet is a decision about money, and the person
+  // inviting a joiner is often not the person who funds them — a wallet that
+  // appears without anybody choosing it is a wallet nobody feels responsible
+  // for. The Bank can open one afterwards either way.
+  const [inviteWallet, setInviteWallet] = useState(false)
   const [inviteBusy, setInviteBusy] = useState(false)
 
   const refresh = useCallback(async () => {
@@ -187,13 +192,14 @@ export default function TeamRosterPage() {
     const res = await fetch('/api/freehold/team', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, role: inviteRole }),
+      body: JSON.stringify({ name, email, role: inviteRole, openWallet: inviteWallet }),
     }).catch(() => null)
     setInviteBusy(false)
     const body = res ? await res.json().catch(() => null) : null
     if (res?.ok) {
       toast.success(t('team.invite.ok', { email }))
       setInviteOpen(false); setInviteName(''); setInviteEmail(''); setInviteRole('broker')
+      setInviteWallet(false)
       void refresh()
     } else {
       toast.error(body?.error || t('team.invite.failed'))
@@ -462,6 +468,19 @@ export default function TeamRosterPage() {
                 <option key={r} value={r}>{t(`role.${r}`)}</option>
               ))}
             </select>
+          </label>
+          {/* Their account, opened with them. Keyed on the email, the same key
+              the whole ledger uses, so it is theirs from their first sign-in —
+              which is what lets somebody be funded before they have logged in
+              rather than after. */}
+          <label className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2/40 p-3 text-sm">
+            <input type="checkbox" checked={inviteWallet}
+              onChange={(e) => setInviteWallet(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--gold,#d4af37)]" />
+            <span>
+              <span className="block text-slate-200">{t('team.invite.openWallet')}</span>
+              <span className="mt-0.5 block text-xs text-slate-500">{t('team.invite.openWalletHint')}</span>
+            </span>
           </label>
           <p className="flex items-start gap-2 text-xs text-slate-500">
             <Wallet className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-600" />

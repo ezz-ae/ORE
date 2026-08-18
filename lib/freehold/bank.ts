@@ -162,6 +162,13 @@ export interface Actor {
   role: Role
   /** The wallet they own. null for somebody with no account yet. */
   walletId: string | null
+  /**
+   * The name that goes on the signature, as it read on screen. Optional
+   * because authorisation never depends on it — a movement is allowed or not
+   * on identity and ownership, never on what somebody is called — and falling
+   * back to the id keeps a signature readable rather than blank.
+   */
+  name?: string
 }
 
 export const isAdmin = (role: Role): boolean =>
@@ -333,14 +340,30 @@ export function authorise(actor: Actor, req: MoveRequest): Authorisation {
       if (!isAdmin(actor.role)) return no('notAdmin')
       return { ok: true }
 
-    // SIGNING CASH OUT OF THE BANK. This is the act that creates a cheque and
-    // names its owner, so it is an admin's own signature and the destination is
-    // the admin's own wallet — an admin who wants somebody else to have it
-    // sends it afterwards, in the open, like anybody else.
+    // SIGNING CASH OUT OF THE BANK, TO A NAMED BENEFICIARY.
+    //
+    // This is the act that creates a cheque and writes an admin's name on it.
+    // The destination used to be forced to the admin's OWN wallet, on the
+    // reasoning that an admin who wants somebody else to have it should send it
+    // afterwards — three visible steps, with a named human standing between the
+    // printing press and somebody's balance.
+    //
+    // That reasoning was right about the goal and wrong about the mechanism.
+    // The two-step dance did not record who the money was FOR; it recorded a
+    // move and then an unrelated-looking transfer, and anybody reconstructing
+    // it had to infer the intent. Worse, it made the ordinary case — the bank
+    // paying somebody — look like an admin paying themselves.
+    //
+    // So the beneficiary is now explicit and any wallet may be named, INCLUDING
+    // the admin's own, which is a normal movement and not a special case. What
+    // replaces the dance is the signature: `signature.ts` binds the signing
+    // admin to this exact amount, this exact beneficiary and this exact moment,
+    // and the parcel still records `movedBy` — so the burn rule, and every
+    // "exactly one name against every destroyed dirham" property built on it,
+    // is unchanged.
     case 'move': {
       if (!isAdmin(actor.role)) return no('notAdmin')
-      if (!actor.walletId) return no('noSuchWallet')
-      if (req.toWalletId !== actor.walletId) return no('notYourMoney')
+      if (!req.toWalletId) return no('noSuchWallet')
       return { ok: true }
     }
 

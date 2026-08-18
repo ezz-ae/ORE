@@ -168,16 +168,38 @@ console.log('\n── in the bank it is float; once it moves it is a cheque ─�
 
 console.log('\n── signing Cash out of the bank ──')
 {
-  // THE MOVE IS WHAT CREATES THE CHEQUE AND NAMES ITS OWNER, so an admin signs
-  // it into their OWN wallet. Wanting somebody else to have it is a send, made
-  // in the open, afterwards — which puts a named human between the printing
-  // press and a broker's balance.
-  check('an admin moves Cash into their own wallet',
+  // THE MOVE IS WHAT CREATES THE CHEQUE AND NAMES ITS OWNER — and it now names
+  // its BENEFICIARY too.
+  //
+  // This assertion used to REQUIRE the opposite: an admin could only move Cash
+  // into their own wallet, so that paying somebody took a second, visible step.
+  // The goal was right — a named human between the printing press and a
+  // broker's balance — and the mechanism was wrong. The two-step dance recorded
+  // no beneficiary at all: it left a move and then an unrelated-looking
+  // transfer, and the ordinary case, the bank paying a broker, was
+  // indistinguishable from an admin paying themselves.
+  //
+  // What replaces it is stronger and explicit: the beneficiary is named and
+  // signed for (lib/freehold/signature.ts), and `movedBy` still records the
+  // ADMIN rather than the recipient — so the burn rule below, and every
+  // "exactly one name against every destroyed dirham" property built on it, is
+  // untouched.
+  check('an admin signs Cash out to their own wallet',
     why(admin, req({ action: 'move', toWalletId: 'w-admin' })) === 'ok')
-  check('…and not straight into somebody else\'s',
-    why(admin, req({ action: 'move', toWalletId: 'w-b1' })) === 'notYourMoney')
+  check('…and to a named beneficiary, which is the point of the signature',
+    why(admin, req({ action: 'move', toWalletId: 'w-b1' })) === 'ok',
+    'the beneficiary is refused again, so the record cannot say who money was for')
+  check('…but never into nowhere',
+    why(admin, req({ action: 'move', toWalletId: null })) === 'noSuchWallet')
   check('a broker cannot sign money out of the bank',
     why(broker, req({ action: 'move', toWalletId: 'w-b1' })) === 'notAdmin')
+
+  // THE BURN RIGHT DOES NOT TRAVEL WITH THE MONEY. Restated here because it is
+  // the property the old rule was protecting, and it has to survive the change.
+  check('the parcel still records the admin who signed it out, not the recipient',
+    /movedBy: input\.actor\.userId|moved_by = \$2[\s\S]{0,200}input\.actor\.userId/
+      .test(readFileSync(join(process.cwd(), 'lib/freehold/bank-db.ts'), 'utf8')),
+    'a beneficiary could end up owning the right to burn money they were paid')
 
   // THE OLD "ALLOCATE" IS GONE. It was the one movement whose source was not
   // the actor's own wallet, and while it existed "nobody takes from anybody"
