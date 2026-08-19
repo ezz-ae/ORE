@@ -66,6 +66,7 @@ import { wallet as walletDict } from '../lib/i18n/dictionaries/wallet'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { inventory } from '../lib/i18n/dictionaries/inventory'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
+import { DELIVERY_BARS, FORECAST_REFUSALS } from '../lib/freehold/delivery-commitment'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 import { p_ads_google } from '../lib/i18n/dictionaries/p_ads_google'
 
@@ -376,6 +377,19 @@ console.log('\n── the wallet and the bank ──')
   family('bank.use.state', 'bank.use.state.', USE_STATES, walletDict)
   // The commission panel renders t(`wal.comm.state.${c.state}`) per deal.
   family('wal.comm.state', 'wal.comm.state.', PAYOUT_STATES, walletDict)
+}
+
+console.log('\n── the delivery promise ──')
+{
+  // The panel renders THREE computed families: the bar's own word, the
+  // sentence under the count, and the named refusal when a forecast cannot
+  // honestly be given. A missing member here renders as the raw key on the one
+  // screen that decides whether this account gets paid this month.
+  family('promise.bar', 'promise.bar.', DELIVERY_BARS, lm_core)
+  family('promise.said', 'promise.said.', DELIVERY_BARS, lm_core)
+  // Walked from the union in the pure module rather than typed out, so a
+  // refusal added there cannot reach the screen unreadable.
+  family('promise.cannot', 'promise.cannot.', FORECAST_REFUSALS, lm_core)
 }
 
 if (failures > 0) {
