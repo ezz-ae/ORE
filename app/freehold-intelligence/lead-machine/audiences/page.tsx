@@ -23,6 +23,7 @@ import { Users, Rocket, Trash2, ArrowUpRight, Sparkles, PenLine, Database, X, Lo
 import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting } from '@/lib/meta/types'
 import PatternBuilder from './PatternBuilder'
+import { LocalAudiences } from './LocalAudiences'
 import PersonaStudio from './PersonaStudio'
 import LookalikeStudio from './LookalikeStudio'
 import CrmAudiences from './CrmAudiences'
@@ -163,6 +164,13 @@ export default function AudiencesPage() {
           </button>
         ))}
       </section>
+
+      {/* THE THREE LOCAL AUDIENCES, above the warm layer.
+          Everything else on this page is a way of BUILDING an audience. This
+          one is the finished article, measured before it is stored — and after
+          an account where a saved spec quietly reached the whole market, a
+          measured audience is worth more than another builder. */}
+      <LocalAudiences onSaved={load} />
 
       {/* The warm layer's live state — Meta fills these from behaviour once
           built; the floor that guards a retargeting launch reports readiness

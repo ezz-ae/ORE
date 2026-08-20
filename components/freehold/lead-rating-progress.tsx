@@ -1,26 +1,25 @@
 'use client'
 
 /**
- * FIFTY GOOD LEADS — the promise, on a screen, in one number.
+ * HOW MANY LEADS HAVE BEEN RATED, and how many of those were worth it.
  *
- * The client will not be invoiced until fifty good leads have landed. That is
- * the only number that matters this month, and until now it lived in somebody's
- * head while the screens reported cost per lead — the number that has already
- * been wrong once here, by a factor of fifty.
+ * This began life as a "fifty good leads" scoreboard on the ads home page, and
+ * it was wrong there twice over. A large number under a progress bar reads as
+ * reassurance — "we have got you" — on a screen somebody opens in order to
+ * CHANGE something. And a target parked away from the work that moves it is a
+ * target nobody acts on.
  *
- * THREE BARS, ALWAYS SHOWN TOGETHER. "Good" is a term of a deal, not a fact,
- * and a panel that picked one definition would be taking a side in somebody
- * else's negotiation. Three lines side by side turns "is this real" into
- * "which line did we agree on", which is a conversation that ends.
+ * So it sits in the follow-up queue instead, where the next unrated lead is one
+ * click away, and it says the one thing a person standing there can act on: how
+ * many are still unrated. Everything else on it is context for that.
  *
- * The unrated count sits beside the recommended bar and is never folded into
- * it. An unrated lead has not failed — nobody has looked at it. On this account
- * that distinction is most of the answer: leads already bought and paid for,
- * sitting one broker-click away from counting.
+ * The three bars stay, without the essay. "Good" means different things to
+ * different people and the counts genuinely differ — showing one number would
+ * be picking a definition on somebody else's behalf.
  */
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, Target, AlertTriangle, Star } from 'lucide-react'
+import { Loader2, Star } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DELIVERY_BARS, type DeliveryBar } from '@/lib/freehold/delivery-commitment'
 
@@ -62,7 +61,7 @@ const aed = (n: number) =>
     : n >= 1000 ? `AED ${Math.round(n / 1000)}k`
     : `AED ${Math.round(n)}`
 
-export default function DeliveryPromisePanel({
+export default function LeadRatingProgress({
   target = 50, bar = 'valuable',
 }: { target?: number; bar?: DeliveryBar }) {
   const t = useT()
@@ -96,7 +95,7 @@ export default function DeliveryPromisePanel({
     <div className="rounded-2xl border border-line bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Target className="h-4 w-4 text-gold" /> {t('promise.title', { n: data.target ?? target })}
+          <Star className="h-4 w-4 text-gold" /> {t('rating.title')}
         </h3>
         {/* Switching the bar re-reads the server rather than re-slicing what is
             already here: the forecast is computed against the chosen bar, and a
@@ -119,7 +118,6 @@ export default function DeliveryPromisePanel({
       <p className="mt-4 text-4xl font-semibold tabular-nums text-white">
         {here.met}<span className="text-2xl text-slate-500"> / {data.target ?? target}</span>
       </p>
-      <p className="mt-1 text-[12px] text-slate-400">{t(`promise.said.${shown}`)}</p>
 
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
         <div className={`h-full rounded-full transition-all ${here.done ? 'bg-emerald-400' : 'bg-gold'}`}
@@ -147,42 +145,9 @@ export default function DeliveryPromisePanel({
         </Link>
       )}
 
-      {/* WHAT FINISHING COSTS — or a named refusal to guess. */}
-      {best && (
-        <div className="mt-3 rounded-xl border border-line bg-surface-2/40 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
-            {t('promise.finish')}
-          </p>
-          {best.forecast.known ? (
-            <>
-              <p className="mt-1 text-[13px] text-slate-200">
-                {t('promise.cost', {
-                  name: best.campaignName,
-                  leads: `${best.forecast.leadsNeeded.lo}–${Number.isFinite(best.forecast.leadsNeeded.hi) ? best.forecast.leadsNeeded.hi : '∞'}`,
-                  spend: `${aed(best.forecast.spendAed.lo)}–${aed(best.forecast.spendAed.hi)}`,
-                })}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">
-                {t('promise.rate', {
-                  lo: (best.forecast.rate.lo * 100).toFixed(0),
-                  hi: (best.forecast.rate.hi * 100).toFixed(0),
-                })}
-              </p>
-              {/* MORE MONEY IS THE WRONG ANSWER below a certain rate, and a
-                  forecast that just returned a huge number would be read as a
-                  plan. Said as what it is. */}
-              {best.forecast.rate.hi < 0.05 && (
-                <p className="mt-2 flex items-start gap-2 text-[12px] text-rose-200">
-                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {t('promise.hopeless')}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="mt-1 text-[12px] text-slate-400">{t(`promise.cannot.${best.forecast.reason}`)}</p>
-          )}
-        </div>
-      )}
-
+      {/* NO COST FORECAST HERE. What finishing costs is an ADS decision and
+          this is the CRM — a broker rating leads cannot act on a budget range,
+          and a number nobody at this screen can move is furniture. */}
       {(data.capped ?? 0) > 0 && (
         <p className="mt-3 text-[10px] text-slate-500">{t('promise.capped', { n: data.capped ?? 0 })}</p>
       )}

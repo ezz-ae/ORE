@@ -163,7 +163,7 @@ console.log('\n── and when it does answer, it answers with a range ──')
 
 console.log('\n── the screen shows all three and never invents a number ──')
 {
-  const panel = code('components/freehold/delivery-promise-panel.tsx')
+  const panel = code('components/freehold/lead-rating-progress.tsx')
   check('the panel walks the bars rather than naming one',
     /DELIVERY_BARS\.map/.test(panel),
     'a bar added to the rule module would not appear on the screen')
@@ -173,11 +173,32 @@ console.log('\n── the screen shows all three and never invents a number ─�
   check('switching the bar re-reads the server',
     /useCallback[\s\S]{0,200}bar=\$\{shown\}/.test(panel) && /\}, \[target, shown\]\)/.test(panel),
     'one bar\'s count could be shown under another bar\'s forecast')
-  check('a refusal renders its own sentence',
-    /promise\.cannot\.\$\{best\.forecast\.reason\}/.test(panel))
-  check('the unrated leads are a route to the queue, not a statistic',
-    /crm\/follow-up/.test(panel),
-    'the screen names work nobody can act on from where they are standing')
+  // THE FORECAST IS BUILT AND NOT YET ON A SCREEN, and that is deliberate
+  // rather than forgotten: "what finishing costs" is an ADS decision, and the
+  // CRM panel that survives is for a broker who can only act on the unrated
+  // count. The refusals stay walkable and translated so the ads-side surface
+  // that renders them cannot ship a raw key — but nothing pretends they are
+  // visible today.
+  check('the forecast refusals stay walkable for whoever renders them',
+    FORECAST_REFUSALS.length === 4 && new Set(FORECAST_REFUSALS).size === 4)
+  const dict = code('lib/i18n/dictionaries/lm_core.ts')
+  for (const r of FORECAST_REFUSALS) {
+    check(`  "${r}" has a sentence waiting`, new RegExp(`'promise\\.cannot\\.${r}'`).test(dict))
+  }
+  // IT LIVES BESIDE THE WORK THAT MOVES IT. A target on a screen nobody can
+  // act from is furniture; this one sits in the follow-up queue, where the
+  // next unrated lead is one click away.
+  const followUp = code('app/freehold-intelligence/crm/follow-up/page.tsx')
+  check('the rating progress sits in the follow-up queue',
+    /<LeadRatingProgress/.test(followUp),
+    'the target is parked away from the queue that moves it')
+  const adsHome = code('app/freehold-intelligence/lead-machine/page.tsx')
+  check('…and not on the ads home, where it read as a scoreboard',
+    !/LeadRatingProgress|DeliveryPromisePanel/.test(adsHome),
+    'a progress bar on the ads home reads as "you are fine" to somebody who came to change something')
+  check('…and no cost forecast is shown in the CRM',
+    !/promise\.cost/.test(panel),
+    'a broker rating leads cannot act on a budget range')
 
   const route = code('app/api/freehold/delivery/route.ts')
   check('the terms travel in the URL, not in a stored setting',

@@ -8,6 +8,7 @@ import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { leadOriginLabel } from '@/lib/freehold/lead-origin'
 import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import LeadRatingProgress from '@/components/freehold/lead-rating-progress'
 import { LeadValueChips } from '@/components/freehold/lead-value-chips'
 import { triage, type SetAsideReason } from '@/lib/freehold/queue-priority'
 import { OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
@@ -485,6 +486,14 @@ export default function FollowUpQueuePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-4">
+
+            {/* RATING PROGRESS, BESIDE THE QUEUE THAT MOVES IT.
+                This used to be a big "50 good leads" scoreboard on the ads
+                home. Wrong place twice over: a progress bar reads as "you are
+                fine" on a screen somebody opens to change something, and a
+                target parked away from the work is a target nobody acts on.
+                Here the next unrated lead is one click away. */}
+            <LeadRatingProgress target={50} bar="valuable" />
 
             {/* Response-time clock — target + live breach count, or an honest
                 "no target set" when the admin hasn't configured one. */}

@@ -6,7 +6,6 @@ import { MachinePulse } from '@/components/freehold/machine-pulse'
 import HourTruthPanel from '@/components/freehold/hour-truth-panel'
 import BudgetSplitPanel from '@/components/freehold/budget-split-panel'
 import LiveCampaignsWidget from '@/components/freehold/lead-machine/live-campaigns-widget'
-import DeliveryPromisePanel from '@/components/freehold/delivery-promise-panel'
 import RocketAdWidget from '@/components/freehold/lead-machine/rocket-ad-widget'
 import RatingLoopWidget from '@/components/freehold/rating-loop-widget'
 import { getServerT } from '@/lib/i18n/server'
@@ -117,18 +116,14 @@ export default async function LeadMachineOverviewPage() {
           an operator comes here for: what the money is doing right now, and
           the fastest way to start something new. Everything below is context
           for those two. */}
-      {/* THE PROMISE, ABOVE EVERYTHING.
-          There is one number that decides whether this account gets paid this
-          month — fifty good leads — and every other figure on this page is a
-          means to it. It went at the top because a target that lives in
-          somebody's head is a target the screens quietly work against: this
-          page reported cost per lead for months while the number that mattered
-          was the good RATE, and the two pointed opposite ways. */}
-      <div className="mt-6">
-        <DeliveryPromisePanel target={50} bar="valuable" />
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      {/* THE PROMISE PANEL IS NOT HERE, and that was a decision.
+          It sat at the top of this page for exactly one day. A big number with
+          a progress bar reads as a scoreboard saying "you are fine" — and this
+          is the ads home, where somebody arrives to CHANGE something. A target
+          belongs next to the work that moves it, so the rating progress now
+          lives in the follow-up queue, where rating a lead is one click away.
+          See components/freehold/lead-rating-progress.tsx. */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <LiveCampaignsWidget />
         <RocketAdWidget />
         {/* WHAT THE TEAM'S RATINGS ARE DOING. It sits on the ads home rather

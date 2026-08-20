@@ -167,6 +167,9 @@ export const lm_core: Record<Locale, Dict> = {
     // "Good" is a term of a deal, not a fact. All three bars are shown at once
     // so the conversation is about which line was agreed, not about whether
     // the number is honest. See lib/freehold/delivery-commitment.ts.
+    // The rating strip in the follow-up queue. Short on purpose — a broker
+    // standing here can act on ONE thing, and it is the unrated count.
+    'rating.title': 'Lead ratings',
     'promise.title': '{n} good leads',
     'promise.bar.contactable': 'Contactable',
     'promise.bar.qualified': 'Qualified',
@@ -175,7 +178,7 @@ export const lm_core: Record<Locale, Dict> = {
     'promise.said.qualified': 'Leads a broker moved to qualified, viewing, negotiation or closed. A statement about the pipeline.',
     'promise.said.valuable': 'Leads a broker rated 6 or higher after speaking to them. A statement about the person, and the bar worth putting in writing.',
     'promise.bought': 'Leads bought',
-    'promise.unrated': '{n} leads nobody has rated yet. Under this bar each one is delivery already paid for and not yet claimed — rate them and the count moves.',
+    'promise.unrated': '{n} leads not rated yet. Rate them and the count moves.',
     'promise.finish': 'What finishing costs',
     'promise.cost': 'On {name}: about {leads} more leads, {spend}.',
     'promise.rate': 'Measured good rate {lo}–{hi}%. Set a budget from the top of the range, not the bottom.',
@@ -1792,6 +1795,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.hub.sig.brochure': 'يوجد كتيّب',
     'lm.w.live.title': 'الحملات المباشرة',
 
+    'rating.title': 'تقييمات العملاء',
     'promise.title': '{n} عميل جيد',
     'promise.bar.contactable': 'يمكن الوصول إليه',
     'promise.bar.qualified': 'مؤهَّل',
@@ -1800,7 +1804,7 @@ export const lm_core: Record<Locale, Dict> = {
     'promise.said.qualified': 'عملاء نقلهم الوسيط إلى مؤهَّل أو معاينة أو تفاوض أو إغلاق. وهذا وصف لمسار البيع.',
     'promise.said.valuable': 'عملاء قيّمهم الوسيط بـ6 فأعلى بعد التحدث إليهم. وهذا وصف للشخص نفسه، وهو المعيار الجدير بأن يُكتب في الاتفاق.',
     'promise.bought': 'عملاء تم شراؤهم',
-    'promise.unrated': '{n} عميلاً لم يقيّمهم أحد بعد. وبهذا المعيار كل واحد منهم تسليم مدفوع سلفاً ولم يُطالَب به — قيّمهم ويتحرك العدّاد.',
+    'promise.unrated': '{n} عميلاً بلا تقييم بعد. قيّمهم ويتحرك العدّاد.',
     'promise.finish': 'تكلفة إكمال الاتفاق',
     'promise.cost': 'على {name}: نحو {leads} عميلاً إضافياً، بـ{spend}.',
     'promise.rate': 'نسبة الجودة المقاسة {lo}–{hi}%. اضبط الميزانية على أعلى النطاق لا أدناه.',
@@ -3373,6 +3377,7 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.hub.sig.brochure': 'Есть брошюра',
     'lm.w.live.title': 'Активные кампании',
 
+    'rating.title': 'Оценки лидов',
     'promise.title': '{n} хороших лидов',
     'promise.bar.contactable': 'Есть контакт',
     'promise.bar.qualified': 'Квалифицирован',
@@ -3381,7 +3386,7 @@ export const lm_core: Record<Locale, Dict> = {
     'promise.said.qualified': 'Лиды, которых брокер перевёл в квалифицирован, показ, переговоры или закрыт. Это про воронку.',
     'promise.said.valuable': 'Лиды, которым брокер поставил 6 и выше после разговора. Это про самого человека — и та планка, которую стоит зафиксировать письменно.',
     'promise.bought': 'Куплено лидов',
-    'promise.unrated': '{n} лидов ещё никто не оценил. По этой планке каждый из них — уже оплаченная поставка, которую не предъявили: оцените их, и счётчик сдвинется.',
+    'promise.unrated': '{n} лидов ещё не оценены. Оцените их — и счётчик сдвинется.',
     'promise.finish': 'Во что обойдётся завершение',
     'promise.cost': 'На {name}: примерно ещё {leads} лидов, {spend}.',
     'promise.rate': 'Измеренная доля хороших {lo}–{hi}%. Бюджет считайте по верхней границе, не по нижней.',
