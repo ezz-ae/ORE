@@ -12,7 +12,7 @@ import { useLiveProjects, type LiveProject } from '@/lib/freehold/use-live-proje
 import { fieldClass } from '@/components/freehold/ui'
 import type { MetaFormQuestion, MetaFormQuestionType, CreateLeadFormPayload, ThankYouButtonType } from '@/lib/meta/types'
 import {
-  CONTACT_GROUPS, CONTACT_TYPES, DEFAULT_CONTACT, FORM_TEMPLATES, PRESET_DEFS,
+  CONTACT_GROUPS, CONTACT_TYPES, DEFAULT_CONTACT, FORM_TEMPLATES, PRESET_DEFS, type PresetKey,
   buildPreset, contactLabelKey, customToMetaQuestion, introFromListing, mapFormToBuilder, materializeTemplate,
   type BuilderCustomQuestion, type FormTemplateKey, type ListingFacts,
 } from '@/lib/meta/form-templates'
@@ -244,7 +244,9 @@ export default function NewFormPage() {
     }))
   }
 
-  function addPreset(key: 'budget' | 'timeline' | 'purpose') {
+  // Typed from the union rather than by hand — a preset added to the module
+  // and not to this list is a button that cannot be pressed.
+  function addPreset(key: PresetKey) {
     const q = buildPreset(key, facts, t)
     setForm((prev) => (prev.customQuestions.some((c) => c.key === q.key)
       ? prev

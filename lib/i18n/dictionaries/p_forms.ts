@@ -279,6 +279,17 @@ const en: Dict = {
   'pforms.qualify.removeOption': 'Remove option',
   'pforms.qualify.removeQuestion': 'Remove question',
   'pforms.preset.purpose': 'Purpose',
+  // ELIGIBILITY, ASKED RATHER THAN INFERRED.
+  // Outside Dubai's freehold areas ownership is restricted to UAE and GCC
+  // nationals, so a campaign for that stock pays for people who cannot
+  // complete. The buyer's own answer is exact where Meta's `Expatriates`
+  // guess is approximately wrong — and nobody is quietly denied the advert.
+  'pforms.preset.eligibility': 'Ownership eligibility',
+  'pforms.eligibility.gcc': 'UAE or GCC national',
+  'pforms.eligibility.other': 'Other nationality',
+  // "Not sure" is a LEAD, not a rejection — somebody who needs the rule
+  // explained, which is the conversation a broker exists for.
+  'pforms.eligibility.unsure': 'Not sure — please advise me',
   'pforms.budget.underX': 'Under {x}',
   'pforms.budget.aboveX': 'Above {x}',
   'pforms.timeline.1to3': '1–3 months',
@@ -559,6 +570,10 @@ const ar: Dict = {
   'pforms.qualify.removeOption': 'حذف الخيار',
   'pforms.qualify.removeQuestion': 'حذف السؤال',
   'pforms.preset.purpose': 'الغرض',
+  'pforms.preset.eligibility': 'أهلية التملك',
+  'pforms.eligibility.gcc': 'مواطن إماراتي أو خليجي',
+  'pforms.eligibility.other': 'جنسية أخرى',
+  'pforms.eligibility.unsure': 'لست متأكداً — أرجو إفادتي',
   'pforms.budget.underX': 'أقل من {x}',
   'pforms.budget.aboveX': 'أكثر من {x}',
   'pforms.timeline.1to3': '1–3 أشهر',
@@ -836,6 +851,10 @@ const ru: Dict = {
   'pforms.qualify.removeOption': 'Удалить вариант',
   'pforms.qualify.removeQuestion': 'Удалить вопрос',
   'pforms.preset.purpose': 'Цель',
+  'pforms.preset.eligibility': 'Право на владение',
+  'pforms.eligibility.gcc': 'Гражданин ОАЭ или страны GCC',
+  'pforms.eligibility.other': 'Другое гражданство',
+  'pforms.eligibility.unsure': 'Не уверен — подскажите, пожалуйста',
   'pforms.budget.underX': 'До {x}',
   'pforms.budget.aboveX': 'Свыше {x}',
   'pforms.timeline.1to3': '1–3 месяца',

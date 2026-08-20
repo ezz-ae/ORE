@@ -105,7 +105,7 @@ export function contactLabelKey(type: string): string | null {
 
 // ─── Question presets ────────────────────────────────────────────────────────
 
-export type PresetKey = 'budget' | 'timeline' | 'purpose'
+export type PresetKey = 'budget' | 'timeline' | 'purpose' | 'eligibility'
 
 function fmtAED(n: number): string {
   if (n >= 1_000_000) {
@@ -177,16 +177,64 @@ export function buildPurposePreset(t: TFn): BuilderCustomQuestion {
   }
 }
 
+/**
+ * CAN THIS BUYER LEGALLY OWN THIS PROPERTY?
+ *
+ * Not every unit is sellable to everyone. Outside Dubai's designated freehold
+ * areas, ownership is restricted to UAE and GCC nationals — so a campaign for
+ * non-freehold stock spends real money on people who cannot complete, and the
+ * broker finds out on the phone.
+ *
+ * The obvious fix is to reach for Meta's `Expatriates` exclusion, and it is the
+ * wrong instrument twice over. It is not a nationality field — it is Meta
+ * guessing at migration from where somebody's friends live — so it misses in
+ * both directions: a Gulf national resident in Dubai is flagged expatriate and
+ * CAN buy; a resident of fifteen years may not be flagged and cannot. And it
+ * decides who may SEE a housing advert on the basis of where they are from,
+ * which this product does not do. See lib/freehold/local-audiences.ts.
+ *
+ * Asking is better on every axis that matters. It is the buyer's own answer
+ * rather than a platform's inference, so it is exactly right rather than
+ * approximately wrong; it costs nothing in reach; and it screens at the moment
+ * of submission rather than by silently withholding the advert. A person who
+ * cannot buy this unit is told so and stops, instead of becoming a lead
+ * somebody pays for and then disappoints.
+ *
+ * OFF BY DEFAULT, and attached only to the templates for stock where the
+ * restriction is real. Asking every buyer about eligibility for a property that
+ * has no restriction is an intrusive question with no purpose.
+ */
+export function buildEligibilityPreset(t: TFn): BuilderCustomQuestion {
+  return {
+    id: presetId('eligibility'),
+    key: 'ownership_eligibility',
+    label: t('pforms.preset.eligibility'),
+    kind: 'choice',
+    // Three options, not two. "I am not sure" is the honest answer for a great
+    // many real buyers and it is a LEAD — somebody who needs the rule
+    // explained, which is the conversation a broker is for. Forcing a yes/no
+    // would push the unsure into whichever answer looks safer and destroy the
+    // signal the question exists to collect.
+    options: [
+      t('pforms.eligibility.gcc'),
+      t('pforms.eligibility.other'),
+      t('pforms.eligibility.unsure'),
+    ],
+  }
+}
+
 export function buildPreset(key: PresetKey, facts: ListingFacts, t: TFn): BuilderCustomQuestion {
-  if (key === 'budget')   return buildBudgetPreset(facts, t)
-  if (key === 'timeline') return buildTimelinePreset(t)
+  if (key === 'budget')      return buildBudgetPreset(facts, t)
+  if (key === 'timeline')    return buildTimelinePreset(t)
+  if (key === 'eligibility') return buildEligibilityPreset(t)
   return buildPurposePreset(t)
 }
 
 export const PRESET_DEFS: { key: PresetKey; labelKey: string }[] = [
-  { key: 'budget',   labelKey: 'pforms.preset.budget'   },
-  { key: 'timeline', labelKey: 'pforms.preset.timeline' },
-  { key: 'purpose',  labelKey: 'pforms.preset.purpose'  },
+  { key: 'budget',      labelKey: 'pforms.preset.budget'      },
+  { key: 'timeline',    labelKey: 'pforms.preset.timeline'    },
+  { key: 'purpose',     labelKey: 'pforms.preset.purpose'     },
+  { key: 'eligibility', labelKey: 'pforms.preset.eligibility' },
 ]
 
 // ─── Custom question → Meta question ─────────────────────────────────────────
