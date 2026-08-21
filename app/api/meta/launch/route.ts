@@ -10,6 +10,7 @@ import { query } from '@/lib/db'
 import { getAudience } from '@/lib/freehold/audiences'
 import { getCampaignRequest, markRequestLaunched } from '@/lib/freehold/campaign-requests'
 import { rememberCampaignAudience } from '@/lib/freehold/audience-outcomes'
+import { readQualifiedGoal, qualifiedConversionId } from '@/lib/meta/qualified-goal-db'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { adEndTimeForPermit, endTimeHasPassed } from '@/lib/freehold/permit-schedule'
 import { getLandingPublishState } from '@/lib/landing-pages'
@@ -496,6 +497,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Arms = the ad sets this launch will create. The learning floor is per ad
+    // set, so a launch splitting across six placements has to clear it six
+    // times over before qualified leads are a goal it can sustain.
+    const armsForLaunch = Array.isArray(body.manualPlacements) && body.manualPlacements.length > 0
+      ? body.manualPlacements.length : 1
+    const launchPixelId = typeof body.pixelId === 'string' && body.pixelId.trim() ? body.pixelId.trim() : null
+    const qualifiedGoal = await readQualifiedGoal({
+      objective: body.objective,
+      destination: body.destination,
+      pixelId: launchPixelId,
+      arms: armsForLaunch,
+    }).catch(() => null) ?? { goal: 'lead' as const, reason: 'noConversion' as const, perArmPerWeek: null, neededPerWeek: 0 }
+    const qualifiedConversion = qualifiedGoal.goal === 'qualified'
+      ? await qualifiedConversionId(launchPixelId).catch(() => null)
+      : null
+
     const result = await launchFullCampaign({
       campaignName:     body.campaignName,
       objective:        body.objective,
@@ -523,6 +540,14 @@ export async function POST(req: NextRequest) {
       lifetimeCapAED:   typeof body.lifetimeCapAED === 'number' && body.lifetimeCapAED > 0 ? body.lifetimeCapAED : undefined,
       cplCapAED:        typeof body.cplCapAED === 'number' && body.cplCapAED > 0 ? body.cplCapAED : undefined,
       pixelId:          typeof body.pixelId === 'string' && body.pixelId.trim() ? body.pixelId.trim() : undefined,
+      // WHAT THIS AD SET IS TOLD TO BUY. Qualified leads when the account can
+      // prove it produces enough of them per arm to leave learning, and form
+      // fills otherwise — lib/meta/qualified-goal.ts owns the test. A failed
+      // read leaves it undefined, which is exactly the behaviour every launch
+      // had before this existed.
+      qualifiedConversionId: qualifiedGoal.goal === 'qualified'
+        ? (qualifiedConversion ?? undefined)
+        : undefined,
       placementMode:    body.placementMode === 'manual' ? 'manual' : undefined,
       manualPlacements: Array.isArray(body.manualPlacements) ? body.manualPlacements.map(String) : undefined,
       leadLanguages:    Array.isArray(body.leadLanguages) ? body.leadLanguages.map(String) : undefined,
