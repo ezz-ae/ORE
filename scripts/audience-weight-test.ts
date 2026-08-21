@@ -20,6 +20,8 @@ import {
 } from '../lib/freehold/audience-weight'
 import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { splitBudget, type SplitRow } from '../lib/freehold/budget-split'
+import { medianMinutes } from '../lib/freehold/audience-outcomes'
+import { SLOW_RESPONSE_MULTIPLE } from '../lib/freehold/hour-truth'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -28,8 +30,8 @@ const ok = (m: string) => console.log(`  ✓ ${m}`)
 const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}\n      got: ${got}`) }
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
-const rec = (key: string, leads: number, qualified: number, won = 0): AudienceRecord =>
-  ({ key, leads, qualified, won })
+const rec = (key: string, leads: number, qualified: number, won = 0, wait?: number | null): AudienceRecord =>
+  ({ key, leads, qualified, won, medianResponseMinutes: wait ?? null })
 const byKey = (ws: ReturnType<typeof weighAudiences>, k: string) => ws.find((w) => w.key === k)!
 
 console.log('\n── the floor is the whole point ──')
@@ -131,8 +133,9 @@ console.log('\n── every walkable value is covered ──')
 {
   check('rungs are walkable and include the no-signal answer',
     WEIGHT_RUNGS.includes('none') && WEIGHT_RUNGS.length === 3)
-  check('verdicts are walkable and include unknown',
-    WEIGHT_VERDICTS.includes('unknown') && WEIGHT_VERDICTS.length === 4)
+  check('verdicts are walkable and include unknown and unanswered',
+    WEIGHT_VERDICTS.includes('unknown') && WEIGHT_VERDICTS.includes('unanswered') &&
+    WEIGHT_VERDICTS.length === 5)
   const all = weighAudiences([rec('x', 0, 0), rec('bad', 100, 2), rec('good', 100, 30), rec('mid', 100, 10)])
   const seen = new Set(all.map((w) => w.verdict))
   check('a realistic table produces better, worse, tied and unknown together',
@@ -229,6 +232,52 @@ console.log('\n── the route actually spends it ──')
     /audienceRung/.test(route))
 }
 
+console.log('\n── the rota gets asked before the audience is blamed ──')
+{
+  // The same audience record twice. The only difference is how long its leads
+  // waited for somebody to pick up the phone.
+  const answered = weighAudiences([rec('slow', 100, 2, 0, 30), rec('good', 100, 30, 0, 30)])
+  check('answered as fast as the rest, a bad rate is the audience',
+    byKey(answered, 'slow').verdict === 'worse', byKey(answered, 'slow').verdict)
+  check('…and it is weighted down', byKey(answered, 'slow').weight < NEUTRAL_WEIGHT)
+
+  const ignored = weighAudiences([
+    rec('slow', 100, 2, 0, 30 * SLOW_RESPONSE_MULTIPLE), rec('good', 100, 30, 0, 30),
+  ])
+  check('the identical rate, with leads left waiting, is the ROTA not the audience',
+    byKey(ignored, 'slow').verdict === 'unanswered', byKey(ignored, 'slow').verdict)
+  check('…and its budget is untouched — cutting it would delete the evidence',
+    byKey(ignored, 'slow').weight === NEUTRAL_WEIGHT, String(byKey(ignored, 'slow').weight))
+  check('…just under the multiple is still the audience, not the rota',
+    weighAudiences([rec('slow', 100, 2, 0, 30 * SLOW_RESPONSE_MULTIPLE - 1), rec('good', 100, 30, 0, 30)])
+      .find((w) => w.key === 'slow')!.verdict === 'worse')
+
+  // ASYMMETRIC ON PURPOSE, the same way hour-truth only lets 'weak' drop an
+  // hour. A winner answered fast is not re-examined: being wrong about a
+  // winner costs surplus, being wrong about a loser costs the evidence.
+  check('a WINNER is never withheld for being answered quickly',
+    weighAudiences([rec('fast', 100, 30, 0, 5), rec('rest', 100, 3, 0, 200)])
+      .find((w) => w.key === 'fast')!.verdict === 'better')
+
+  check('an account nobody timed blames nobody',
+    weighAudiences([rec('a', 100, 2), rec('b', 100, 30)]).find((w) => w.key === 'a')!.verdict === 'worse')
+  check('an instant desk is never the yardstick for slowness',
+    weighAudiences([rec('slow', 100, 2, 0, 90), rec('good', 100, 30, 0, 0)])
+      .find((w) => w.key === 'slow')!.verdict === 'worse')
+
+  check('the multiple is imported from hour-truth, not restated',
+    /SLOW_RESPONSE_MULTIPLE/.test(
+      readFileSync(join(process.cwd(), 'lib/freehold/audience-weight.ts'), { encoding: 'utf8' })
+        .split('\n').filter((l) => l.startsWith('import')).join('\n')))
+
+  check('the wait is a median, so one nine-day reply cannot condemn a quick desk',
+    medianMinutes([5, 5, 5, 5, 13000]) === 5, String(medianMinutes([5, 5, 5, 5, 13000])))
+  check('an even count takes the middle pair', medianMinutes([10, 20, 30, 40]) === 25)
+  check('nobody answered is null, never zero', medianMinutes([null, undefined]) === null)
+  check('an unanswered lead does not pull the median down',
+    medianMinutes([null, 60, null]) === 60)
+}
+
 console.log('\n── the screen says the thing, not the multiplier ──')
 {
   check('exactly neutral is worth no sentence', weightReads(NEUTRAL_WEIGHT) === null)
@@ -248,6 +297,13 @@ console.log('\n── the screen says the thing, not the multiplier ──')
     /weightReads\(/.test(panel) && !/audienceWeight\s*[<>]/.test(panel))
   check('the panel never prints the multiplier itself',
     !/\{p\.audienceWeight\}/.test(panel) && !/audienceWeight[^)]*toFixed/.test(panel))
+  check('the rota line replaces the buyer line rather than joining it',
+    /audienceVerdict === 'unanswered'/.test(panel) &&
+    /audienceVerdict !== 'unanswered'/.test(panel))
+  for (const locale of ['en', 'ar', 'ru'] as const) {
+    check(`${locale}: the rota sentence exists and names the audience`,
+      (lm_ads[locale]['split.audience.unanswered'] ?? '').includes('{audience}'))
+  }
   check('the rung line is withheld unless the account earned one',
     /audienceRung === 'deal'/.test(panel) && /audienceRung === 'qualified'/.test(panel) &&
     !/audienceRung === 'none'/.test(panel))

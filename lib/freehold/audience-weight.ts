@@ -31,6 +31,7 @@
  * Pure — no I/O, no clock, no platform call. Runs in `pnpm guards`.
  */
 import { countBounds } from '@/lib/freehold/min-evidence'
+import { SLOW_RESPONSE_MULTIPLE } from '@/lib/freehold/hour-truth'
 
 /** One audience's record, as `audience-outcomes.ts` already rolls it up. */
 export interface AudienceRecord {
@@ -39,6 +40,11 @@ export interface AudienceRecord {
   leads: number
   qualified: number
   won: number
+  /**
+   * Median minutes to the first broker reply for this audience's leads, or
+   * null when nobody has been answered. See the `unanswered` verdict.
+   */
+  medianResponseMinutes?: number | null
 }
 
 /**
@@ -54,8 +60,17 @@ export interface AudienceRecord {
 export const WEIGHT_RUNGS = ['none', 'qualified', 'deal'] as const
 export type WeightRung = (typeof WEIGHT_RUNGS)[number]
 
-/** Walkable — each renders its own sentence. */
-export const WEIGHT_VERDICTS = ['better', 'worse', 'tied', 'unknown'] as const
+/**
+ * Walkable — each renders its own sentence.
+ *
+ * `unanswered` is the one that is not about the audience at all, and it is
+ * here for the same reason `hour-truth.ts` has it: an audience whose leads sit
+ * for six hours converts badly, and the obvious reading — "these people do not
+ * buy, spend less on them" — is usually backwards. The audience did not fail;
+ * the COVER did. Weighting it down would cut the spend, cut the leads, cut the
+ * evidence, and leave the rota exactly as it was.
+ */
+export const WEIGHT_VERDICTS = ['better', 'worse', 'tied', 'unknown', 'unanswered'] as const
 export type WeightVerdict = (typeof WEIGHT_VERDICTS)[number]
 
 /**
@@ -104,6 +119,31 @@ export interface AudienceWeight {
 
 const clamp = (w: number): number => Math.min(MAX_WEIGHT, Math.max(MIN_WEIGHT, w))
 
+/** The quickest median reply on the account, or null when nobody was timed. */
+export function fastestResponse(rows: AudienceRecord[]): number | null {
+  const times = rows
+    .map((r) => r.medianResponseMinutes)
+    .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m >= 0)
+  return times.length > 0 ? Math.min(...times) : null
+}
+
+/**
+ * Did this audience's leads wait materially longer than the best-served ones?
+ *
+ * SLOW_RESPONSE_MULTIPLE is imported from `hour-truth.ts` rather than restated:
+ * a report and a budget must not be able to disagree about what "slow" means.
+ * An audience nobody timed, or an account nobody timed, is NOT slow — an
+ * unknown wait is not an excuse and not an accusation.
+ */
+function answeredSlowly(r: AudienceRecord, fastest: number | null): boolean {
+  const mine = r.medianResponseMinutes
+  if (fastest === null || typeof mine !== 'number' || !Number.isFinite(mine)) return false
+  // A fastest of zero would make every multiple infinite; nobody is slow
+  // against an instant desk, so the comparison is skipped rather than faked.
+  if (fastest <= 0) return false
+  return mine >= fastest * SLOW_RESPONSE_MULTIPLE
+}
+
 const eventsOn = (r: AudienceRecord, rung: Exclude<WeightRung, 'none'>): number =>
   rung === 'deal' ? r.won : r.qualified
 
@@ -146,6 +186,11 @@ export function weighAudiences(rows: AudienceRecord[]): AudienceWeight[] {
 
   const totalLeads = rows.reduce((n, r) => n + Math.max(0, r.leads), 0)
   const totalEvents = rows.reduce((n, r) => n + Math.max(0, eventsOn(r, rung)), 0)
+  // Measured against the FASTEST audience rather than an average, exactly as
+  // readDay does for the day's blocks. An average is dragged up by the very
+  // audience being judged, so the slowest one on the account could never look
+  // slow — which is the audience this test exists to catch.
+  const fastest = fastestResponse(rows)
 
   return rows.map((r): AudienceWeight => {
     const leads = Math.max(0, r.leads)
@@ -172,6 +217,13 @@ export function weighAudiences(rows: AudienceRecord[]): AudienceWeight[] {
       return { key: r.key, weight: clamp(lo / fieldRate), rung, verdict: 'better', fieldRate, bound: lo }
     }
     if (hi < fieldRate) {
+      // THE ROTA GETS ASKED FIRST. Only a 'worse' reading is checked, and the
+      // asymmetry is deliberate — the same one hour-truth.ts makes. Being
+      // wrong about a winner costs some surplus; being wrong about a loser
+      // cuts the spend that would have produced the evidence to overturn it.
+      if (answeredSlowly(r, fastest)) {
+        return { key: r.key, weight: NEUTRAL_WEIGHT, rung, verdict: 'unanswered', fieldRate, bound: hi }
+      }
       return { key: r.key, weight: clamp(hi / fieldRate), rung, verdict: 'worse', fieldRate, bound: hi }
     }
     return { key: r.key, weight: NEUTRAL_WEIGHT, rung, verdict: 'tied', fieldRate, bound: null }

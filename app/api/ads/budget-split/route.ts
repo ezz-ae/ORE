@@ -101,6 +101,9 @@ export async function GET() {
     // audiences, not against the campaigns that happened to run it.
     const audienceWeights = weighAudiences(audienceRows.map((a) => ({
       key: a.key, leads: a.leads, qualified: a.qualified, won: a.won,
+      // The rota's alibi. Without it an audience nobody called reads as an
+      // audience nobody wants, and the budget answers the wrong question.
+      medianResponseMinutes: a.medianResponseMinutes,
     })))
     const audienceRung = audienceWeights[0]?.rung ?? 'none'
 
@@ -248,6 +251,9 @@ export async function GET() {
           audienceWeight: weightFor(
             audienceWeights, audienceOfCampaign.get(p.campaignId)?.key ?? null,
           ),
+          audienceVerdict: audienceWeights.find(
+            (w) => w.key === audienceOfCampaign.get(p.campaignId)?.key,
+          )?.verdict ?? null,
           frequency: d?.frequency ?? 0,
           // The ad sets that actually hold the budget. One ⇒ the panel can
           // apply the change; several ⇒ it says so instead, because splitting

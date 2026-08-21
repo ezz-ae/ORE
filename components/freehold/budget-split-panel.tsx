@@ -30,7 +30,7 @@ import { Loader2, Check } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { SplitAction, SplitReason } from '@/lib/freehold/budget-split'
 import { weightReads } from '@/lib/freehold/audience-weight'
-import type { WeightRung } from '@/lib/freehold/audience-weight'
+import type { WeightRung, WeightVerdict } from '@/lib/freehold/audience-weight'
 
 interface Plan {
   campaignId: string
@@ -47,6 +47,7 @@ interface Plan {
   channel: 'meta' | 'google'
   audienceName: string | null
   audienceWeight: number
+  audienceVerdict: WeightVerdict | null
 }
 
 interface Response {
@@ -161,7 +162,15 @@ export default function BudgetSplitPanel() {
                   freq: p.frequency ? p.frequency.toFixed(1) : '—',
                 })}
               </span>
-              {p.audienceName && audienceSays(p) && (
+              {/* The rota's line comes FIRST and replaces the other one. An
+                  audience nobody called has no verdict worth printing about
+                  its buyers, and printing both would bury the actionable half. */}
+              {p.audienceName && p.audienceVerdict === 'unanswered' && (
+                <span className="block text-[10px] leading-snug text-amber-200/80">
+                  {t('split.audience.unanswered', { audience: p.audienceName })}
+                </span>
+              )}
+              {p.audienceName && p.audienceVerdict !== 'unanswered' && audienceSays(p) && (
                 <span className="block text-[10px] leading-snug text-slate-500">
                   {audienceSays(p) === 'more'
                     ? t('split.audience.more', { audience: p.audienceName })
