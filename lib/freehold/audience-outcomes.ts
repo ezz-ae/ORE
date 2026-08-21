@@ -79,6 +79,31 @@ export async function rememberCampaignAudience(input: {
   } catch { /* bookkeeping never fails a launch */ }
 }
 
+/**
+ * Which audience each campaign was launched from.
+ *
+ * `audienceOutcomes` folds this table BY AUDIENCE, which answers "which
+ * audience produces buyers". A caller holding a campaign needs the arrow the
+ * other way round to spend on that answer — `audience-weight.ts` computes one
+ * weight per audience and `/api/ads/budget-split` has campaigns in its hand.
+ *
+ * Best-effort, like the write that fills it: an account with no audience
+ * bookkeeping yet returns an empty map, every campaign resolves to no key, and
+ * every weight resolves to NEUTRAL_WEIGHT. Not knowing which audience a
+ * campaign came from is never grounds to move its budget.
+ */
+export async function campaignAudienceKeys(): Promise<Map<string, { key: string; name: string }>> {
+  try {
+    await ensureTable()
+    const rows = await query<{ campaign_id: string; audience_key: string; audience_name: string }>(
+      `SELECT campaign_id, audience_key, audience_name FROM freehold_campaign_audience`,
+    )
+    return new Map(rows.map((r) => [r.campaign_id, { key: r.audience_key, name: r.audience_name }]))
+  } catch {
+    return new Map()
+  }
+}
+
 /** One CRM lead, attributed to the audience its campaign was launched from. */
 export interface AttributedLead {
   audienceKey: string

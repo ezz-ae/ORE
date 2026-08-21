@@ -199,6 +199,35 @@ console.log('\n── the split spends the weight, and only the surplus ──')
     /ONLY PLACE AUDIENCE QUALITY MAY SPEAK/.test(src))
 }
 
+console.log('\n── the route actually spends it ──')
+{
+  // A weight nothing reads is the failure this repo keeps finding: a number
+  // computed correctly, logged, and acted on by nobody. `audience-outcomes.ts`
+  // sat in exactly that state until this change, so the wiring is asserted at
+  // the source rather than trusted.
+  const route = readFileSync(join(process.cwd(), 'app/api/ads/budget-split/route.ts'), { encoding: 'utf8' })
+
+  check('the route computes the weights', /weighAudiences\(/.test(route))
+  check('…from the audience outcomes the CRM already had',
+    /audienceOutcomes\(\)/.test(route))
+  check('…and knows which audience each campaign came from',
+    /campaignAudienceKeys\(\)/.test(route))
+
+  const rowsBlock = route.slice(route.indexOf('const rows: SplitRow[]'), route.indexOf('const cap ='))
+  check('the weight reaches the SplitRow the allocator actually reads',
+    /audienceWeight:\s*weightFor\(/.test(rowsBlock), rowsBlock.slice(0, 200))
+
+  // BOTH READS MUST DEGRADE. They add a preference to an allocation that is
+  // already correct without them; a database that will not answer must give
+  // the neutral split, never a 502 on a panel that used to work.
+  check('the outcomes read cannot fail the panel', /audienceOutcomes\(\)\.catch\(/.test(route))
+  check('the campaign→audience read cannot fail the panel',
+    /campaignAudienceKeys\(\)\.catch\(/.test(route))
+
+  check('the rung is reported, so the screen never implies a precision the account lacks',
+    /audienceRung/.test(route))
+}
+
 if (failures > 0) {
   console.error(`\n${failures} audience-weight guard(s) broken.`)
   process.exit(1)

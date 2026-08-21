@@ -13,6 +13,12 @@
  *   · saturation                lookalike-ladder.ts, over Meta frequency/reach
  *   · the price of a lead       what decides how many arms the cap carries
  *   · the current budgets       from the ad sets that actually hold them
+ *   · the audience weight       audience-weight.ts, over what each audience's
+ *                               leads BECAME — the fifth input, and the only
+ *                               one about WHO was bought rather than what it
+ *                               cost. Absent on an account with no quality
+ *                               signal yet, where every weight is neutral and
+ *                               this route plans exactly as it always did.
  *
  * BOTH CHANNELS, and this one is not a reporting nicety. The Ads Machine's cap
  * is ONE combined figure covering Meta and Google (ads-machine-engine states
@@ -35,6 +41,8 @@ import { accountMoneyBasis } from '@/lib/freehold/money-truth-db'
 import { moneyStandings, type CampaignMoney } from '@/lib/freehold/money-truth'
 import { assessTier } from '@/lib/freehold/lookalike-ladder'
 import { splitBudget, type SplitRow } from '@/lib/freehold/budget-split'
+import { weighAudiences, weightFor } from '@/lib/freehold/audience-weight'
+import { audienceOutcomes, campaignAudienceKeys } from '@/lib/freehold/audience-outcomes'
 import { listMachines } from '@/lib/freehold/ads-machine'
 import { deliveryOf, isSpending } from '@/lib/meta/delivery-status'
 import {
@@ -69,7 +77,7 @@ export async function GET() {
     // Google only would have been told it has nothing running, which is a
     // different and much louder claim than "this only looked at Meta".
 
-    const [basis, insightsById, capAed] = await Promise.all([
+    const [basis, insightsById, capAed, audienceRows, audienceOfCampaign] = await Promise.all([
       accountMoneyBasis(),
       getAccountCampaignInsights(),
       // THE STATED CEILING, from the machines that are actually running. A
@@ -81,7 +89,20 @@ export async function GET() {
           return running.length > 0 ? running.reduce((n, m) => n + m.dailyCapAed, 0) : null
         })
         .catch(() => null),
+      // BOTH BEST-EFFORT. These two reads add a preference to an allocation
+      // that is already correct without them, so a database that will not
+      // answer must degrade to the neutral split rather than fail the panel.
+      audienceOutcomes().catch(() => []),
+      campaignAudienceKeys().catch(() => new Map<string, { key: string; name: string }>()),
     ])
+
+    // One weight per AUDIENCE, computed over the whole field before any
+    // campaign is looked at — an audience is ranked against the other
+    // audiences, not against the campaigns that happened to run it.
+    const audienceWeights = weighAudiences(audienceRows.map((a) => ({
+      key: a.key, leads: a.leads, qualified: a.qualified, won: a.won,
+    })))
+    const audienceRung = audienceWeights[0]?.rung ?? 'none'
 
     const detail = await Promise.all(live.map(async (c) => {
       const [quality, adSets] = await Promise.all([
@@ -182,6 +203,13 @@ export async function GET() {
       dailyBudgetAed: d.dailyBudgetAed,
       standing: standingById.get(d.money.campaignId)?.verdict ?? 'tooEarly',
       saturated: d.saturated,
+      // A campaign whose audience was never recorded — every Google campaign,
+      // and every Meta one launched before the bookkeeping existed — resolves
+      // to NEUTRAL_WEIGHT. An unknown audience is not a bad audience.
+      audienceWeight: weightFor(
+        audienceWeights,
+        audienceOfCampaign.get(d.money.campaignId)?.key ?? null,
+      ),
     }))
 
     // No cap configured ⇒ plan against what is already committed. That is the
@@ -201,6 +229,10 @@ export async function GET() {
       capIsConfigured: capAed !== null,
       costPerLeadAed,
       perArmAed: split.perArmAed,
+      // What the audience ranking stood on, so the panel can say 'deals',
+      // 'qualified leads' or nothing at all rather than implying a precision
+      // the account has not earned yet.
+      audienceRung,
       supportedArms: split.supportedArms,
       tomorrowAed: split.tomorrowAed,
       overCapAed: split.overCapAed,
@@ -212,6 +244,10 @@ export async function GET() {
           channel: d?.channel ?? 'meta',
           currentAed: Math.round(d?.dailyBudgetAed ?? 0),
           saturated: d?.saturated ?? false,
+          audienceName: audienceOfCampaign.get(p.campaignId)?.name ?? null,
+          audienceWeight: weightFor(
+            audienceWeights, audienceOfCampaign.get(p.campaignId)?.key ?? null,
+          ),
           frequency: d?.frequency ?? 0,
           // The ad sets that actually hold the budget. One ⇒ the panel can
           // apply the change; several ⇒ it says so instead, because splitting
