@@ -179,6 +179,34 @@ export function weighAudiences(rows: AudienceRecord[]): AudienceWeight[] {
 }
 
 /**
+ * How far from neutral a weight has to be before it is worth a SENTENCE.
+ *
+ * A panel must never print "1.07". A broker cannot price a multiplier, and a
+ * gap that small is inside the noise of the sample it came from — putting it
+ * on screen would dress a coin-flip as a finding. Below this band the row says
+ * nothing about its audience, which is the honest reading.
+ *
+ * This lives here rather than in the component so the rule is one definition
+ * and a guard can prove it, the way `aedOf` owns the ledger's one conversion.
+ */
+export const WEIGHT_SAY_BAND = 0.1
+
+/**
+ * The word for a weight, or nothing.
+ *
+ * Three answers, and the third is the common one. 'less' is deliberately not
+ * 'excluded' anywhere it is rendered: the floor is MIN_WEIGHT and the screen
+ * has to keep saying so, because "we spend less here" and "we stopped" are
+ * different promises and only one of them is true.
+ */
+export function weightReads(weight: number): 'more' | 'less' | null {
+  if (!Number.isFinite(weight)) return null
+  if (weight >= NEUTRAL_WEIGHT + WEIGHT_SAY_BAND) return 'more'
+  if (weight <= NEUTRAL_WEIGHT - WEIGHT_SAY_BAND) return 'less'
+  return null
+}
+
+/**
  * The weight for one audience, for a caller holding a campaign rather than a
  * table. An audience nobody weighed is NEUTRAL_WEIGHT — an unknown is never a
  * penalty, which is the same rule `budget-split.ts` applies to an unknown cost.

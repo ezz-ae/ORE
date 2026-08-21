@@ -414,6 +414,13 @@ export const lm_ads: Record<Locale, Dict> = {
   'split.onGoogle': 'set this one in Google',
   'split.overCap': '{over} over {cap} tomorrow. Meta restarts the learning on a big cut, so it comes down over a few days instead of all at once.',
   'split.noCap': 'No daily cap set, so this splits what is already running.',
+  // The audience line. Never the multiplier — a broker cannot price 1.4 — and
+  // 'less' always ends by saying the campaign is still running, because that
+  // is the promise the weight makes and "takes less" alone reads as "stopped".
+  'split.audience.rankedOnDeals': 'Audiences are ranked on deals closed.',
+  'split.audience.rankedOnQualified': 'Audiences are ranked on leads that qualified.',
+  'split.audience.more': '{audience} buys more often than the rest, so it takes more of what is spare.',
+  'split.audience.less': '{audience} buys less often than the rest, so it takes less of what is spare. It keeps running.',
   'lm.launch.duplicate.openRunning': 'Open the one running',
   'lm.launch.duplicate.anyway': 'Launch it anyway',
   // ── My points (the broker's own page) ──────────────────────────────────
@@ -1577,6 +1584,10 @@ export const lm_ads: Record<Locale, Dict> = {
   'split.onGoogle': 'اضبط هذه في جوجل',
   'split.overCap': '{over} فوق {cap} غدًا. ميتا تعيد تشغيل التعلّم عند خفض كبير، لذا ينزل على أيام لا دفعة واحدة.',
   'split.noCap': 'لا سقف يومي محدد، لذا يقسّم هذا ما يعمل حاليًا.',
+  'split.audience.rankedOnDeals': 'الجماهير مرتّبة على الصفقات المقفلة.',
+  'split.audience.rankedOnQualified': 'الجماهير مرتّبة على الليدات التي تأهّلت.',
+  'split.audience.more': '{audience} يشتري أكثر من غيره، فيأخذ نصيبًا أكبر من الفائض.',
+  'split.audience.less': '{audience} يشتري أقل من غيره، فيأخذ نصيبًا أصغر من الفائض. ويظل يعمل.',
   'lm.launch.duplicate.openRunning': 'افتح الحملة العاملة',
   'lm.launch.duplicate.anyway': 'أطلقها على أي حال',
   // ── نقاطي ────────────────────────────────────────────────────────────
@@ -2735,6 +2746,10 @@ export const lm_ads: Record<Locale, Dict> = {
   'split.onGoogle': 'задайте её в Google',
   'split.overCap': '{over} сверх {cap} завтра. Meta перезапускает обучение при резком снижении, поэтому спуск идёт несколько дней.',
   'split.noCap': 'Дневной потолок не задан, поэтому делится то, что уже работает.',
+  'split.audience.rankedOnDeals': 'Аудитории ранжированы по закрытым сделкам.',
+  'split.audience.rankedOnQualified': 'Аудитории ранжированы по заявкам, прошедшим квалификацию.',
+  'split.audience.more': '{audience} покупает чаще остальных, поэтому берёт больше свободных денег.',
+  'split.audience.less': '{audience} покупает реже остальных, поэтому берёт меньше свободных денег. И продолжает работать.',
   'lm.launch.duplicate.openRunning': 'Открыть работающую',
   'lm.launch.duplicate.anyway': 'Всё равно запустить',
   // ── Мои баллы ────────────────────────────────────────────────────────

@@ -17,11 +17,20 @@
  * click. A campaign with several ad sets is shown and not applied: splitting a
  * budget across ad sets is a different decision and not one to make on
  * somebody's behalf without asking which.
+ *
+ * THE AUDIENCE LINE SAYS THE THING, NOT THE MECHANISM. It never prints the
+ * multiplier — a broker cannot price 1.4 — and it never appears at all below
+ * `weightReads`' band or on an account with no quality signal yet, where
+ * `audienceRung` is 'none'. The 'less' sentence always ends by saying the
+ * campaign is still running, because that is the actual promise this feature
+ * makes and a row that only said "takes less" would read as "switched off".
  */
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Check } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { SplitAction, SplitReason } from '@/lib/freehold/budget-split'
+import { weightReads } from '@/lib/freehold/audience-weight'
+import type { WeightRung } from '@/lib/freehold/audience-weight'
 
 interface Plan {
   campaignId: string
@@ -36,6 +45,8 @@ interface Plan {
   frequency: number
   adSetIds: string[]
   channel: 'meta' | 'google'
+  audienceName: string | null
+  audienceWeight: number
 }
 
 interface Response {
@@ -49,6 +60,7 @@ interface Response {
   tomorrowAed?: number
   overCapAed?: number
   plans?: Plan[]
+  audienceRung?: WeightRung
   error?: string
 }
 
@@ -58,6 +70,10 @@ const TONE: Record<SplitAction, string> = {
 }
 
 const aed = (n: number) => `AED ${Math.round(n).toLocaleString('en-US')}`
+
+/** The rule for whether a weight is worth a sentence lives in
+ *  `audience-weight.ts`, never here — a second copy would drift. */
+const audienceSays = (p: Plan) => weightReads(p.audienceWeight)
 
 export default function BudgetSplitPanel() {
   const t = useT()
@@ -114,6 +130,17 @@ export default function BudgetSplitPanel() {
           : t('split.said.noPrice', { cap: aed(data.capAed ?? 0), live: data.live ?? 0 })}
       </p>
 
+      {/* What the audience ranking stands on. Withheld entirely at 'none' —
+          an account with no quality signal yet must not be told its audiences
+          were ranked at all. */}
+      {(data.audienceRung === 'deal' || data.audienceRung === 'qualified') && (
+        <p className="mt-1 text-[11px] text-slate-500">
+          {data.audienceRung === 'deal'
+            ? t('split.audience.rankedOnDeals')
+            : t('split.audience.rankedOnQualified')}
+        </p>
+      )}
+
       {moves.length === 0 && (
         <p className="mt-3 text-[12px] text-emerald-300">{t('split.settled')}</p>
       )}
@@ -134,6 +161,13 @@ export default function BudgetSplitPanel() {
                   freq: p.frequency ? p.frequency.toFixed(1) : '—',
                 })}
               </span>
+              {p.audienceName && audienceSays(p) && (
+                <span className="block text-[10px] leading-snug text-slate-500">
+                  {audienceSays(p) === 'more'
+                    ? t('split.audience.more', { audience: p.audienceName })
+                    : t('split.audience.less', { audience: p.audienceName })}
+                </span>
+              )}
             </span>
 
             {/* A button that cannot do the thing is worse than no button. With

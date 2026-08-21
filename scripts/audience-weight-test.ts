@@ -15,9 +15,10 @@
 import {
   weighAudiences, weightFor, fieldRung,
   MIN_WEIGHT, MAX_WEIGHT, NEUTRAL_WEIGHT, MIN_FIELD_EVENTS,
-  WEIGHT_RUNGS, WEIGHT_VERDICTS,
+  WEIGHT_RUNGS, WEIGHT_VERDICTS, weightReads, WEIGHT_SAY_BAND,
   type AudienceRecord,
 } from '../lib/freehold/audience-weight'
+import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { splitBudget, type SplitRow } from '../lib/freehold/budget-split'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -226,6 +227,48 @@ console.log('\n── the route actually spends it ──')
 
   check('the rung is reported, so the screen never implies a precision the account lacks',
     /audienceRung/.test(route))
+}
+
+console.log('\n── the screen says the thing, not the multiplier ──')
+{
+  check('exactly neutral is worth no sentence', weightReads(NEUTRAL_WEIGHT) === null)
+  check('a gap inside the band is worth no sentence — it is noise, not a finding',
+    weightReads(NEUTRAL_WEIGHT + WEIGHT_SAY_BAND / 2) === null &&
+    weightReads(NEUTRAL_WEIGHT - WEIGHT_SAY_BAND / 2) === null)
+  check('at the band it speaks', weightReads(NEUTRAL_WEIGHT + WEIGHT_SAY_BAND) === 'more' &&
+    weightReads(NEUTRAL_WEIGHT - WEIGHT_SAY_BAND) === 'less')
+  check('the ceiling reads as more and the floor as less',
+    weightReads(MAX_WEIGHT) === 'more' && weightReads(MIN_WEIGHT) === 'less')
+  check('a floored weight is always outside the band, so the floor is never silent',
+    NEUTRAL_WEIGHT - MIN_WEIGHT > WEIGHT_SAY_BAND, `${NEUTRAL_WEIGHT - MIN_WEIGHT} vs ${WEIGHT_SAY_BAND}`)
+  check('a NaN says nothing rather than guessing', weightReads(Number.NaN) === null)
+
+  const panel = readFileSync(join(process.cwd(), 'components/freehold/budget-split-panel.tsx'), { encoding: 'utf8' })
+  check('the panel asks the module rather than keeping its own threshold',
+    /weightReads\(/.test(panel) && !/audienceWeight\s*[<>]/.test(panel))
+  check('the panel never prints the multiplier itself',
+    !/\{p\.audienceWeight\}/.test(panel) && !/audienceWeight[^)]*toFixed/.test(panel))
+  check('the rung line is withheld unless the account earned one',
+    /audienceRung === 'deal'/.test(panel) && /audienceRung === 'qualified'/.test(panel) &&
+    !/audienceRung === 'none'/.test(panel))
+
+  // THE PROMISE, IN EVERY LANGUAGE. A row that only said "takes less" reads as
+  // "switched off", which is the thing this feature exists not to do — so the
+  // 'less' copy carries a second sentence saying it keeps running, and a
+  // translation that drops it fails here rather than on somebody's screen.
+  for (const locale of ['en', 'ar', 'ru'] as const) {
+    const d = lm_ads[locale]
+    const less = d['split.audience.less'] ?? ''
+    const more = d['split.audience.more'] ?? ''
+    check(`${locale}: both audience sentences exist`, less.length > 0 && more.length > 0)
+    check(`${locale}: 'less' names the audience`, less.includes('{audience}'))
+    check(`${locale}: 'less' carries the second sentence promising it keeps running`,
+      (less.match(/[.!?۔]/g) ?? []).length >= 2, less)
+    check(`${locale}: 'more' does not`, (more.match(/[.!?۔]/g) ?? []).length === 1, more)
+    check(`${locale}: both rung sentences exist`,
+      (d['split.audience.rankedOnDeals'] ?? '').length > 0 &&
+      (d['split.audience.rankedOnQualified'] ?? '').length > 0)
+  }
 }
 
 if (failures > 0) {
