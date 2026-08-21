@@ -26,6 +26,9 @@ export interface ListingFacts {
   name?: string
   area?: string
   priceAED?: number | null
+  /** The year the property hands over, when the listing says. Decides the
+   *  form's intent default — see lib/meta/form-intent.ts. */
+  handoverYear?: number | null
   paymentPlan?: string | null
   landingUrl?: string
   /** Real brochure file URL when the listing has one — gates the Download button. */

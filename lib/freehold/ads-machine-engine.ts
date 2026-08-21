@@ -1,4 +1,5 @@
 import { BRAND } from '@/lib/freehold/brand'
+import { chooseFormIntent, higherIntentFor, yearsToHandover } from '@/lib/meta/form-intent'
 /**
  * Ads Machine — engine (stage 1: engine, no UI).
  *
@@ -483,7 +484,14 @@ async function ensureProjectLeadForm(
         ...m.customs.map((q, i) => customToMetaQuestion(q, i)),
       ],
       privacyPolicyUrl: BRAND.privacyUrl,
-      isOptimizedForQuality: m.higherIntent,
+      // HIGHER INTENT IS EARNED BY THE PRODUCT, not only by the template. A
+      // plot handing over in six years cannot be bought by somebody who needs
+      // somewhere to live, so a one-tap submission on it is usually a mis-tap.
+      // One-way by construction: a template that asked for it keeps it.
+      isOptimizedForQuality: higherIntentFor(m.higherIntent, chooseFormIntent({
+        yearsToHandover: yearsToHandover(project.facts?.handoverYear ?? null),
+        startingPriceAed: project.facts?.priceAED ?? null,
+      })),
       ...(m.intro.enabled && m.intro.title && m.intro.bullets.length > 0
         ? { contextCard: { title: m.intro.title, style: 'LIST_STYLE', content: m.intro.bullets } }
         : {}),
