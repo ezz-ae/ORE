@@ -108,7 +108,7 @@ export function contactLabelKey(type: string): string | null {
 
 // ─── Question presets ────────────────────────────────────────────────────────
 
-export type PresetKey = 'budget' | 'timeline' | 'purpose' | 'eligibility'
+export type PresetKey = 'budget' | 'timeline' | 'purpose' | 'eligibility' | 'segment' | 'ownWords'
 
 function fmtAED(n: number): string {
   if (n >= 1_000_000) {
@@ -226,10 +226,66 @@ export function buildEligibilityPreset(t: TFn): BuilderCustomQuestion {
   }
 }
 
+/**
+ * WHAT DO YOU WANT — where every option is a SEGMENT, and no option is safe.
+ *
+ * The rule this question lives by: an option everyone can agree with measures
+ * agreeableness, not segment, so every option must carry a cost for the wrong
+ * person. A citizen has no use for residency-by-investment; the golden-visa
+ * option prices itself ("AED 2M+") so it cannot mis-sell a cheaper unit; and
+ * the housing-benefits option identifies a citizen by the benefit only a
+ * citizen can claim — self-declaration through choice, never a nationality
+ * question and never a targeting input.
+ *
+ * SLOT ORDER IS LOAD-BEARING. Careless taps land on the first option no
+ * matter what it says, so slot 1 holds the campaign's own core promise: a
+ * careless pick there gets the default pitch it was already going to get,
+ * while the rare, precious signals sit mid-list where only deliberate
+ * choosers land.
+ */
+export function buildSegmentPreset(t: TFn): BuilderCustomQuestion {
+  return {
+    id: presetId('segment'),
+    key: 'buyer_segment',
+    label: t('pforms.preset.segment'),
+    kind: 'choice',
+    options: [
+      t('pforms.segment.yield'),
+      t('pforms.segment.payment'),
+      t('pforms.segment.citizenHousing'),
+      t('pforms.segment.goldenVisa'),
+      t('pforms.segment.portfolio'),
+    ],
+  }
+}
+
+/**
+ * THE HAND-WRITTEN LINE — the careless-tap catcher.
+ *
+ * Meta's API creates every question as required and offers no per-option
+ * branching (conditional questions are an Ads-Manager CSV feature, not a
+ * Graph field this product can post). So the follow-up is one open-text
+ * question for everyone: a person who tapped through on autopilot now has to
+ * produce words, and either abandons — a lead nobody pays for — or writes
+ * something, and what they write is worth more to the first phone call than
+ * every choice above it. The broker card shows it verbatim.
+ */
+export function buildInOwnWordsPreset(t: TFn): BuilderCustomQuestion {
+  return {
+    id: presetId('ownwords'),
+    key: 'in_own_words',
+    label: t('pforms.preset.ownWords'),
+    kind: 'text',
+    options: [],
+  }
+}
+
 export function buildPreset(key: PresetKey, facts: ListingFacts, t: TFn): BuilderCustomQuestion {
   if (key === 'budget')      return buildBudgetPreset(facts, t)
   if (key === 'timeline')    return buildTimelinePreset(t)
   if (key === 'eligibility') return buildEligibilityPreset(t)
+  if (key === 'segment')     return buildSegmentPreset(t)
+  if (key === 'ownWords')    return buildInOwnWordsPreset(t)
   return buildPurposePreset(t)
 }
 
@@ -238,6 +294,8 @@ export const PRESET_DEFS: { key: PresetKey; labelKey: string }[] = [
   { key: 'timeline',    labelKey: 'pforms.preset.timeline'    },
   { key: 'purpose',     labelKey: 'pforms.preset.purpose'     },
   { key: 'eligibility', labelKey: 'pforms.preset.eligibility' },
+  { key: 'segment',     labelKey: 'pforms.preset.segment' },
+  { key: 'ownWords',    labelKey: 'pforms.preset.ownWords' },
 ]
 
 // ─── Custom question → Meta question ─────────────────────────────────────────
@@ -334,7 +392,7 @@ export function introFromListing(facts: ListingFacts, t: TFn): { title: string; 
 
 // ─── Templates ───────────────────────────────────────────────────────────────
 
-export type FormTemplateKey = 'brochure' | 'viewing' | 'investor' | 'offplan'
+export type FormTemplateKey = 'brochure' | 'viewing' | 'investor' | 'offplan' | 'segmented'
 
 export interface FormTemplate {
   key: FormTemplateKey
@@ -378,6 +436,27 @@ export const FORM_TEMPLATES: FormTemplate[] = [
     higherIntent: true,
     contact: ['FULL_NAME', 'EMAIL', 'PHONE'],
     presets: ['budget', 'timeline', 'purpose'],
+    intro: true,
+    button: 'VIEW_WEBSITE',
+  },
+  {
+    key: 'segmented',
+    nameKey: 'pforms.tpl.segmented',
+    descKey: 'pforms.tpl.segmented.desc',
+    // HIGHER INTENT, non-negotiable for this template. It exists to filter,
+    // and Meta's review screen is the closest thing an instant form has to
+    // verification — there is NO OTP on instant forms; a number verified by
+    // construction needs the WhatsApp destination or a landing page.
+    higherIntent: true,
+    // JOB_TITLE is the profession ask — a prefill, so it costs one tap, and
+    // for a broker it prices the payment-plan conversation before the call.
+    // PHONE serves as the WhatsApp number: a second hand-typed number field
+    // would double the typing for the one datum they almost always equal.
+    contact: ['FULL_NAME', 'PHONE', 'EMAIL', 'JOB_TITLE'],
+    // Segment first (slot order is load-bearing — see buildSegmentPreset),
+    // then the hand-written line while the choice is still warm, then the
+    // two hard qualifiers.
+    presets: ['segment', 'ownWords', 'budget', 'timeline'],
     intro: true,
     button: 'VIEW_WEBSITE',
   },

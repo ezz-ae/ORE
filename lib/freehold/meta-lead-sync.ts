@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { eligibilityFromFields } from '@/lib/freehold/buyer-eligibility'
+import { resolveFormAnswers, type FormQuestionDef } from '@/lib/freehold/form-answers'
+import { getLeadForm } from '@/lib/meta/client'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
 import { getFormLeads, listAccessiblePages, namesByIds } from '@/lib/meta/client'
@@ -139,8 +141,22 @@ export async function syncLeadsToCrm(
   // qualification read it; the targeting layer never does, by guard.
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS buyer_eligibility text`)
 
+  // EVERY answer, resolved to words. An operator designs a form so each
+  // option filters a segment; stored as Meta returns it ('opt_2') the answers
+  // are unreadable, and unstored they are the original failure. Resolved
+  // against the form's own question definitions once, at sync — the record
+  // has to outlive the form, like the ad names above.
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_answers jsonb`)
+
   // One request for every distinct ad in this batch, not one per lead.
   const adNames = await namesByIds(leads.map((l) => l.ad_id ?? '').filter(Boolean))
+
+  // One form read per sync, best-effort. Without it the answers still store —
+  // raw values with prettified keys — so a Graph hiccup degrades the words,
+  // never loses the record.
+  const formQuestions: FormQuestionDef[] = await getLeadForm(formId)
+    .then((f) => (f.questions ?? []) as FormQuestionDef[])
+    .catch(() => [])
 
   // The dedupe guarantee. `INSERT ... WHERE NOT EXISTS` is not atomic: the cron
   // sweep and the on-view sync can both pass the check for the same Meta lead
@@ -168,10 +184,10 @@ export async function syncLeadsToCrm(
     const inserted = await query<{ id: string }>(
       `INSERT INTO freehold_site_leads (
          id, name, phone, email, source, status, meta_lead_id, meta_form_id, utm_id,
-         meta_ad_id, meta_adset_id, meta_form_name, meta_ad_name, buyer_eligibility, created_at, updated_at
+         meta_ad_id, meta_adset_id, meta_form_name, meta_ad_name, buyer_eligibility, meta_answers, created_at, updated_at
        )
        SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, NULLIF($9, ''),
-              NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''),
+              NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, '')::jsonb,
               COALESCE($8::timestamptz, now()), now()
        WHERE NOT EXISTS (
          SELECT 1 FROM freehold_site_leads WHERE meta_lead_id = $6
@@ -192,6 +208,8 @@ export async function syncLeadsToCrm(
         formName || '',
         (lead.ad_id ? adNames.get(lead.ad_id) : '') || '',
         eligibilityFromFields(lead.field_data) || '',
+        JSON.stringify(resolveFormAnswers(lead.field_data, formQuestions)) === '[]'
+          ? '' : JSON.stringify(resolveFormAnswers(lead.field_data, formQuestions)),
       ],
     ).catch((error) => {
       console.error('[meta-leads] CRM sync insert failed', error)
@@ -218,6 +236,19 @@ export async function syncLeadsToCrm(
     // column existed carries the answer in Meta's payload, and the sweep
     // re-reads that payload anyway. COALESCE — classified once, never
     // overwritten by a later blank.
+    // Answers backfill, same contract: the sweep re-reads Meta's payload, so
+    // every lead synced before the column existed converges on its answers.
+    if (!inserted.length) {
+      const answers = resolveFormAnswers(lead.field_data, formQuestions)
+      if (answers.length > 0) {
+        await query(
+          `UPDATE freehold_site_leads
+              SET meta_answers = COALESCE(meta_answers, $2::jsonb)
+            WHERE meta_lead_id = $1 AND meta_answers IS NULL`,
+          [lead.id, JSON.stringify(answers)],
+        ).catch((error) => console.error('[meta-leads] answers backfill failed', error))
+      }
+    }
     if (!inserted.length) {
       const eligibility = eligibilityFromFields(lead.field_data)
       if (eligibility) {
