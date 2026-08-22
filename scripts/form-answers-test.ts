@@ -52,8 +52,10 @@ console.log('\n── words, never slugs ──')
 console.log('\n── degrades to raw, never to nothing ──')
 {
   const a = resolveFormAnswers([f('buyer_segment', 'opt_2')], [])
-  check('with no form definition the answer still stores — raw value, prettified key',
-    a.length === 1 && a[0].answer === 'opt_2' && a[0].question === 'buyer segment', JSON.stringify(a))
+  check('with no form definition the answer still stores — raw value, and a house key gets its NAME',
+    a.length === 1 && a[0].answer === 'opt_2' && a[0].question === 'Buyer type', JSON.stringify(a))
+  check('a foreign custom key still prettifies rather than dropping',
+    resolveFormAnswers([f('my_weird_question', 'x')], [])[0].question === 'my weird question')
   check('an unknown option value keeps the raw value',
     resolveFormAnswers([f('buyer_segment', 'opt_9')], Q)[0].answer === 'opt_9')
   check('an empty answer is a skipped question, not a stored blank',
@@ -93,8 +95,25 @@ console.log('\n── the segmented template holds its shape ──')
   check('no option is the universal-appeal one that measures agreeableness',
     !seg.options.some((o) => /آمن|safe|надеж/i.test(o)), seg.options.join(' | '))
 
+  // THE NAME AND THE QUESTION ARE DIFFERENT STRINGS. The picker chip inside
+  // the system says what the preset IS ("Buyer type — 5 segments"); the label
+  // the person answers is the sentence. One key serving both put a full
+  // question on a chip, which names nothing.
+  check('the picker name is a name, not the question sentence',
+    p_forms.en['pforms.preset.segment'] !== p_forms.en['pforms.segment.q'] &&
+    !p_forms.en['pforms.preset.segment'].includes('?'))
+  check('…and the person-facing label is the question key',
+    seg.label === p_forms.en['pforms.segment.q'], seg.label)
+
   const words = buildInOwnWordsPreset(t as never)
   check('the hand-written line is open text', words.kind === 'text' && words.options.length === 0)
+  check('…its picker name and question are split the same way',
+    p_forms.en['pforms.preset.ownWords'] !== p_forms.en['pforms.ownWords.q'] &&
+    words.label === p_forms.en['pforms.ownWords.q'])
+  check('the template name says what it does, in every language',
+    (['en', 'ar', 'ru'] as const).every((l) =>
+      (p_forms[l]['pforms.tpl.segmented'] ?? '').length > 0 &&
+      !/segmented buyer|مشترٍ مصنَّف|Сегментированный покупатель/i.test(p_forms[l]['pforms.tpl.segmented'])))
   check('…under a stable key the CRM can recognise', words.key === 'in_own_words')
 
   const tpl = FORM_TEMPLATES.find((x) => x.key === 'segmented')!

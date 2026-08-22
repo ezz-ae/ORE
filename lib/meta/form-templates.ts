@@ -247,7 +247,10 @@ export function buildSegmentPreset(t: TFn): BuilderCustomQuestion {
   return {
     id: presetId('segment'),
     key: 'buyer_segment',
-    label: t('pforms.preset.segment'),
+    // The question the PERSON sees. The preset picker shows
+    // pforms.preset.segment — a name, not a sentence — because a chip that
+    // reads "What matters most to you?" answers nothing about what it adds.
+    label: t('pforms.segment.q'),
     kind: 'choice',
     options: [
       t('pforms.segment.yield'),
@@ -274,7 +277,7 @@ export function buildInOwnWordsPreset(t: TFn): BuilderCustomQuestion {
   return {
     id: presetId('ownwords'),
     key: 'in_own_words',
-    label: t('pforms.preset.ownWords'),
+    label: t('pforms.ownWords.q'),
     kind: 'text',
     options: [],
   }
@@ -443,10 +446,14 @@ export const FORM_TEMPLATES: FormTemplate[] = [
     key: 'segmented',
     nameKey: 'pforms.tpl.segmented',
     descKey: 'pforms.tpl.segmented.desc',
-    // HIGHER INTENT, non-negotiable for this template. It exists to filter,
-    // and Meta's review screen is the closest thing an instant form has to
-    // verification — there is NO OTP on instant forms; a number verified by
-    // construction needs the WhatsApp destination or a landing page.
+    // HIGHER INTENT, non-negotiable for this template — it exists to filter.
+    // SMS/OTP verification DOES exist on instant forms ("Require SMS
+    // verification", a quality filter Meta is rolling out per account), but it
+    // is an Ads-Manager toggle with no Graph field this product can post, and
+    // a created form cannot be edited afterwards to switch it on. So an OTP
+    // form is built in Ads Manager by hand — and the sync still captures its
+    // answers in full, because resolution matches question LABELS from the
+    // form's own definition, never only the keys this template stamps.
     higherIntent: true,
     // JOB_TITLE is the profession ask — a prefill, so it costs one tap, and
     // for a broker it prices the payment-plan conversation before the call.

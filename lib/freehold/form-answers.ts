@@ -48,11 +48,27 @@ const CONTACT_KEY = /(phone|mobile|whatsapp|tel|mail|name)/
 
 const norm = (s: string): string => s.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
 
-/** `budget_range` → `budget range` — the fallback when the form definition
- *  could not be read. Ugly next to a real label, but an answer whose question
- *  is missing is still an answer, and dropping it would repeat the original
- *  failure with better manners. */
-const prettifyKey = (key: string): string => key.replace(/[_-]+/g, ' ').trim()
+/**
+ * The house question keys, named for a person.
+ *
+ * The fallback path (form definition unreadable) used to render the KEY with
+ * its underscores swapped for spaces — "buyer segment" on a broker's screen,
+ * which is a slug wearing a hat. Every key this platform's own presets stamp
+ * is known in advance, so it gets a real name; only a truly foreign custom
+ * key falls through to the prettified spelling, which is still better than
+ * dropping the answer.
+ */
+const KNOWN_KEY_NAMES: Record<string, string> = {
+  buyer_segment: 'Buyer type',
+  in_own_words: 'In their own words',
+  budget_range: 'Budget',
+  purchase_timeline: 'Timeline',
+  purchase_purpose: 'Purpose',
+  ownership_eligibility: 'Ownership eligibility',
+}
+
+const prettifyKey = (key: string): string =>
+  KNOWN_KEY_NAMES[key.trim().toLowerCase()] ?? key.replace(/[_-]+/g, ' ').trim()
 
 /**
  * Resolve one lead's field_data against its form's questions.
