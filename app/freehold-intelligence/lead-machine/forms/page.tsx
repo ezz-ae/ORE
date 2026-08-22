@@ -10,6 +10,7 @@ import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import { groupFormsByPage } from '@/lib/meta/form-templates'
 import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
+import { answerOutcomes, type AnswerOutcome } from '@/lib/freehold/answer-outcomes'
 import { query } from '@/lib/db'
 import { DemoNotice } from '@/components/freehold/demo-badge'
 import { FormsSyncControls } from './_sync'
@@ -139,6 +140,7 @@ export default async function FormsPage() {
   const { t }         = await getServerT()
   const data          = await getForms()
   const crmStats      = await getCrmStatsByForm()
+  const answerQs      = await answerOutcomes()
   const crmByForm     = new Map([...crmStats.perForm.entries()].map(([id, s]) => [id, s.n]))
   const isConfigError = data.demo === true
   const forms         = data.forms
@@ -265,6 +267,55 @@ export default async function FormsPage() {
               })}
             compact
           />
+        </section>
+      )}
+
+      {/* WHAT EACH ANSWER IS WORTH. The segmentation questions folded across
+          every synced lead: which door the serious buyers actually walk
+          through. Absent until at least two answers have real traffic —
+          an empty comparison is not rendered as zeros it never earned. */}
+      {!isConfigError && answerQs.length > 0 && (
+        <section className="mt-6 rounded-[20px] border border-line bg-surface p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.forms.answers.title')}</div>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('lm.forms.answers.note')}</p>
+          <div className="mt-4 space-y-5">
+            {answerQs.map((qo) => (
+              <div key={qo.question}>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <div className="text-sm font-semibold text-white">{qo.question}</div>
+                  <span className="text-[11px] text-slate-500">{t('lm.forms.answers.answered', { n: String(qo.leads) })}</span>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {qo.answers.map((a: AnswerOutcome) => {
+                    // Only a verdict the sample supports gets a word — tied and
+                    // unknown rows show their counts and claim nothing.
+                    const chip = a.verdict === 'better'
+                      ? { key: 'lm.forms.answers.better', cls: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300' }
+                      : a.verdict === 'worse'
+                      ? { key: 'lm.forms.answers.worse', cls: 'border-amber-400/40 bg-amber-400/10 text-amber-300' }
+                      : a.verdict === 'unanswered'
+                      ? { key: 'lm.forms.answers.unanswered', cls: 'border-slate-500/30 bg-slate-500/10 text-slate-400' }
+                      : null
+                    return (
+                      <div key={a.answer} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[12px] border border-line/60 bg-surface-2 px-3 py-2">
+                        <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{a.answer}</span>
+                        <span className="text-[11px] tabular-nums text-slate-500">{t('lm.forms.answers.leads', { n: String(a.leads) })}</span>
+                        <span className={`text-[11px] tabular-nums ${a.qualified > 0 ? 'text-emerald-300' : 'text-slate-600'}`}>
+                          {t('lm.forms.answers.qualified', { n: String(a.qualified) })}
+                        </span>
+                        {a.won > 0 && (
+                          <span className="text-[11px] tabular-nums text-gold">{t('lm.forms.answers.won', { n: String(a.won) })}</span>
+                        )}
+                        {chip && (
+                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${chip.cls}`}>{t(chip.key)}</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
