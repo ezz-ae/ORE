@@ -24,6 +24,8 @@
  * Runs in `pnpm guards`.
  */
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
+import { BUYER_ELIGIBILITIES } from '../lib/freehold/buyer-eligibility'
+import { crm } from '../lib/i18n/dictionaries/crm'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
 import { REQUEST_STATUSES } from '../lib/freehold/campaign-requests'
 import { personaIds } from '../lib/freehold/persona-audience'
@@ -176,6 +178,11 @@ console.log('\n── campaign-request statuses ──')
 {
   // Broker screen and fulfilment queue both render t(`creq.status.${s}`).
   family('creq.status', 'creq.status.', REQUEST_STATUSES)
+
+  // The buyer's eligibility answer renders as t(`crm.eligibility.${v}`) on the
+  // lead page — a computed family, so it is enumerated here from the walkable
+  // const the classifier owns.
+  family('crm.eligibility', 'crm.eligibility.', BUYER_ELIGIBILITIES, crm)
 }
 
 console.log('\n── launcher audience markets ──')

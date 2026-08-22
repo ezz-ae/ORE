@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { eligibilityFromFields } from '@/lib/freehold/buyer-eligibility'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
 import { getFormLeads, listAccessiblePages, namesByIds } from '@/lib/meta/client'
@@ -130,6 +131,14 @@ export async function syncLeadsToCrm(
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_name text`)
   await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_name text`)
 
+  // THE BUYER'S OWN ANSWER. The eligibility preset asks who can legally
+  // complete a purchase on restricted stock, and until this column existed the
+  // answer died here — extracted by nothing, the broker asking it again on the
+  // phone. Classified once at sync (lib/freehold/buyer-eligibility.ts), stored
+  // as 'gcc' | 'other' | 'unsure', NULL when the form never asked. Routing and
+  // qualification read it; the targeting layer never does, by guard.
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS buyer_eligibility text`)
+
   // One request for every distinct ad in this batch, not one per lead.
   const adNames = await namesByIds(leads.map((l) => l.ad_id ?? '').filter(Boolean))
 
@@ -159,10 +168,10 @@ export async function syncLeadsToCrm(
     const inserted = await query<{ id: string }>(
       `INSERT INTO freehold_site_leads (
          id, name, phone, email, source, status, meta_lead_id, meta_form_id, utm_id,
-         meta_ad_id, meta_adset_id, meta_form_name, meta_ad_name, created_at, updated_at
+         meta_ad_id, meta_adset_id, meta_form_name, meta_ad_name, buyer_eligibility, created_at, updated_at
        )
        SELECT $1, $2, $3, NULLIF($4, ''), $5, 'new', $6, $7, NULLIF($9, ''),
-              NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''),
+              NULLIF($10, ''), NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''),
               COALESCE($8::timestamptz, now()), now()
        WHERE NOT EXISTS (
          SELECT 1 FROM freehold_site_leads WHERE meta_lead_id = $6
@@ -182,6 +191,7 @@ export async function syncLeadsToCrm(
         lead.adset_id || '',
         formName || '',
         (lead.ad_id ? adNames.get(lead.ad_id) : '') || '',
+        eligibilityFromFields(lead.field_data) || '',
       ],
     ).catch((error) => {
       console.error('[meta-leads] CRM sync insert failed', error)
@@ -204,6 +214,21 @@ export async function syncLeadsToCrm(
     // that have not arrived yet — and the ones somebody is looking at today
     // would keep showing a number forever. COALESCE, so a name is filled once
     // and never overwritten by a later blank.
+    // Same self-healing sweep for the answer: every lead synced before the
+    // column existed carries the answer in Meta's payload, and the sweep
+    // re-reads that payload anyway. COALESCE — classified once, never
+    // overwritten by a later blank.
+    if (!inserted.length) {
+      const eligibility = eligibilityFromFields(lead.field_data)
+      if (eligibility) {
+        await query(
+          `UPDATE freehold_site_leads
+              SET buyer_eligibility = COALESCE(buyer_eligibility, $2)
+            WHERE meta_lead_id = $1 AND buyer_eligibility IS NULL`,
+          [lead.id, eligibility],
+        ).catch((error) => console.error('[meta-leads] eligibility backfill failed', error))
+      }
+    }
     if (!inserted.length) {
       const adName = (lead.ad_id ? adNames.get(lead.ad_id) : '') || ''
       if (formName || adName) {
