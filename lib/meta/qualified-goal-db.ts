@@ -1,6 +1,6 @@
 import { query } from '@/lib/db'
 import { listCustomConversions } from '@/lib/meta/client'
-import { chooseQualifiedGoal, isPixelOptimised, type QualifiedGoalRead } from '@/lib/meta/qualified-goal'
+import { chooseQualifiedGoal, isPixelOptimised, isQualifiedConversion, type QualifiedGoalRead } from '@/lib/meta/qualified-goal'
 import { objectiveToOptimizationGoal } from '@/lib/meta/optimization-goal'
 import type { MetaCampaignObjective, AdDestination } from '@/lib/meta/types'
 
@@ -58,7 +58,7 @@ export async function qualifiedConversionId(pixelId?: string | null): Promise<st
     const match = all.find((c) =>
       !c.isArchived &&
       (!pixelId || !c.eventSourceId || c.eventSourceId === pixelId) &&
-      /QualifiedLead/i.test(`${c.rule ?? ''} ${c.name ?? ''}`))
+      isQualifiedConversion(c))
     return match?.id ?? null
   } catch {
     return null

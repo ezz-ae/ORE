@@ -19,6 +19,8 @@
  *    returns carries an action that performs a real Graph / settings call.
  */
 
+import { isQualifiedConversion, QUALIFIED_EVENT_NAME } from '@/lib/meta/qualified-goal'
+
 // ─── Catalogue ────────────────────────────────────────────────────────────────
 
 export interface PixelEventDef {
@@ -262,7 +264,35 @@ export function recommendPixelActions(input: RecommenderInput): PixelSuggestion[
     })
   }
 
-  // 5. No URL-scoped conversion exists, so landing-page traffic can't be
+  // 5. The CRM reports QualifiedLead through the Conversions API, and the
+  //    launch gate (lib/meta/qualified-goal.ts) can point ad sets at it — but
+  //    only at a conversion OBJECT, which it finds and deliberately never
+  //    creates. This is the one place that offers to create it, and only when
+  //    a CAPI pixel is configured: the event arrives server-side at THAT
+  //    pixel, so a conversion built anywhere else would listen on a stream
+  //    the event never reaches.
+  const hasQualifiedConversion = live.some(isQualifiedConversion)
+  if (input.capiPixelId && !hasQualifiedConversion) {
+    out.push({
+      key: 'qualified-conversion',
+      severity: 'recommended',
+      titleKey: 'lm.pixel.sug.qualifiedConversion.title',
+      bodyKey: 'lm.pixel.sug.qualifiedConversion.body',
+      actionLabelKey: 'lm.pixel.sug.qualifiedConversion.action',
+      nameKey: 'lm.pixel.sug.qualifiedConversion.name',
+      action: {
+        type: 'create-conversion',
+        pixelId: input.capiPixelId,
+        // Meta's category enum for the conversion; the RULE is what selects
+        // the custom event. LEAD is the honest category — it is a lead event,
+        // just a later rung of one.
+        customEventType: 'LEAD',
+        rule: standardEventRule(QUALIFIED_EVENT_NAME),
+      },
+    })
+  }
+
+  // 6. No URL-scoped conversion exists, so landing-page traffic can't be
   //    measured or retargeted separately from the rest of the site.
   const hasLandingConversion = live.some(
     (c) => (c.rule ?? '').includes(LANDING_PAGE_URL_FRAGMENT),

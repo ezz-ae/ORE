@@ -75,6 +75,26 @@ export function isPixelOptimised(goal: MetaOptimizationGoal): boolean {
   return PIXEL_OPTIMISED_GOALS.includes(goal)
 }
 
+/** The event name capi.ts sends when a broker qualifies a lead. Stated here so
+ *  the sender, the finder and the recommender share one spelling. */
+export const QUALIFIED_EVENT_NAME = 'QualifiedLead'
+
+/**
+ * Is this custom conversion the one the CRM's QualifiedLead lands in?
+ *
+ * ONE matcher, used by the launch-time finder (qualified-goal-db) and by the
+ * Pixel tab's recommender. Two copies would let the recommender build a
+ * conversion the finder then fails to recognise — a button that "worked" and
+ * changed nothing.
+ */
+export function isQualifiedConversion(c: { rule?: string | null; name?: string | null }): boolean {
+  // Tolerant of the separator: the RULE carries the event name verbatim
+  // ('QualifiedLead'), but a conversion built by hand in Ads Manager is named
+  // by a person — 'Qualified Lead (CRM)', 'qualified_lead' — and refusing
+  // those would offer to create a duplicate beside the one that already works.
+  return /qualified[\s_-]*lead/i.test(`${c.rule ?? ''} ${c.name ?? ''}`)
+}
+
 /**
  * Should this ad set be told to buy qualified leads?
  *

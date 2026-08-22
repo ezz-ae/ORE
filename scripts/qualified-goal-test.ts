@@ -16,6 +16,8 @@ import {
   PIXEL_OPTIMISED_GOALS,
 } from '../lib/meta/qualified-goal'
 import { LEARNING_EVENTS, LEARNING_WINDOW_DAYS } from '../lib/freehold/learning-phase'
+import { isQualifiedConversion, QUALIFIED_EVENT_NAME } from '../lib/meta/qualified-goal'
+import { recommendPixelActions, standardEventRule, type RecommenderConversion, type RecommenderInput } from '../lib/meta/pixel-events'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -126,6 +128,45 @@ console.log('\n── the launch actually sends it ──')
     !/createCustomConversion/.test(db))
   check('the count is of what Meta was SENT, not what the CRM believes',
     /meta_reported_stages/.test(db))
+}
+
+console.log('\n── the Pixel tab offers to build the object the gate needs ──')
+{
+  const base: RecommenderInput = {
+    pixels: [{ id: 'px1', name: 'Main', lastFiredTime: null }],
+    globalPixelId: 'px1',
+    capiPixelId: 'px1',
+    conversions: [] as RecommenderConversion[],
+  }
+  const conv = (over: Partial<RecommenderConversion>): RecommenderConversion => ({
+    id: 'cc1', name: 'x', customEventType: 'LEAD', rule: null,
+    eventSourceId: 'px1', isArchived: false, ...over,
+  })
+  const keys = (i: RecommenderInput) => recommendPixelActions(i).map((s) => s.key)
+
+  check('with a CAPI pixel and no QualifiedLead conversion, it is suggested',
+    keys(base).includes('qualified-conversion'))
+
+  const sug = recommendPixelActions(base).find((s) => s.key === 'qualified-conversion')!
+  check('…targeting the CAPI pixel — the event arrives server-side at that stream',
+    sug.action.type === 'create-conversion' && sug.action.pixelId === 'px1')
+  check('…with a rule on the exact event name capi.ts sends',
+    sug.action.type === 'create-conversion' && sug.action.rule.includes(QUALIFIED_EVENT_NAME))
+  check('…and the rule it writes is one the launch-time finder recognises',
+    isQualifiedConversion({ rule: (sug.action as { rule: string }).rule, name: '' }))
+
+  check('no CAPI pixel ⇒ never suggested — a conversion elsewhere listens on a stream the event never reaches',
+    !keys({ ...base, capiPixelId: null }).includes('qualified-conversion'))
+  check('an existing QualifiedLead conversion ⇒ not suggested again',
+    !keys({ ...base, conversions: [conv({ rule: standardEventRule('QualifiedLead') })] }).includes('qualified-conversion'))
+  check('…recognised by NAME too, for one built by hand in Ads Manager',
+    !keys({ ...base, conversions: [conv({ name: 'CRM Qualified Lead' })] }).includes('qualified-conversion'))
+  check('an ARCHIVED one does not count',
+    keys({ ...base, conversions: [conv({ rule: standardEventRule('QualifiedLead'), isArchived: true })] }).includes('qualified-conversion'))
+
+  check('the matcher is ONE definition shared by finder and recommender',
+    /isQualifiedConversion/.test(readFileSync(join(process.cwd(), 'lib/meta/qualified-goal-db.ts'), { encoding: 'utf8' })) &&
+    /isQualifiedConversion/.test(readFileSync(join(process.cwd(), 'lib/meta/pixel-events.ts'), { encoding: 'utf8' })))
 }
 
 console.log('\n── walkable ──')
