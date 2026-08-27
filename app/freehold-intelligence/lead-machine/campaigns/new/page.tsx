@@ -4,13 +4,18 @@ import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from 'rea
 import { BRAND, getBrandSiteUrl } from '@/lib/freehold/brand'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
+import { saveAccountMemory } from '@/lib/freehold/account-memory'
+import {
+  listDrafts, saveDraft, deleteDraft, getDraft, summarise, safeRestore,
+  type DraftStore, type DraftSummary,
+} from '@/lib/freehold/campaign-drafts'
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { BUYER_INTENTS, withIntent, type BuyerIntent } from '@/lib/meta/intent'
 import { loadImage } from '@/lib/freehold/ad-compose'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
 import { useSession } from '@/lib/freehold/use-session'
+import { formatInstantZoned } from '@/lib/freehold/clock'
 import { toast } from 'sonner'
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
@@ -78,6 +83,9 @@ interface WizardState {
   // and a check acknowledged here still shows as failing in Inventory. Reset
   // whenever the listing changes.
   dqVerifiedChecks: string[]
+  /** The last copy this wizard SUGGESTED, so it can tell its own prefill from
+   *  something the operator wrote. Never sent to Meta. */
+  __prefilledText?: string
   // Step 2
   strategy:      TargetingStrategy | 'custom'
   dailyBudgetAED: number
@@ -402,6 +410,14 @@ export default function NewCampaignPage() {
   // form lived on another Page was simply stuck.
   const [metaPages, setMetaPages] = useState<Array<{ id: string; name: string; canAdvertise?: boolean }>>([])
   const [adPageId, setAdPageId] = useState('') // '' = the configured Page
+  // THE PAGE STOPPED CHOOSING ITSELF.
+  //
+  // This effect listed `adPageId` as a dependency and called `setAdPageId`
+  // inside its own body, so resolving the default Page re-ran the effect,
+  // which refetched, which resolved again. Every render round-trip fought
+  // whatever the operator — or the lead form, which owns the Page it belongs
+  // to — had just chosen. `resolvedDefault` makes the fallback happen once.
+  const resolvedDefault = useRef(false)
   useEffect(() => {
     const q = adPageId ? `?pageId=${encodeURIComponent(adPageId)}` : ''
     fetch(`/api/meta/identity${q}`, { cache: 'no-store' })
@@ -415,9 +431,12 @@ export default function NewCampaignPage() {
           setIgUserId((prev) => (d.identity.instagramOptions ?? []).some((o: { id: string }) => o.id === prev) ? prev : '')
         }
         if (Array.isArray(d?.pages) && d.pages.length > 0) setMetaPages(d.pages)
-        // Resolve '' to the configured Page's real id once, so the picker
-        // always holds an actual choice and the launch always states one.
-        if (!adPageId && typeof d?.identity?.pageId === 'string' && d.identity.pageId) {
+        // Resolve '' to the configured Page's real id ONCE, so the picker
+        // always holds an actual choice and the launch always states one —
+        // and never again, so nothing overrides a later choice.
+        if (!resolvedDefault.current && !adPageId
+            && typeof d?.identity?.pageId === 'string' && d.identity.pageId) {
+          resolvedDefault.current = true
           setAdPageId(d.identity.pageId)
         }
       })
@@ -898,73 +917,77 @@ export default function NewCampaignPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadFormId, leadFormsLoading])
 
-  // Everything the user types is saved: restore the last draft on mount
-  // (this device first, then the ACCOUNT — so a draft started on the laptop
-  // resumes on the phone), and persist every change locally + to the account.
-  // Cleared everywhere after a successful launch.
-  const DRAFT_KEY = 'fh-campaign-draft'
-  const draftRestored = useRef(false)
-  // The form exactly as it starts, so a late-arriving account draft can tell
-  // "nobody has touched this yet" from "the operator is already working".
-  const pristineForm = useRef('')
-  if (!pristineForm.current) pristineForm.current = JSON.stringify(form)
+  // ── DRAFTS: AN OFFER, NOT A STATE ─────────────────────────────────────────
+  //
+  // This used to keep ONE draft and restore it silently on mount, which meant
+  // there was no way to start a new campaign — opening the launcher put the
+  // last one back and the only escape was clearing thirty fields by hand. Two
+  // campaigns could not be worked on in parallel either: the second overwrote
+  // the first with no warning.
+  //
+  // Now the launcher opens, sees what is on file, and ASKS. Rules and storage
+  // live in lib/freehold/campaign-drafts.ts; this is only the wiring.
+  const DRAFT_KEY = 'fh-campaign-drafts'
+  const draftStore = useMemo<DraftStore>(() => ({
+    read: () => { try { return localStorage.getItem(DRAFT_KEY) } catch { return null } },
+    write: (raw) => { try { localStorage.setItem(DRAFT_KEY, raw) } catch { /* full/blocked */ } },
+  }), [])
+  // One editing session is one draft, however many keystrokes it takes.
+  const draftId = useRef<string>('')
+  if (!draftId.current) draftId.current = `d_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+  const [draftChoices, setDraftChoices] = useState<DraftSummary[] | null>(null)
+  const savingEnabled = useRef(false)
+
   useEffect(() => {
-    let restoredLocally = false
+    // MIGRATION. The old single-slot key becomes the first entry in the new
+    // list rather than being dropped — somebody mid-campaign when this ships
+    // must not lose it.
     try {
-      const raw = localStorage.getItem(DRAFT_KEY)
-      if (raw) {
-        const draft = JSON.parse(raw) as Partial<WizardState> & { __leadFormId?: string }
-        // Going live is a decision made at THIS launch's review, never
-        // inherited: a draft that once carried ACTIVE would otherwise put
-        // every future campaign straight live — which is exactly what "it
-        // launches live by itself" reports look like from the inside.
-        setForm((prev) => ({ ...prev, ...draft, launchStatus: 'PAUSED' }))
-        if (typeof draft.__leadFormId === 'string' && draft.__leadFormId) setLeadFormId(draft.__leadFormId)
-        restoredLocally = true
+      const legacy = localStorage.getItem('fh-campaign-draft')
+      if (legacy) {
+        saveDraft(draftStore, 'legacy', JSON.parse(legacy) as Record<string, unknown>, Date.now())
+        localStorage.removeItem('fh-campaign-draft')
       }
-    } catch { /* ignore corrupt drafts */ }
-    loadAccountMemory().then((m) => {
-      const acctDraft = m.campaignDraft
-      if (!restoredLocally && acctDraft && typeof acctDraft === 'object') {
-        // The account read is a network round trip; the operator can have
-        // uploaded a design and typed a headline before it lands. Applying an
-        // older draft over that wipes work in front of them — the image just
-        // disappears. A draft only fills a form nobody has touched yet.
-        let applied = false
-        setForm((prev) => {
-          if (JSON.stringify(prev) !== pristineForm.current) return prev
-          applied = true
-          // Same rule as the local draft: live is chosen at review, not restored.
-          return { ...prev, ...(acctDraft as Partial<WizardState>), launchStatus: 'PAUSED' }
-        })
-        const savedFormId = (acctDraft as { __leadFormId?: string }).__leadFormId
-        if (applied && typeof savedFormId === 'string' && savedFormId) setLeadFormId(savedFormId)
-      }
-      draftRestored.current = true
-    })
-  }, [])
-  useEffect(() => {
-    // The attached lead form travels WITH the draft — leaving to edit the form
-    // (opens in a new tab) and coming back must never lose the wiring, and
-    // "Edit form" must always be able to find the form it just created.
-    //
-    // A blob: preview URL must NEVER be persisted. It points at an in-memory
-    // object owned by the page that made it, so a restored draft carries a
-    // URL the browser can no longer resolve — the preview then renders an
-    // empty frame for an image that uploaded perfectly well. `imageHash` is
-    // the durable half and is what actually launches, so dropping the dead
-    // preview URL loses nothing.
-    const draft = {
-      ...form,
-      imageUrl: form.imageUrl.startsWith('blob:') ? '' : form.imageUrl,
-      variants: form.variants.map((v) => (v.imageUrl.startsWith('blob:') ? { ...v, imageUrl: '' } : v)),
-      __leadFormId: leadFormId,
+    } catch { /* a corrupt legacy draft is simply not migrated */ }
+
+    const found = listDrafts(draftStore).map((d) => summarise(d, t('lm.newCampaign.draft.untitled')))
+    // NOTHING TO CHOOSE BETWEEN means no question. A chooser that appears on
+    // an empty account is a dialog people learn to dismiss without reading.
+    if (found.length === 0) { savingEnabled.current = true; return }
+    setDraftChoices(found)
+  }, [draftStore, t])
+
+  function resumeDraft(id: string) {
+    const d = getDraft(draftStore, id)
+    if (d) {
+      draftId.current = d.id
+      const safe = safeRestore(d.data) as Partial<WizardState> & { __leadFormId?: string }
+      setForm((prev) => ({ ...prev, ...safe }))
+      if (typeof safe.__leadFormId === 'string' && safe.__leadFormId) setLeadFormId(safe.__leadFormId)
     }
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) } catch { /* full/blocked storage */ }
-    // Account save waits for restore so a pristine form never clobbers a
-    // draft the account already holds.
-    if (draftRestored.current) saveAccountMemoryDebounced('campaignDraft', draft, 1500)
-  }, [form, leadFormId])
+    setDraftChoices(null)
+    savingEnabled.current = true
+  }
+
+  function startFresh() {
+    setDraftChoices(null)
+    savingEnabled.current = true
+  }
+
+  function discardDraft(id: string) {
+    deleteDraft(draftStore, id)
+    const left = listDrafts(draftStore).map((d) => summarise(d, t('lm.newCampaign.draft.untitled')))
+    if (left.length === 0) startFresh()
+    else setDraftChoices(left)
+  }
+
+  useEffect(() => {
+    // Saving starts only once the operator has answered the chooser. Writing
+    // before that would let the pristine form overwrite the very draft being
+    // offered — which is how the old version lost work.
+    if (!savingEnabled.current) return
+    saveDraft(draftStore, draftId.current, { ...form, __leadFormId: leadFormId }, Date.now())
+  }, [form, leadFormId, draftStore])
 
   // Load real inventory for the project picker.
   useEffect(() => {
@@ -1057,19 +1080,36 @@ export default function NewCampaignPage() {
   function onListingChange(id: string) {
     const listing = listings.find((l) => l.id === id)
     if (!listing) return
-    setForm((prev) => ({
-      ...prev,
-      listingId:    listing.id,
-      campaignName: `${listing.projectName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
-      primaryText:  `${listing.projectName} — starting from AED ${listing.startingPrice?.toLocaleString() ?? '—'}. ${listing.paymentPlan ?? 'Request the investor summary now.'}`.trim(),
-      headlines:    [listing.projectName],
-      landingUrl:   listing.landingUrl,
-      imageUrl:     listing.imageUrl,
-      imageHash:    '',   // fall back to the listing photo unless a new file is uploaded
-      // Acknowledgments belong to one listing's checks — never carry them
-      // over to a different listing.
-      dqVerifiedChecks: [],
-    }))
+    setForm((prev) => {
+      // AN UPLOADED DESIGN IS NEVER OVERWRITTEN BY A LISTING PHOTO.
+      //
+      // This used to set `imageUrl: listing.imageUrl, imageHash: ''`
+      // unconditionally, so picking the project again — or changing it after
+      // uploading — silently replaced the operator's own picture with the
+      // website's hero shot and threw away the upload's hash. From the
+      // outside it reads as "the preview shows the landing page, not my
+      // image", which is exactly what it was doing.
+      //
+      // A prefill is a courtesy for an empty field. The moment there is real
+      // work in it, the courtesy stops.
+      const uploaded = !!prev.imageHash || prev.imageUrl.startsWith('blob:') || prev.imageUrl.startsWith('data:')
+      // The same rule for the words: a headline somebody edited is theirs.
+      const wroteCopy = prev.primaryText.trim() !== '' && prev.primaryText !== prev.__prefilledText
+      const suggested = `${listing.projectName} — starting from AED ${listing.startingPrice?.toLocaleString() ?? '—'}. ${listing.paymentPlan ?? 'Request the investor summary now.'}`.trim()
+      return {
+        ...prev,
+        listingId:    listing.id,
+        campaignName: `${listing.projectName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
+        primaryText:  wroteCopy ? prev.primaryText : suggested,
+        __prefilledText: suggested,
+        headlines:    wroteCopy ? prev.headlines : [listing.projectName],
+        landingUrl:   listing.landingUrl,
+        ...(uploaded ? {} : { imageUrl: listing.imageUrl, imageHash: '' }),
+        // Acknowledgments belong to one listing's checks — never carry them
+        // over to a different listing.
+        dqVerifiedChecks: [],
+      }
+    })
     setDqData(null)
   }
 
@@ -1635,8 +1675,10 @@ export default function NewCampaignPage() {
       // LOCAL record and no ad exists on Facebook. Saying "launched" there is
       // the worst kind of lie, so the success screen must carry the truth.
       setLaunched({ campaignId: data.campaignId, status: data.status, demo: data.demo === true })
-      try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
-      saveAccountMemory({ campaignDraft: null }) // launched — clear the draft everywhere
+      // Only the draft that just launched. Another campaign half-written in
+      // a second tab is somebody's work and is none of this launch's business.
+      deleteDraft(draftStore, draftId.current)
+      saveAccountMemory({ campaignDraft: null })
     } catch {
       setApiError('Network error. Please try again.')
     } finally {
@@ -1650,6 +1692,58 @@ export default function NewCampaignPage() {
   // reach (estimate), expected results (from budget ÷ CPL cap), the CPL cap
   // itself, and the auto-enhancement mode. Each estimate is labelled as such and
   // becomes the real metric once Meta reports the first delivery.
+  // ── THE DRAFT CHOOSER ─────────────────────────────────────────────────────
+  //
+  // Shown BEFORE the wizard, not over it. A dialog floating above a form that
+  // is already filled with the old draft would be answering a question the
+  // screen behind it has already decided — and "start fresh" would visibly
+  // undo work, which reads as data loss even when it is not.
+  if (draftChoices && draftChoices.length > 0) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-10 sm:px-6">
+        <h1 className="text-[26px] font-semibold text-white">{t('lm.newCampaign.draft.title')}</h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-slate-400">{t('lm.newCampaign.draft.sub')}</p>
+
+        <ul className="mt-6 space-y-2">
+          {draftChoices.map((d) => (
+            <li key={d.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-line bg-surface p-4 transition hover:border-gold/30">
+              <button type="button" onClick={() => resumeDraft(d.id)} className="min-w-0 flex-1 text-start">
+                <span className="block truncate text-[14px] font-semibold text-white">{d.title}</span>
+                <span className="mt-0.5 block text-[12px] text-slate-500">
+                  {/* The operation's clock, not the reader's browser — same
+                      rule every timestamp in this product follows. */}
+                  {[d.detail, formatInstantZoned(new Date(d.at).toISOString(), 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })]
+                    .filter(Boolean).join(' · ')}
+                </span>
+              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <button type="button" onClick={() => resumeDraft(d.id)}
+                  className="rounded-lg border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  {t('lm.newCampaign.draft.resume')}
+                </button>
+                {/* Deleting is per draft and never bulk. "Clear all" on a list
+                    of somebody's unfinished work is a button with one outcome
+                    and no undo. */}
+                <button type="button" onClick={() => discardDraft(d.id)}
+                  title={t('lm.newCampaign.draft.discard')}
+                  aria-label={t('lm.newCampaign.draft.discard')}
+                  className="rounded-lg p-1.5 text-slate-600 transition hover:text-red-300">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <button type="button" onClick={startFresh}
+          className="mt-5 inline-flex items-center gap-2 rounded-xl border border-dashed border-line px-4 py-3 text-[13px] font-semibold text-slate-200 transition hover:border-gold/40 hover:text-white">
+          <Plus className="h-4 w-4 text-gold" /> {t('lm.newCampaign.draft.fresh')}
+        </button>
+      </div>
+    )
+  }
+
   if (launched) {
     const realReach = attachedAudience?.reach ?? null
     const enhanceLabel = AUTO_ENHANCE_OPTIONS.find((o) => o.value === form.autoEnhance)?.labelKey ?? 'lm.newCampaign.s4.autoEnhance.approval'
@@ -2529,12 +2623,31 @@ export default function NewCampaignPage() {
             {activeObjective.dest === 'landing' && (
               <div>
                 <Label>{t('lm.newCampaign.s3.label.landingUrl')} <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span></Label>
-                <input
-                  className={inputCls(!form.landingUrl && !form.listingId)}
-                  value={form.landingUrl}
-                  onChange={(e) => update('landingUrl', e.target.value)}
-                  placeholder={t('lm.landingUrlPlaceholder')}
-                />
+                {/* CLEARABLE. A landing page arrives here from three places —
+                    the project picker, a ?lp= link, a restored draft — and
+                    until now none of them could be undone: the field refilled
+                    itself from the listing and there was no way to say "no
+                    page, just the form". An X on a field that something else
+                    filled in is not a nicety. */}
+                <div className="relative">
+                  <input
+                    className={`${inputCls(!form.landingUrl && !form.listingId)} ${form.landingUrl ? 'pe-9' : ''}`}
+                    value={form.landingUrl}
+                    onChange={(e) => update('landingUrl', e.target.value)}
+                    placeholder={t('lm.landingUrlPlaceholder')}
+                  />
+                  {form.landingUrl && (
+                    <button
+                      type="button"
+                      onClick={() => update('landingUrl', '')}
+                      title={t('lm.newCampaign.s3.clearLanding')}
+                      aria-label={t('lm.newCampaign.s3.clearLanding')}
+                      className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 transition hover:text-white"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
