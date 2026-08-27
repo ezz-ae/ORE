@@ -1,6 +1,10 @@
 import { query, ensureOnce } from '@/lib/db'
 import { QUALIFIED_STATUSES, WON_STATUSES } from '@/lib/freehold/lead-stages'
 
+/** Activity types that are not somebody responding. Mirrors response-time.ts
+ *  and hour-truth-db.ts — one list, three readers, no drift. */
+const NON_RESPONSE_TYPES = ['assignment', 'created', 'repeat_inquiry', 'whatsapp_received']
+
 /**
  * WHICH AUDIENCE ACTUALLY PRODUCES BUYERS.
  *
@@ -26,6 +30,15 @@ export interface AudienceOutcome {
   leads: number
   qualified: number
   won: number
+  /**
+   * Median minutes to the first broker reply, over this audience's leads that
+   * got one. null when none did.
+   *
+   * Here so an audience is never condemned for a conversion rate the desk
+   * never gave it a chance at — `audience-weight.ts` reads it and returns
+   * 'unanswered' instead of 'worse'.
+   */
+  medianResponseMinutes: number | null
   /**
    * A few of the actual people this audience brought.
    *
@@ -79,6 +92,31 @@ export async function rememberCampaignAudience(input: {
   } catch { /* bookkeeping never fails a launch */ }
 }
 
+/**
+ * Which audience each campaign was launched from.
+ *
+ * `audienceOutcomes` folds this table BY AUDIENCE, which answers "which
+ * audience produces buyers". A caller holding a campaign needs the arrow the
+ * other way round to spend on that answer — `audience-weight.ts` computes one
+ * weight per audience and `/api/ads/budget-split` has campaigns in its hand.
+ *
+ * Best-effort, like the write that fills it: an account with no audience
+ * bookkeeping yet returns an empty map, every campaign resolves to no key, and
+ * every weight resolves to NEUTRAL_WEIGHT. Not knowing which audience a
+ * campaign came from is never grounds to move its budget.
+ */
+export async function campaignAudienceKeys(): Promise<Map<string, { key: string; name: string }>> {
+  try {
+    await ensureTable()
+    const rows = await query<{ campaign_id: string; audience_key: string; audience_name: string }>(
+      `SELECT campaign_id, audience_key, audience_name FROM freehold_campaign_audience`,
+    )
+    return new Map(rows.map((r) => [r.campaign_id, { key: r.audience_key, name: r.audience_name }]))
+  } catch {
+    return new Map()
+  }
+}
+
 /** One CRM lead, attributed to the audience its campaign was launched from. */
 export interface AttributedLead {
   audienceKey: string
@@ -87,6 +125,24 @@ export interface AttributedLead {
   status: string | null
   name?: string | null
   interest?: string | null
+  /** Minutes to the first broker reply, or null when nobody answered. */
+  responseMinutes?: number | null
+}
+
+/**
+ * The middle value, or null.
+ *
+ * A MEDIAN, not a mean, for the same reason `money-truth.ts` takes one for the
+ * sales cycle: one lead answered nine days late would drag an average past any
+ * threshold and mark a desk that is actually quick as slow.
+ */
+export function medianMinutes(values: Array<number | null | undefined>): number | null {
+  const xs = values
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0)
+    .sort((a, b) => a - b)
+  if (xs.length === 0) return null
+  const mid = Math.floor(xs.length / 2)
+  return xs.length % 2 === 1 ? xs[mid] : (xs[mid - 1] + xs[mid]) / 2
 }
 
 /** How many real people to show per audience. Enough to recognise a pattern,
@@ -106,14 +162,16 @@ export function rollupAudienceLeads(
   campaignsPerAudience: Map<string, number>,
 ): AudienceOutcome[] {
   const byKey = new Map<string, AudienceOutcome>()
+  const waits = new Map<string, Array<number | null | undefined>>()
   for (const lead of leads) {
     const row = byKey.get(lead.audienceKey) ?? {
       key: lead.audienceKey,
       name: lead.audienceName,
       campaigns: campaignsPerAudience.get(lead.audienceKey) ?? 0,
-      leads: 0, qualified: 0, won: 0, samples: [],
+      leads: 0, qualified: 0, won: 0, medianResponseMinutes: null, samples: [],
     }
     row.leads++
+    waits.set(lead.audienceKey, [...(waits.get(lead.audienceKey) ?? []), lead.responseMinutes])
     const status = String(lead.status ?? '').toLowerCase()
     if (QUALIFIED_STATUSES.has(status)) row.qualified++
     if (WON_STATUSES.has(status)) row.won++
@@ -141,6 +199,10 @@ export function rollupAudienceLeads(
     if (row.samples.some((s) => s.name === lead.name)) continue
     row.samples.push({ name: lead.name, status: lead.status, interest: lead.interest ?? null })
   }
+  for (const [key, xs] of waits) {
+    const row = byKey.get(key)
+    if (row) row.medianResponseMinutes = medianMinutes(xs)
+  }
   return [...byKey.values()].sort((a, b) =>
     b.won - a.won || b.qualified - a.qualified || b.leads - a.leads)
 }
@@ -160,13 +222,31 @@ export async function audienceOutcomes(): Promise<AudienceOutcome[]> {
     // carry the campaign id as utm_id, landing-page leads carry the campaign
     // name as utm_campaign. Matching only one of the two would silently drop
     // an entire channel's leads and make an audience look barren.
-    const leads = await query<{ audience_key: string; campaign_id: string; status: string | null; name: string | null; interest: string | null }>(
-      `SELECT ca.audience_key, ca.campaign_id, l.status, l.name, l.interest
+    // The response clock rides along on the SAME read. It is the identical
+    // lateral join hour-truth-db.ts uses, down to NON_RESPONSE_TYPES, because
+    // two definitions of "somebody answered" would let a report and a budget
+    // disagree about whether a desk is slow. Measured from ARRIVAL, not from
+    // assignment: a lead that sat unassigned for six hours was still going
+    // cold for six hours.
+    const leads = await query<{ audience_key: string; campaign_id: string; status: string | null; name: string | null; interest: string | null; response_minutes: number | null }>(
+      `SELECT ca.audience_key, ca.campaign_id, l.status, l.name, l.interest,
+              CASE WHEN r.first_response_at IS NOT NULL
+                THEN GREATEST(0, ROUND(EXTRACT(EPOCH FROM (r.first_response_at - l.created_at)) / 60))::int
+              END AS response_minutes
          FROM freehold_campaign_audience ca
          JOIN freehold_site_leads l
            ON (l.utm_id = ca.campaign_id)
            OR (ca.campaign_name <> '' AND lower(l.utm_campaign) = lower(ca.campaign_name))
+         LEFT JOIN LATERAL (
+           SELECT MIN(a.created_at) AS first_response_at
+             FROM freehold_site_lead_activity a
+            WHERE a.lead_id = l.id
+              AND a.created_by IS NOT NULL
+              AND a.activity_type <> ALL($1)
+              AND a.created_at >= l.created_at
+         ) r ON TRUE
         WHERE l.archived IS NOT TRUE`,
+      [NON_RESPONSE_TYPES],
     )
 
     const rows = rollupAudienceLeads(
@@ -177,6 +257,7 @@ export async function audienceOutcomes(): Promise<AudienceOutcome[]> {
         status: l.status,
         name: l.name,
         interest: l.interest,
+        responseMinutes: l.response_minutes === null ? null : Number(l.response_minutes),
       })),
       perAudience,
     )
@@ -185,7 +266,7 @@ export async function audienceOutcomes(): Promise<AudienceOutcome[]> {
     // omitted, so "tried, brought nothing" is visible.
     for (const [key, n] of perAudience) {
       if (rows.some((r) => r.key === key)) continue
-      rows.push({ key, name: names.get(key) ?? key, campaigns: n, leads: 0, qualified: 0, won: 0, samples: [] })
+      rows.push({ key, name: names.get(key) ?? key, campaigns: n, leads: 0, qualified: 0, won: 0, medianResponseMinutes: null, samples: [] })
     }
     return rows
   } catch {

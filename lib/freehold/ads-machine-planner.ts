@@ -650,6 +650,10 @@ export async function buildMachinePlan(
         name: listingName,
         area,
         priceAED: price,
+        // Captured at plan time with the rest of the listing facts. It decides
+        // the lead form's intent default — a property handing over years out
+        // is an investor product and a one-tap submission on it is a mis-tap.
+        handoverYear: listing?.handoverYear ?? null,
         paymentPlan: listing?.paymentPlan ?? null,
         landingUrl,
         brochureUrl: listing?.brochureUrl ?? null,

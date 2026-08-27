@@ -172,6 +172,12 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.sug.landingConversion.body': 'A conversion scoped to your landing-page URLs separates that traffic from the rest of the site, and gives you an audience worth retargeting.',
     'lm.pixel.sug.landingConversion.action': 'Create it',
     'lm.pixel.sug.landingConversion.name': 'Landing page visits',
+    // The QualifiedLead conversion — what lets an ad set buy qualification
+    // instead of form fills. Says what changes, not the mechanism.
+    'lm.pixel.sug.qualifiedConversion.title': 'Your ads buy form fills. Your CRM knows who was worth calling.',
+    'lm.pixel.sug.qualifiedConversion.body': 'Every lead a broker qualifies is already reported back to Meta. One conversion object makes that the thing new campaigns optimise for — Meta then hunts people who qualify, not people who tap forms. New launches pick it up automatically once the account produces enough qualified leads to learn from.',
+    'lm.pixel.sug.qualifiedConversion.action': 'Create it',
+    'lm.pixel.sug.qualifiedConversion.name': 'Qualified lead (CRM)',
   },
 
   ar: {
@@ -340,6 +346,10 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.sug.landingConversion.body': 'تحويل محصور بروابط صفحات الهبوط يفصل تلك الحركة عن بقية الموقع، ويمنحك جمهوراً يستحق إعادة الاستهداف.',
     'lm.pixel.sug.landingConversion.action': 'أنشئه',
     'lm.pixel.sug.landingConversion.name': 'زيارات صفحات الهبوط',
+    'lm.pixel.sug.qualifiedConversion.title': 'إعلاناتك تشتري تعبئة نماذج. ونظامك يعرف من كان يستحق الاتصال.',
+    'lm.pixel.sug.qualifiedConversion.body': 'كل عميل يؤهله الوسيط يُبلَّغ به ميتا بالفعل. كائن تحويل واحد يجعل ذلك ما تتحسّن عليه الحملات الجديدة — فتبحث ميتا عمن يتأهل، لا عمن يضغط على النماذج. الإطلاقات الجديدة تلتقطه تلقائيًا متى أنتج الحساب مؤهلين يكفون للتعلّم.',
+    'lm.pixel.sug.qualifiedConversion.action': 'أنشئه',
+    'lm.pixel.sug.qualifiedConversion.name': 'عميل مؤهل (CRM)',
   },
 
   ru: {
@@ -508,5 +518,9 @@ export const lm_pixel: Record<Locale, Dict> = {
     'lm.pixel.sug.landingConversion.body': 'Конверсия, ограниченная URL ваших лендингов, отделяет этот трафик от остального сайта и даёт аудиторию, которую стоит ретаргетировать.',
     'lm.pixel.sug.landingConversion.action': 'Создать',
     'lm.pixel.sug.landingConversion.name': 'Визиты на лендинги',
+    'lm.pixel.sug.qualifiedConversion.title': 'Ваша реклама покупает заполнения форм. Ваша CRM знает, кому стоило звонить.',
+    'lm.pixel.sug.qualifiedConversion.body': 'О каждом лиде, которого брокер квалифицировал, Meta уже узнаёт. Один объект конверсии делает это целью оптимизации новых кампаний — Meta ищет тех, кто квалифицируется, а не тех, кто нажимает на формы. Новые запуски подхватят его автоматически, как только квалифицированных лидов станет достаточно для обучения.',
+    'lm.pixel.sug.qualifiedConversion.action': 'Создать',
+    'lm.pixel.sug.qualifiedConversion.name': 'Квалифицированный лид (CRM)',
   },
 }

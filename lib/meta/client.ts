@@ -1027,6 +1027,13 @@ export async function createAdSet(params: {
   status: 'ACTIVE' | 'PAUSED'
   /** Conversion pixel override — falls back to the account default. */
   pixelId?: string
+  /**
+   * The custom conversion built on the CRM's QualifiedLead event. When present
+   * the ad set is told to buy QUALIFIED leads rather than form fills — see
+   * lib/meta/qualified-goal.ts, which decides whether the account can support
+   * it. Omitted keeps the unchanged `custom_event_type` behaviour exactly.
+   */
+  qualifiedConversionId?: string
   /** Where a click/submit goes — shapes destination_type + promoted_object. */
   destination?: AdDestination
   /** Cost-per-result ceiling in AED → COST_CAP bid strategy on the ad set. */
@@ -1225,10 +1232,16 @@ export async function createAdSet(params: {
     // Website destination + pixel signal for lead/conversion campaigns.
     body.destination_type = 'WEBSITE'
     if (pixelId) {
-      body.promoted_object = {
-        pixel_id: pixelId,
-        custom_event_type: params.objective === 'CONVERSIONS' ? 'PURCHASE' : 'LEAD',
-      }
+      // A CUSTOM CONVERSION OUTRANKS THE ENUM. `custom_event_type: 'LEAD'` buys
+      // form fills; the conversion id points the auction at the CRM's own
+      // QualifiedLead. The two are mutually exclusive in promoted_object, so
+      // the enum is not also sent — Graph rejects the pair.
+      body.promoted_object = params.qualifiedConversionId
+        ? { pixel_id: pixelId, custom_conversion_id: params.qualifiedConversionId }
+        : {
+            pixel_id: pixelId,
+            custom_event_type: params.objective === 'CONVERSIONS' ? 'PURCHASE' : 'LEAD',
+          }
     }
   }
 
@@ -3666,6 +3679,9 @@ export async function launchFullCampaign(params: {
   launchStatus: 'ACTIVE' | 'PAUSED'
   /** Conversion pixel override — falls back to the account default. */
   pixelId?:     string
+  /** Custom conversion on QualifiedLead — see createAdSet and
+   *  lib/meta/qualified-goal.ts. Omitted = the unchanged behaviour. */
+  qualifiedConversionId?: string
   /** Where a click/submit goes; default 'landing' (the landingUrl). */
   destination?: AdDestination
   /** Meta instant-form id — REQUIRED when destination is 'form'. */
@@ -3884,6 +3900,7 @@ export async function launchFullCampaign(params: {
         targeting: baseTargeting,
         status: params.launchStatus,
         pixelId: pixelId ?? undefined,
+        qualifiedConversionId: params.qualifiedConversionId,
         destination: params.destination,
         cplCapAED: params.cplCapAED,
         pageId: params.pageId,
@@ -3918,6 +3935,7 @@ export async function launchFullCampaign(params: {
         targeting: baseTargeting,
         status: params.launchStatus,
         pixelId: pixelId ?? undefined,
+        qualifiedConversionId: params.qualifiedConversionId,
         destination: params.destination,
         cplCapAED: params.cplCapAED,
         pageId: params.pageId,

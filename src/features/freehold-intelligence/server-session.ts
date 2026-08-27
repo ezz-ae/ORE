@@ -111,6 +111,10 @@ export type CRMLeadIntelligence = {
    *  the lead can outlive the form it came through. See lib/freehold/lead-origin.ts. */
   formName?: string
   adName?: string
+  /** The buyer's own ownership-eligibility answer ('gcc'|'other'|'unsure'), '' when the form never asked. */
+  buyerEligibility?: string
+  /** Non-contact form answers, resolved to words at sync. */
+  formAnswers?: Array<{ key: string; question: string; answer: string }>
   stage: string
   pipelineStage: PipelineStage
   temperature: LeadTemperature

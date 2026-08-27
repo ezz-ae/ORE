@@ -59,6 +59,7 @@ import {
 } from '@/lib/freehold/learning-phase'
 import { MIN_ARM_DAILY_AED } from '@/lib/freehold/level-arms'
 import type { MoneyVerdict } from '@/lib/freehold/money-truth'
+import { NEUTRAL_WEIGHT } from '@/lib/freehold/audience-weight'
 
 /** Walkable — each renders its own word and its own reason. */
 export const SPLIT_ACTIONS = ['raise', 'lower', 'hold', 'starve'] as const
@@ -89,6 +90,28 @@ export interface SplitRow {
   /** Human endorsement or a compliance reason to keep it running. A protected
    *  arm is funded before anything else and is never starved. */
   protected?: boolean
+  /**
+   * How this campaign's AUDIENCE converts against the rest of the field — see
+   * `audience-weight.ts`. Absent, or on an account with no quality signal yet,
+   * it is NEUTRAL_WEIGHT and this function splits exactly as it always did.
+   *
+   * It scales the SURPLUS only, never the learning base: the audience is
+   * deprioritised, never switched off.
+   */
+  audienceWeight?: number
+}
+
+/**
+ * A row's weight, defended.
+ *
+ * Absent, zero, negative and NaN all mean the same thing here — nobody has
+ * measured this audience — and all resolve to NEUTRAL_WEIGHT. A zero that fell
+ * through would starve an arm silently, which is the exclusion `audience-weight`
+ * exists to refuse.
+ */
+const audienceWeightOf = (r: SplitRow): number => {
+  const w = r.audienceWeight
+  return typeof w === 'number' && Number.isFinite(w) && w > 0 ? w : NEUTRAL_WEIGHT
 }
 
 export interface SplitPlan {
@@ -192,8 +215,16 @@ export function splitBudget(
     const growable = fundable.filter((r) => !r.saturated && r.standing !== 'behind')
     const takers = growable.length > 0 ? growable : fundable.filter((r) => !r.saturated)
     if (takers.length > 0) {
-      const each = spare / takers.length
-      for (const r of takers) targets.set(r.campaignId, (targets.get(r.campaignId) ?? 0) + each)
+      // THE SURPLUS IS THE ONLY PLACE AUDIENCE QUALITY MAY SPEAK. The base
+      // above is what an arm needs to leave learning; scaling THAT by a weight
+      // would starve the audience whose evidence is thinnest, which is the
+      // audience most in need of more of it. So a weight moves the money that
+      // is left over and never the money that buys the measurement.
+      const totalWeight = takers.reduce((n, r) => n + audienceWeightOf(r), 0)
+      for (const r of takers) {
+        const share = totalWeight > 0 ? audienceWeightOf(r) / totalWeight : 1 / takers.length
+        targets.set(r.campaignId, (targets.get(r.campaignId) ?? 0) + spare * share)
+      }
       spare = 0
     }
   }

@@ -54,12 +54,14 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       value_rating: number | null;
       meta_form_name: string | null;
       meta_ad_name: string | null;
+      buyer_eligibility: string | null;
+      meta_answers: unknown;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
               utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text,
               behaviour_score, buyer_intent, purchase_probability, budget_confidence, click_intent,
-              duplicate_dismissed_at::text, value_rating, meta_form_name, meta_ad_name
+              duplicate_dismissed_at::text, value_rating, meta_form_name, meta_ad_name, buyer_eligibility, meta_answers
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -105,10 +107,20 @@ async function getLiveLead(id: string, ownerKeys: string[] | null): Promise<CRML
       // campaign carry a form each on purpose.
       formName: r.meta_form_name ?? '',
       adName: r.meta_ad_name ?? '',
+      // The buyer's own answer to the ownership-eligibility question, when the
+      // form asked it. The broker reads it BEFORE the first call — asking a
+      // person to repeat an answer they already gave is how forms teach people
+      // not to answer forms.
+      buyerEligibility: r.buyer_eligibility ?? '',
+      // Everything else they answered, already resolved to words at sync.
+      formAnswers: answersForCard(
+        Array.isArray(r.meta_answers) ? (r.meta_answers as FormAnswer[]) : [],
+      ),
     } as unknown as CRMLeadIntelligence
   } catch { return null }
 }
 import { QuickActions } from './_components/LeadClientActions'
+import { answersForCard, type FormAnswer } from '@/lib/freehold/form-answers'
 import { SmartProfile } from './_components/SmartProfile'
 import { listProfileFacts } from '@/lib/freehold/lead-profile'
 import { LeadViewingsCard } from './_components/LeadViewingsCard'
@@ -331,7 +343,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               Zero-protection: no session, no block — never a defaulted number.
               Layer 4 — click_intent (declared by the ad clicked) shows even
               without a behaviour score: both honest, both labelled by source. */}
-          {(lead.behaviourScore !== null && lead.behaviourScore !== undefined) || lead.clickIntent ? (
+          {(lead.behaviourScore !== null && lead.behaviourScore !== undefined) || lead.clickIntent || lead.buyerEligibility ? (
             <div className="rounded-xl border border-line bg-surface p-6">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-400">
                 <Activity className="h-3.5 w-3.5 text-gold" /> {t('crm.intelligence')}
@@ -372,10 +384,41 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     <p className="mt-0.5 text-sm font-medium text-white">{t(`crm.budget.${lead.budgetConfidence}`)}</p>
                   </div>
                 )}
+                {/* The buyer's OWN answer, labelled as such. It renders only
+                    when the form asked — an absent answer is not a field
+                    showing "unknown", it is a question that was never put. */}
+                {lead.buyerEligibility && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.eligibility')}</p>
+                    <p className="mt-0.5 text-sm font-medium text-white">{t(`crm.eligibility.${lead.buyerEligibility}`)}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{t('crm.eligibilitySource')}</p>
+                  </div>
+                )}
               </div>
               <p className="mt-4 text-xs text-slate-500">{t('crm.intelligenceNote')}</p>
             </div>
           ) : null}
+
+          {/* What they answered on the form — the operator designed each
+              question to filter a segment; this is where the broker reads the
+              result. Values are stored resolved (words, never opt_2), in the
+              form's own language, so they render verbatim. */}
+          {(lead.formAnswers?.length ?? 0) > 0 && (
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-400">
+                <FileText className="h-3.5 w-3.5 text-gold" /> {t('crm.formAnswers')}
+              </div>
+              <div className="mt-4 space-y-3">
+                {lead.formAnswers!.map((a) => (
+                  <div key={a.key}>
+                    <p className="text-xs text-slate-500">{a.question}</p>
+                    <p className="mt-0.5 text-sm font-medium text-white">{a.answer}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs text-slate-500">{t('crm.formAnswersNote')}</p>
+            </div>
+          )}
 
           {/* AI Summary */}
           <div className="rounded-xl border border-gold/15 bg-gold/[0.04] p-6">

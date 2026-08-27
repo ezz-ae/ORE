@@ -537,6 +537,45 @@ breakdown reports where an ad was **shown**.
 
 *Guards:* `audience-pattern-test.ts`, `geo-spec-test.ts`, `network-privacy-test.ts`.
 
+### An audience is deprioritised, never switched off
+
+The instinct when leads get expensive is to cut a segment out. The nationality
+form of that is refused above. The *timing* form is refused here, and it is the
+one that is not obvious: an exclusion is a permanent decision taken on a
+temporary sample. A switched-off audience stops producing leads, so it stops
+producing the evidence that would overturn the verdict, and the first bad
+fortnight becomes the last word on it. The account narrows onto whatever worked
+in its first month and every later reading agrees, because nothing else was
+funded enough to disagree.
+
+`lib/freehold/audience-weight.ts` makes the same judgement reversible.
+`weighAudiences` turns each audience's CRM record into a bounded multiplier:
+
+1. **The floor is not zero.** `MIN_WEIGHT = 0.25` — a quarter share still buys
+   enough leads for the audience to keep measuring itself. `MAX_WEIGHT = 2`
+   stops one lucky month emptying every other arm before the second reading
+   arrives. Absent, zero, negative and NaN all resolve to `NEUTRAL_WEIGHT`.
+2. **It ranks on the rung the FIELD can carry**, not the rung one audience
+   reached — `fieldRung`, at `MIN_FIELD_EVENTS = 5`. Deals first, qualified
+   leads when deals are too thin, and `none` on a young account, where every
+   weight is 1 and the module changes nothing.
+3. **It compares against the REST of the field, not the whole.** An audience
+   that is most of the volume is most of the average too, so comparing it to a
+   total including itself means it can never separate — backwards, since the
+   biggest arm is the one whose weight moves the most money.
+4. **It moves on the bound facing the field rate**, never the point estimate —
+   `countBounds` from `min-evidence.ts`, so a weight and a verdict elsewhere in
+   the product cannot disagree about what the sample supports. A tie is exactly
+   neutral.
+
+In `budget-split.ts` the weight scales the **surplus only**, through
+`audienceWeightOf`, and never the learning base: scaling the base would starve
+the audience whose evidence is thinnest, which is the audience most in need of
+more of it. A weighted-down arm keeps `perArmAed` and is never `starve`.
+
+*Guard:* `audience-weight-test.ts` — including source scans that the base is
+computed with no weight in it and that the floor is a stated constant.
+
 ## Copy
 
 No paid advertisement may contain a word somebody meant to replace. Ad copy
