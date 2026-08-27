@@ -19,16 +19,35 @@
  *   status      PAUSED, always. The lite path optimises for speed of
  *               setup, never for skipping the human look before money.
  *
+ * ── AUTOMATED, NOT SKIPPED ───────────────────────────────────────────────
+ *
+ * The first version derived everything and ran. The operator's verdict on it
+ * was exact: "it's rocket but it should finalize with me the ad — the idea of
+ * rocket is not skipping the steps but automate it in smart way." They were
+ * right. A launcher that hands back a half-made ad and says "go edit it on the
+ * campaign page" has not saved anybody a step; it has moved the work somewhere
+ * with less context and no preview.
+ *
+ * So Rocket now does the deriving AND shows the result: the picture as it will
+ * appear, the words as they will read, both editable in place. Three written
+ * angles rather than one template, a generated backdrop when there is no
+ * design to hand, and Run underneath — pressed on an ad somebody has actually
+ * seen.
+ *
  * The full wizard remains one link away for every detailed decision. This
  * page exists because "next next next" should not require the nexts.
  */
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, Zap, Upload, CheckCircle2, ArrowRight } from 'lucide-react'
+import { Loader2, Zap, Upload, CheckCircle2, ArrowRight, Sparkles, Wand2, RefreshCw } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { getBrandSiteUrl } from '@/lib/freehold/brand'
 import { READY_BUYERS } from '@/lib/freehold/ready-buyers'
 import { composeProjectAd } from '@/lib/freehold/project-ad'
+import {
+  IMAGE_STYLES, STYLE_PROMPT, imagePromptFor, HEADLINE_MAX, PRIMARY_MAX,
+  type CopyFacts, type WrittenCopy, type ImageStyle,
+} from '@/lib/freehold/campaign-copy'
 
 interface Project {
   id: string
@@ -58,6 +77,14 @@ export default function QuickLaunchPage() {
   const [done, setDone] = useState<{ campaignId: string } | null>(null)
   const designDataUrl = useRef('')
   const [budgetOverride, setBudgetOverride] = useState<number | null>(null)
+  // THE FINISHING STEP. Copy the operator can read and change before it runs,
+  // rather than after, on another screen.
+  const [options, setOptions] = useState<WrittenCopy[] | null>(null)
+  const [writing, setWriting] = useState(false)
+  const [brief, setBrief] = useState('')
+  const [lang, setLang] = useState<'en' | 'ar' | 'ru'>('en')
+  const [genStyle, setGenStyle] = useState<ImageStyle>('golden')
+  const [generating, setGenerating] = useState(false)
 
   // The Rocket handoff from the ads home: the budget the operator set there.
   useEffect(() => {
@@ -137,6 +164,75 @@ export default function QuickLaunchPage() {
       designDataUrl.current = dataUrl
       setImageHash(d.hash); setImagePreview(dataUrl)
     } finally { setUploading(false) }
+  }
+
+  /** The listing's real facts, and only those — see lib/freehold/campaign-copy.ts. */
+  function factsOf(p: Project | null): CopyFacts {
+    return {
+      projectName: p?.projectName ?? null,
+      area: p?.area ?? null,
+      developer: p?.developer ?? null,
+      // FORMATTED HERE, never asked of the model. The price belongs to the
+      // listing record; a model that returns one has invented it.
+      priceText: typeof p?.startingPriceAED === 'number' && p.startingPriceAED > 0
+        ? `AED ${p.startingPriceAED.toLocaleString('en-US')}` : null,
+      paymentPlan: p?.paymentPlan ?? null,
+      handoverYear: p?.handoverYear ?? null,
+    }
+  }
+
+  /** Write three angles from the facts. Never blocks Run — copy already on
+   *  screen stays exactly as it is if the writer cannot be reached. */
+  async function writeCopy() {
+    setWriting(true); setError('')
+    try {
+      const res = await fetch('/api/freehold/ads/write-copy', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facts: factsOf(project), language: lang, brief }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(d?.error === 'noFacts' ? t('lm.quick.write.noFacts') : t('lm.quick.write.failed'))
+        return
+      }
+      const opts: WrittenCopy[] = Array.isArray(d?.options) ? d.options : []
+      setOptions(opts)
+      // The first angle is applied so the preview is never empty after a
+      // write — and every one stays one click away.
+      if (opts[0]) setCaption({ headline: opts[0].headline, primaryText: opts[0].primaryText, description: opts[0].description })
+    } catch { setError(t('lm.quick.write.failed')) } finally { setWriting(false) }
+  }
+
+  /**
+   * Generate a backdrop when there is no design to hand.
+   *
+   * The prompt asks for a PLACE and forbids text, prices, logos and badges —
+   * every one of those is a claim, and a claim a model drew is a claim nobody
+   * approved. The words go on separately, above, where they can be read.
+   */
+  async function generateImage() {
+    setGenerating(true); setError('')
+    try {
+      const res = await fetch('/api/freehold/creative-studio/generate-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: imagePromptFor(factsOf(project), STYLE_PROMPT[genStyle]),
+          aspectRatio: '1:1',
+          title: `${project?.projectName ?? 'Ad'} — ${genStyle}`,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d?.url) { setError(d?.error || t('lm.quick.gen.failed')); return }
+      // Straight into Meta, so the generated picture is a real ad image with a
+      // hash rather than a URL that has to survive to launch time.
+      const up = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: d.url }),
+      })
+      const u = await up.json().catch(() => ({}))
+      if (up.ok && u?.hash) { setImageHash(u.hash); setImagePreview(d.url); designDataUrl.current = '' }
+      else { setImagePreview(d.url); setError(t('lm.quick.gen.notUploaded')) }
+    } catch { setError(t('lm.quick.gen.failed')) } finally { setGenerating(false) }
   }
 
   async function shrink(dataUrl: string): Promise<string> {
@@ -254,6 +350,93 @@ export default function QuickLaunchPage() {
           <input type="file" accept="image/*" className="hidden" disabled={uploading}
             onChange={(e) => { void onUpload(e.target.files?.[0] ?? null); e.target.value = '' }} />
         </label>
+
+        {/* ── GENERATE A BACKDROP, when there is no design to hand ──────────
+            Prompted for a PLACE and never a claim — no text, no price, no
+            badge. A price a model drew is a price nobody approved. */}
+        {!designDataUrl.current && (
+          <div className="rounded-xl border border-line bg-surface px-3.5 py-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
+              <Sparkles className="h-3 w-3 text-gold" /> {t('lm.quick.gen.title')}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={genStyle} onChange={(e) => setGenStyle(e.target.value as ImageStyle)}
+                className="rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12px] text-white outline-none focus:border-gold/40">
+                {IMAGE_STYLES.map((k) => <option key={k} value={k}>{t(`lm.quick.gen.style.${k}`)}</option>)}
+              </select>
+              <button type="button" onClick={() => void generateImage()} disabled={generating}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-3 py-1.5 text-[12px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-40">
+                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                {t('lm.quick.gen.action')}
+              </button>
+            </div>
+            <p className="mt-1.5 text-[10.5px] leading-relaxed text-slate-500">{t('lm.quick.gen.note')}</p>
+          </div>
+        )}
+
+        {/* ── THE WORDS, BEFORE THEY RUN ────────────────────────────────────
+            This is the whole difference between automating a step and
+            skipping it. The ad is written here, shown here, and changed here
+            — not handed over half-made with "go edit it on the campaign
+            page", which moves the work somewhere with less context. */}
+        {canRun && (
+          <div className="space-y-3 rounded-xl border border-line bg-surface p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
+                {t('lm.quick.write.title')}
+              </span>
+              <div className="flex items-center gap-2">
+                <select value={lang} onChange={(e) => setLang(e.target.value as 'en' | 'ar' | 'ru')}
+                  className="rounded-lg border border-line bg-surface-2 px-2 py-1 text-[11px] text-white outline-none focus:border-gold/40">
+                  <option value="en">EN</option><option value="ar">AR</option><option value="ru">RU</option>
+                </select>
+                <button type="button" onClick={() => void writeCopy()} disabled={writing}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gold/35 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-40">
+                  {writing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                  {options ? t('lm.quick.write.again') : t('lm.quick.write.action')}
+                </button>
+              </div>
+            </div>
+
+            {/* The operator's own steer, passed to the writer as MATERIAL —
+                never as instructions that could outrank the grounding rules. */}
+            <input value={brief} onChange={(e) => setBrief(e.target.value)}
+              placeholder={t('lm.quick.write.briefPh')}
+              className="w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-[12px] text-white outline-none placeholder:text-slate-600 focus:border-gold/40" />
+
+            {/* THREE ANGLES, not one. A single suggestion gets accepted out of
+                politeness; three make somebody choose, and choosing is when
+                they read it. */}
+            {options && options.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {options.map((o) => (
+                  <button key={o.angle} type="button"
+                    onClick={() => setCaption({ headline: o.headline, primaryText: o.primaryText, description: o.description })}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+                      caption?.headline === o.headline
+                        ? 'border-gold/50 bg-gold/10 text-gold'
+                        : 'border-line text-slate-400 hover:text-white'
+                    }`}>
+                    {t(`lm.quick.write.angle.${o.angle}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <label className="block">
+              <span className="text-[10.5px] uppercase tracking-wider text-slate-500">{t('lm.quick.write.headline')}</span>
+              <input value={caption?.headline ?? ''} maxLength={HEADLINE_MAX}
+                onChange={(e) => setCaption((c) => ({ headline: e.target.value, primaryText: c?.primaryText ?? '', description: c?.description ?? '' }))}
+                className="mt-1 w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-white outline-none focus:border-gold/40" />
+            </label>
+            <label className="block">
+              <span className="text-[10.5px] uppercase tracking-wider text-slate-500">{t('lm.quick.write.body')}</span>
+              <textarea value={caption?.primaryText ?? ''} rows={3} maxLength={PRIMARY_MAX}
+                onChange={(e) => setCaption((c) => ({ headline: c?.headline ?? '', primaryText: e.target.value, description: c?.description ?? '' }))}
+                className="mt-1 w-full resize-none rounded-lg border border-line bg-surface-2 px-3 py-2 text-[12.5px] leading-relaxed text-white outline-none focus:border-gold/40" />
+            </label>
+          </div>
+        )}
 
         {/* What Run will actually do — said before the press, in plain words. */}
         <div className="rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[11.5px] leading-relaxed text-slate-400">

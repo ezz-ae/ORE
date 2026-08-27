@@ -67,6 +67,7 @@ import { lm_ads } from '../lib/i18n/dictionaries/lm_ads'
 import { inventory } from '../lib/i18n/dictionaries/inventory'
 import { lm_core } from '../lib/i18n/dictionaries/lm_core'
 import { DELIVERY_BARS, FORECAST_REFUSALS } from '../lib/freehold/delivery-commitment'
+import { COPY_ANGLES, IMAGE_STYLES } from '../lib/freehold/campaign-copy'
 import { lm_audiences } from '../lib/i18n/dictionaries/lm_audiences'
 import { p_ads_google } from '../lib/i18n/dictionaries/p_ads_google'
 
@@ -377,6 +378,15 @@ console.log('\n── the wallet and the bank ──')
   family('bank.use.state', 'bank.use.state.', USE_STATES, walletDict)
   // The commission panel renders t(`wal.comm.state.${c.state}`) per deal.
   family('wal.comm.state', 'wal.comm.state.', PAYOUT_STATES, walletDict)
+}
+
+console.log('\n── Rocket writes the ad with you ──')
+{
+  // The angle chips and the picture styles are rendered through computed keys.
+  // A member added to either union and not translated shows as its own key on
+  // the screen somebody launches from.
+  family('lm.quick.write.angle', 'lm.quick.write.angle.', COPY_ANGLES, lm_core)
+  family('lm.quick.gen.style', 'lm.quick.gen.style.', IMAGE_STYLES, lm_core)
 }
 
 console.log('\n── the delivery promise ──')
