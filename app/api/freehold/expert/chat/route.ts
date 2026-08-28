@@ -22,7 +22,9 @@ import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
 import { APP_ROUTES } from '@/lib/freehold/app-routes.generated'
 import { auditFigures, evidenceLine, METRIC_SHAPED, type EvidenceReport } from '@/lib/freehold/evidence'
-import { unknownCampaigns } from '@/lib/freehold/answer-grounding'
+import { unknownEntities, type EntityKind } from '@/lib/freehold/answer-grounding'
+import { gatherKnownNames, type KnownNames } from '@/lib/freehold/known-names'
+import { linkAllowed } from '@/lib/freehold/link-truth'
 
 export const runtime = 'nodejs'
 
@@ -212,53 +214,13 @@ function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
 }
 
 // ── LINK TRUTH: no fabricated deep links (they 404) ────────────────────────
-// The model emits hrefs freely; a static app page is fine, but a deep RECORD
-// link (a specific lead / form / project / property / landing / campaign) is
-// only real if its id/slug actually came back from a tool this turn. Anything
-// else the model invented, and the user lands on a 404 — the exact "every link
-// from the chat is 404" report. hrefAllowed lets static routes through and
-// requires record ids to be tool-sourced.
-const RECORD_COLLECTIONS = /\/(leads|forms|projects|properties|landing|landings|landing-pages|ads-machine|campaigns|deals|audiences)\/([^/?#]+)/i
-function hrefAllowed(href: unknown, seen: string): boolean {
-  if (typeof href !== 'string') return false
-  const h = href.trim()
-  if (!h.startsWith('/')) return false // internal paths only — no off-site links
-  const path = h.split('?')[0].split('#')[0]
-  const m = path.match(RECORD_COLLECTIONS)
-  if (m) {
-    const id = decodeURIComponent(m[2] || '').toLowerCase()
-    // 'new', 'launch', 'attribution' etc. are static sub-pages, not records.
-    if (['new', 'launch', 'attribution', 'create'].includes(id)) return true
-    return id.length > 0 && seen.toLowerCase().includes(id)
-  }
-  // A trailing id-looking segment on any other route must also be tool-sourced.
-  const seg = (path.split('/').filter(Boolean).pop() || '').toLowerCase()
-  if (/^[0-9a-f]{8,}$/i.test(seg) || /^\d{6,}$/.test(seg) || /^[0-9a-f][0-9a-f-]{19,}$/i.test(seg)) {
-    if (!seen.toLowerCase().includes(seg)) return false
-  }
-  // FINAL GATE: the route itself must exist. This used to `return true` for
-  // anything that merely looked static, so a wholly invented path such as
-  // /freehold-intelligence/library/creatives/edit/generated_image_x.png
-  // was handed to the user and 404'd. Verifying record ids was never enough —
-  // the ROUTE has to be real.
-  return routeExists(path)
-}
-
-/** Does `path` match a real page route? '*' = one segment, '**' = catch-all. */
-function routeExists(path: string): boolean {
-  const parts = path.split('/').filter(Boolean)
-  return APP_ROUTES.some((pattern) => {
-    const pp = pattern.split('/').filter(Boolean)
-    let i = 0
-    for (; i < pp.length; i++) {
-      if (pp[i] === '**') return true       // catch-all swallows the rest
-      if (i >= parts.length) return false
-      if (pp[i] === '*') continue           // one dynamic segment
-      if (pp[i].toLowerCase() !== parts[i].toLowerCase()) return false
-    }
-    return i === parts.length
-  })
-}
+// The model emits hrefs freely. A link is offered only when a real route
+// answers it AND every segment that filled a wildcard in that route came back
+// from a tool this turn — see lib/freehold/link-truth.ts for why the previous
+// version (a hand-kept list of record collections, plus a guess at whether a
+// segment "looked like" an id) let /freehold-intelligence/inventory/<invented>
+// through to a 404 while appearing to check everything.
+const hrefAllowed = (href: unknown, seen: string): boolean => linkAllowed(href, seen, APP_ROUTES)
 
 /** Strip fabricated hrefs: a `path` block with a bad link becomes plain text
  *  (its words are kept, the 404 link is not); a navigate action with a bad
@@ -404,7 +366,19 @@ export async function POST(request: NextRequest) {
 
     const skill = getSkill('expert')!
     const brokerId = sessionUser?.role === 'broker' ? (sessionUser.brokerId ?? sessionUser.email) : null
-    const systemContext = await gatherSystemContext(role as Role, brokerId)
+    // The real records this workspace holds, gathered in parallel with the
+    // system context — the answer is checked against them below. Server-side
+    // and not from body.context, because a guard whose reach depends on which
+    // page the user is standing on is not a guard. See known-names.ts.
+    const [systemContext, knownNames] = await Promise.all([
+      gatherSystemContext(role as Role, brokerId),
+      gatherKnownNames(((): KnownNames => {
+        const c = (body.context as { campaigns?: unknown } | undefined)?.campaigns
+        return Array.isArray(c)
+          ? { campaign: c.map((x) => String((x as { name?: unknown })?.name ?? '')).filter(Boolean) }
+          : {}
+      })()).catch((): KnownNames => ({})),
+    ])
 
     const fullContext: Record<string, unknown> = {
       currentPage: body.page ?? null,
@@ -748,30 +722,51 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     // inventory, nowhere in this product. Every figure audit in the world
     // would have passed a sentence with no figures in it.
     //
-    // So the ENTITY is checked too, against the campaign names this workspace
-    // actually holds. Narrow by design (see answer-grounding): only the shape
-    // "<Name> campaign", only against a known list, and silent when there is no
-    // list to check against — an accusation with nothing behind it is its own
-    // kind of lie.
-    const knownCampaignNames = ((): string[] => {
-      const c = (fullContext as { campaigns?: unknown }).campaigns
-      if (!Array.isArray(c)) return []
-      return c.map((x) => String((x as { name?: unknown })?.name ?? '')).filter(Boolean)
-    })()
-    if (knownCampaignNames.length > 0) {
-      const invented = unknownCampaigns(blocksToText(blocks), knownCampaignNames)
-      if (invented.length > 0) {
-        console.error('[expert] invented campaign name(s):', invented.join(', '))
-        blocks = [{
-          type: 'text',
-          content:
-            `I have to correct myself — there is no campaign called "${invented[0]}" in this account, `
-            + `so everything I just said about it was invented rather than looked up. `
-            + `What you actually have: ${knownCampaignNames.slice(0, 6).join(', ')}`
-            + `${knownCampaignNames.length > 6 ? ` and ${knownCampaignNames.length - 6} more` : ''}. `
-            + `Ask me about one of those and I will answer from the real numbers.`,
-        }]
+    // So the ENTITY is checked too, against the names this workspace actually
+    // holds. Narrow by design (see answer-grounding): only the sentence shapes
+    // a model writes when it is being helpful about a record it never looked
+    // up, and silent for any kind whose list did not load — an accusation with
+    // nothing behind it is its own kind of lie.
+    //
+    // ── AND IT WAS SILENT ALMOST EVERYWHERE ───────────────────────────────
+    //
+    // The list of real campaigns was read from context.campaigns, which the
+    // CALLING PAGE supplies. The ads screens send it. Nothing else does. So on
+    // the inventory screen this check compared against an empty list, returned
+    // "nothing to compare against", and logged a clean answer for:
+    //
+    //   "Saad Aldbsaoy shows high intent… a specific property, Volta Towers…
+    //    Originated from 'Volta_Towers_DXB_Leads_2024' campaign… Assigned to
+    //    Aya Al-Masri."
+    //
+    // Four records, none of which exist, with a Draft WhatsApp Message button
+    // underneath. The lists are gathered server-side now (known-names.ts) and
+    // cover people and projects as well as campaigns, because a fabricated
+    // colleague and a fabricated building are worse to act on than a
+    // fabricated budget, not better.
+    const invented = unknownEntities(blocksToText(blocks), knownNames)
+    if (invented.length > 0) {
+      console.error('[expert] invented record(s):',
+        invented.map((e) => `${e.kind}:${e.name}`).join(', '))
+      const KIND_WORD: Record<EntityKind, string> = {
+        campaign: 'campaign', project: 'property', person: 'person',
       }
+      const first = invented[0]
+      const real = (knownNames[first.kind] ?? []) as string[]
+      blocks = [{
+        type: 'text',
+        content:
+          `I have to correct myself — there is no ${KIND_WORD[first.kind]} called "${first.name}" in this account, `
+          + `so everything I just said about it was invented rather than looked up.`
+          + (invented.length > 1
+            ? ` The same goes for ${invented.slice(1).map((e) => `"${e.name}"`).join(' and ')}.`
+            : '')
+          + (real.length > 0
+            ? ` What you actually have: ${real.slice(0, 6).join(', ')}`
+              + `${real.length > 6 ? ` and ${real.length - 6} more` : ''}. `
+              + `Ask me about one of those and I will answer from the real records.`
+            : ''),
+      }]
     }
 
     let evidence: EvidenceReport | null = null

@@ -116,17 +116,106 @@ export function ungroundedNumbers(answer: string, corpus: Set<string>): string[]
  * to be helpful about.
  */
 export function campaignNamesClaimed(answer: string): string[] {
-  const out: string[] = []
+  return entityClaims(answer).filter((c) => c.kind === 'campaign').map((c) => c.name)
+}
+
+/**
+ * THE KINDS OF RECORD AN ANSWER CAN INVENT.
+ *
+ * Campaigns were checked from the day the Zada Tower transcript arrived, and
+ * nothing else was. Then this came in from a live workspace, on the inventory
+ * screen, with three buttons under it:
+ *
+ *   "Saad Aldbsaoy shows high intent… He submitted his details via a Meta ad
+ *    for a specific property, Volta Towers, just 3 hours ago… Originated from
+ *    'Volta_Towers_DXB_Leads_2024' campaign… Assigned to Aya Al-Masri."
+ *
+ * There is no Saad Aldbsaoy, no Volta Towers, no such campaign and no Aya
+ * Al-Masri. A guard that only knew about campaigns caught none of it — and the
+ * campaign half, the one it did understand, went unchecked too, for a separate
+ * reason recorded at `unknownEntities`.
+ *
+ * A person and a property are worse to invent than a campaign, not better. A
+ * fabricated figure wastes an afternoon; a fabricated LEAD with a "Draft
+ * WhatsApp Message" button under it is an assistant asking somebody to go and
+ * contact a person who does not exist, about a building that does not exist.
+ */
+export const ENTITY_KINDS = ['campaign', 'project', 'person'] as const
+export type EntityKind = (typeof ENTITY_KINDS)[number]
+
+export interface EntityClaim { kind: EntityKind; name: string }
+
+/**
+ * The claim patterns, one per kind.
+ *
+ * STILL DELIBERATELY NARROW, for the reason the campaign pattern was narrow: a
+ * general proper-noun detector would flag every area, developer and building
+ * in Dubai, and a guard that cries wolf is switched off inside a week — and
+ * then the real lie ships. Each pattern below matches the SENTENCE SHAPE a
+ * model writes when it is being helpful about a record it has not looked up,
+ * not merely the presence of a capitalised word.
+ *
+ * `person` is the narrowest of the three on purpose. "Assigned to X" and
+ * "handled by X" are statements about who owes work — the kind of claim that
+ * sends somebody to a colleague's desk — while a name appearing anywhere else
+ * in a sentence is far more likely to be the user's own words quoted back.
+ */
+const CLAIM_PATTERNS: Record<EntityKind, RegExp[]> = {
+  campaign: [
+    // "the Zada Tower campaign", "Zada Tower campaign is…"
+    /\b((?:[A-Z][\w'’-]*\s+){1,4})campaign\b/g,
+    // "'Volta_Towers_DXB_Leads_2024' campaign" — the quoted shape, which the
+    // original pattern captured with the closing quote glued to the name.
+    /["'“‘]([^"'“”‘’]{2,80})["'”’]\s+campaign\b/g,
+    // "campaign 'X'", "campaign named X"
+    /\bcampaign\s+(?:named\s+|called\s+)?["'“‘]([^"'“”‘’]{2,80})["'”’]/g,
+  ],
+  project: [
+    // "the Volta Towers project", "Volta Towers development".
+    //
+    // NOT tower/towers/residences/heights. Those are ordinary Dubai nouns and
+    // the pattern would fire on "the Marina towers" in generic advice, which
+    // is the cried-wolf failure this file exists to avoid. Only the words that
+    // mean "this is a record in your inventory".
+    /\b((?:[A-Z][\w'’-]*\s+){1,4})(?:project|development|listing)\b/g,
+    // "property, Volta Towers," — the shape in the transcript above, where the
+    // noun comes FIRST and the name follows it. Bounded by punctuation or a
+    // verb so it cannot run on into the rest of the sentence.
+    /\b(?:property|project|listing|development)[,:]?\s+["'“‘]?((?:[A-Z][\w'’-]*\s*){1,4})["'”’]?(?=[,.;)]|\s+(?:just|which|that|is|was|has))/g,
+  ],
+  person: [
+    // "Assigned to Aya Al-Masri", "handled by X", "reassigned to X".
+    //
+    // The trigger words are spelled with explicit case classes rather than an
+    // /i flag: the flag would also loosen [A-Z] in the NAME, and a pattern that
+    // accepts a lowercase name matches ordinary prose ("assigned to someone
+    // else") and starts accusing the assistant of inventing the word "someone".
+    /\b(?:[Aa]ssigned\s+to|[Hh]andled\s+by|[Oo]wned\s+by|[Rr]eassigned\s+to)\s+((?:[A-Z][\w'’-]*\s*){1,3})(?=[,.;)]|\s+(?:and|who|is|was|has|will))/g,
+  ],
+}
+
+/** Every record this answer asserts by name, with the kind it asserted it as. */
+export function entityClaims(answer: string): EntityClaim[] {
   const src = String(answer ?? '')
-  // "the Zada Tower campaign", "Zada Tower campaign is…" — one to four
-  // capitalised words directly before the word campaign.
-  for (const m of src.matchAll(/\b((?:[A-Z][\w'’-]*\s+){1,4})campaign\b/g)) {
-    const name = m[1].trim()
-    // Leading articles and possessives are not part of a name.
-    const cleaned = name.replace(/^(The|This|That|Your|Our|A|An)\s+/i, '').trim()
-    if (cleaned) out.push(cleaned)
+  const out: EntityClaim[] = []
+  const seen = new Set<string>()
+  for (const kind of ENTITY_KINDS) {
+    for (const re of CLAIM_PATTERNS[kind]) {
+      for (const m of src.matchAll(re)) {
+        // Leading articles and possessives are not part of a name.
+        const cleaned = (m[1] ?? '').trim()
+          .replace(/^(The|This|That|Your|Our|A|An)\s+/i, '')
+          .replace(/^["'“‘]+|["'”’]+$/g, '')
+          .trim()
+        if (!cleaned) continue
+        const key = `${kind}:${cleaned.toLowerCase()}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({ kind, name: cleaned })
+      }
+    }
   }
-  return [...new Set(out)]
+  return out
 }
 
 const loose = (s: string) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '')
@@ -140,11 +229,38 @@ const loose = (s: string) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g
  * a campaign called "Sea Legend One — Quick" is abbreviating, not inventing.
  */
 export function unknownCampaigns(answer: string, knownNames: string[]): string[] {
-  const known = knownNames.map(loose).filter(Boolean)
-  if (known.length === 0) return []   // nothing to check against; claim nothing
-  return campaignNamesClaimed(answer).filter((claim) => {
-    const c = loose(claim)
-    return !known.some((k) => k.includes(c) || c.includes(k))
+  return unknownEntities(answer, { campaign: knownNames }).map((e) => e.name)
+}
+
+/**
+ * Records the answer names that the workspace does not hold.
+ *
+ * SILENT WITHOUT A LIST, PER KIND. An accusation with nothing behind it is its
+ * own kind of lie, so a kind whose list did not load is not checked — the
+ * answer keeps its words rather than being replaced by a denial the server
+ * cannot support.
+ *
+ * That rule is right and it is also how the Volta Towers answer escaped the
+ * one guard that existed. The known-campaign list was read from
+ * `context.campaigns`, which the CALLING PAGE supplies — and the inventory
+ * screen supplies none. So on every screen but the ads screens the campaign
+ * check silently returned "nothing to check against", which reads in the log
+ * exactly like a clean answer. A guard whose reach depends on which page the
+ * user happens to be standing on is not a guard; the lists are gathered
+ * server-side now, and this comment is here so nobody moves them back.
+ */
+export function unknownEntities(
+  answer: string,
+  known: Partial<Record<EntityKind, readonly string[]>>,
+): EntityClaim[] {
+  return entityClaims(answer).filter((claim) => {
+    const list = (known[claim.kind] ?? []).map(loose).filter(Boolean)
+    if (list.length === 0) return false
+    const c = loose(claim.name)
+    if (!c) return false
+    // Either direction counts as a match: a model naming "Sea Legend" for a
+    // campaign called "Sea Legend One — Quick" is abbreviating, not inventing.
+    return !list.some((k) => k.includes(c) || c.includes(k))
   })
 }
 
