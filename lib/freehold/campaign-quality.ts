@@ -1,6 +1,8 @@
 import { query } from '@/lib/db'
 import { getUntrustedLeadIds } from '@/lib/freehold/training-integrity'
-import { QUALIFIED_STATUSES, VIEWING_STATUSES, WON_STATUSES } from '@/lib/freehold/lead-stages'
+import {
+  QUALIFIED_STATUSES, VIEWING_STATUSES, WON_STATUSES, VALUABLE_RATING, AVOID_RATING,
+} from '@/lib/freehold/lead-stages'
 import { bucketLeadsByCampaign, type CampaignRef, type LeadCounts } from '@/lib/freehold/lead-attribution'
 
 /**
@@ -61,9 +63,23 @@ export interface CampaignQuality {
    * read as a verdict on the campaign when it was a verdict on the queue.
    */
   score: number | null
-  /** Attributed leads that have moved at all — reached, qualified, won or
-   *  judged junk. Zero means the score is withheld and the card says why. */
+  /** Attributed leads that have moved at all — reached, qualified, won,
+   *  judged junk, OR value-rated. Zero means the score is withheld and the
+   *  card says why. */
   worked: number
+  /**
+   * WHICH JUDGMENT THE SCORE WAS BUILT FROM.
+   *
+   * Carried because the alternative is a panel that disagrees with itself: an
+   * 82 in large type above a funnel row reading "qualified 0" invites exactly
+   * the question this whole change came from — "how can we trust those?". The
+   * screen states its basis instead, so the two halves are one statement.
+   *
+   * 'funnel'  — the CRM funnel moved; the score is built from it.
+   * 'ratings' — nobody has moved a card, but brokers have judged the leads.
+   * null      — nothing to score, and the card says why.
+   */
+  scoreBasis: 'funnel' | 'ratings' | null
   funnel: { key: 'reached' | 'qualified' | 'won' | 'junk'; count: number; pct: number }[]
   /** Landing-session behaviour (leading signal): average 0–100 score over the
    *  attributed leads that HAVE one, and how many that is. null/0 when none. */
@@ -75,6 +91,34 @@ export interface CampaignQuality {
   avgValue: number | null
   valueValuable: number   // rated ≥ 6 — "buy more of this"
   valueAvoid: number      // rated ≤ 2 — "stop buying this"
+  /**
+   * LEADS A HUMAN HAS SAID ARE WORTH PURSUING — by either route.
+   *
+   * A lead can be judged two ways in this product and only one of them was
+   * ever counted. `qualified` reads the STATUS column: somebody dragged the
+   * card through the funnel. The 0–10 value rating reads a broker's direct
+   * verdict on the lead, one click, and this file's own comment calls it "the
+   * strongest signal in the product".
+   *
+   * A team that rates diligently and lets the status column lag therefore
+   * produced: 176 leads, 0 qualified, 0 worth calling, score withheld —
+   * "nothing to score" printed above 75 leads a broker had rated 8 or better.
+   * The money panel priced the best campaign in the account at "over AED 8k
+   * per lead worth calling" and the advisor proposed pausing it.
+   *
+   * The product had already settled this question elsewhere and in the other
+   * direction: `writeBackDecision` in lead-stages.ts sends `qualified` to Meta
+   * on `rating >= VALUABLE_RATING`, reason 'rating'. So the optimiser was
+   * being told these leads were qualified while the operator was being told
+   * none of them were. One rule, two answers.
+   *
+   * This is the union, deduplicated — a lead that is both status-qualified and
+   * rated well is one lead, not two.
+   */
+  worthCalling: number
+  /** Of `worthCalling`, how many got there ONLY by rating. Named so a screen
+   *  can say which judgment it is leaning on rather than blending them. */
+  worthCallingByRating: number
   /** WHO this campaign actually brings — researched smart-profile facts over
    *  the attributed leads, aggregated to counts (industry/role/city/interests).
    *  Empty when no profiles exist; never guessed. */
@@ -235,8 +279,8 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   const avgValue = valueRated > 0
     ? Math.round((rated.reduce((s, r) => s + (r.value_rating as number), 0) / valueRated) * 10) / 10
     : null
-  const valueValuable = rated.filter((r) => (r.value_rating as number) >= 6).length
-  const valueAvoid = rated.filter((r) => (r.value_rating as number) <= 2).length
+  const valueValuable = rated.filter((r) => (r.value_rating as number) >= VALUABLE_RATING).length
+  const valueAvoid = rated.filter((r) => (r.value_rating as number) <= AVOID_RATING).length
   const valueAdj = valueRated >= 3 && avgValue !== null
     ? ((avgValue - 5) / 5) * 15
     : 0
@@ -258,10 +302,74 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   // one does. Withheld, not zero: min-evidence.ts states the rule for every
   // other number in this product facing a threshold, and a score is the most
   // consequential number on this page.
-  const worked = reached + qualified + won + junk
-  const score = attributed === 0 || worked === 0 ? null : Math.max(0, Math.min(100, Math.round(
-    rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20 + behaviourAdj + valueAdj,
-  )))
+  // ── WORTH CALLING: either judgment counts ──────────────────────────────
+  // See the field's doc comment. Deduplicated by lead id, because a lead that
+  // is both status-qualified and rated 8 is one lead.
+  const worthCallingIds = new Set<string>()
+  for (const r of rows) {
+    const st = r.status
+    const rating = typeof r.value_rating === 'number' ? r.value_rating : null
+    if ((st && QUALIFIED_STATUSES.has(st)) || (rating !== null && rating >= VALUABLE_RATING)) {
+      worthCallingIds.add(r.id)
+    }
+  }
+  const worthCalling = worthCallingIds.size
+  const worthCallingByRating = rows.filter((r) =>
+    worthCallingIds.has(r.id)
+    && !(r.status && QUALIFIED_STATUSES.has(r.status))).length
+
+  // ── A RATING IS WORK ───────────────────────────────────────────────────
+  //
+  // `worked` decides whether the score is withheld, and it counted only status
+  // movement. So a broker rating seventy-five leads moved this number not at
+  // all, and the page said "none has been worked yet — there is nothing to
+  // score" directly above seventy-five judgments. Looking at a lead and
+  // deciding what it is worth is the most deliberate act in the CRM; it is not
+  // an untouched queue.
+  const workedIds = new Set<string>()
+  for (const r of rows) {
+    const st = r.status
+    if ((st && st !== 'new') || junkIds.has(r.id) || typeof r.value_rating === 'number') {
+      workedIds.add(r.id)
+    }
+  }
+  const worked = workedIds.size
+
+  /**
+   * TWO SIGNALS, AND THE SCORE USES WHICHEVER EXIST.
+   *
+   * The old formula was built entirely out of funnel rates with the rating as a
+   * ±15 nudge on top. That is right when the funnel has moved. When it has not,
+   * every rate term is zero and the nudge is applied to nothing: a campaign
+   * whose leads average 8/10 scored 9 out of 100. The adjustment could only
+   * help in the case where it was least needed.
+   *
+   * So the two are scored independently and combined by what is actually
+   * known. Outcomes outrank opinions where both exist — a closed deal is worth
+   * more than a good feeling about a lead — but an opinion outranks silence.
+   */
+  const funnelScore = worked === 0 ? null : Math.max(0, Math.min(100,
+    rate(reached) * 20 + rate(qualified) * 35 + rate(won) * 45 - rate(junk) * 20 + behaviourAdj))
+  // The rating is already a 0–10 verdict on lead value; 8/10 is 80, not 9.
+  const ratingScore = valueRated >= 3 && avgValue !== null
+    ? Math.max(0, Math.min(100, avgValue * 10))
+    : null
+  // Did the funnel itself move, or is `worked` carried entirely by ratings?
+  const funnelMoved = reached + qualified + won + junk > 0
+
+  const scoreBasis: CampaignQuality['scoreBasis'] =
+    attributed === 0 ? null
+      : funnelMoved && funnelScore !== null ? 'funnel'
+        : ratingScore !== null ? 'ratings'
+          : null
+  const score = attributed === 0 ? null
+    : funnelMoved && funnelScore !== null
+      // Both: the funnel leads, the rating adjusts it as before.
+      ? Math.round(Math.max(0, Math.min(100, funnelScore + valueAdj)))
+      : ratingScore !== null
+        // Ratings only: they ARE the answer, at full weight.
+        ? Math.round(ratingScore)
+        : null
 
   // WHO THEY ARE — the researched smart-profile facts over this campaign's
   // leads, aggregated to counts. "Campaign X brings finance directors in
@@ -313,7 +421,8 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
   return {
     campaignId, attributed, reached, qualified, viewings, won, revenueAed, junk, duplicates, score, worked, funnel,
     avgBehaviour, behaviourCount,
-    valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
+    valueRated, avgValue, valueValuable, valueAvoid, worthCalling, worthCallingByRating,
+    scoreBasis, whoTheyAre,
     matchedOn: { utmId: campaignId || '', campaignName: campaignName || '' },
     untagged,
   }
