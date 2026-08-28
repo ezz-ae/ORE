@@ -1,0 +1,368 @@
+/**
+ * ONE WRITE PATH FOR A LEAD — the CRM screen and the chat use the same one.
+ *
+ * This code was the body of PATCH /api/freehold/crm/leads/[id]. It was only
+ * reachable over HTTP with a session cookie, which meant the assistant could
+ * not use it, which meant the assistant could not change a lead at all. Its
+ * whole CRM capability was `crm_search_leads` — it could find the person going
+ * cold and then do nothing about them.
+ *
+ * That is what "the chat is not effective" turns out to be. On ads it holds
+ * twenty tools and can pause a campaign, move a budget, edit an ad, launch a
+ * campaign. On the CRM — where the operator actually spends the day, and where
+ * this was reported from — it could read and talk. So it wrote paragraphs
+ * about a lead and offered buttons ("Draft WhatsApp Message", "Mark as
+ * Contacted") that mapped to no capability at all.
+ *
+ * The fix is not a second write path for the machine. A duplicated update
+ * drifts within a month: this one carries the broker-ownership rule, the
+ * reassignment authority check, the value-rating points claim, the Ads Machine
+ * bridge, the activity log and the Meta write-back, and a copy would miss two
+ * of those on day one and quietly diverge on the rest. So the logic moved HERE
+ * whole, and both callers are thin:
+ *
+ *   · the route awaits the session, then calls updateLead
+ *   · the coordinator tool passes the signed-in user, then calls updateLead
+ *
+ * The rules apply identically either way — a broker cannot reassign a lead by
+ * asking the assistant nicely, because the same branch runs.
+ *
+ * ── WHY IT RETURNS A STATUS INSTEAD OF THROWING ──────────────────────────
+ *
+ * The refusals here are ANSWERS, not faults: "brokers cannot reassign leads",
+ * "not permitted, unlocks at…". The route needs them as HTTP codes and the
+ * assistant needs them as sentences to say out loud. A thrown error would
+ * flatten both into "something went wrong", and the reassignment window in
+ * particular is a rule the person is entitled to hear stated.
+ */
+import { query } from '@/lib/db'
+import { brokerOwnerKeys } from '@/lib/freehold/lead-access'
+import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
+import { notify } from '@/lib/freehold/notifications'
+import { emailLeadMovementToInbox, notifyBrokerOfAssignedLead } from '@/lib/transactional-email'
+import { answerLeadScore } from '@/lib/freehold/ads-machine'
+import { authorizeReassign } from '@/lib/freehold/authority-db'
+import type { Role } from '@/lib/freehold/session-types'
+import { statusForDenial } from '@/lib/freehold/authority'
+import { reportLeadToMeta } from '@/lib/freehold/lead-writeback'
+import { openRatingClaim } from '@/lib/freehold/points-db'
+import { outcomeOf } from '@/lib/freehold/points'
+
+/** Who is making the change. The same shape a verified session carries. */
+export interface LeadActor {
+  email: string
+  role: Role
+  brokerId?: string | null
+}
+
+export type LeadWriteResult =
+  | { ok: true; id: string }
+  /** `status` is the HTTP code the route should answer with. */
+  | { ok: false; status: number; error: string; reason?: string; unlocksAt?: string | null }
+
+/**
+ * The fields a caller may set. Exported because the coordinator tools build
+ * their patches from it — a tool that sets a field this list does not carry
+ * would silently do nothing, and finding that out from a user is expensive.
+ */
+export const LEAD_WRITABLE_FIELDS = [
+  'status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest',
+  'message', 'snooze_until', 'archived', 'muted_until', 'blocked',
+  'duplicate_dismissed_at',
+] as const
+
+// "Not a duplicate" dismissals persist on the lead row (survives reloads and
+// devices). Best-effort column ensure, run once per instance.
+let dismissColEnsured: Promise<void> | null = null
+const ensureDismissColumn = () => {
+  if (!dismissColEnsured) {
+    dismissColEnsured = query(
+      `ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS duplicate_dismissed_at timestamptz`
+    ).then(() => undefined).catch((e) => { dismissColEnsured = null; throw e })
+  }
+  return dismissColEnsured
+}
+
+// Describe what a PATCH changed so the lead's activity timeline reflects real
+// history. Failures never break the update itself.
+async function logPatchActivity(leadId: string, body: Record<string, unknown>, actor: string) {
+  const entries: Array<{ type: string; description: string }> = []
+  // Lead name for human-readable movement emails (best-effort).
+  const leadRow = await query<{ name: string | null }>(
+    `SELECT name FROM freehold_site_leads WHERE id = $1 LIMIT 1`, [leadId],
+  ).catch(() => [] as { name: string | null }[])
+  const leadRef = { id: leadId, name: leadRow[0]?.name ?? null }
+
+  if (typeof body.status === 'string' && body.status) {
+    entries.push({ type: 'stage', description: `Stage changed to ${body.status}` })
+    // Movement feed: the brand inbox tracks every step, not just arrivals.
+    void emailLeadMovementToInbox('stage', leadRef, `stage changed to ${body.status}`)
+  }
+  if ('assigned_broker_id' in body) {
+    entries.push({
+      type: 'assignment',
+      description: body.assigned_broker_id ? `Assigned to ${body.assigned_broker_id}` : 'Unassigned',
+    })
+    if (body.assigned_broker_id) {
+      // In-app notification straight to the assignee (best-effort)…
+      notify('lead_assigned', { lead: leadId }, {
+        recipient: String(body.assigned_broker_id),
+        href: `/freehold-intelligence/crm/leads/${leadId}`,
+      }).catch(() => {})
+      // …and the EMAIL. The assign API and the automation engine both emailed
+      // the broker; this route — the one behind the CRM's own assignment UI —
+      // only pinged in-app, so a broker away from the dashboard missed exactly
+      // the assignments made by hand. notifyBrokerOfAssignedLead also feeds
+      // the movement note to the brand inbox, so one call covers both.
+      void notifyBrokerOfAssignedLead(String(body.assigned_broker_id), leadId)
+    } else {
+      void emailLeadMovementToInbox('unassigned', leadRef, 'unassigned — nobody owns this lead now')
+    }
+  }
+  if (typeof body.priority === 'string' && body.priority) {
+    entries.push({ type: 'note', description: `Priority set to ${body.priority}` })
+  }
+  if ('value_rating' in body) {
+    entries.push({ type: 'note', description: `Value rated ${Number(body.value_rating)}/10` })
+  }
+  if ('snooze_until' in body && body.snooze_until) {
+    const until = new Date(String(body.snooze_until))
+    entries.push({
+      type: 'note',
+      description: `Snoozed until ${Number.isNaN(until.getTime()) ? String(body.snooze_until) : until.toISOString().slice(0, 16).replace('T', ' ')}`,
+    })
+  }
+  if (body.archived === true) entries.push({ type: 'note', description: 'Conversation archived' })
+  if (body.blocked === true) entries.push({ type: 'note', description: 'Contact blocked' })
+  if ('duplicate_dismissed_at' in body && body.duplicate_dismissed_at) {
+    entries.push({ type: 'note', description: 'Marked as not a duplicate' })
+  }
+  if (entries.length === 0) return
+  try {
+    await ensureLeadActivityTable()
+    for (const e of entries) {
+      await query(
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [crypto.randomUUID(), leadId, e.type, e.description, actor]
+      )
+    }
+  } catch {
+    // Activity logging is best-effort — the update already succeeded.
+  }
+}
+
+
+export async function updateLead(
+  id: string,
+  body: Record<string, unknown>,
+  user: LeadActor,
+): Promise<LeadWriteResult> {
+
+  // Brokers may only modify their own leads, and may not reassign them away.
+  const isBroker = user.role === 'broker'
+  const ownerKeys = brokerOwnerKeys(user)
+  if (isBroker) {
+    if ('assigned_broker_id' in body) {
+      return { ok: false, status: 403, error: 'Brokers cannot reassign leads' }
+    }
+    try {
+      await ensureLeadsTable()
+      const owner = await query<{ assigned_broker_id: string | null }>(
+        `SELECT assigned_broker_id FROM freehold_site_leads WHERE id = $1`,
+        [id]
+      )
+      if (owner.length === 0) return { ok: false, status: 404, error: 'Not found' }
+      if (!ownerKeys.includes(owner[0].assigned_broker_id ?? '')) {
+        return { ok: false, status: 403, error: 'Forbidden' }
+      }
+    } catch {
+      return { ok: false, status: 503, error: 'DB unavailable' }
+    }
+  }
+
+  // ── Reassignment authority ──────────────────────────────────────────────
+  // A team leader's power to move a lead is not a flag on their account: it
+  // depends on THIS lead's state. Inside the grace window the assigned broker
+  // is protected; a lead they have actually worked is never up for grabs,
+  // however old; a lead still untouched once the window passes unlocks.
+  // Management is not
+  // fairness-gated but every decision — allowed or denied — is written down,
+  // which is what settles the argument later.
+  if (!isBroker && 'assigned_broker_id' in body) {
+    const { decision, facts } = await authorizeReassign(
+      id,
+      { email: user.email, role: user.role, id: user.brokerId ?? null },
+      `→ ${String(body.assigned_broker_id || 'unassigned')}`,
+    )
+    if (!facts) return { ok: false, status: 404, error: 'Not found' }
+    if (!decision.allowed) {
+      return { ok: false, status: statusForDenial(decision), error: 'Reassignment not permitted', reason: decision.reason, unlocksAt: decision.unlocksAt ?? null }
+    }
+  }
+
+  const ALLOWED_FIELDS: readonly string[] = LEAD_WRITABLE_FIELDS
+  const updates: string[] = []
+  const values: unknown[] = []
+
+  // ── VALUE RATING — one click, one scale ─────────────────────────────────
+  // A 0–10 judgment of what this lead is actually WORTH, replacing the old
+  // binary green/red. The bottom of the scale is the point: a lead rated 0
+  // teaches the machine what it should stop buying, which is exactly as
+  // valuable as knowing what to buy more of. Written canonically on the lead;
+  // if the Ads Machine has an unanswered question about this same lead, the
+  // one click answers that too — nobody rates the same lead twice.
+  if ('value_rating' in body) {
+    const v = Number(body.value_rating)
+    if (!Number.isFinite(v) || v < 0 || v > 10) {
+      return { ok: false, status: 400, error: 'value_rating must be 0–10' }
+    }
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rating int`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rated_by text`).catch(() => undefined)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS value_rated_at timestamptz`).catch(() => undefined)
+    // Placeholders MUST be numbered by values.length, not updates.length —
+    // `value_rated_at = now()` (and `updated_at = now()` below) add to `updates`
+    // without a bound value, so numbering by updates.length desyncs every
+    // later placeholder. A combined PATCH like {value_rating, status} then
+    // pointed `status` and the WHERE id at the same $-index and left one
+    // parameter unreferenced (Postgres 500). Numbering by values.length is
+    // correct because only value-bearing clauses advance it.
+    updates.push(`value_rating = $${values.length + 1}`)
+    values.push(Math.round(v))
+    updates.push(`value_rated_by = $${values.length + 1}`)
+    values.push(user.email)
+    updates.push(`value_rated_at = now()`)
+
+    // ── The points claim, opened on the FIRST rating only ─────────────────
+    //
+    // A rating that changes nothing is worse than no rating: brokers stop
+    // within a week, and this is the strongest signal in the product. So an
+    // accurate call earns the point back — settled later, when the forecast
+    // has had time to be right or wrong.
+    //
+    // The snapshot is taken HERE, before the outcome could be known, because
+    // that is the whole integrity of the scheme. Best-effort: a rating must
+    // never fail because the points table is unreachable — the rating is the
+    // signal, the point is only the thank-you. See lib/freehold/points.ts.
+    void (async () => {
+      try {
+        const [row] = await query<{ status: string | null; blocked: boolean | null; phone: string | null }>(
+          `SELECT status, blocked, phone FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
+          [id],
+        )
+        await openRatingClaim({
+          leadId: id,
+          brokerId: user.brokerId ?? user.email,
+          rating: Math.round(v),
+          outcomeAtRating: outcomeOf({
+            status: row?.status,
+            blocked: row?.blocked,
+            badPhone: !row?.phone || row.phone.replace(/\D/g, '').length < 7,
+          }),
+        })
+      } catch { /* the rating stands whatever the points table does */ }
+    })()
+
+    // Bridge into the machine's learning, best-effort: the rating must never
+    // fail because the machine has no question open.
+    void (async () => {
+      try {
+        const rows = await query<{ id: string }>(
+          `SELECT id FROM freehold_site_ads_machine_lead_verdicts
+            WHERE lead_id = $1 AND answered_at IS NULL LIMIT 1`,
+          [id],
+        )
+        if (rows[0]) await answerLeadScore(rows[0].id, Math.round(v), user.email)
+      } catch { /* machine table may not exist yet */ }
+    })()
+  }
+
+  for (const field of ALLOWED_FIELDS) {
+    if (field in body) {
+      // Numbered by values.length, NOT updates.length — for exactly the reason
+      // spelled out above the value_rating block: `value_rated_at = now()` and
+      // `updated_at = now()` push a clause without pushing a value, so counting
+      // clauses desyncs every later placeholder. This loop was still counting
+      // clauses, so a PATCH carrying value_rating AND another field (say
+      // status) bound that field to the same $-index as the WHERE id — writing
+      // the lead's own id into status.
+      updates.push(`${field} = $${values.length + 1}`)
+      values.push(body[field])
+    }
+  }
+
+  // Stamp WHEN this broker received the lead. The grace window measures from
+  // here, so without it a reassigned lead would be judged by the date the lead
+  // first arrived and would never be protected.
+  if ('assigned_broker_id' in body) updates.push(`assigned_at = now()`)
+
+  if (updates.length === 0) return { ok: false, status: 400, error: 'No valid fields to update' }
+
+  updates.push(`updated_at = now()`)
+  values.push(id)
+
+  try {
+    await ensureLeadsTable()
+    if ('duplicate_dismissed_at' in body) await ensureDismissColumn()
+    await query(
+      `UPDATE freehold_site_leads SET ${updates.join(', ')} WHERE id = $${values.length}`,
+      values
+    )
+    await logPatchActivity(id, body, user.email)
+    // THE OTHER HALF OF THE SIGNAL. Meta only ever learns that a form was
+    // submitted; whether the lead was real is decided here, in the CRM, and
+    // until now that judgment never travelled back — so the optimiser kept
+    // buying more of whatever produced submissions. Fire-and-forget: an ad
+    // platform must never be able to fail a CRM write.
+    void reportLeadToMeta(id)
+    return { ok: true, id }
+  } catch {
+    return { ok: false, status: 500, error: 'Update failed' }
+  }
+}
+
+
+/**
+ * RECORD THAT SOMEBODY ACTUALLY REACHED OUT.
+ *
+ * Two writes that belong together and were never done together: the activity
+ * row (what happened, who did it, when) and `last_contact_at` on the lead
+ * (which is what the overdue-follow-up queue, the response clock and the team
+ * metrics all read). Logging one without the other is how a lead that was
+ * called this morning still shows in the "going cold" list at lunchtime.
+ *
+ * This is the write behind the "Mark as Contacted" button the assistant kept
+ * offering with nothing underneath it.
+ *
+ * The lead update goes through updateLead, so a broker touching somebody
+ * else's lead is refused here exactly as it is in the CRM screen.
+ */
+export const CONTACT_CHANNELS = ['call', 'whatsapp', 'email', 'meeting', 'note'] as const
+export type ContactChannel = (typeof CONTACT_CHANNELS)[number]
+
+export async function logLeadContact(
+  leadId: string,
+  channel: ContactChannel,
+  note: string,
+  user: LeadActor,
+): Promise<LeadWriteResult> {
+  // The ownership rules live in one place. Stamping the contact time IS the
+  // permission check — if this refuses, nothing is logged either, so a broker
+  // cannot write history onto a lead that is not theirs.
+  const stamped = await updateLead(leadId, { last_contact_at: new Date().toISOString() }, user)
+  if (!stamped.ok) return stamped
+
+  try {
+    await ensureLeadActivityTable()
+    await query(
+      `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [crypto.randomUUID(), leadId, channel, note || `Logged ${channel}`, user.email],
+    )
+  } catch {
+    // The contact time is the load-bearing half and it landed. A missing
+    // timeline row is visible as a gap; a missing timestamp would put the lead
+    // back in the chase queue an hour after somebody called them.
+  }
+  return { ok: true, id: leadId }
+}

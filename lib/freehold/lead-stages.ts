@@ -14,6 +14,21 @@
  * being re-typed at each call site.
  */
 
+/**
+ * EVERY STAGE A LEAD CAN BE IN, in funnel order.
+ *
+ * Walkable, because a machine now moves leads between them: the assistant's
+ * crm_set_lead_status validates against this array, and a status it accepted
+ * that the database rejects is a tool that reports success and changes
+ * nothing. The same eight are the CHECK constraint on freehold_site_leads
+ * (lib/data.ts) and the importer's whitelist (lib/freehold/lead-import.ts) —
+ * this is the copy the rest should be read against.
+ */
+export const LEAD_STATUSES = [
+  'new', 'contacted', 'qualified', 'viewing', 'negotiation', 'converted', 'closed', 'lost',
+] as const
+export type LeadStatus = (typeof LEAD_STATUSES)[number]
+
 /** Qualified or deeper: a human decided this lead is real. */
 export const QUALIFIED_STATUSES = new Set(['qualified', 'viewing', 'negotiation', 'converted', 'closed'])
 

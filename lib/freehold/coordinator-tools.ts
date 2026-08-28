@@ -23,6 +23,9 @@ import { getLandingPagesForDashboard, getLandingPageForEditor, createLandingPage
 import { getInventoryPropertyBySlug, getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
+import { updateLead, logLeadContact, CONTACT_CHANNELS, type LeadActor } from '@/lib/freehold/crm-write'
+import { LEAD_STATUSES, OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
+import { query as dbQuery } from '@/lib/db'
 import { listLibrary, saveLibraryItem } from '@/lib/freehold/library'
 import { listAudiences, getAudience, type SavedAudience } from '@/lib/freehold/audiences'
 import type { AdDestination, CampaignTargeting, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
@@ -103,6 +106,34 @@ const ADS_READERS: CoordinatorRole[] = ['owner', 'admin', 'marketing', 'sales_ma
 const EVERYONE: CoordinatorRole[] = ['owner', 'admin', 'marketing', 'sales_manager', 'sales_agent', 'data_manager']
 
 const s = (v: unknown) => String(v ?? '').trim()
+/**
+ * The signed-in user, in the shape the one lead-write path expects.
+ *
+ * Built from the tool context rather than passed around loose, so a tool
+ * cannot accidentally write as somebody else — every CRM write is attributed to
+ * the account that is actually in the chat.
+ *
+ * The two role vocabularies genuinely differ: the chat says `sales_agent` and
+ * `owner`, the session says `broker` and `ceo`. Mapped explicitly rather than
+ * cast, and anything with no counterpart falls to `broker` — the MOST
+ * restricted role, so a vocabulary that grows later fails closed instead of
+ * handing an unmapped account management powers over other people's leads.
+ */
+const SESSION_ROLE: Record<CoordinatorRole, LeadActor['role']> = {
+  owner: 'ceo',
+  admin: 'admin',
+  marketing: 'marketing',
+  sales_manager: 'sales_manager',
+  sales_agent: 'broker',
+  data_manager: 'broker',
+  viewer: 'broker',
+}
+
+const actorOf = (ctx: ToolCtx): LeadActor => ({
+  email: ctx.email,
+  role: SESSION_ROLE[ctx.role] ?? 'broker',
+  brokerId: ctx.brokerId,
+})
 const n = (v: unknown) => Number(v)
 
 // Launch vocabulary shared with the campaign wizard (campaigns/new). The
@@ -808,6 +839,140 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     },
   },
 
+  /**
+   * THE CRM COULD ONLY BE READ, AND THAT IS WHAT "THE CHAT IS NOT EFFECTIVE"
+   * TURNED OUT TO MEAN.
+   *
+   * On ads this assistant holds twenty tools: it lists campaigns, reads
+   * insights, pauses, resumes, moves budgets, edits ads, builds forms, launches.
+   * On the CRM it held one — search. So asked about a lead going cold it wrote
+   * a paragraph and offered "Draft WhatsApp Message" and "Mark as Contacted",
+   * two buttons that mapped to no capability in the product, because there was
+   * nothing underneath them to map to.
+   *
+   * These five close it. Every one goes through lib/freehold/crm-write.ts, the
+   * same function the CRM screen posts to, so a broker cannot reassign a lead
+   * by asking the assistant instead of pressing the button — it is one code
+   * path with one set of rules. All four writes are destructive and therefore
+   * confirmation-gated at autonomy 1 exactly like the ads writes.
+   */
+  {
+    name: 'crm_log_contact', agent: 'crm_agent', destructive: true,
+    description: 'Record that this lead was actually contacted — writes the timeline entry AND stamps last_contact_at, which is what the overdue-follow-up queue reads. Use this for "mark as contacted" and after any call/message.',
+    params: '{ "leadId": string, "channel": "call"|"whatsapp"|"email"|"meeting"|"note", "note"?: string, "confirm": true }',
+    roles: EVERYONE,
+    schema: z.object({
+      leadId: z.string(),
+      channel: z.enum(CONTACT_CHANNELS),
+      note: z.string().optional().describe('what was said or agreed — shown on the lead timeline'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
+    run: async (args, ctx) => {
+      const leadId = s(args.leadId)
+      if (!leadId) return { error: 'leadId is required' }
+      const r = await logLeadContact(leadId, args.channel as never, s(args.note), actorOf(ctx))
+      return r.ok ? { ok: true, leadId, channel: s(args.channel) } : { ok: false, error: r.error }
+    },
+  },
+  {
+    name: 'crm_set_lead_status', agent: 'crm_agent', destructive: true,
+    description: `Move a lead to a different stage. One of: ${LEAD_STATUSES.join(', ')}.`,
+    params: '{ "leadId": string, "status": string, "confirm": true }', roles: EVERYONE,
+    schema: z.object({
+      leadId: z.string(),
+      status: z.enum(LEAD_STATUSES),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
+    run: async (args, ctx) => {
+      const leadId = s(args.leadId)
+      if (!leadId) return { error: 'leadId is required' }
+      const r = await updateLead(leadId, { status: s(args.status) }, actorOf(ctx))
+      return r.ok ? { ok: true, leadId, status: s(args.status) } : { ok: false, error: r.error }
+    },
+  },
+  {
+    name: 'crm_rate_lead', agent: 'crm_agent', destructive: true,
+    description: 'Record the 0–10 judgment of what this lead is worth. This is the signal the ads machine learns from — a 0 teaches it what to stop buying, which is worth as much as knowing what to buy more of. Only ever the user\'s own judgment, never your guess.',
+    params: '{ "leadId": string, "rating": 0-10, "confirm": true }', roles: EVERYONE,
+    schema: z.object({
+      leadId: z.string(),
+      rating: z.number().min(0).max(10),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact rating'),
+    }),
+    run: async (args, ctx) => {
+      const leadId = s(args.leadId)
+      if (!leadId) return { error: 'leadId is required' }
+      const r = await updateLead(leadId, { value_rating: n(args.rating) }, actorOf(ctx))
+      return r.ok ? { ok: true, leadId, rating: Math.round(n(args.rating)) } : { ok: false, error: r.error }
+    },
+  },
+  {
+    name: 'crm_assign_lead', agent: 'crm_agent', destructive: true,
+    description: 'Assign or reassign a lead to a broker (their user id). The server checks the reassignment window and may refuse with a reason — say the reason out loud rather than retrying.',
+    params: '{ "leadId": string, "brokerId": string, "confirm": true }',
+    roles: ['owner', 'admin', 'sales_manager'],
+    schema: z.object({
+      leadId: z.string(),
+      brokerId: z.string().describe('the broker user id to assign to; empty string unassigns'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
+    run: async (args, ctx) => {
+      const leadId = s(args.leadId)
+      if (!leadId) return { error: 'leadId is required' }
+      const r = await updateLead(leadId, { assigned_broker_id: s(args.brokerId) || null }, actorOf(ctx))
+      // A refusal here is a RULE, not a fault — the assigned broker's grace
+      // window. It is handed back with its reason so the assistant can state
+      // it, which is the answer the person is entitled to.
+      return r.ok
+        ? { ok: true, leadId, assignedTo: s(args.brokerId) || null }
+        : { ok: false, error: r.error, reason: r.reason ?? null, unlocksAt: r.unlocksAt ?? null }
+    },
+  },
+  {
+    name: 'crm_overdue_followups', agent: 'crm_agent',
+    description: `Leads that have gone quiet — nobody has contacted them in over ${OVERDUE_FOLLOWUP_HOURS} hours and they are not closed or lost. Read this BEFORE claiming a lead is "at risk of going cold": it is the real list, with real hours. Brokers see only their own book.`,
+    params: '{ "limit"?: number }', roles: EVERYONE,
+    schema: z.object({ limit: z.number().optional() }),
+    run: async (args, ctx) => {
+      const limit = Math.min(Math.max(Math.round(n(args.limit) || 15), 1), 50)
+      // Broker scoping is applied in SQL, not filtered afterwards — a broker
+      // must not be able to learn another broker's book from a row count.
+      const isBroker = ctx.role === 'sales_agent'
+      const params: unknown[] = [OVERDUE_FOLLOWUP_HOURS]
+      let scope = ''
+      if (isBroker) {
+        params.push(ctx.brokerId ?? ctx.email)
+        scope = ' AND assigned_broker_id = $2'
+      }
+      params.push(limit)
+      try {
+        const rows = await dbQuery<{
+          id: string; name: string | null; phone: string | null; status: string | null
+          assigned_broker_id: string | null; hours_quiet: string
+        }>(
+          `SELECT id, name, phone, status, assigned_broker_id,
+                  round(extract(epoch FROM now() - COALESCE(last_contact_at, created_at)) / 3600)::text AS hours_quiet
+             FROM freehold_site_leads
+            WHERE archived IS NOT TRUE
+              AND status NOT IN ('converted', 'closed', 'lost')
+              AND COALESCE(last_contact_at, created_at) < now() - ($1 || ' hours')::interval${scope}
+            ORDER BY COALESCE(last_contact_at, created_at) ASC
+            LIMIT $${params.length}`,
+          params,
+        )
+        return rows.map((r) => ({
+          id: r.id, name: r.name, phone: r.phone, status: r.status,
+          assignedTo: r.assigned_broker_id, hoursSinceContact: Number(r.hours_quiet) || 0,
+        }))
+      } catch {
+        // An empty list and a failed read are different answers, and saying
+        // "nothing is overdue" when the query fell over is the lie this
+        // product spends most of its guards preventing.
+        return { error: 'Could not read the follow-up queue just now.' }
+      }
+    },
+  },
+
   // ── creative_agent ─────────────────────────────────────────────────────────
   {
     name: 'library_list', agent: 'creative_agent',
@@ -979,8 +1144,18 @@ export function parseToolCall(
   return null
 }
 
-/** At level 2, actions that ACTIVATE spend still need an explicit human yes. */
-const L2_STILL_CONFIRM = new Set(['ads_resume_campaign'])
+/**
+ * At level 2, actions that ACTIVATE spend still need an explicit human yes.
+ *
+ * And one that spends nothing: taking a lead off the broker holding it. The
+ * money actions are on this list because they are hard to undo; reassignment is
+ * on it because it is a decision ABOUT A PERSON — somebody's commission and
+ * somebody's morning. The server already refuses it inside the grace window,
+ * but "the rules permitted it" is not the same as "a human asked for it", and
+ * a semi-autonomous assistant quietly moving leads between colleagues is the
+ * kind of thing a team finds out about afterwards.
+ */
+const L2_STILL_CONFIRM = new Set(['ads_resume_campaign', 'crm_assign_lead'])
 
 /**
  * Execute one tool call with role + autonomy enforcement. Never throws.

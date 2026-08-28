@@ -321,9 +321,20 @@ console.log('\n── the scheme is wired where it says it is ──')
   // THE SNAPSHOT MUST BE TAKEN AT THE RATING. Settle against today's row and a
   // broker who edits after the outcome lands looks like somebody who called it
   // early — the integrity of the whole scheme is this one moment.
-  const crm = code('app/api/freehold/crm/leads/[id]/route.ts')
+  // Asserted against the WRITE PATH, not against a screen's route. The rating
+  // used to be writable only through PATCH /crm/leads/[id]; it now also moves
+  // when the assistant is asked to rate a lead, and both go through
+  // lib/freehold/crm-write.ts. The rule is that the claim is opened WHEREVER
+  // the rating is written — pinning the old route file would have passed while
+  // a second, claimless path grew beside it.
+  const crm = code('lib/freehold/crm-write.ts')
   check('a claim is opened where the rating is written', /openRatingClaim\(/.test(crm))
   check('…carrying what was known AT THAT MOMENT', /outcomeAtRating: outcomeOf\(/.test(crm))
+  // And there is only ONE place the rating is written, so "wherever" is one
+  // place. A second writer would need its own claim and would not have one.
+  const writers = ['lib/freehold/crm-write.ts', 'app/api/freehold/crm/leads/[id]/route.ts']
+    .filter((f) => /value_rating\s*=\s*\$/.test(code(f)))
+  check('…and the rating has exactly one writer', writers.length === 1, writers.join(','))
 
   // ONLY THE FIRST RATING EARNS, enforced by the database rather than by a
   // check somebody can forget.
