@@ -58,6 +58,35 @@ export type AdvisorArea = 'reach' | 'targeting' | 'placements' | 'budget' | 'cre
 
 export type { AdvisorAction }
 
+/**
+ * WHAT IS WORKING AND WHAT IS BLOCKING — from the SAME call as the suggestions.
+ *
+ * This used to be a second endpoint (/api/freehold/ads/refine) with its own
+ * model call, its own system prompt, its own vocabulary and — the part that
+ * mattered — its own data. It read its metrics from the BROWSER: the page
+ * posted numbers up and the server analysed whatever it was sent, while this
+ * route fetches from Meta itself.
+ *
+ * Two models, two datasets, two voices, one panel. The operator's words were
+ * "the refiner is in another word". The page had already half-conceded it, by
+ * hiding the refiner's actions column whenever the advisor had suggestions —
+ * a workaround for a duplication rather than a fix for it.
+ *
+ * Worse than untidy: the two could disagree. This codebase already carries a
+ * note about a screen "contradicting itself in two boxes an inch apart", and
+ * two independent analyses of two different copies of the numbers is the
+ * machinery for producing exactly that.
+ *
+ * So the summary is produced HERE, in the same call, over the same fetched
+ * data as the suggestions — which is also the only way it can be held to the
+ * same evidence rules.
+ */
+export interface AdvisorSummary {
+  /** Short, specific, each grounded in DATA. */
+  working: string[]
+  blocking: string[]
+}
+
 export interface AdvisorSuggestion {
   area: AdvisorArea
   title: string
@@ -198,9 +227,11 @@ DATA:
 ${JSON.stringify(context)}
 
 Return ONLY strict JSON, no markdown:
-{"suggestions":[{"area":"...","title":"...","detail":"...","evidence":"...","action":null}]}
+{"working":["..."],"blocking":["..."],"suggestions":[{"area":"...","title":"...","detail":"...","evidence":"...","action":null}]}
 
 Rules:
+- "working" and "blocking": up to 3 each, one short specific sentence per item, every one grounded in a number from DATA. What is genuinely driving results, and what is genuinely holding them back. Empty arrays if the data does not support any — never pad, and never put an item in "working" that the numbers do not support just to balance the two lists.
+- The suggestions below must FOLLOW from working/blocking. They are one analysis, not two: never let a suggestion contradict the summary above it.
 - 3 to 6 suggestions, most impactful first. If the data genuinely supports fewer, return fewer — never pad.
 - "area" must be exactly one of: reach, targeting, placements, budget, creative, quality.
 - "title": short imperative headline, max 60 characters.
@@ -256,12 +287,24 @@ function buildState(
 
 type RawSuggestion = { area?: unknown; title?: unknown; detail?: unknown; evidence?: unknown; action?: unknown }
 
-function parseSuggestions(raw: string, state: AdvisorState): AdvisorSuggestion[] | null {
+/** Short, specific, deduped strings — the two summary lists. */
+const summaryList = (v: unknown): string[] =>
+  (Array.isArray(v) ? v : [])
+    .map((x) => String(x ?? '').trim())
+    .filter(Boolean)
+    .slice(0, 3)
+
+function parseAdvisor(raw: string, state: AdvisorState):
+  { suggestions: AdvisorSuggestion[]; summary: AdvisorSummary } | null {
   try {
     const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-    const parsed = JSON.parse(cleaned) as { suggestions?: unknown }
+    const parsed = JSON.parse(cleaned) as { suggestions?: unknown; working?: unknown; blocking?: unknown }
     if (!Array.isArray(parsed.suggestions)) return null
-    return (parsed.suggestions as RawSuggestion[])
+    const summary: AdvisorSummary = {
+      working: summaryList(parsed.working),
+      blocking: summaryList(parsed.blocking),
+    }
+    const suggestions = (parsed.suggestions as RawSuggestion[])
       .slice(0, 6)
       .map((s) => ({
         area: (AREAS.has(String(s.area)) ? String(s.area) : 'quality') as AdvisorArea,
@@ -271,6 +314,7 @@ function parseSuggestions(raw: string, state: AdvisorState): AdvisorSuggestion[]
         action: validateAdvisorAction(s.action, state, safeBudgetStep),
       }))
       .filter((s) => s.title && s.detail)
+    return { suggestions, summary }
   } catch {
     return null
   }
@@ -393,8 +437,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ available: false, reason: 'ai_error', metrics })
   }
 
-  const suggestions = parseSuggestions(raw, state)
-  if (suggestions === null) return NextResponse.json({ available: false, reason: 'ai_error', metrics })
+  const parsed = parseAdvisor(raw, state)
+  if (parsed === null) return NextResponse.json({ available: false, reason: 'ai_error', metrics })
 
-  return NextResponse.json({ available: true, suggestions, metrics, generatedAt: new Date().toISOString() })
+  return NextResponse.json({
+    available: true,
+    suggestions: parsed.suggestions,
+    // One analysis, one voice — see AdvisorSummary.
+    summary: parsed.summary,
+    metrics,
+    generatedAt: new Date().toISOString(),
+  })
 }
