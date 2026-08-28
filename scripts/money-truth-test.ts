@@ -21,6 +21,7 @@
  * Pure — no network, no clock. Runs in `pnpm guards`.
  */
 import { readFileSync } from 'node:fs'
+import { scoreLeads, type ScorableLead } from '../lib/freehold/campaign-score'
 import { join } from 'node:path'
 import {
   MONEY_RUNGS, MONEY_VERDICTS, DEFAULT_CYCLE, DEFAULT_DAYS_TO_CLOSE, DEFAULT_DAYS_TO_QUALIFY,
@@ -317,10 +318,27 @@ console.log('\n── the machine actually reads it ──')
   // above can fire. It shipped in the CRM and reached no ad decision at all.
   const quality = readFileSync(join(process.cwd(), 'lib/freehold/campaign-quality.ts'), { encoding: 'utf8' })
   check('the campaign quality read carries deal value',
-    /revenueAed/.test(quality) && /deal_value_aed/.test(quality))
+    /revenueAed/.test(quality))
+
+  // ASSERTED BY RUNNING IT, not by matching the shape of the branch it used to
+  // live in. This scanned campaign-quality.ts for `if (s && WON.has(s)) { …
+  // revenueAed += v` and broke the moment the arithmetic moved to
+  // campaign-score.ts — while the RULE it protects was never at risk. The rule
+  // is that a value stamped on a lead that later went cold is a hope, not a
+  // receipt, and now that scoreLeads is pure that can simply be demonstrated.
+  const lead = (o: Partial<ScorableLead>): ScorableLead => ({
+    id: `m${Math.random()}`, status: 'new', blocked: null, phone: '+9715010000000',
+    behaviour_score: null, value_rating: null, deal_value_aed: null, ...o,
+  })
+  const money = scoreLeads([
+    lead({ status: 'closed', deal_value_aed: 1_000_000, phone: '+971501000001' }),
+    lead({ status: 'converted', deal_value_aed: 250_000, phone: '+971501000002' }),
+    // Both of these carry a value and neither closed.
+    lead({ status: 'lost', deal_value_aed: 9_000_000, phone: '+971501000003' }),
+    lead({ status: 'negotiation', deal_value_aed: 4_000_000, phone: '+971501000004' }),
+  ])
   check('…and only counts money against a WON lead',
-    /if \(s && WON\.has\(s\)\) \{[\s\S]{0,320}revenueAed \+= v/.test(quality),
-    'revenue is summed outside the won branch')
+    money.revenueAed === 1_250_000, `AED ${money.revenueAed}`)
 }
 
 console.log('\n── a number Meta never gave us is withheld, never printed as zero ──')
