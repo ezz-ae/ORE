@@ -23,7 +23,10 @@ import { getLandingPagesForDashboard, getLandingPageForEditor, createLandingPage
 import { getInventoryPropertyBySlug, getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
-import { updateLead, logLeadContact, CONTACT_CHANNELS, type LeadActor } from '@/lib/freehold/crm-write'
+import {
+  updateLead, logLeadContact, getLeadForActor, CONTACT_CHANNELS, type LeadActor,
+} from '@/lib/freehold/crm-write'
+import { waAppLink } from '@/lib/whatsapp/links'
 import { LEAD_STATUSES, OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
 import { query as dbQuery } from '@/lib/db'
 import { updateProject, archiveProject } from '@/lib/freehold/content-admin-db'
@@ -998,6 +1001,42 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       if (!leadId) return { error: 'leadId is required' }
       const r = await logLeadContact(leadId, args.channel as never, s(args.note), actorOf(ctx))
       return r.ok ? { ok: true, leadId, channel: s(args.channel) } : { ok: false, error: r.error }
+    },
+  },
+  {
+    name: 'crm_message_link', agent: 'crm_agent',
+    description: 'Turn a message YOU have written into a WhatsApp link for this lead, ready for the user to tap and send. This is the "draft a WhatsApp message" capability: it opens the user\'s own WhatsApp with the lead\'s real number and your text pre-filled. It does NOT send anything — the person presses send. Write the message from facts you actually looked up about this lead; never invent a project, a price or a previous conversation.',
+    params: '{ "leadId": string, "text": string }', roles: EVERYONE,
+    schema: z.object({
+      leadId: z.string(),
+      text: z.string().describe('the message to pre-fill, in the lead\'s own language where you know it'),
+    }),
+    run: async (args, ctx) => {
+      const leadId = s(args.leadId)
+      const text = s(args.text)
+      if (!leadId || !text) return { error: 'leadId and text are required' }
+      // The number comes from the DATABASE, never from the model. That is the
+      // same rule as the link guard on hrefs: a contact link built from
+      // something an assistant composed is a message to a stranger.
+      const found = await getLeadForActor(leadId, actorOf(ctx))
+      if (!found.ok) return { ok: false, error: found.error }
+      const digits = (found.lead.phone ?? '').replace(/\D/g, '')
+      // A link to an undialable number is a dead button, and the lead's phone
+      // being unusable is itself the answer the person needs.
+      if (digits.length < 7) {
+        return { ok: false, error: 'This lead has no usable phone number, so there is nothing to open. Say so rather than offering a link.' }
+      }
+      return {
+        ok: true,
+        leadId,
+        name: found.lead.name,
+        // Opens the user's OWN WhatsApp with the text ready. There is no
+        // WhatsApp API on this deployment and nothing is sent on anyone's
+        // behalf — say "ready to send", never "sent".
+        whatsappUrl: waAppLink(digits, text),
+        text,
+        note: 'Nothing has been sent. This opens the user\'s WhatsApp with the message pre-filled; they press send. Afterwards, offer crm_log_contact to record it.',
+      }
     },
   },
   {

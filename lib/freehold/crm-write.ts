@@ -366,3 +366,56 @@ export async function logLeadContact(
   }
   return { ok: true, id: leadId }
 }
+
+/**
+ * READ ONE LEAD, WITH THE SAME OWNERSHIP RULE THE WRITES USE.
+ *
+ * `searchCrmLeads` scopes by role already, but it searches by free text. A
+ * caller holding an id needs to fetch THAT lead and be refused if it is not
+ * theirs — and needs the refusal to look identical to the one a write gets,
+ * or the two drift and one of them becomes the way around the other.
+ */
+export interface LeadFacts {
+  id: string
+  name: string | null
+  phone: string | null
+  status: string | null
+  projectSlug: string | null
+  source: string | null
+  lastContactAt: string | null
+  assignedBrokerId: string | null
+}
+
+export async function getLeadForActor(
+  leadId: string,
+  user: LeadActor,
+): Promise<{ ok: true; lead: LeadFacts } | { ok: false; status: number; error: string }> {
+  try {
+    await ensureLeadsTable()
+    const rows = await query<{
+      id: string; name: string | null; phone: string | null; status: string | null
+      project_slug: string | null; source: string | null
+      last_contact_at: string | null; assigned_broker_id: string | null
+    }>(
+      `SELECT id, name, phone, status, project_slug, source,
+              last_contact_at::text, assigned_broker_id
+         FROM freehold_site_leads WHERE id = $1`,
+      [leadId],
+    )
+    const row = rows[0]
+    if (!row) return { ok: false, status: 404, error: 'No lead with that id' }
+    if (user.role === 'broker' && !brokerOwnerKeys(user).includes(row.assigned_broker_id ?? '')) {
+      return { ok: false, status: 403, error: 'That lead is not yours' }
+    }
+    return {
+      ok: true,
+      lead: {
+        id: row.id, name: row.name, phone: row.phone, status: row.status,
+        projectSlug: row.project_slug, source: row.source,
+        lastContactAt: row.last_contact_at, assignedBrokerId: row.assigned_broker_id,
+      },
+    }
+  } catch {
+    return { ok: false, status: 503, error: 'Could not read that lead just now' }
+  }
+}

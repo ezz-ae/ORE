@@ -149,10 +149,28 @@ export async function executeTool(request: ToolCallRequest): Promise<McpResponse
         break;
       }
       default:
-        result = { mock: true, message: `Read-only MCP tool registered: ${tool.name}` };
-        fallbackStatus = 'mock';
-        evidence = ['Registered tool has no read handler yet'];
-        nextActions = ['Implement tool-specific handler'];
+        // A REGISTERED TOOL WITH NO HANDLER MUST NOT REPORT SUCCESS.
+        //
+        // This used to answer status 'success' with `{ mock: true }` and a
+        // `fallbackStatus: 'mock'` nobody is obliged to read. Every caller
+        // checks `status`, so a tool that does nothing looked exactly like a
+        // tool that worked — the "it says it did it and nothing happened"
+        // failure, at the API layer.
+        //
+        // Not reachable today: the five handler-less tools all carry
+        // canWriteExternal and are refused above, before the switch. This is
+        // the trap for the NEXT read tool somebody registers and does not
+        // implement, which is precisely the case that would ship unnoticed.
+        return {
+          requestId,
+          tool: tool.id,
+          layer: 'mcp',
+          status: 'error',
+          evidence: ['Registered tool has no handler'],
+          warnings: [`${tool.name} is registered but not implemented — nothing was done.`],
+          nextActions: ['Implement the handler, or remove the tool from the registry'],
+          generatedAt: now(),
+        };
     }
 
     return {

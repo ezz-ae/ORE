@@ -193,6 +193,67 @@ console.log('\n── brokers keep their own book ──')
     /Could not read the follow-up queue/.test(q.slice(0, 3000)))
 }
 
+console.log('\n── the button that started this: drafting a message ──')
+{
+  // "Draft WhatsApp Message" was offered with no capability behind it. There
+  // is no WhatsApp API here, so the honest capability is a link-out: the
+  // assistant writes the text, the user's own WhatsApp opens with it filled
+  // in, and the user presses send.
+  const t = byName('crm_message_link')
+  check('drafting a message to a lead is a real tool', !!t)
+  // NOT destructive, because it sends nothing. Marking it so would put a
+  // confirmation in front of writing a draft, and nobody would use it.
+  check('…and it is not destructive, because nothing is sent',
+    t!.destructive !== true)
+
+  const tools = readFileSync(join(process.cwd(), 'lib/freehold/coordinator-tools.ts'), 'utf8')
+  const fn = tools.slice(tools.indexOf("name: 'crm_message_link'"), tools.indexOf("name: 'crm_set_lead_status'"))
+
+  // THE NUMBER COMES FROM THE DATABASE. A phone the model composed is a
+  // message to a stranger — worse than a dead link, because it arrives.
+  check('the number is read from the lead record, never taken from the model',
+    /getLeadForActor\(leadId, actorOf\(ctx\)\)/.test(fn) && /found\.lead\.phone/.test(fn), fn.slice(0, 400))
+  check('…through the same ownership rule the writes use',
+    /getLeadForActor/.test(fn))
+  // A link to an undialable number is a dead button, and the unusable phone is
+  // itself the answer the person needs.
+  check('an undialable lead gets a refusal, not a broken link',
+    /digits\.length < 7/.test(fn))
+  // "Sent" is the claim this product spends most of its guards preventing.
+  check('the result says plainly that nothing was sent',
+    /Nothing has been sent/.test(fn))
+  check('…and points at logging it afterwards',
+    /crm_log_contact/.test(fn))
+}
+
+console.log('\n── an unimplemented tool is not a successful one ──')
+{
+  const exec = readFileSync(join(process.cwd(), 'lib/freehold/mcp/execute-tool.ts'), 'utf8')
+  const tail = exec.slice(exec.indexOf('      default:'))
+
+  // It used to answer status 'success' with `{ mock: true }` and a
+  // fallbackStatus nobody is obliged to read. Every caller checks `status`, so
+  // a tool that did nothing looked exactly like one that worked.
+  check('a registered tool with no handler reports an error',
+    /status: 'error'/.test(tail.slice(0, 1400)))
+  // Read the CODE, not the file: the comment above the fix quotes the very
+  // shape it removed, and a whole-file scan matched its own explanation — a
+  // guard that fails on the sentence justifying it teaches people to delete
+  // the sentence.
+  const execCode = exec.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+  check('…and never mock data dressed as a result',
+    !/mock: true/.test(execCode), 'mock success is back')
+  check('…and says plainly that nothing was done',
+    /nothing was done/.test(tail.slice(0, 1400)))
+
+  // Not reachable today — the five handler-less tools all carry
+  // canWriteExternal and are refused before the switch. This asserts that
+  // refusal, because it is what makes the above a trap for the future rather
+  // than a live bug.
+  check('external writes are refused before any handler runs',
+    exec.indexOf('if (tool.canWriteExternal)') < exec.indexOf('switch (tool.id)'))
+}
+
 console.log('\n── the inventory can be worked too, and not destroyed ──')
 {
   const inv = COORDINATOR_TOOLS.filter((t) => t.agent === 'inventory_agent')
