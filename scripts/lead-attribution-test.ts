@@ -190,6 +190,34 @@ console.log('\n── the launcher writes the id into the id ──')
     String((client.match(/url_tags:/g) ?? []).length))
 }
 
+console.log('\n\u2500\u2500 an empty quality panel says what it looked for \u2500\u2500')
+{
+  // `attributed: 0` has two causes that look identical on screen: the campaign
+  // produced no leads, or leads arrived and the tag that connects them to this
+  // campaign did not. The panel said one sentence for both — so a wiring fault
+  // on OUR side read as a failed campaign, and the operator's conclusion was
+  // that lead quality "always doesn't know anything".
+  //
+  // The rule: when it cannot score, it reports its own terms. What it searched
+  // for, and how many leads in the CRM carry no campaign tag at all — the one
+  // number that tells an empty campaign from a broken link.
+  const quality = readFileSync(join(process.cwd(), 'lib/freehold/campaign-quality.ts'), { encoding: 'utf8' })
+  check('the read reports the id and name it matched on',
+    /matchedOn: \{ utmId: campaignId/.test(quality))
+  check('…and counts leads carrying no campaign tag at all',
+    /coalesce\(utm_id, ''\) = ''/.test(quality) && /coalesce\(utm_campaign, ''\) = ''/.test(quality))
+  // Asked only when there is nothing to score: a second count on every healthy
+  // campaign page is a query for a sentence nobody reads.
+  check('…only when there is nothing to score',
+    /if \(attributed === 0\) \{/.test(quality))
+
+  const page = readFileSync(join(process.cwd(), 'app/freehold-intelligence/ads-live/meta/[id]/page.tsx'), { encoding: 'utf8' })
+  check('the empty panel shows what it searched for',
+    /lm\.cmd\.qualityLookedFor/.test(page))
+  check('…and names the untagged leads when there are any',
+    /quality\.untagged > 0/.test(page) && /lm\.cmd\.qualityUntagged/.test(page))
+}
+
 if (failures > 0) {
   console.error(`\n${failures} lead-attribution rule(s) broken.`)
   process.exit(1)

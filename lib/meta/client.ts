@@ -3200,6 +3200,10 @@ export interface AdResult {
   id: string
   name: string
   status: string
+  /** The ad set this ad belongs to. Needed by anything that acts on one ad —
+   *  every write path is addressed by ad set, and re-deriving the parent from
+   *  a second listAds call per ad set is a fan-out for a field Meta returns. */
+  adSetId: string
   thumbnailUrl: string | null
   spend: number
   leads: number
@@ -3220,11 +3224,11 @@ export interface AdResult {
  */
 export async function getAdResults(campaignId: string): Promise<AdResult[]> {
   const res = await apiFetch<{ data?: Array<{
-    id?: string; name?: string; status?: string
+    id?: string; name?: string; status?: string; adset_id?: string
     creative?: { thumbnail_url?: string }
     insights?: { data?: Array<{ spend?: string; actions?: Array<{ action_type: string; value: string }> }> }
   }> }>(`/${campaignId}/ads`, undefined, {
-    fields: `id,name,status,creative{thumbnail_url},insights.date_preset(${HEADLINE_WINDOW}){spend,actions}`,
+    fields: `id,name,status,adset_id,creative{thumbnail_url},insights.date_preset(${HEADLINE_WINDOW}){spend,actions}`,
     limit: '50',
   })
   return (res.data ?? [])
@@ -3237,6 +3241,7 @@ export async function getAdResults(campaignId: string): Promise<AdResult[]> {
         id: String(a.id),
         name: String(a.name ?? ''),
         status: String(a.status ?? ''),
+        adSetId: String(a.adset_id ?? ''),
         thumbnailUrl: a.creative?.thumbnail_url ?? null,
         spend,
         leads,

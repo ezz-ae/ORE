@@ -24,6 +24,7 @@
  * Runs in `pnpm guards`.
  */
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
+import { ADVISOR_ACTION_TYPES } from '../lib/freehold/advisor-actions'
 import { BUYER_ELIGIBILITIES } from '../lib/freehold/buyer-eligibility'
 import { crm } from '../lib/i18n/dictionaries/crm'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
@@ -109,6 +110,18 @@ console.log('\n── placement verdicts ──')
   check('…and it contains the click verdict that shipped without a word',
     (PLACEMENT_VERDICTS as readonly string[]).includes('noClicks'))
   family('lm.place.verdict', 'lm.place.verdict.', PLACEMENT_VERDICTS)
+}
+
+console.log('\n── advisor action labels ──')
+{
+  // The Accept button renders t(`lm.cmd.advisorDo.${s.action.type}`) — the
+  // label IS the promise about what pressing it does to a live campaign, so a
+  // missing one would put a raw key on a button that spends money. The
+  // vocabulary widened from three actions to six in one change; this is what
+  // stops the seventh shipping without a word.
+  check('every advisor action type is enumerable at runtime',
+    Array.isArray(ADVISOR_ACTION_TYPES) && ADVISOR_ACTION_TYPES.length >= 6)
+  family('lm.cmd.advisorDo', 'lm.cmd.advisorDo.', ADVISOR_ACTION_TYPES)
 }
 
 console.log('\n── setup-check findings ──')

@@ -3,7 +3,16 @@ import { safeBudgetStep } from '@/lib/freehold/learning-phase'
 import { geminiApiKey } from "@/lib/gemini-rest"
 import { metaLeadCount } from '@/lib/meta/lead-count'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { getCampaign, getCampaignInsights, listAdSets, MetaConfigError } from '@/lib/meta/client'
+import {
+  getCampaign, getCampaignInsights, listAdSets, getAdResults,
+  getCampaignInsightsByPlacement, MetaConfigError,
+} from '@/lib/meta/client'
+import { placementKeys } from '@/lib/meta/placement-write'
+import { auditPlacements } from '@/lib/freehold/placement-audit'
+import {
+  validateAdvisorAction, actionShapeLines, adIsProvenWorse, MIN_AD_SPEND_TO_JUDGE,
+  type AdvisorAction, type AdvisorState, type AdvisorAdSet, type AdvisorAd,
+} from '@/lib/freehold/advisor-actions'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 import type { MetaAdSet, MetaCampaign, MetaInsights } from '@/lib/meta/types'
@@ -23,20 +32,31 @@ export const dynamic = 'force-dynamic'
  * based on. NOTHING-FAKE rule: no key / no data / unparseable output →
  * { available: false, reason } — never a heuristic fallback dressed as AI.
  *
- * A suggestion may carry a machine-applicable `action` — but ONLY one of three
- * safe shapes (set_budget / pause_campaign / resume_campaign), only when the
- * model grounded it in the data, and always re-validated server-side against
- * the REAL fetched state (budget clamped to ±30% of the ad set's current
- * budget, unknown ad-set ids rejected). Anything else is discussed through the
- * Expert's confirm-gated tools, not applied here.
+ * A suggestion may carry a machine-applicable `action`, from the vocabulary in
+ * lib/freehold/advisor-actions.ts — every one of them a move the operator
+ * already had by hand on this page, every one reversible, every one
+ * re-validated server-side against the REAL fetched state. Anything else is
+ * discussed through the Expert's confirm-gated tools, not applied here.
+ *
+ * ── WHY THIS ROUTE FETCHES THE ADS AND THE PLACEMENT BREAKDOWN ───────────
+ *
+ * It used to read the campaign, its month insights, the ad sets' targeting and
+ * the CRM funnel — and nothing below the ad set. So it could not see that one
+ * of four creatives had taken half the budget and returned nothing, which is
+ * the single most common thing wrong with a running campaign and the one an
+ * operator most wants pointed at. It could only ever say "your CTR is low",
+ * which is true of the average of four ads and actionable on none of them.
+ *
+ * The two extra reads close that. `getAdResults` gives every ad its own spend
+ * and leads; the placement breakdown feeds the deterministic audit, whose
+ * condemned list is the ONLY source a drop_placement action may name. Both
+ * fail soft: a missing read narrows what the advisor can propose, it never
+ * fails the request.
  */
 
 export type AdvisorArea = 'reach' | 'targeting' | 'placements' | 'budget' | 'creative' | 'quality'
 
-export type AdvisorAction =
-  | { type: 'set_budget'; adSetId: string; dailyBudgetAED: number }
-  | { type: 'pause_campaign' }
-  | { type: 'resume_campaign' }
+export type { AdvisorAction }
 
 export interface AdvisorSuggestion {
   area: AdvisorArea
@@ -171,7 +191,7 @@ const AREAS: ReadonlySet<string> = new Set(['reach', 'targeting', 'placements', 
 
 function buildPrompt(context: unknown): string {
   return `You are a senior Meta Ads advisor for Dubai freehold real estate, reviewing a RUNNING campaign.
-Below is the campaign's REAL data: Meta delivery insights for this month, derived metrics computed from them in code, each live ad set's actual targeting, and the downstream CRM lead-quality funnel (reached / qualified / won / junk — which Meta itself cannot see).
+Below is the campaign's REAL data: Meta delivery insights for this month, derived metrics computed from them in code, each live ad set's actual targeting AND its individual ads with their own spend and leads, the placements a statistical audit has already condemned, and the downstream CRM lead-quality funnel (reached / qualified / won / junk — which Meta itself cannot see).
 Base every suggestion ONLY on this data. Never invent numbers, and never present industry benchmarks as this campaign's data.
 
 DATA:
@@ -186,46 +206,57 @@ Rules:
 - "title": short imperative headline, max 60 characters.
 - "detail": 1-3 sentences of concrete, doable advice for THIS campaign (what to change and why).
 - "evidence": cite the specific real numbers from DATA the suggestion rests on (e.g. "CTR 0.42% on 12,340 impressions; 9 leads at CPL AED 210"). Never reference a value that is null or missing from DATA.
-- "action": null for most suggestions. Attach one ONLY when the numbers in DATA clearly justify an immediate, safe change, and ONLY one of these exact shapes:
-  {"type":"set_budget","adSetId":"<an id from DATA.adSets>","dailyBudgetAED":<integer>} — a new daily budget for that ad set, within ±30% of its current dailyBudgetAED and at least 50.
-  {"type":"pause_campaign"} — only when the campaign is ACTIVE and DATA shows meaningful spend with clearly poor results.
-  {"type":"resume_campaign"} — only when the campaign is PAUSED and DATA justifies resuming it.
-- DATA.recentDecisions lists what was ALREADY done to this campaign recently (by the operator or the machine). Never suggest an action equivalent to one just taken — build on the record, don't repeat it.
-  Never attach an action you cannot justify from DATA, and never invent an adSetId.`
+- "action": ATTACH ONE WHENEVER A SHAPE BELOW FITS THE FINDING. A finding the operator cannot act on from this page is worth far less than one they can, so do not withhold an action out of caution — every action here is reversible, and each is re-checked against the real data before it is offered. Use null only when nothing below expresses the change.
+${actionShapeLines()}
+- Never invent an id. Every adSetId, adId and placement must appear in DATA.
+- DATA.adSets[].ads carries each creative's OWN spend and leads. When one ad has taken real money and returned far less than its siblings, say so by name and attach pause_ad — that is the most useful single thing this panel can do.
+- DATA.recentDecisions lists what was ALREADY done to this campaign recently (by the operator or the machine). Never suggest an action equivalent to one just taken — build on the record, don't repeat it.`
 }
 
 /**
- * Server-side validation of a model-proposed action against the REAL fetched
- * state — unknown ad-set ids are rejected, budgets are clamped to ±30% of the
- * ad set's current budget (floor AED 50), and status actions must match the
- * campaign's actual status. A suggestion whose action fails validation keeps
- * its advice but loses the one-click action.
+ * The fetched state every proposed action is re-checked against.
+ *
+ * Assembled from what Meta returned and from the placement audit's own verdict
+ * — never from the model's reply. See lib/freehold/advisor-actions.ts for the
+ * rules each action is then held to.
  */
-function validateAction(raw: unknown, campaign: MetaCampaign | null, adSets: MetaAdSet[]): AdvisorAction | null {
-  if (!raw || typeof raw !== 'object') return null
-  const a = raw as Record<string, unknown>
-  if (a.type === 'pause_campaign') return campaign?.status === 'ACTIVE' ? { type: 'pause_campaign' } : null
-  if (a.type === 'resume_campaign') return campaign?.status === 'PAUSED' ? { type: 'resume_campaign' } : null
-  if (a.type === 'set_budget') {
-    const adSet = adSets.find((s) => s.id === String(a.adSetId ?? ''))
-    if (!adSet) return null
-    const current = Math.round(Number(adSet.daily_budget) / 100) || 0
-    if (current <= 0) return null
-    const proposed = Math.round(Number(a.dailyBudgetAED))
-    if (!Number.isFinite(proposed) || proposed <= 0) return null
-    // Through the learning guard, not a ±30% clamp: 30% either way is past
-    // Meta's ~20% reset line, so the old bound APPROVED resets while looking
-    // like a safety rail. The advisor's ask is taken to the line, never over.
-    const clamped = Math.max(50, safeBudgetStep(current, proposed))
-    if (clamped === current) return null
-    return { type: 'set_budget', adSetId: adSet.id, dailyBudgetAED: clamped }
+function buildState(
+  campaign: MetaCampaign | null,
+  adSets: MetaAdSet[],
+  ads: AdvisorAd[],
+  adSetIdOf: Map<string, string>,
+  condemned: readonly string[],
+): AdvisorState {
+  const byAdSet = new Map<string, AdvisorAd[]>()
+  for (const ad of ads) {
+    const parent = adSetIdOf.get(ad.id) ?? ''
+    if (!parent) continue
+    const list = byAdSet.get(parent) ?? []
+    list.push(ad)
+    byAdSet.set(parent, list)
   }
-  return null
+  return {
+    campaignStatus: campaign?.status ?? null,
+    adSets: adSets.map((a): AdvisorAdSet => {
+      const placements = placementKeys((a.targeting ?? {}) as Record<string, unknown>)
+      return {
+        id: a.id,
+        status: a.status ?? null,
+        dailyBudgetAED: Math.round(Number(a.daily_budget) / 100) || 0,
+        placements,
+        // The audit is campaign-wide; an ad set is only offered the condemned
+        // surfaces it actually runs. A placement it never had is not its
+        // problem and dropping it would be a write that changes nothing.
+        condemnedPlacements: placements.filter((p) => condemned.includes(p)),
+        ads: byAdSet.get(a.id) ?? [],
+      }
+    }),
+  }
 }
 
 type RawSuggestion = { area?: unknown; title?: unknown; detail?: unknown; evidence?: unknown; action?: unknown }
 
-function parseSuggestions(raw: string, campaign: MetaCampaign | null, adSets: MetaAdSet[]): AdvisorSuggestion[] | null {
+function parseSuggestions(raw: string, state: AdvisorState): AdvisorSuggestion[] | null {
   try {
     const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
     const parsed = JSON.parse(cleaned) as { suggestions?: unknown }
@@ -237,7 +268,7 @@ function parseSuggestions(raw: string, campaign: MetaCampaign | null, adSets: Me
         title: String(s.title ?? '').trim().slice(0, 120),
         detail: String(s.detail ?? '').trim(),
         evidence: String(s.evidence ?? '').trim(),
-        action: validateAction(s.action, campaign, adSets),
+        action: validateAdvisorAction(s.action, state, safeBudgetStep),
       }))
       .filter((s) => s.title && s.detail)
   } catch {
@@ -258,16 +289,24 @@ export async function POST(req: NextRequest) {
 
   // Fetch everything in parallel; each source fails soft to null (a missing
   // piece narrows the analysis, it never 500s the advisor).
-  const [campaignR, insightsR, adSetsR, qualityR] = await Promise.allSettled([
+  const [campaignR, insightsR, adSetsR, qualityR, adsR, placementR] = await Promise.allSettled([
     getCampaign(campaignId),
     getCampaignInsights(campaignId),
     listAdSets(campaignId),
     getCampaignQuality(campaignId, campaignName),
+    // Per-AD spend and leads. Without this the advisor can only ever describe
+    // the average of every creative in the campaign, which is a number that
+    // belongs to none of them.
+    getAdResults(campaignId),
+    // The placement breakdown. Fed to the deterministic audit below, whose
+    // condemned list is the only thing a drop_placement may name.
+    getCampaignInsightsByPlacement(campaignId),
   ])
   const campaign: MetaCampaign | null = campaignR.status === 'fulfilled' ? campaignR.value : null
   const insights: MetaInsights | null = insightsR.status === 'fulfilled' ? insightsR.value : null
   const adSets: MetaAdSet[] = adSetsR.status === 'fulfilled' ? adSetsR.value : []
   const quality: CampaignQuality | null = qualityR.status === 'fulfilled' ? qualityR.value : null
+  const adResults = adsR.status === 'fulfilled' ? adsR.value : []
 
   // Meta not connected at all → honest state, not advice from nothing.
   const metaResults = [campaignR, insightsR, adSetsR]
@@ -282,6 +321,18 @@ export async function POST(req: NextRequest) {
 
   const metrics = computeMetrics(campaign, insights, adSets)
 
+  // ── The state every action is validated against ────────────────────────────
+  // Built from fetched numbers and the audit's own verdict, BEFORE the model is
+  // called, so nothing the model says can widen what it is allowed to do.
+  const ads: AdvisorAd[] = adResults.map((a) => ({
+    id: a.id, name: a.name, status: a.status || null, spend: a.spend, leads: a.leads,
+  }))
+  const adSetIdOf = new Map(adResults.map((a) => [a.id, a.adSetId]))
+  const condemned = placementR.status === 'fulfilled'
+    ? auditPlacements(placementR.value).cut.map((r) => `${r.platform}:${r.position}`)
+    : []
+  const state = buildState(campaign, adSets, ads, adSetIdOf, condemned)
+
   const apiKey = geminiApiKey()
   if (!apiKey) return NextResponse.json({ available: false, reason: 'no_ai_key', metrics })
 
@@ -295,7 +346,35 @@ export async function POST(req: NextRequest) {
       ? { name: campaign.name, status: campaign.status, objective: campaign.objective ?? null, startTime: campaign.start_time ?? null }
       : { name: campaignName || null },
     metrics,
-    adSets: adSets.map(targetingSummary),
+    adSets: adSets.map((a) => {
+      const seen = state.adSets.find((x) => x.id === a.id)
+      return {
+        ...targetingSummary(a),
+        // The surfaces this ad set really runs, in the vocabulary a
+        // drop_placement action has to use — not the three raw position lists
+        // the targeting summary carries for describing the audience.
+        placements: seen?.placements ?? [],
+        condemnedPlacements: seen?.condemnedPlacements ?? [],
+        ads: (seen?.ads ?? []).map((ad) => ({
+          id: ad.id,
+          name: ad.name,
+          status: ad.status,
+          spend: Math.round(ad.spend),
+          leads: ad.leads,
+          // Stated as a range, never a point estimate — an ad with one lead on
+          // AED 400 does not have "a cost per lead of 400", it has a spread
+          // wide enough that the model must not read it as a verdict. Same
+          // bound the server then re-checks pause_ad against.
+          cplRange: (() => {
+            const r = adIsProvenWorse(ad, ads)
+            return { atLeastAED: Math.round(r.adCplLo), provenWorseThanSiblings: r.proven }
+          })(),
+        })),
+      }
+    }),
+    // Named so the model can say WHY an ad it can see is not yet judgeable,
+    // rather than inventing a reason or condemning it anyway.
+    minAdSpendToJudgeAED: MIN_AD_SPEND_TO_JUDGE,
     crmQuality: quality
       ? { attributed: quality.attributed, reached: quality.reached, qualified: quality.qualified, won: quality.won, junk: quality.junk, score: quality.score }
       : null,
@@ -314,7 +393,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ available: false, reason: 'ai_error', metrics })
   }
 
-  const suggestions = parseSuggestions(raw, campaign, adSets)
+  const suggestions = parseSuggestions(raw, state)
   if (suggestions === null) return NextResponse.json({ available: false, reason: 'ai_error', metrics })
 
   return NextResponse.json({ available: true, suggestions, metrics, generatedAt: new Date().toISOString() })

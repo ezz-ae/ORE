@@ -79,6 +79,24 @@ export interface CampaignQuality {
    *  the attributed leads, aggregated to counts (industry/role/city/interests).
    *  Empty when no profiles exist; never guessed. */
   whoTheyAre: Array<{ kind: string; value: string; n: number }>
+  /**
+   * WHAT THIS LOOKED FOR, AND HOW MANY LEADS CARRY NO CAMPAIGN AT ALL.
+   *
+   * `attributed: 0` has two completely different causes and the panel said the
+   * same sentence for both: the campaign genuinely produced no leads, or the
+   * leads arrived and the tag that connects them to this campaign did not. The
+   * second is a wiring fault on our side and looks, from the screen, exactly
+   * like a campaign that failed — which is how "lead quality never knows
+   * anything" becomes the operator's standing impression of the product.
+   *
+   * So the read reports its own terms. `matchedOn` is the id and name it
+   * searched for; `untagged` counts leads in the table carrying NO campaign
+   * tag of any kind. A large untagged count next to zero attributed is not an
+   * empty campaign, it is a broken link, and it is the one number that tells
+   * them apart.
+   */
+  matchedOn: { utmId: string; campaignName: string }
+  untagged: number
 }
 
 /** CRM statuses that count as "qualified or deeper" — shared with the Ads
@@ -275,10 +293,29 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     { key: 'junk', count: junk, pct: pct(junk) },
   ]
 
+  // Only asked when there is nothing to score — it is a diagnosis of an empty
+  // panel, and running a second count on every healthy campaign page would be
+  // a query for a sentence nobody reads.
+  let untagged = 0
+  if (attributed === 0) {
+    try {
+      const [u] = await query<{ n: string }>(
+        `SELECT count(*)::text AS n
+           FROM freehold_site_leads
+          WHERE archived IS NOT TRUE
+            AND coalesce(utm_id, '') = ''
+            AND coalesce(utm_campaign, '') = ''`,
+      )
+      untagged = Number(u?.n ?? 0) || 0
+    } catch { untagged = 0 }
+  }
+
   return {
     campaignId, attributed, reached, qualified, viewings, won, revenueAed, junk, duplicates, score, worked, funnel,
     avgBehaviour, behaviourCount,
     valueRated, avgValue, valueValuable, valueAvoid, whoTheyAre,
+    matchedOn: { utmId: campaignId || '', campaignName: campaignName || '' },
+    untagged,
   }
 }
 

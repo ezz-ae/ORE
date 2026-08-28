@@ -52,6 +52,9 @@ type AdvisorAction =
   | { type: 'set_budget'; adSetId: string; dailyBudgetAED: number }
   | { type: 'pause_campaign' }
   | { type: 'resume_campaign' }
+  | { type: 'pause_ad'; adSetId: string; adId: string }
+  | { type: 'pause_adset'; adSetId: string }
+  | { type: 'drop_placement'; adSetId: string; placement: string }
 type AdvisorSuggestion = { area: AdvisorArea; title: string; detail: string; evidence: string; action?: AdvisorAction | null }
 type AdvisorMetrics = {
   impressions: number; clicks: number; spend: number; leads: number; linkClicks: number | null
@@ -450,8 +453,19 @@ export default function CampaignCommandPage() {
     runAdvisor()
   }, [data, advisorAutoRan, runAdvisor])
 
-  // Accept a suggestion's validated action through the page's EXISTING
-  // mutation handlers (setStatus / setAdSetBudget) — no new write path.
+  /**
+   * ACCEPT PERFORMS THE CHANGE, through the page's EXISTING mutation handlers.
+   *
+   * Every branch here routes into a control the operator already has by hand
+   * further down this page — the same optimistic update, the same PATCH, the
+   * same revert on failure. No accepted suggestion has a write path of its
+   * own, which is what keeps a model's press and a person's press identical.
+   *
+   * A branch that cannot find its target does NOT report success. `ok` stays
+   * false, the suggestion stays on screen, and the operator sees that nothing
+   * happened — the failure mode this whole change exists to remove is a button
+   * that ticks and leaves the campaign exactly as it was.
+   */
   async function acceptSuggestion(s: AdvisorSuggestion, idx: number) {
     const act = s.action
     if (!act || advisorApplying !== null) return
@@ -463,6 +477,13 @@ export default function CampaignCommandPage() {
       else if (act.type === 'set_budget') {
         const adSet = data?.adSets.find((a) => a.id === act.adSetId)
         if (adSet) ok = await setAdSetBudget(adSet, act.dailyBudgetAED)
+      } else if (act.type === 'pause_adset') {
+        const adSet = data?.adSets.find((a) => a.id === act.adSetId)
+        if (adSet) ok = await setAdSetStatus(adSet, 'PAUSED')
+      } else if (act.type === 'pause_ad') {
+        ok = await setAdStatus(act.adSetId, act.adId, 'ACTIVE', 'PAUSED')
+      } else if (act.type === 'drop_placement') {
+        ok = await acceptPlacementDrop(act.adSetId, act.placement)
       }
       if (ok) {
         // Applied — drop the suggestion and refresh the campaign data in place.
@@ -470,6 +491,36 @@ export default function CampaignCommandPage() {
         await load({ silent: true })
       }
     } finally { setAdvisorApplying(null) }
+  }
+
+  /**
+   * Drop one placement, through the route that reads the ad set back.
+   *
+   * Deliberately NOT a targeting write from this page. `/api/freehold/
+   * proposals/accept` fetches the live spec, changes only the placement
+   * fields, writes the same object back and re-reads it — because Meta
+   * replaces the whole targeting object and a naive write would delete the
+   * narrowing groups, the exclusions, the languages and the Advantage opt-out.
+   * Its refusals are surfaced verbatim: "the platform did not do it" is a
+   * different sentence from "we did not ask", and the operator needs the
+   * first one.
+   */
+  async function acceptPlacementDrop(adSetId: string, placement: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/freehold/proposals/accept', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        // `placementStop` — the proposal kind for "this surface is spending and
+        // returning nothing", which is exactly what the audit condemned it for.
+        body: JSON.stringify({ kind: 'placementStop', adSetId, placement }),
+      })
+      const d = (await res.json().catch(() => ({}))) as { ok?: boolean; detail?: string; error?: string }
+      if (!res.ok || !d.ok) { toast.error(d.detail || d.error || t('lm.cmd.advisorActionFailed')); return false }
+      toast.success(t('lm.cmd.advisorPlacementDropped', { placement }))
+      return true
+    } catch {
+      toast.error(t('lm.cmd.advisorActionFailed'))
+      return false
+    }
   }
 
   // Sync: re-pull everything fresh from Meta + CRM (the page's own loader),
@@ -646,8 +697,8 @@ export default function CampaignCommandPage() {
    * set. Pausing the whole campaign to silence one audience takes the others
    * down with it.
    */
-  async function setAdSetStatus(adSet: AdSetRow, next: 'ACTIVE' | 'PAUSED') {
-    if (statusBusyId) return
+  async function setAdSetStatus(adSet: AdSetRow, next: 'ACTIVE' | 'PAUSED'): Promise<boolean> {
+    if (statusBusyId) return false
     setStatusBusyId(adSet.id)
     // Optimistic, then reconciled from the server's answer — a toggle that
     // waits on a round trip feels broken even when it works.
@@ -659,16 +710,18 @@ export default function CampaignCommandPage() {
       })
       if (!res.ok) throw new Error()
       toast.success(next === 'ACTIVE' ? t('lm.cmd.adSetOn') : t('lm.cmd.adSetOff'))
+      return true
     } catch {
       // Put the real state back rather than leave a lie on screen.
       setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id === adSet.id ? { ...x, status: adSet.status } : x) } : d)
       toast.error(t('lm.cmd.statusFailed'))
+      return false
     } finally { setStatusBusyId(null) }
   }
 
   /** Turn a single AD on or off, without touching its ad set's learning. */
-  async function setAdStatus(adSetId: string, adId: string, current: MetaCampaignStatus, next: 'ACTIVE' | 'PAUSED') {
-    if (statusBusyId) return
+  async function setAdStatus(adSetId: string, adId: string, current: MetaCampaignStatus, next: 'ACTIVE' | 'PAUSED'): Promise<boolean> {
+    if (statusBusyId) return false
     setStatusBusyId(adId)
     setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id !== adSetId ? x
       : { ...x, ads: x.ads?.map((ad) => ad.id === adId ? { ...ad, status: next } : ad) }) } : d)
@@ -678,10 +731,12 @@ export default function CampaignCommandPage() {
         body: JSON.stringify({ status: next }),
       })
       if (!res.ok) throw new Error()
+      return true
     } catch {
       setData((d) => d ? { ...d, adSets: d.adSets.map((x) => x.id !== adSetId ? x
         : { ...x, ads: x.ads?.map((ad) => ad.id === adId ? { ...ad, status: current } : ad) }) } : d)
       toast.error(t('lm.cmd.statusFailed'))
+      return false
     } finally { setStatusBusyId(null) }
   }
 
@@ -1182,6 +1237,19 @@ export default function CampaignCommandPage() {
               {fixingLoc !== '' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {t('lm.metaIssues.repairLocation')}
             </button>
+            {/* THE REPORT, WHERE THE BUTTON IS.
+                `repairAllLocations` has always written a line per ad set saying
+                what Meta now holds — and this copy of the button never rendered
+                it. Pressing it spun for a second and then showed nothing at
+                all, which is indistinguishable from a button that does nothing,
+                and is exactly what an operator reported: "you click fix it does
+                nothing". The work was happening; only the answer was missing. */}
+            {fixReport.length > 0 && (
+              <div className="mt-2 rounded-lg border border-line bg-surface px-3 py-2 text-[11px] leading-relaxed text-slate-300">
+                {fixReport.map((l, i) => <div key={i}>{l}</div>)}
+                <div className="mt-1.5 text-slate-500">{t('lm.metaIssues.thenPublish')}</div>
+              </div>
+            )}
             {fixError && <p className="mt-2 text-[12px] text-rose-200">{fixError}</p>}
           </section>
         )
@@ -1431,7 +1499,33 @@ export default function CampaignCommandPage() {
             </Link>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-slate-400">{t('lm.cmd.qualityNone')}</p>
+          /* NOTHING ATTRIBUTED — AND THE TWO REASONS FOR THAT ARE NOT ALIKE.
+             Either the campaign produced no leads, or leads arrived and the
+             tag connecting them to this campaign did not. The panel said one
+             sentence for both, so a wiring fault on our side read as a failed
+             campaign, and "lead quality never knows anything" became the
+             standing impression of the whole screen. It now shows what it
+             searched for, and — when leads exist with no campaign tag at all —
+             names that instead, because it is a different problem with a
+             different fix. */
+          <div className="mt-4">
+            <p className="text-sm text-slate-400">{t('lm.cmd.qualityNone')}</p>
+            {quality && (
+              <>
+                <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                  {t('lm.cmd.qualityLookedFor', {
+                    id: quality.matchedOn.utmId || '—',
+                    name: quality.matchedOn.campaignName || '—',
+                  })}
+                </p>
+                {quality.untagged > 0 && (
+                  <p className="mt-1.5 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2 text-[11px] leading-relaxed text-amber-200">
+                    {t('lm.cmd.qualityUntagged', { n: quality.untagged })}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         )}
       </section>
 
@@ -1630,7 +1724,7 @@ export default function CampaignCommandPage() {
                         {s.action && (
                           <button type="button" onClick={() => acceptSuggestion(s, i)} disabled={advisorApplying !== null || statusBusy || !!budgetBusy}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
-                            {advisorApplying === i ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('lm.cmd.advisorAccept')}
+                            {advisorApplying === i ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t(`lm.cmd.advisorDo.${s.action.type}`)}
                           </button>
                         )}
                         <button type="button" onClick={() => discussSuggestion(s)}
