@@ -48,6 +48,34 @@
  * Pure — no I/O. The route table is injected. Runs in `pnpm guards`.
  */
 
+/**
+ * THE ONLY LINKS THAT MAY LEAVE THIS APP, AND ONLY WHEN A TOOL PRODUCED THEM.
+ *
+ * Everything above is about internal paths. But the one thing a person most
+ * wants to do from a lead — message them, call them — is inherently off-site:
+ * there is no WhatsApp API on this deployment, so `crm_message_link` builds a
+ * wa.me link that opens the USER'S OWN WhatsApp with the text pre-filled.
+ * Nothing is sent on anybody's behalf.
+ *
+ * That link would be refused as `offsite` by the rule above, which is why this
+ * exists — and why it is an allowlist of four contact schemes rather than a
+ * relaxation. The grounding requirement is IDENTICAL and it is the whole
+ * safety of it: the exact URL must appear in this turn's tool results, and the
+ * tool built it from the phone number in the database. A model that composes
+ * `wa.me/9715…` from its own head is composing a message to a stranger, and
+ * that is a worse outcome than a 404.
+ */
+const CONTACT_LINKS = [
+  /^https:\/\/wa\.me\/\d{7,20}(?:\?|$)/i,
+  /^https:\/\/web\.whatsapp\.com\/send\?phone=\d{7,20}(?:&|$)/i,
+  /^tel:\+?[\d\s().-]{7,25}$/i,
+  /^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i,
+] as const
+
+/** Is this one of the four, AND did a tool actually produce this exact link? */
+export const isGroundedContactLink = (href: string, seen: string): boolean =>
+  CONTACT_LINKS.some((re) => re.test(href)) && seen.toLowerCase().includes(href.toLowerCase())
+
 /** Why a link was refused. Walkable — each is a different bug upstream. */
 export const LINK_REFUSALS = [
   'offsite',      // not an internal path at all
@@ -96,8 +124,11 @@ export function wildcardSegments(path: readonly string[], pattern: string): stri
 export function linkVerdict(href: unknown, seen: string, routes: readonly string[]): LinkVerdict {
   if (typeof href !== 'string') return { ok: false, refusal: 'offsite' }
   const h = href.trim()
-  // Internal paths only. An off-site link from an assistant is a different and
-  // larger question than a 404, and this is not the place to answer it.
+  // The four contact schemes, and only when a tool built this exact link.
+  if (isGroundedContactLink(h, seen)) return { ok: true }
+  // Otherwise internal paths only. An off-site link an assistant composed is a
+  // different and larger question than a 404, and this is not the place to
+  // answer it.
   if (!h.startsWith('/')) return { ok: false, refusal: 'offsite' }
 
   const path = pathSegments(h)

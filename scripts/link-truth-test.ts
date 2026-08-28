@@ -90,6 +90,39 @@ console.log('\n── static pages are pages, not records ──')
     !linkAllowed(null, SEEN, APP_ROUTES) && !linkAllowed(42, SEEN, APP_ROUTES))
 }
 
+console.log('\n── the contact links, and only the ones a tool built ──')
+{
+  // There is no WhatsApp API on this deployment: crm_message_link builds a
+  // wa.me link that opens the USER'S OWN WhatsApp with the text pre-filled.
+  // It is off-site by nature, so the internal-paths rule would have refused it
+  // — and relaxing that rule generally would let a model hand somebody a link
+  // to any site it liked.
+  const wa = 'https://wa.me/971501234567?text=Hello'
+  const SEEN_WA = JSON.stringify({ whatsappUrl: wa })
+  check('a wa.me link a tool produced is allowed', linkAllowed(wa, SEEN_WA, APP_ROUTES))
+
+  // THE WHOLE SAFETY OF IT. A number the model composed is a message to a
+  // stranger — worse than a 404, because it reaches a real person.
+  check('a wa.me link the model invented is refused',
+    !linkAllowed('https://wa.me/971509999999?text=Hi', SEEN_WA, APP_ROUTES))
+  check('…and reported as off-site, not as a bad route',
+    (() => { const v = linkVerdict('https://wa.me/971509999999', SEEN_WA, APP_ROUTES)
+             return !v.ok && v.refusal === 'offsite' })())
+
+  check('tel: and mailto: work the same way',
+    linkAllowed('tel:+971501234567', 'call tel:+971501234567 now', APP_ROUTES)
+    && linkAllowed('mailto:a@b.com', 'write to mailto:a@b.com', APP_ROUTES)
+    && !linkAllowed('mailto:a@b.com', 'nothing was fetched', APP_ROUTES))
+
+  // The allowlist is four schemes, not "https is fine now".
+  check('an ordinary external link is still refused even when quoted in a result',
+    !linkAllowed('https://example.com/x', 'https://example.com/x', APP_ROUTES))
+  check('…including a lookalike host',
+    !linkAllowed('https://wa.me.evil.com/971501234567', 'https://wa.me.evil.com/971501234567', APP_ROUTES))
+  check('…and a wa.me link with no number at all',
+    !linkAllowed('https://wa.me/', 'https://wa.me/', APP_ROUTES))
+}
+
 console.log('\n── wildcards, including the catch-all ──')
 {
   check('a literal pattern grounds nothing',
