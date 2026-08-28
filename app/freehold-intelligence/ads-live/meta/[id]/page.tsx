@@ -37,7 +37,6 @@ type AdSetRow = MetaAdSet
 // a rolling window drains after a campaign is switched off, and thirty days
 // past its last lead the campaign reads zero, as though it never ran.
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; lifetime?: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
-type Analysis = { working: string[]; blocking: string[]; actions: string[] }
 type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: RuleOperator; threshold: number; action: RuleAction; actionValue: number | null; currentValue: number; pointValue: number | null }
 import type { PlacementAudit } from '@/lib/freehold/placement-audit'
 
@@ -62,7 +61,8 @@ type AdvisorMetrics = {
   dailyBudgetAED: number | null; avgDailySpendAED: number | null; spendPacePct: number | null
   daysElapsed: number | null; dateStart: string | null; dateStop: string | null
 }
-type AdvisorResult = { available: boolean; reason?: string; suggestions?: AdvisorSuggestion[]; metrics?: AdvisorMetrics; generatedAt?: string }
+type AdvisorSummary = { working: string[]; blocking: string[] }
+type AdvisorResult = { available: boolean; reason?: string; suggestions?: AdvisorSuggestion[]; summary?: AdvisorSummary; metrics?: AdvisorMetrics; generatedAt?: string }
 
 const ADVISOR_AREA_TONES: Record<AdvisorArea, string> = {
   reach: 'border-sky-400/30 bg-sky-400/10 text-sky-300',
@@ -226,9 +226,6 @@ export default function CampaignCommandPage() {
   })
   const [budgetBusy, setBudgetBusy] = useState<string | null>(null)
   const [quality, setQuality] = useState<CampaignQuality | null>(null)
-  const [analysis, setAnalysis] = useState<Analysis | null>(null)
-  const [analysisText, setAnalysisText] = useState('')
-  const [refineBusy, setRefineBusy] = useState(false)
   // LITE: on phones the AI panel body is folded — daily use is one Analyse tap.
   const [aiOpen, setAiOpen] = useState(false)
   // LITE: phones show only the daily essentials (switch · results · AI); ad-set
@@ -534,12 +531,17 @@ export default function CampaignCommandPage() {
     } finally { setSyncBusy(false) }
   }
 
-  // The unified panel's single analyse control runs BOTH the refiner summary
-  // and the advisor suggestions; each guards its own busy flag.
-  function analyseAll() {
-    runRefine()
-    runAdvisor()
-  }
+  /**
+   * ONE ANALYSIS, NOT TWO.
+   *
+   * This used to fire the advisor AND a separate "refiner" endpoint, each with
+   * its own model call and its own prompt — and the refiner analysed metrics
+   * posted up FROM THIS PAGE while the advisor fetched its own from Meta. Two
+   * models over two copies of the numbers, rendered a centimetre apart, which
+   * is the machinery for a screen that contradicts itself. The summary now
+   * comes back from the same call as the suggestions.
+   */
+  const analyseAll = runAdvisor
 
   function discussSuggestion(s: AdvisorSuggestion) {
     if (!data) return
@@ -827,26 +829,6 @@ export default function CampaignCommandPage() {
     }
     navigator.clipboard?.writeText(lines.join('\n'))
     toast.success(t('lm.cmd.copyInfoOk'))
-  }
-
-  async function runRefine() {
-    if (!data || refineBusy) return
-    setRefineBusy(true); setAnalysis(null); setAnalysisText('')
-    try {
-      const res = await fetch('/api/freehold/ads/refine', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campaignName: data.campaign.name,
-          objective: data.campaign.objective,
-          metrics: kpis,
-          quality: quality ? { score: quality.score, attributed: quality.attributed, reached: quality.reached, qualified: quality.qualified, won: quality.won, junk: quality.junk } : undefined,
-        }),
-      })
-      const d = await res.json().catch(() => ({}))
-      if (d.analysis) setAnalysis(d.analysis)
-      else if (d.text) setAnalysisText(String(d.text))
-      else toast.error(t('lm.cmd.refineFailed'))
-    } catch { toast.error(t('lm.cmd.refineFailed')) } finally { setRefineBusy(false) }
   }
 
   if (loading) return (
@@ -1554,15 +1536,15 @@ export default function CampaignCommandPage() {
               className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
               <RefreshCw className={`h-3.5 w-3.5 text-gold ${syncBusy ? 'animate-spin' : ''}`} /> {syncBusy ? t('lm.cmd.advisorSyncing') : t('lm.cmd.advisorSync')}
             </button>
-            <button type="button" onClick={analyseAll} disabled={refineBusy || advisorBusy}
+            <button type="button" onClick={analyseAll} disabled={advisorBusy}
               className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
-              {refineBusy || advisorBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {refineBusy || advisorBusy ? t('lm.cmd.refining') : t('lm.cmd.refineCta')}
+              {advisorBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {advisorBusy ? t('lm.cmd.refining') : t('lm.cmd.refineCta')}
             </button>
           </div>
         </div>
 
         {/* Folded on phones until Details or a fresh analysis opens it. */}
-        <div className={aiOpen || analysis || analysisText ? '' : 'hidden md:block'}>
+        <div className={aiOpen || advisor?.summary ? '' : 'hidden md:block'}>
         {/* The REAL computed metrics the advisor's suggestions are grounded in. */}
         {advisor?.metrics && advisorChips(advisor.metrics).length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -1575,19 +1557,13 @@ export default function CampaignCommandPage() {
           </div>
         )}
 
-        {analysis && (
-          <div className={`mt-4 grid gap-3 ${advisor?.available && (advisor.suggestions?.length ?? 0) > 0 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
-            <RefineCol icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} title={t('lm.cmd.refineWorking')} items={analysis.working} />
-            <RefineCol icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-400" />} title={t('lm.cmd.refineBlocking')} items={analysis.blocking} />
-            {/* The plain-string actions column is replaced by the richer
-                advisor suggestions below whenever those are available. */}
-            {!(advisor?.available && (advisor.suggestions?.length ?? 0) > 0) && (
-              <RefineCol icon={<ArrowRight className="h-3.5 w-3.5 text-gold" />} title={t('lm.cmd.refineActions')} items={analysis.actions} />
-            )}
+        {/* What is working and what is blocking — the same call, the same
+            numbers and the same voice as the suggestions underneath. */}
+        {advisor?.summary && (advisor.summary.working.length > 0 || advisor.summary.blocking.length > 0) && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <RefineCol icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} title={t('lm.cmd.refineWorking')} items={advisor.summary.working} />
+            <RefineCol icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-400" />} title={t('lm.cmd.refineBlocking')} items={advisor.summary.blocking} />
           </div>
-        )}
-        {!analysis && analysisText && (
-          <p className="mt-4 whitespace-pre-wrap rounded-xl border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-slate-300">{analysisText}</p>
         )}
 
         {/* Advisor — honest states only; never fabricated advice. */}

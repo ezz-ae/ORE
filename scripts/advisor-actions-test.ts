@@ -22,7 +22,7 @@
  *
  * These are those rules. Pure — no network. Runs in `pnpm guards`.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   ADVISOR_ACTION_TYPES, ACTION_SHAPES, actionShapeLines,
@@ -281,6 +281,49 @@ console.log('\n── the page performs every action it offers ──')
   check('every repair button renders the report of what Meta now holds',
     offers.every((after) => /fixReport\.map/.test(after.slice(0, 1400))),
     `${offers.length} offer(s)`)
+}
+
+console.log('\n── one analysis, not two ──')
+{
+  const route = readFileSync(join(process.cwd(), 'app/api/freehold/ads/advisor/route.ts'), 'utf8')
+  const page = readFileSync(join(process.cwd(), 'app/freehold-intelligence/ads-live/meta/[id]/page.tsx'), 'utf8')
+
+  // THE SECOND MODEL IS GONE. /api/freehold/ads/refine ran its own call with
+  // its own prompt over metrics posted up FROM THE BROWSER, while the advisor
+  // fetched its own from Meta. Two analyses of two copies of the numbers,
+  // rendered a centimetre apart, is the machinery for a screen that
+  // contradicts itself — and this codebase already carries a note about
+  // exactly that happening.
+  check('the refiner endpoint is gone',
+    !existsSync(join(process.cwd(), 'app/api/freehold/ads/refine/route.ts')))
+  check('…and nothing calls it any more',
+    !/ads\/refine/.test(page), 'the page still posts to the refiner')
+  check('…and the page keeps no second analysis state',
+    !/runRefine|refineBusy|setAnalysisText/.test(page))
+
+  // The summary comes back from the SAME call, so it is held to the same
+  // evidence rules as the suggestions it sits above.
+  check('the summary is produced by the advisor call',
+    /"working":\["\.\.\."\],"blocking":\["\.\.\."\]/.test(route), 'the prompt does not ask for it')
+  check('…and returned with the suggestions',
+    /summary: parsed\.summary/.test(route))
+  check('…and parsed by one function, not two',
+    /function parseAdvisor\(/.test(route) && !/function parseSuggestions\(/.test(route))
+
+  // One analysis means the halves may not disagree.
+  check('the model is told the two halves are one analysis',
+    /never let a suggestion contradict the summary above it/.test(route))
+  // Padding "working" to balance the columns is how a failing campaign gets a
+  // reassuring left-hand column.
+  check('…and told not to pad the good column',
+    /never pad/.test(route) && /just to balance/.test(route))
+
+  check('the page renders the summary from the advisor',
+    /advisor\.summary\.working/.test(page) && /advisor\.summary\.blocking/.test(page))
+  // One call, so one spinner. Two busy flags on one button is how a control
+  // ends up enabled while half its work is still running.
+  check('one button, one busy flag',
+    /onClick=\{analyseAll\} disabled=\{advisorBusy\}/.test(page))
 }
 
 console.log(failures === 0

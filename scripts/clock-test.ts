@@ -131,7 +131,12 @@ console.log('\n── the timezone-blind renders cannot grow ──')
   const offenders: string[] = []
   for (const f of files) {
     if (f.endsWith('lib/freehold/clock.ts')) continue
-    const src = readFileSync(f, { encoding: 'utf8' })
+    // `git ls-files` reads the INDEX, so a file deleted but not yet staged is
+    // still listed and readFileSync throws — the whole gauntlet dying on an
+    // ENOENT stack trace while somebody was mid-refactor. A file that is not
+    // on disk has no date renders in it; skip it and keep counting.
+    let src: string
+    try { src = readFileSync(f, { encoding: 'utf8' }) } catch { continue }
     for (const [i, line] of src.split('\n').entries()) {
       const dateShaped = /\.toLocale(Date|Time)String\(/.test(line)
         || (/\.toLocaleString\(/.test(line)
