@@ -26,6 +26,9 @@ import { searchCrmLeads } from '@/lib/data'
 import { updateLead, logLeadContact, CONTACT_CHANNELS, type LeadActor } from '@/lib/freehold/crm-write'
 import { LEAD_STATUSES, OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
 import { query as dbQuery } from '@/lib/db'
+import { updateProject, archiveProject } from '@/lib/freehold/content-admin-db'
+import { EDITABLE_PROJECT_FIELDS, isListed } from '@/lib/freehold/content-authority'
+import { setProjectPermit } from '@/lib/freehold/inventory-write'
 import { listLibrary, saveLibraryItem } from '@/lib/freehold/library'
 import { listAudiences, getAudience, type SavedAudience } from '@/lib/freehold/audiences'
 import type { AdDestination, CampaignTargeting, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
@@ -65,7 +68,7 @@ export interface CoordinatorTool {
   /** Stable snake name the model calls, prefixed by specialist. */
   name: string
   /** Specialist agent this tool belongs to (shown in docs + evidence). */
-  agent: 'ads_agent' | 'landing_agent' | 'crm_agent' | 'creative_agent' | 'research_agent'
+  agent: 'ads_agent' | 'landing_agent' | 'inventory_agent' | 'crm_agent' | 'creative_agent' | 'research_agent'
   description: string
   /** Human-readable args spec rendered into the prompt. */
   params: string
@@ -128,6 +131,17 @@ const SESSION_ROLE: Record<CoordinatorRole, LeadActor['role']> = {
   data_manager: 'broker',
   viewer: 'broker',
 }
+
+/**
+ * The same identity, for the CONTENT authority (content-authority.ts checks
+ * mayEdit/mayArchiveProject and writes the authority log against it). Shares
+ * SESSION_ROLE so a role cannot be management to one checker and a broker to
+ * the other.
+ */
+const projectActor = (ctx: ToolCtx) => ({
+  email: ctx.email,
+  role: SESSION_ROLE[ctx.role] ?? 'broker',
+})
 
 const actorOf = (ctx: ToolCtx): LeadActor => ({
   email: ctx.email,
@@ -699,9 +713,120 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     },
   },
 
-  // ── landing_agent ──────────────────────────────────────────────────────────
+  /**
+   * ── inventory_agent ──────────────────────────────────────────────────────
+   *
+   * The listing half of the assistant could read a project and change nothing
+   * about it, which is the same gap the CRM had: it could name a problem and
+   * not fix it. The sharpest case is the Trakheesi permit — the launch reads a
+   * property's expiry to set the ad set's end_time and the Ads Machine reads
+   * it to decide whether a campaign may keep running, so a listing with no
+   * permit on it is an ad the compliance stop cannot stop.
+   *
+   * Every write here goes through the same function the inventory screen posts
+   * to: updateProject and archiveProject in content-admin-db.ts (which check
+   * mayEdit/mayArchiveProject and write the authority log), and setProjectPermit
+   * in inventory-write.ts (which refuses a permit number or date that is not
+   * real — a compliance record holding a plausible wrong value is worse than an
+   * empty one, because it reads as done).
+   *
+   * DELETING A PROJECT IS NOT HERE, deliberately. It destroys the row and the
+   * landing pages attached to it, it is owner-only, and it does not come back.
+   * Archiving covers the request people actually make and is what a refused
+   * delete already offers instead. A machine that can be talked into an
+   * irreversible act is one somebody will eventually talk into one.
+   */
   {
-    name: 'listing_get', agent: 'landing_agent',
+    name: 'listing_list', agent: 'inventory_agent',
+    description: 'List the catalog projects (slug, name, area, developer, status, price). Use this to FIND a project before answering about one — never guess a project name or slug, and never describe a property that is not in this list.',
+    params: '{ "q"?: string }', roles: EVERYONE,
+    schema: z.object({ q: z.string().optional().describe('filter by name, area or developer') }),
+    run: async (args) => {
+      const q = s(args.q).toLowerCase()
+      const all = await getInventoryPropertiesFromDB()
+      const hit = q
+        ? all.filter((p) => [p.name, p.area, p.developer].some((v) => String(v ?? '').toLowerCase().includes(q)))
+        : all
+      return hit.slice(0, 40).map((p) => ({
+        slug: p.slug, name: p.name, area: p.area, developer: p.developer,
+        status: p.status, listed: isListed(p.status), startingPriceAED: p.startingPriceAED,
+      }))
+    },
+  },
+  {
+    name: 'listing_update', agent: 'inventory_agent', destructive: true,
+    description: `Change a listing's stored facts. Only these fields: ${EDITABLE_PROJECT_FIELDS.join(', ')}. Identity (slug, id) and attachments are not editable — an edit that could reach them would orphan the records a delete is refused for protecting.`,
+    params: '{ "slug": string, "fields": { ... }, "confirm": true }', roles: OPERATORS,
+    schema: z.object({
+      slug: z.string(),
+      fields: z.record(z.string(), z.unknown()).describe('only EDITABLE_PROJECT_FIELDS keys'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact change'),
+    }),
+    run: async (args, ctx) => {
+      const slug = s(args.slug)
+      if (!slug) return { error: 'slug is required' }
+      const raw = (args.fields ?? {}) as Record<string, unknown>
+      // Filtered HERE as well as in updateProject, so the answer can name what
+      // was ignored. A tool that silently drops a field reports a change the
+      // user then goes looking for.
+      const allowed: Record<string, unknown> = {}
+      const rejected: string[] = []
+      for (const k of Object.keys(raw)) {
+        if ((EDITABLE_PROJECT_FIELDS as readonly string[]).includes(k)) allowed[k] = raw[k]
+        else rejected.push(k)
+      }
+      if (Object.keys(allowed).length === 0) {
+        return { ok: false, error: `Nothing to change. Editable fields: ${EDITABLE_PROJECT_FIELDS.join(', ')}.`, rejected }
+      }
+      const r = await updateProject(slug, allowed, projectActor(ctx))
+      return r.ok
+        ? { ok: true, slug, changed: Object.keys(allowed), ...(rejected.length ? { ignored: rejected } : {}) }
+        : { ok: false, error: r.verdict.refusal ?? 'refused' }
+    },
+  },
+  {
+    name: 'listing_set_permit', agent: 'inventory_agent', destructive: true,
+    description: 'Record the Trakheesi permit number and expiry on a listing. This is what the launch gate reads to set the ad set end date and what the Ads Machine reads to stop a campaign whose permit has lapsed — a listing without one cannot be compliance-stopped. An unreal permit number or date is refused, not stored.',
+    params: '{ "slug": string, "permitNumber": string, "permitExpiry": "YYYY-MM-DD", "confirm": true }',
+    roles: OPERATORS,
+    schema: z.object({
+      slug: z.string(),
+      permitNumber: z.string().describe('empty string clears it'),
+      permitExpiry: z.string().describe('YYYY-MM-DD; empty string clears it'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact permit'),
+    }),
+    run: async (args) => {
+      const slug = s(args.slug)
+      if (!slug) return { error: 'slug is required' }
+      const r = await setProjectPermit(slug, {
+        permitNumber: s(args.permitNumber), permitExpiry: s(args.permitExpiry),
+      })
+      return r.ok
+        ? { ok: true, slug, permitNumber: r.permitNumber, permitExpiry: r.permitExpiry, state: r.state }
+        : { ok: false, error: r.error }
+    },
+  },
+  {
+    name: 'listing_archive', agent: 'inventory_agent', destructive: true,
+    description: 'Take a listing off the public site (archive) or put it back (restore). Reversible — this is the tool for "remove this project", never a delete.',
+    params: '{ "slug": string, "restore"?: boolean, "confirm": true }', roles: OPERATORS,
+    schema: z.object({
+      slug: z.string(),
+      restore: z.boolean().optional().describe('true puts it back on the site'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
+    run: async (args, ctx) => {
+      const slug = s(args.slug)
+      if (!slug) return { error: 'slug is required' }
+      const restore = args.restore === true
+      const r = await archiveProject(slug, projectActor(ctx), restore)
+      return r.ok
+        ? { ok: true, slug, listed: restore }
+        : { ok: false, error: r.verdict.refusal ?? 'refused' }
+    },
+  },
+  {
+    name: 'listing_get', agent: 'inventory_agent',
     description: 'Load ONE catalog project/listing by slug (or exact name): the REAL stored record (price, area, developer, payment plan, handover, yield) PLUS the PERSISTED four-dimension AI intelligence profile (investment / lifestyle / financial / market, with its generated_at and staleness) when one exists. For investment-case / lifestyle / market questions about a project, use this and cite the settled profile instead of re-deriving it.',
     params: '{ "slug": string }', roles: EVERYONE,
     schema: z.object({ slug: z.string().describe('project slug from the catalog (an exact project name also resolves)') }),
@@ -739,6 +864,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       }
     },
   },
+  // ── landing_agent ──────────────────────────────────────────────────────────
   {
     name: 'landing_list', agent: 'landing_agent',
     description: 'List the landing pages (slug, title, status, leads) — the ONE store behind /lp/<slug>.',

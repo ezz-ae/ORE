@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
-import { normalizePermit, normalizePermitExpiry, permitState } from '@/lib/freehold/trakheesi'
+import { setProjectPermit } from '@/lib/freehold/inventory-write'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,41 +34,14 @@ export async function PATCH(
   const { slug } = await params
   const body = (await req.json().catch(() => ({}))) as { permitNumber?: unknown; permitExpiry?: unknown }
 
-  // Blank clears the field. Anything that is not a real permit or a real
-  // calendar date is refused outright — a compliance record with a plausible
-  // but wrong value in it is worse than an empty one, because it reads as done.
-  const rawNumber = typeof body.permitNumber === 'string' ? body.permitNumber.trim() : ''
-  const rawExpiry = typeof body.permitExpiry === 'string' ? body.permitExpiry.trim() : ''
-
-  const permitNumber = rawNumber ? normalizePermit(rawNumber) : null
-  if (rawNumber && !permitNumber) {
-    return NextResponse.json({ error: 'That does not look like a Trakheesi permit number.' }, { status: 400 })
+  // The rules and the write live in lib/freehold/inventory-write.ts, because
+  // the assistant sets permits through the same function — a permit typed into
+  // the chat has to be validated exactly as one typed into the form.
+  const result = await setProjectPermit(slug, body)
+  if (!result.ok) {
+    const { status, ok: _ok, ...rest } = result
+    return NextResponse.json(rest, { status })
   }
-  const permitExpiry = rawExpiry ? normalizePermitExpiry(rawExpiry) : null
-  if (rawExpiry && !permitExpiry) {
-    return NextResponse.json({ error: 'The expiry must be a real date (YYYY-MM-DD).' }, { status: 400 })
-  }
-
-  try {
-    const rows = await query<{ slug: string }>(
-      `UPDATE freehold_site_projects
-          SET payload = coalesce(payload, '{}'::jsonb)
-                        || jsonb_build_object('permitNumber', $2::text, 'permitExpiry', $3::text),
-              updated_at = now()
-        WHERE lower(slug) = lower($1)
-        RETURNING slug`,
-      [slug, permitNumber, permitExpiry],
-    )
-    if (rows.length === 0) return NextResponse.json({ error: 'No such listing' }, { status: 404 })
-    return NextResponse.json({
-      ok: true,
-      permitNumber,
-      permitExpiry,
-      // The same classification the launch gate and the alert strip use, so
-      // the screen can never disagree with what the machine will actually do.
-      state: permitState(permitNumber, permitExpiry),
-    })
-  } catch {
-    return NextResponse.json({ error: 'Could not save the permit' }, { status: 500 })
-  }
+  const { ok: _done, ...payload } = result
+  return NextResponse.json({ ok: true, ...payload })
 }

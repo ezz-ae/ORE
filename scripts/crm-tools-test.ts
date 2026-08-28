@@ -30,6 +30,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { COORDINATOR_TOOLS, toolsForRole } from '../lib/freehold/coordinator-tools'
+import { EDITABLE_PROJECT_FIELDS } from '../lib/freehold/content-authority'
 import { LEAD_STATUSES } from '../lib/freehold/lead-stages'
 import { CONTACT_CHANNELS, LEAD_WRITABLE_FIELDS } from '../lib/freehold/crm-write'
 
@@ -192,7 +193,103 @@ console.log('\n── brokers keep their own book ──')
     /Could not read the follow-up queue/.test(q.slice(0, 3000)))
 }
 
+console.log('\n── the inventory can be worked too, and not destroyed ──')
+{
+  const inv = COORDINATOR_TOOLS.filter((t) => t.agent === 'inventory_agent')
+  check('the inventory agent has tools that ACT, not only read',
+    inv.some((t) => t.destructive), inv.map((t) => t.name).join(','))
+
+  // The catalogue, enumerable. This is also the answer to describing a
+  // property that does not exist: the model can look instead of guessing.
+  check('the catalog can be listed, so a project need never be guessed',
+    !!byName('listing_list'))
+  check('a listing’s facts can be changed', !!byName('listing_update'))
+  check('a listing can be taken off the site and put back', !!byName('listing_archive'))
+  // The launch reads a property's expiry to set the ad set end date and the
+  // Ads Machine reads it to stop a lapsed campaign. A listing with no permit
+  // is an ad the compliance stop cannot stop.
+  check('the Trakheesi permit can be recorded', !!byName('listing_set_permit'))
+
+  for (const name of ['listing_update', 'listing_archive', 'listing_set_permit']) {
+    check(`${name} is destructive and confirmable`,
+      byName(name)!.destructive === true && /confirm/.test(byName(name)!.params))
+  }
+  check('listing_list is not destructive', byName('listing_list')!.destructive !== true)
+
+  // THE LINE THE MACHINE DOES NOT CROSS. deleteProject destroys the row and
+  // the landing pages attached to it, it is owner-only, and it does not come
+  // back. Archiving covers the request people actually make.
+  check('there is no delete tool — the irreversible act stays a human’s',
+    !COORDINATOR_TOOLS.some((t) => /listing_delete|project_delete|delete_listing/.test(t.name)),
+    COORDINATOR_TOOLS.map((t) => t.name).filter((n) => n.includes('delete')).join(','))
+
+  const tools = readFileSync(join(process.cwd(), 'lib/freehold/coordinator-tools.ts'), 'utf8')
+  check('…and no tool calls deleteProject at all', !/deleteProject\(/.test(tools))
+
+  // ONE WRITE PATH, same rule as the CRM half.
+  check('listing writes go through the screen’s own functions',
+    /updateProject\(/.test(tools) && /archiveProject\(/.test(tools) && /setProjectPermit\(/.test(tools))
+  check('…and no listing tool writes the projects table itself',
+    !/UPDATE\s+freehold_site_projects/i.test(tools))
+
+  // Identity is not editable: an edit that could reach slug/id would orphan
+  // exactly the records a delete is refused for protecting.
+  check('the editable-field list is the authority module’s, not a copy',
+    /EDITABLE_PROJECT_FIELDS/.test(tools))
+  check('…and identity is not on it',
+    !(EDITABLE_PROJECT_FIELDS as readonly string[]).includes('slug')
+    && !(EDITABLE_PROJECT_FIELDS as readonly string[]).includes('id'))
+  // A tool that silently drops a field reports a change the user then goes
+  // looking for.
+  const upd = tools.slice(tools.indexOf("name: 'listing_update'"))
+  check('a field it cannot change is named back, not dropped in silence',
+    /rejected/.test(upd.slice(0, 2000)))
+
+  // Content authority and lead ownership must read the same role for the same
+  // person, or a role could be management to one checker and a broker to the
+  // other.
+  check('both authority checks read the role from one mapping',
+    /const projectActor = \(ctx: ToolCtx\) => \(\{[\s\S]{0,140}SESSION_ROLE\[ctx\.role\]/.test(tools))
+
+  // Only operators change the catalog; everyone may read it.
+  check('only operators change the catalog',
+    ['listing_update', 'listing_archive', 'listing_set_permit']
+      .every((n) => !byName(n)!.roles.includes('sales_agent')))
+  check('anyone may read it', byName('listing_list')!.roles.includes('sales_agent'))
+}
+
+console.log('\n── the permit route kept nothing of its own ──')
+{
+  const route = readFileSync(join(process.cwd(), 'app/api/freehold/inventory/[slug]/permit/route.ts'), 'utf8')
+  check('the permit route delegates to the shared write',
+    /await setProjectPermit\(slug, body\)/.test(route))
+  check('…and no longer writes the payload itself',
+    !/jsonb_build_object\('permitNumber'/.test(route))
+
+  // A compliance record holding a plausible but wrong value is worse than an
+  // empty one, because it reads as done and nobody looks again. That refusal
+  // has to apply to a permit typed into the chat exactly as to one typed into
+  // the form — which is the whole reason it moved.
+  const write = readFileSync(join(process.cwd(), 'lib/freehold/inventory-write.ts'), 'utf8')
+  check('an unreal permit number is refused, not stored',
+    /does not look like a Trakheesi permit number/.test(write))
+  check('an unreal expiry is refused, not stored',
+    /must be a real date/.test(write))
+  check('the state returned is the one the launch gate uses',
+    /permitState\(permitNumber, permitExpiry\)/.test(write))
+}
+
+console.log('\n── the assistant is told to look before it names a property ──')
+{
+  const chat = readFileSync(join(process.cwd(), 'app/api/freehold/expert/chat/route.ts'), 'utf8')
+  // Both prompt paths (the JSON protocol and the SDK one) carry it, or the
+  // rule applies only on whichever path happens to be on that day.
+  check('both prompt paths tell it to call listing_list first',
+    (chat.match(/call listing_list and use a project from it/g) ?? []).length === 2,
+    String((chat.match(/call listing_list/g) ?? []).length))
+}
+
 console.log(failures === 0
-  ? '\n✅ the assistant can work the CRM, through the same rules as the screen.'
-  : `\n❌ ${failures} CRM-tool guard(s) failed`)
+  ? '\n✅ the assistant can work the CRM and the catalog, through the same rules as the screens.'
+  : `\n❌ ${failures} CRM/inventory tool guard(s) failed`)
 process.exit(failures === 0 ? 0 : 1)
