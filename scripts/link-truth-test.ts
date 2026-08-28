@@ -34,6 +34,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { linkVerdict, linkAllowed, wildcardSegments, LINK_REFUSALS } from '../lib/freehold/link-truth'
 import { entityClaims, unknownEntities, unknownCampaigns, ENTITY_KINDS } from '../lib/freehold/answer-grounding'
+import { readableText, type ExpertBlock } from '../lib/freehold/expert-blocks'
+import { blocksToText } from '../lib/freehold/expert-sessions'
 import { APP_ROUTES } from '../lib/freehold/app-routes.generated'
 
 let failures = 0
@@ -198,6 +200,83 @@ console.log('\n── and honest answers are left alone ──')
     unknownCampaigns('There are no rules for the Zada Tower campaign.', ['cash offer']).includes('Zada Tower'))
 }
 
+console.log('\n── the checker reads what the USER reads ──')
+{
+  // THE HOLE UNDER THE HOLE. The entity check ran on blocksToText, which exists
+  // to replay history to the model compactly: it keeps a plan step's `step`,
+  // drops its `detail` and `owner`, drops action labels entirely, and truncates
+  // at 4,000 characters. The reply that prompted all of this put its invented
+  // campaign in a `detail`, its invented colleague in an `owner`, and its
+  // invented property in a button label. The checker examined
+  // "Intent: High; Risk: High; Next Action: Immediate Contact" and found
+  // nothing wrong — which was true of the text it was handed.
+  const card: ExpertBlock[] = [
+    { type: 'text', content: 'Saad Aldbsaoy shows high intent but is at high risk of going cold.' },
+    { type: 'text', content: 'He submitted his details via a Meta ad for a specific property, Volta Towers, just 3 hours ago.' },
+    { type: 'plan', title: 'LEAD ASSESSMENT', steps: [
+      { step: 'Intent: High', detail: "Originated from 'Volta_Towers_DXB_Leads_2024' campaign, showing specific interest.", owner: 'LEAD' },
+      { step: 'Next Action: Immediate Contact', detail: 'Assigned to Aya Al-Masri. A WhatsApp message is the fastest way to engage.', owner: 'AYA AL-MASRI' },
+    ] },
+    { type: 'actions', actions: [
+      { label: 'View Volta Towers Details', kind: 'navigate', href: '/freehold-intelligence/inventory/volta-towers' },
+    ] },
+  ]
+  const KNOWN = {
+    campaign: ['cash offer new audiences'],
+    project: ['Sea Legend One', 'Riverside Hills'],
+    person: ['Bashar Ezz', 'Mona Khalil'],
+  }
+
+  const full = readableText(card)
+  check('a plan step’s detail is read', full.includes('Volta_Towers_DXB_Leads_2024'), full)
+  check('…and its owner chip', full.includes('AYA AL-MASRI'), full)
+  check('…and an action button’s label', full.includes('View Volta Towers Details'), full)
+
+  // The whole point, measured: the old reader caught one of three.
+  const before = unknownEntities(blocksToText(card), KNOWN)
+  const after = unknownEntities(full, KNOWN)
+  check('the compact history reader missed most of it',
+    before.length < after.length, `${before.length} vs ${after.length}`)
+  check('all three inventions are caught now',
+    new Set(after.map((e) => e.kind)).size === 3, JSON.stringify(after))
+  // Worth being exact about which layer catches what: the PROPERTY is caught
+  // from the prose sentence, not from the button label — "View Volta Towers
+  // Details" matches no entity pattern, and widening the patterns to read
+  // button text would flag every real button in the product. The button is
+  // stopped by the OTHER layer instead: its href names a record no tool
+  // returned, so linkVerdict refuses it.
+  check('the invented button is stopped by the link rule, not the name rule',
+    !linkAllowed('/freehold-intelligence/inventory/volta-towers', SEEN, APP_ROUTES))
+
+  // No truncation. A long reply's tail is exactly where a model puts the
+  // things it is least sure about.
+  const long: ExpertBlock[] = [
+    { type: 'text', content: 'x'.repeat(6000) },
+    { type: 'text', content: 'The Volta Towers project is ready.' },
+  ]
+  check('a long reply is not truncated before it is checked',
+    unknownEntities(readableText(long), KNOWN).some((e) => e.name === 'Volta Towers'),
+    String(readableText(long).length))
+
+  // blocksToText keeps its own job — it is right for history, wrong for
+  // verification, and nothing here should have changed it.
+  check('the history reader is left alone, still compact',
+    blocksToText(card).length < full.length)
+}
+
+console.log('\n── the route checks the full reply, not the summary ──')
+{
+  const route = readFileSync(join(process.cwd(), 'app/api/freehold/expert/chat/route.ts'), 'utf8')
+  check('the entity check reads the full reply',
+    /unknownEntities\(readableText\(blocks\), knownNames\)/.test(route))
+  check('…and no longer the compact history view',
+    !/unknownEntities\(blocksToText/.test(route))
+  // Figures were always audited over JSON.stringify(blocks), which covers every
+  // field. Asserted so a future tidy-up does not "unify" them onto the summary.
+  check('figures are still audited over the whole reply object',
+    /auditFigures\(replyJson/.test(route) && /const replyJson = JSON\.stringify\(blocks\)/.test(route))
+}
+
 console.log('\n── the route uses both, and gathers its own lists ──')
 {
   const route = readFileSync(join(process.cwd(), 'app/api/freehold/expert/chat/route.ts'), 'utf8')
@@ -211,7 +290,7 @@ console.log('\n── the route uses both, and gathers its own lists ──')
     !/\[0-9a-f\]\{8,\}/.test(route), route.slice(0, 0))
 
   check('the answer is checked for every entity kind, not only campaigns',
-    /unknownEntities\(blocksToText\(blocks\), knownNames\)/.test(route))
+    /unknownEntities\(readableText\(blocks\), knownNames\)/.test(route))
   // THE SILENCE. The list must not come from whatever page the user is on.
   check('the known names are gathered server-side',
     /gatherKnownNames\(/.test(route))

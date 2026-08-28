@@ -106,3 +106,80 @@ Known real app paths you may link to:
 - /freehold-intelligence/review-requests
 
 Ground everything in the live system context provided. Never invent numbers. Be decisive.`
+
+/**
+ * EVERYTHING IN A REPLY THAT A PERSON CAN ACTUALLY READ.
+ *
+ * The verification layer — the entity check that refuses invented records —
+ * ran on `blocksToText`, which exists for a different job: replaying history
+ * back to the model compactly. It keeps a plan step's `step` and drops its
+ * `detail` and `owner`, drops action labels entirely, drops a path's label and
+ * description, and truncates the whole thing at 4,000 characters.
+ *
+ * Those omissions are correct for history and catastrophic for verification,
+ * because the reply that prompted all of this put its fabrications precisely
+ * there. The card read:
+ *
+ *   step:   "Intent: High"
+ *   detail: "Originated from 'Volta_Towers_DXB_Leads_2024' campaign…"
+ *   owner:  "AYA AL-MASRI"
+ *   action: "View Volta Towers Details"
+ *
+ * The invented campaign, the invented colleague and the invented property were
+ * all in fields the checker never saw. It examined "Intent: High; Risk: High;
+ * Next Action: Immediate Contact" and found nothing wrong, which was true of
+ * the text it was given.
+ *
+ * So verification gets its own reader: every field rendered to a human, no
+ * truncation. A guard that inspects a summary of the answer is checking
+ * something the user never reads.
+ *
+ * EXHAUSTIVE BY CONSTRUCTION. The switch has no default and ends in a `never`
+ * assignment, so adding a block type to ExpertBlock without teaching this
+ * function about it fails the typecheck — rather than silently opening a new
+ * place for a claim to hide.
+ */
+export function readableText(blocks: readonly ExpertBlock[] | undefined): string {
+  if (!blocks?.length) return ''
+  const out: string[] = []
+  const push = (...parts: (string | undefined)[]) => {
+    for (const p of parts) if (p && p.trim()) out.push(p.trim())
+  }
+
+  for (const b of blocks) {
+    switch (b.type) {
+      case 'text':
+        push(b.content)
+        break
+      case 'plan':
+        push(b.title)
+        // detail and owner too — the two fields the card hid its inventions in.
+        for (const s of b.steps ?? []) push(s.step, s.detail, s.owner)
+        break
+      case 'actions':
+        // A button's LABEL is a claim ("View Volta Towers Details"), and its
+        // prompt is what gets said next in the user's name.
+        for (const a of b.actions ?? []) push(a.label, a.prompt, a.href)
+        break
+      case 'color':
+        push(b.label)
+        break
+      case 'landing':
+        push(b.title, b.subhead, b.cta)
+        for (const s of b.sections ?? []) push(s.heading, s.body)
+        break
+      case 'media':
+        push(b.label, b.prompt)
+        break
+      case 'path':
+        push(b.label, b.description, b.href)
+        break
+      default: {
+        // Exhaustiveness: a new block type must be handled above.
+        const never: never = b
+        void never
+      }
+    }
+  }
+  return out.join('\n')
+}

@@ -8,6 +8,7 @@ import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { appendExpertTurn, getExpertSession, blocksToText } from '@/lib/freehold/expert-sessions'
+import { readableText } from '@/lib/freehold/expert-blocks'
 import {
   toolsForRole, renderToolDocs, parseToolCall, runCoordinatorTool,
   type CoordinatorRole, type ToolCtx,
@@ -744,7 +745,13 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     // cover people and projects as well as campaigns, because a fabricated
     // colleague and a fabricated building are worse to act on than a
     // fabricated budget, not better.
-    const invented = unknownEntities(blocksToText(blocks), knownNames)
+    // readableText, NOT blocksToText: the history reader keeps a plan step's
+    // `step` and drops its `detail` and `owner`, drops action labels entirely,
+    // and truncates at 4,000 characters — and the reply that prompted this
+    // check put its invented campaign in a detail, its invented colleague in an
+    // owner, and its invented property in a button label. The checker was
+    // reading a summary the user never sees. See lib/freehold/expert-blocks.ts.
+    const invented = unknownEntities(readableText(blocks), knownNames)
     if (invented.length > 0) {
       console.error('[expert] invented record(s):',
         invented.map((e) => `${e.kind}:${e.name}`).join(', '))
