@@ -1447,12 +1447,23 @@ export default function CampaignCommandPage() {
                   <div className="h-full rounded-full transition-all" style={{ width: `${quality.score}%`, background: scoreColor(quality.score) }} />
                 </div>
                 <div className="mt-1.5 text-[11px] text-slate-500">{t('lm.cmd.attributedLeads', { n: quality.attributed })}</div>
+                {/* WHAT THIS NUMBER WAS JUDGED ON. Without it an 82 sits above
+                    a funnel row reading "qualified 0" and the panel argues
+                    with itself — which is the question that produced this
+                    whole change: "how can we trust those?" */}
+                {quality.scoreBasis === 'ratings' && quality.avgValue !== null && (
+                  <div className="mt-1 text-[11px] leading-snug text-slate-400">
+                    {t('lm.cmd.qualityFromRatings', { n: quality.valueRated, avg: quality.avgValue })}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
                 { key: 'fReached', v: quality.reached, pct: quality.funnel.find((f) => f.key === 'reached')?.pct ?? 0 },
-                { key: 'fQualified', v: quality.qualified, pct: quality.funnel.find((f) => f.key === 'qualified')?.pct ?? 0 },
+                // Either judgment counts here — a broker rating a lead 8 has
+                // said it is worth calling as surely as dragging its card has.
+                { key: 'fQualified', v: quality.worthCalling, pct: quality.attributed > 0 ? Math.round((quality.worthCalling / quality.attributed) * 100) : 0 },
                 { key: 'fWon', v: quality.won, pct: quality.funnel.find((f) => f.key === 'won')?.pct ?? 0, tone: 'gold' as const },
                 { key: 'fJunk', v: quality.junk, pct: quality.funnel.find((f) => f.key === 'junk')?.pct ?? 0, tone: 'warn' as const },
               ].map((f) => (

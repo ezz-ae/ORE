@@ -223,6 +223,9 @@ export const lm_ads: Record<Locale, Dict> = {
     // What it searched for, so an empty panel can be told apart from a broken
     // link. Without this both read as "the campaign produced nothing".
     'lm.cmd.qualityLookedFor': 'Looked for leads tagged with campaign id {id}, or the campaign name “{name}”.',
+    // Says what the score was judged on, so an 82 above a funnel row reading
+    // "qualified 0" is one statement instead of two that argue.
+    'lm.cmd.qualityFromRatings': 'Judged on {n} broker ratings, averaging {avg}/10. The CRM funnel has not moved yet.',
     'lm.cmd.qualityUntagged': '{n} leads in the CRM carry no campaign tag at all. That points at the link between the ad and the lead, not at this campaign — leads are arriving without saying where from.',
     'lm.fit.runAsOne': 'Run it as one ad set',
     'lm.aud.record': '· {leads} leads, {qualified} real',
@@ -1417,6 +1420,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'lm.cmd.qualityOpenCrm': 'افتح هؤلاء العملاء',
     'lm.cmd.qualityNone': 'لا يوجد عملاء محتملون منسوبون بعد. تظهر الجودة مع ورود عملاء من هذه الحملة.',
     'lm.cmd.qualityLookedFor': 'تم البحث عن عملاء موسومين بمعرّف الحملة {id} أو باسم الحملة «{name}».',
+    'lm.cmd.qualityFromRatings': 'التقييم مبني على {n} تقييماً من الوسطاء بمتوسط {avg}/10. لم يتحرّك مسار العملاء بعد.',
     'lm.cmd.qualityUntagged': '{n} من العملاء في نظام إدارة العلاقات لا يحملون أي وسم حملة. هذا يشير إلى الرابط بين الإعلان والعميل، لا إلى هذه الحملة — العملاء يصلون دون بيان مصدرهم.',
     'lm.fit.runAsOne': 'شغّلها كمجموعة إعلانية واحدة',
     'lm.aud.record': '· {leads} عميل، {qualified} جاد',
@@ -2588,6 +2592,7 @@ export const lm_ads: Record<Locale, Dict> = {
   'lm.cmd.qualityOpenCrm': 'Открыть этих лидов',
     'lm.cmd.qualityNone': 'Пока нет привязанных лидов. Качество появится, когда придут лиды из этой кампании.',
     'lm.cmd.qualityLookedFor': 'Искали лиды с идентификатором кампании {id} или с названием «{name}».',
+    'lm.cmd.qualityFromRatings': 'Оценка построена на {n} оценках брокеров, в среднем {avg}/10. Воронка CRM ещё не двигалась.',
     'lm.cmd.qualityUntagged': 'У {n} лидов в CRM нет никакой метки кампании. Это указывает на связь между объявлением и лидом, а не на саму кампанию — лиды приходят, не сообщая источник.',
     'lm.fit.runAsOne': 'Запустить одной группой объявлений',
     'lm.aud.record': '· {leads} заявок, {qualified} реальных',

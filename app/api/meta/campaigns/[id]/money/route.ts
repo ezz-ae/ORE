@@ -82,7 +82,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         // facts, and dividing Meta-reported leads into CRM-qualified ones
         // would be counting two different populations.
         leads: quality?.attributed ?? 0,
-        qualified: quality?.qualified ?? 0,
+        // EITHER JUDGMENT, not the status column alone. This read
+        // `quality.qualified` and a team that rates leads rather than dragging
+        // cards priced every campaign against a denominator of zero — the
+        // panel said "0 leads worth calling at about AED 8k+ each" about the
+        // best campaign in the account. See CampaignQuality.worthCalling.
+        qualified: quality?.worthCalling ?? 0,
         deals: quality?.won ?? 0,
         revenueAed: quality?.revenueAed ?? 0,
         ageDays: Number.isFinite(created) ? Math.max(0, (Date.now() - created) / 86_400_000) : 0,

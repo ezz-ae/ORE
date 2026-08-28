@@ -241,6 +241,7 @@ Rules:
 ${actionShapeLines()}
 - Never invent an id. Every adSetId, adId and placement must appear in DATA.
 - DATA.adSets[].ads carries each creative's OWN spend and leads. When one ad has taken real money and returned far less than its siblings, say so by name and attach pause_ad — that is the most useful single thing this panel can do.
+- DATA.crmQuality carries TWO independent judgments of lead quality and you must not confuse them. The funnel counts (reached/qualified/won) move only when somebody drags a card through the CRM; the value ratings are a broker's direct 0–10 verdict on the lead itself. A campaign whose leads are all still status "new" but whose ratedValuable count is high has GOOD leads and a slow CRM queue — say that, and never call it "zero quality" or propose pausing it on the funnel counts alone. If valueRated is 0 AND the funnel has not moved, nobody has judged these leads yet: that is an unworked queue, not a verdict on the campaign, and the action belongs to the team, not the budget.
 - DATA.recentDecisions lists what was ALREADY done to this campaign recently (by the operator or the machine). Never suggest an action equivalent to one just taken — build on the record, don't repeat it.`
 }
 
@@ -419,8 +420,35 @@ export async function POST(req: NextRequest) {
     // Named so the model can say WHY an ad it can see is not yet judgeable,
     // rather than inventing a reason or condemning it anyway.
     minAdSpendToJudgeAED: MIN_AD_SPEND_TO_JUDGE,
+    // ── WHAT THE ADVISOR WAS NOT BEING TOLD ────────────────────────────────
+    //
+    // This carried five funnel counts and a score, and nothing about the 0–10
+    // value ratings. On a campaign whose 176 leads were still status 'new'
+    // while brokers had rated 75 of them 8 or better, the model received
+    // `{ attributed: 176, reached: 0, qualified: 0, won: 0, junk: 0 }` and
+    // reasoned correctly to a false conclusion: "zero CRM quality leads … a
+    // severe issue … needs immediate investigation", with a Pause button on
+    // the best campaign in the account.
+    //
+    // The model was not hallucinating. It was reading a payload that omitted
+    // the strongest signal the CRM holds. The fix is not to stop it proposing
+    // a pause — it is to let it see the ratings before it decides.
     crmQuality: quality
-      ? { attributed: quality.attributed, reached: quality.reached, qualified: quality.qualified, won: quality.won, junk: quality.junk, score: quality.score }
+      ? {
+          attributed: quality.attributed,
+          reached: quality.reached, qualified: quality.qualified,
+          won: quality.won, junk: quality.junk, score: quality.score,
+          // A lead a human rated has been looked at. Zero here means nobody
+          // has judged anything; it is not the same as leads being bad.
+          worked: quality.worked,
+          valueRated: quality.valueRated,
+          avgValueOutOf10: quality.avgValue,
+          ratedValuable: quality.valueValuable,
+          ratedAvoid: quality.valueAvoid,
+          // Either judgment counts — status-qualified OR rated well.
+          worthCalling: quality.worthCalling,
+          worthCallingByRatingOnly: quality.worthCallingByRating,
+        }
       : null,
     recentDecisions: decisions.map((d) => `${d.createdAt.slice(0, 10)} [${d.source}] ${d.action}: ${d.detail}`.slice(0, 220)),
   }

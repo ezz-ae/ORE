@@ -176,7 +176,12 @@ export async function buildRows(view: SmartView): Promise<ViewRow[]> {
         label: c.name ?? c.id,
         spend,
         enquiries: quality?.attributed ?? 0,
-        worthCalling: quality?.qualified ?? 0,
+        // EITHER JUDGMENT COUNTS. This read `quality.qualified`, the status
+        // column alone, so a team that rates leads instead of dragging cards
+        // showed "0 worth calling" — and the money panel then priced the best
+        // campaign in the account at "over AED 8k per lead worth calling" off
+        // a denominator of zero. See CampaignQuality.worthCalling.
+        worthCalling: quality?.worthCalling ?? 0,
         viewings: quality?.viewings ?? 0,
         sold: quality?.won ?? 0,
         moneyIn: quality?.revenueAed ?? 0,
@@ -238,7 +243,7 @@ export async function buildRows(view: SmartView): Promise<ViewRow[]> {
           label: `${g.name} · Google`,
           spend,
           enquiries: quality?.attributed ?? 0,
-          worthCalling: quality?.qualified ?? 0,
+          worthCalling: quality?.worthCalling ?? 0,
           viewings: quality?.viewings ?? 0,
           sold: quality?.won ?? 0,
           moneyIn: quality?.revenueAed ?? 0,
