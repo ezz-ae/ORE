@@ -165,6 +165,44 @@ console.log('\n── it happens on the one write path, and leaves a history ─
     /never guess a rating yourself/.test(tools))
 }
 
+console.log('\n── and the leads already rated get moved too ──')
+{
+  // The rule only fires from the moment it shipped, so an account whose team
+  // has rated for months would see it do nothing and reasonably conclude it
+  // does not work. The backfill walks the history once.
+  const bf = readFileSync(join(process.cwd(), 'scripts/backfill-rating-status.ts'), 'utf8')
+
+  // THE DRIFT RISK. A backfill that re-expresses the rule in SQL disagrees
+  // with the live path the first time either changes, and the disagreement
+  // shows up as leads in states nothing else can produce.
+  check('the backfill imports the rule rather than re-expressing it',
+    /import \{ statusForRating \} from '\.\.\/lib\/freehold\/rating-status'/.test(bf))
+  check('…and decides with it, not with SQL',
+    /statusForRating\(r\.value_rating, r\.status\)/.test(bf)
+    && !/CASE WHEN value_rating/i.test(bf))
+
+  // Restatusing thousands of leads changes what every queue says about a
+  // business. That is a decision somebody takes, not something a deploy does.
+  check('it writes nothing unless told to',
+    /const APPLY = process\.argv\.includes\('--apply'\)/.test(bf)
+    && /if \(!APPLY\)/.test(bf))
+  check('…and is not wired into build or deploy',
+    !/backfill:rating-status/.test(readFileSync(join(process.cwd(), 'package.json'), 'utf8')
+      .split('"build"')[1]?.slice(0, 200) ?? ''))
+
+  // query() returns [] with no database, so a script that printed "0 moved"
+  // would report success it had not achieved. Same rule as db-smoke.
+  check('no database means no claim, with its own exit code',
+    /No DATABASE_URL/.test(bf) && /return 2/.test(bf))
+
+  // A lead somebody moved while this was running must not be dragged back.
+  check('each write is guarded on the status it read',
+    /status IS NOT DISTINCT FROM \$3/.test(bf))
+  // A status that changed with no entry beside it is a lead that moved itself.
+  check('every move leaves a timeline entry saying it was derived',
+    /derived from the existing rating/.test(bf) && /'system'/.test(bf))
+}
+
 console.log(failures === 0
   ? '\n✅ a rating advances the lead, and cannot invent a business.'
   : `\n❌ ${failures} rating-status guard(s) failed`)
