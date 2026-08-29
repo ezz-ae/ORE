@@ -24,8 +24,10 @@ import { getInventoryPropertyBySlug, getInventoryPropertiesFromDB } from '@/lib/
 import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
 import {
-  updateLead, logLeadContact, getLeadForActor, CONTACT_CHANNELS, type LeadActor,
+  updateLead, logLeadContact, getLeadForActor, unratedAdvancedLeads,
+  CONTACT_CHANNELS, type LeadActor,
 } from '@/lib/freehold/crm-write'
+import { RATING_STATUS_CEILING } from '@/lib/freehold/rating-status'
 import { waAppLink } from '@/lib/whatsapp/links'
 import { LEAD_STATUSES, OVERDUE_FOLLOWUP_HOURS } from '@/lib/freehold/lead-stages'
 import { query as dbQuery } from '@/lib/db'
@@ -1057,7 +1059,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
   },
   {
     name: 'crm_rate_lead', agent: 'crm_agent', destructive: true,
-    description: 'Record the 0–10 judgment of what this lead is worth. This is the signal the ads machine learns from — a 0 teaches it what to stop buying, which is worth as much as knowing what to buy more of. Only ever the user\'s own judgment, never your guess.',
+    description: 'Record the 0–10 judgment of what this lead is worth. This is the signal the ads machine learns from — a 0 teaches it what to stop buying, which is worth as much as knowing what to buy more of. A rating of 6 or better ALSO moves the lead to qualified, so this one click both scores the lead and advances it; a lower rating records the judgment and moves nothing. Only ever the user\'s own judgment, never your guess.',
     params: '{ "leadId": string, "rating": 0-10, "confirm": true }', roles: EVERYONE,
     schema: z.object({
       leadId: z.string(),
@@ -1069,6 +1071,22 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       if (!leadId) return { error: 'leadId is required' }
       const r = await updateLead(leadId, { value_rating: n(args.rating) }, actorOf(ctx))
       return r.ok ? { ok: true, leadId, rating: Math.round(n(args.rating)) } : { ok: false, error: r.error }
+    },
+  },
+  {
+    name: 'crm_unrated_leads', agent: 'crm_agent',
+    description: `Leads somebody advanced to ${RATING_STATUS_CEILING} or deeper WITHOUT rating them. These are the ones where a rating is worth the most — a person thought them good enough to move on, and the machine buying the next thousand like them has no idea why. Offer to rate them; never guess a rating yourself.`,
+    params: '{ "limit"?: number }', roles: EVERYONE,
+    schema: z.object({ limit: z.number().optional() }),
+    run: async (args, ctx) => {
+      const r = await unratedAdvancedLeads(actorOf(ctx), n(args.limit) || 20)
+      if (!r.ok) return { ok: false, error: r.error }
+      return {
+        ok: true,
+        count: r.leads.length,
+        leads: r.leads.map((l) => ({ id: l.id, name: l.name, status: l.status, project: l.projectSlug })),
+        note: 'Ask the user for each rating and record it with crm_rate_lead. A rating of 6 or better also moves the lead to qualified.',
+      }
     },
   },
   {
