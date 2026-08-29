@@ -47,6 +47,9 @@ import { statusForDenial } from '@/lib/freehold/authority'
 import { reportLeadToMeta } from '@/lib/freehold/lead-writeback'
 import { openRatingClaim } from '@/lib/freehold/points-db'
 import { outcomeOf } from '@/lib/freehold/points'
+import {
+  statusForRating, FUNNEL_ORDER, rankOf, RATING_STATUS_CEILING,
+} from '@/lib/freehold/rating-status'
 
 /** Who is making the change. The same shape a verified session carries. */
 export interface LeadActor {
@@ -155,9 +158,12 @@ async function logPatchActivity(leadId: string, body: Record<string, unknown>, a
 
 export async function updateLead(
   id: string,
-  body: Record<string, unknown>,
+  patch: Record<string, unknown>,
   user: LeadActor,
 ): Promise<LeadWriteResult> {
+  // A COPY, because a rating may add a status to it below. Mutating the
+  // caller's object would silently change what a route thinks it asked for.
+  const body: Record<string, unknown> = { ...patch }
 
   // Brokers may only modify their own leads, and may not reassign them away.
   const isBroker = user.role === 'broker'
@@ -275,6 +281,35 @@ export async function updateLead(
         if (rows[0]) await answerLeadScore(rows[0].id, Math.round(v), user.email)
       } catch { /* machine table may not exist yet */ }
     })()
+  }
+
+  // ── A RATING MOVES THE LEAD ────────────────────────────────────────────
+  //
+  // This team rates and does not drag cards, so the status column sat at 'new'
+  // across the whole account while the follow-up queue, the team metrics, the
+  // money ladder and the campaign funnel all read it and reported a business
+  // that had done nothing. A broker who rates a lead 8 has said it is worth
+  // pursuing, and `writeBackFor` has been telling Meta exactly that on exactly
+  // this threshold since the write-back shipped. The CRM now agrees with it.
+  //
+  // Written into the SAME update, so the rating and the move are one write and
+  // one history — and it goes through `body`, so logPatchActivity records the
+  // stage change and the movement email fires exactly as a manual move does.
+  //
+  // Forward only, never past qualified, never on a lost lead, and never on a
+  // low or middling rating. The rules and their reasons are in
+  // lib/freehold/rating-status.ts.
+  if ('value_rating' in body && !('status' in body)) {
+    try {
+      const [cur] = await query<{ status: string | null }>(
+        `SELECT status FROM freehold_site_leads WHERE id = $1 LIMIT 1`, [id],
+      )
+      const moved = statusForRating(Number(body.value_rating), cur?.status ?? null)
+      if (moved) body.status = moved
+    } catch {
+      // The rating still lands. A status this write could not derive is a lead
+      // that stays where it was, which is the honest failure.
+    }
   }
 
   for (const field of ALLOWED_FIELDS) {
@@ -417,5 +452,65 @@ export async function getLeadForActor(
     }
   } catch {
     return { ok: false, status: 503, error: 'Could not read that lead just now' }
+  }
+}
+
+/**
+ * LEADS SOMEBODY ADVANCED WITHOUT SAYING WHAT THEY WERE WORTH.
+ *
+ * The mirror of the rule above. A rating moves a lead; moving a lead does NOT
+ * invent a rating, because a status is what was done and a rating is what
+ * somebody thinks, and deriving one from the other would manufacture a
+ * broker's opinion and hand it to the ad machine as though a person had given
+ * it. What it can honestly do is ask.
+ *
+ * These are the leads where the answer is worth the most: somebody thought
+ * them good enough to move to qualified or deeper, and the machine that buys
+ * the next thousand like them has no idea why.
+ *
+ * Broker-scoped in SQL, like the follow-up queue — a broker must not be able
+ * to infer another broker's book from a row count.
+ */
+export async function unratedAdvancedLeads(
+  user: LeadActor,
+  limit = 20,
+): Promise<{ ok: true; leads: LeadFacts[] } | { ok: false; error: string }> {
+  const capped = Math.min(Math.max(Math.round(limit) || 20, 1), 100)
+  const params: unknown[] = [[...FUNNEL_ORDER.slice(rankOf(RATING_STATUS_CEILING))]]
+  let scope = ''
+  if (user.role === 'broker') {
+    params.push(brokerOwnerKeys(user))
+    scope = ' AND assigned_broker_id = ANY($2)'
+  }
+  params.push(capped)
+  try {
+    await ensureLeadsTable()
+    const rows = await query<{
+      id: string; name: string | null; phone: string | null; status: string | null
+      project_slug: string | null; source: string | null
+      last_contact_at: string | null; assigned_broker_id: string | null
+    }>(
+      `SELECT id, name, phone, status, project_slug, source,
+              last_contact_at::text, assigned_broker_id
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE
+          AND value_rating IS NULL
+          AND status = ANY($1)${scope}
+        ORDER BY updated_at DESC NULLS LAST
+        LIMIT $${params.length}`,
+      params,
+    )
+    return {
+      ok: true,
+      leads: rows.map((r) => ({
+        id: r.id, name: r.name, phone: r.phone, status: r.status,
+        projectSlug: r.project_slug, source: r.source,
+        lastContactAt: r.last_contact_at, assignedBrokerId: r.assigned_broker_id,
+      })),
+    }
+  } catch {
+    // "Nothing to rate" and "the read failed" are different answers, and the
+    // first one said falsely is how a backlog becomes invisible.
+    return { ok: false, error: 'Could not read the unrated leads just now.' }
   }
 }
