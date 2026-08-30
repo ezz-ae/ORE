@@ -254,6 +254,43 @@ console.log('\n── an unimplemented tool is not a successful one ──')
     exec.indexOf('if (tool.canWriteExternal)') < exec.indexOf('switch (tool.id)'))
 }
 
+console.log('\n── the bulk asks it used to refuse ──')
+{
+  // "all leads with zero rate make them unqualified" — it refused honestly and
+  // pointed at the CRM list. Honest and useless: the request is obvious, and
+  // the kind somebody asks once and then stops asking.
+  const t = byName('crm_drop_avoid_leads')
+  check('dropping the avoid-rated leads is a real tool', !!t)
+  check('…destructive and confirm-gated', t!.destructive === true && /confirm/.test(t!.params))
+  check('…management only', !t!.roles.includes('sales_agent'))
+
+  const tools = readFileSync(join(process.cwd(), 'lib/freehold/coordinator-tools.ts'), 'utf8')
+  // There is no 'unqualified' status. The user must confirm the word that
+  // actually happens, not a softer one.
+  check('it says the word LOST rather than the word the user used',
+    /mark them LOST/.test(tools) && /there is no "unqualified" status/.test(tools))
+  check('…and shows the count before it may write',
+    /ALWAYS call it once WITHOUT confirm/.test(tools))
+
+  const write = readFileSync(join(process.cwd(), 'lib/freehold/crm-write.ts'), 'utf8')
+  const fn = write.slice(write.indexOf('export async function applyAvoidStatuses'))
+  // A lead that reached a viewing has real work behind it — somebody met
+  // them. Undoing that on a rating deletes the record of the work.
+  check('only leads sitting at exactly qualified are touched',
+    /status = 'qualified'/.test(fn.slice(0, 1200)))
+  check('…and the write is guarded on that same status',
+    /WHERE id = \$1 AND status = 'qualified'/.test(fn))
+  check('every move says why in the timeline',
+    /which the team treats as avoid/.test(fn))
+  check('a broker cannot do it', /Only management can move leads in bulk/.test(fn))
+
+  // It must NOT become an automatic consequence of rating: 0–2 is a verdict on
+  // the audience for the exclusion list, not "this person will never buy".
+  const rs = readFileSync(join(process.cwd(), 'lib/freehold/rating-status.ts'), 'utf8')
+  check('rating a lead badly still closes nothing by itself',
+    /A LOW RATING CLOSES NOTHING/.test(rs))
+}
+
 console.log('\n── the inventory can be worked too, and not destroyed ──')
 {
   const inv = COORDINATOR_TOOLS.filter((t) => t.agent === 'inventory_agent')

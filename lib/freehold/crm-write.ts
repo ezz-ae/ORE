@@ -50,6 +50,7 @@ import { outcomeOf } from '@/lib/freehold/points'
 import {
   statusForRating, FUNNEL_ORDER, rankOf, RATING_STATUS_CEILING,
 } from '@/lib/freehold/rating-status'
+import { AVOID_RATING } from '@/lib/freehold/lead-stages'
 
 /** Who is making the change. The same shape a verified session carries. */
 export interface LeadActor {
@@ -612,6 +613,97 @@ export async function applyRatingStatuses(
         [
           crypto.randomUUID(), m.id,
           `Stage changed to ${m.to} — derived from the existing rating of ${m.rating}/10`,
+          user.email || 'system',
+        ],
+      ).catch(() => { /* the move is the point; a missing note shows as a gap */ })
+    } catch { failed++ }
+  }
+  return { ok: true, plan: { ...plan, moved, failed } }
+}
+
+
+/**
+ * TAKE THE LEADS THE TEAM RATED "AVOID" OUT OF QUALIFIED.
+ *
+ * "all leads with zero rate make them unqualified." The assistant refused —
+ * correctly, since it had no bulk tool — and pointed at the CRM list. That
+ * was honest and useless: the request is reasonable, obvious, and the kind of
+ * thing somebody asks once and then stops asking.
+ *
+ * It is deliberately NOT a side effect of rating. `statusForRating` moves a
+ * lead forward on a good rating and moves nothing on a bad one, because 0–2 is
+ * AVOID_RATING — a verdict on the AUDIENCE, for the exclusion list, not "this
+ * person will never buy". Turning every 0 into a closed lead automatically
+ * would quietly bury people a broker was merely pessimistic about on a
+ * Tuesday.
+ *
+ * As a DELIBERATE, confirmed, bulk act it is a different thing: somebody
+ * looking at a count and deciding. So it lives here, gated, with a dry run.
+ *
+ * ── WHY 'lost' AND WHY ONLY FROM 'qualified' ─────────────────────────────
+ *
+ * There is no 'unqualified' status — the ladder is new → contacted →
+ * qualified → viewing → negotiation → converted → closed, plus terminal
+ * 'lost'. "Not qualified any more" is 'lost', and the tool says that word out
+ * loud so nobody confirms a softer thing than what happens.
+ *
+ * And only from exactly 'qualified'. A lead that reached a viewing or a
+ * negotiation has real work behind it — somebody met them. Undoing that on a
+ * rating would delete the record of the work, which is the one thing a status
+ * exists to hold.
+ */
+export interface AvoidStatusPlan {
+  /** Leads rated at or below AVOID_RATING that sit at exactly 'qualified'. */
+  candidates: number
+  moved?: number
+  failed?: number
+}
+
+export async function applyAvoidStatuses(
+  user: LeadActor,
+  opts: { apply?: boolean } = {},
+): Promise<{ ok: true; plan: AvoidStatusPlan } | { ok: false; status: number; error: string }> {
+  if (user.role === 'broker') {
+    return { ok: false, status: 403, error: 'Only management can move leads in bulk.' }
+  }
+  let rows: Array<{ id: string; value_rating: number | null }>
+  try {
+    await ensureLeadsTable()
+    rows = await query(
+      `SELECT id, value_rating
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE
+          AND value_rating IS NOT NULL
+          AND value_rating <= $1
+          AND status = 'qualified'`,
+      [AVOID_RATING],
+    )
+  } catch {
+    return { ok: false, status: 503, error: 'Could not read the rated leads just now.' }
+  }
+
+  const plan: AvoidStatusPlan = { candidates: rows.length }
+  if (!opts.apply) return { ok: true, plan }
+
+  let moved = 0
+  let failed = 0
+  for (const r of rows) {
+    try {
+      // Guarded on 'qualified', so a lead somebody advances while this runs is
+      // skipped rather than pulled back out of a viewing.
+      const res = await query<{ id: string }>(
+        `UPDATE freehold_site_leads SET status = 'lost', updated_at = now()
+          WHERE id = $1 AND status = 'qualified' RETURNING id`,
+        [r.id],
+      )
+      if (res.length === 0) continue
+      moved++
+      await query(
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+         VALUES ($1, $2, 'stage', $3, $4)`,
+        [
+          crypto.randomUUID(), r.id,
+          `Stage changed to lost — rated ${r.value_rating}/10, which the team treats as avoid`,
           user.email || 'system',
         ],
       ).catch(() => { /* the move is the point; a missing note shows as a gap */ })

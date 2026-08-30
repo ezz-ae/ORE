@@ -25,7 +25,7 @@ import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
 import {
   updateLead, logLeadContact, getLeadForActor, unratedAdvancedLeads,
-  applyRatingStatuses, CONTACT_CHANNELS, type LeadActor,
+  applyRatingStatuses, applyAvoidStatuses, CONTACT_CHANNELS, type LeadActor,
 } from '@/lib/freehold/crm-write'
 import { RATING_STATUS_CEILING } from '@/lib/freehold/rating-status'
 import { waAppLink } from '@/lib/whatsapp/links'
@@ -943,6 +943,12 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
       if (!q) return { error: 'q is required' }
       const asRole = ctx.role === 'sales_agent' ? 'broker' as const : 'admin' as const
       const rows = await searchCrmLeads(q, asRole, ctx.brokerId ?? undefined, 10)
+      if (rows.length === 0) {
+        return {
+          ok: true, count: 0, leads: [],
+          note: `No lead in the CRM matches "${q}". Say so plainly — do NOT offer a name that is not in this result.`,
+        }
+      }
       // Exactly one match (the attached-lead case): include the researched
       // smart profile so the expert answers from verified facts — each fact
       // already carries its source and confidence, so the model can cite them
@@ -1081,11 +1087,21 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     run: async (args, ctx) => {
       const r = await unratedAdvancedLeads(actorOf(ctx), n(args.limit) || 20)
       if (!r.ok) return { ok: false, error: r.error }
+      // EMPTY IS AN ANSWER, AND IT HAS TO SHOUT. This came back with nothing
+      // and the reply was five invented people with a Rate button each. A
+      // `count: 0` that does not say what zero MEANS is a blank the model
+      // fills in.
+      if (r.leads.length === 0) {
+        return {
+          ok: true, count: 0, leads: [],
+          note: 'NOBODY is waiting to be rated — every advanced lead already has a rating. Tell the user exactly that. Do NOT list any names: there are none, and inventing them would send somebody to phone a stranger.',
+        }
+      }
       return {
         ok: true,
         count: r.leads.length,
         leads: r.leads.map((l) => ({ id: l.id, name: l.name, status: l.status, project: l.projectSlug })),
-        note: 'Ask the user for each rating and record it with crm_rate_lead. A rating of 6 or better also moves the lead to qualified.',
+        note: 'These are the ONLY leads waiting. Name no others. Ask the user for each rating and record it with crm_rate_lead — a rating of 6 or better also moves the lead to qualified.',
       }
     },
   },
@@ -1107,6 +1123,24 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         : {
             ok: true, applied: false, ...r.plan,
             note: 'Nothing has been changed. Show the user these counts and ask before running it again with confirm.',
+          }
+    },
+  },
+  {
+    name: 'crm_drop_avoid_leads', agent: 'crm_agent', destructive: true,
+    description: 'Take leads the team rated 2/10 or lower OUT of the qualified stage and mark them LOST. Use the word "lost" when you describe it — there is no "unqualified" status, and the user must know what actually happens. Only touches leads sitting at exactly qualified: one that reached a viewing or a negotiation has real work behind it and is left alone. ALWAYS call it once WITHOUT confirm and tell the user how many leads it found; only call it again with confirm:true after they have seen that number.',
+    params: '{ "confirm"?: true }', roles: ['owner', 'admin', 'sales_manager'],
+    schema: z.object({
+      confirm: z.boolean().optional().describe('set true only after the user has SEEN the count and agreed'),
+    }),
+    run: async (args, ctx) => {
+      const r = await applyAvoidStatuses(actorOf(ctx), { apply: args.confirm === true })
+      if (!r.ok) return { ok: false, error: r.error }
+      return args.confirm === true
+        ? { ok: true, applied: true, movedToLost: r.plan.moved ?? 0, failed: r.plan.failed ?? 0 }
+        : {
+            ok: true, applied: false, wouldMoveToLost: r.plan.candidates,
+            note: 'Nothing has been changed. Tell the user this many leads would be marked LOST, and ask before running it again with confirm.',
           }
     },
   },
@@ -1164,6 +1198,14 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
             LIMIT $${params.length}`,
           params,
         )
+        if (rows.length === 0) {
+          // See crm_unrated_leads: an empty list that does not say so is a
+          // blank the model fills in with plausible names.
+          return {
+            ok: true, count: 0, leads: [],
+            note: 'NOTHING is overdue — every open lead has been contacted inside the window. Say exactly that and list no names.',
+          }
+        }
         return rows.map((r) => ({
           id: r.id, name: r.name, phone: r.phone, status: r.status,
           assignedTo: r.assigned_broker_id, hoursSinceContact: Number(r.hours_quiet) || 0,

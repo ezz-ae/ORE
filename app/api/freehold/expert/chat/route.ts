@@ -24,6 +24,7 @@ import type { Role } from '@/types/freehold-mcp'
 import { APP_ROUTES } from '@/lib/freehold/app-routes.generated'
 import { auditFigures, evidenceLine, METRIC_SHAPED, type EvidenceReport } from '@/lib/freehold/evidence'
 import { unknownEntities, type EntityKind } from '@/lib/freehold/answer-grounding'
+import { unsourcedListedNames } from '@/lib/freehold/listed-records'
 import { gatherKnownNames, type KnownNames } from '@/lib/freehold/known-names'
 import { linkAllowed } from '@/lib/freehold/link-truth'
 
@@ -773,6 +774,40 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
               + `${real.length > 6 ? ` and ${real.length - 6} more` : ''}. `
               + `Ask me about one of those and I will answer from the real records.`
             : ''),
+      }]
+    }
+
+    // ── A LIST OF RECORDS IS A LIST OF THINGS THAT EXIST ──────────────────
+    //
+    // Asked to show unrated leads, with the tool having RUN and returned
+    // nothing, the reply was five people who do not exist — each with a "Rate
+    // <name>" button beside it. Every other guard passed: the entity check
+    // matches sentence shapes ("<Name> campaign", "assigned to <Name>") and a
+    // bullet reading `- Aisha Al-Futtaim (Emaar Beachfront)` is none of them,
+    // while the PROJECTS in that list were real, lifted from the context,
+    // which is exactly what made the invented names beside them credible.
+    //
+    // So this asks the question ungroundedNumbers has always asked of figures:
+    // did this string come from anywhere the model was given? A name in no
+    // tool result, no context and nothing the user typed was produced by the
+    // model alone — and for a person in a list with a button, that is somebody
+    // being sent to phone a stranger.
+    const listed = unsourcedListedNames(
+      readableText(blocks),
+      `${toolResultsText}\n${JSON.stringify(fullContext)}\n${message}`,
+    )
+    if (listed.length > 0) {
+      console.error('[expert] listed record(s) from nowhere:', listed.join(', '))
+      blocks = [{
+        type: 'text',
+        content:
+          `I have to stop myself — I listed ${listed.length === 1 ? 'a record' : `${listed.length} records`} `
+          + `(${listed.slice(0, 5).join(', ')}) that did not come back from any check I ran, `
+          + `so ${listed.length === 1 ? 'it was' : 'they were'} invented rather than looked up. `
+          + (resultNotes.length
+            ? `What actually ran this turn:\n${resultNotes.join('\n')}`
+            : 'No check returned any records this turn.')
+          + `\n\nIf the list came back empty, that is the answer — ask me again and I will say so plainly.`,
       }]
     }
 
