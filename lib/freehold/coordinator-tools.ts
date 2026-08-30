@@ -25,7 +25,7 @@ import { getProjectProfile } from '@/lib/freehold/project-profile'
 import { searchCrmLeads } from '@/lib/data'
 import {
   updateLead, logLeadContact, getLeadForActor, unratedAdvancedLeads,
-  CONTACT_CHANNELS, type LeadActor,
+  applyRatingStatuses, CONTACT_CHANNELS, type LeadActor,
 } from '@/lib/freehold/crm-write'
 import { RATING_STATUS_CEILING } from '@/lib/freehold/rating-status'
 import { waAppLink } from '@/lib/whatsapp/links'
@@ -1087,6 +1087,27 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         leads: r.leads.map((l) => ({ id: l.id, name: l.name, status: l.status, project: l.projectSlug })),
         note: 'Ask the user for each rating and record it with crm_rate_lead. A rating of 6 or better also moves the lead to qualified.',
       }
+    },
+  },
+  {
+    name: 'crm_apply_rating_statuses', agent: 'crm_agent', destructive: true,
+    description: 'Bring every ALREADY-rated lead\'s status up to what its rating implies (6+ becomes qualified). A one-off catch-up for leads rated before the rule existed — without it, an account that has rated for months sees nothing change. ALWAYS call it once WITHOUT confirm first and read the plan out loud (how many leads, moving from what to what); only call it again with confirm:true after the user has seen those numbers and agreed. Forward only, never past qualified, and it never touches a low-rated or lost lead.',
+    params: '{ "confirm"?: true }', roles: ['owner', 'admin', 'sales_manager'],
+    schema: z.object({
+      confirm: z.boolean().optional().describe('set true only after the user has SEEN the dry-run counts and agreed to them'),
+    }),
+    run: async (args, ctx) => {
+      // The dry run is not gated: showing somebody what WOULD change is how
+      // they decide, and putting a confirmation in front of the preview means
+      // confirming a number nobody has seen.
+      const r = await applyRatingStatuses(actorOf(ctx), { apply: args.confirm === true })
+      if (!r.ok) return { ok: false, error: r.error }
+      return args.confirm === true
+        ? { ok: true, applied: true, ...r.plan }
+        : {
+            ok: true, applied: false, ...r.plan,
+            note: 'Nothing has been changed. Show the user these counts and ask before running it again with confirm.',
+          }
     },
   },
   {

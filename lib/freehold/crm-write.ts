@@ -514,3 +514,108 @@ export async function unratedAdvancedLeads(
     return { ok: false, error: 'Could not read the unrated leads just now.' }
   }
 }
+
+
+/**
+ * MOVE THE LEADS THAT WERE ALREADY RATED — the same rule, applied to history.
+ *
+ * `statusForRating` advances a lead from the moment it shipped. Everything
+ * rated before that is still where it was, so an account whose team has rated
+ * for months watches the new rule change nothing and reasonably concludes it
+ * does not work.
+ *
+ * This lives here, beside the live write, rather than only in a script,
+ * because the operator this was built for was explicit: they are tired of
+ * running commands. A one-off maintenance job that can only be reached through
+ * a terminal is a job that does not get done, and the whole point of the
+ * assistant is that it can do the work. So the same function backs both the
+ * script and the confirm-gated chat tool.
+ *
+ * DRY RUN BY DEFAULT. `apply` must be passed explicitly. Restatusing thousands
+ * of leads changes what every queue and report says about a business, and that
+ * is a decision somebody takes with the numbers in front of them.
+ */
+export interface RatingStatusPlan {
+  /** Rated leads examined. */
+  rated: number
+  /** How many the rule would move, grouped `from → to`. */
+  moves: Array<{ from: string; to: string; count: number }>
+  total: number
+  /** Only set when `apply` was true. */
+  moved?: number
+  failed?: number
+}
+
+export async function applyRatingStatuses(
+  user: LeadActor,
+  opts: { apply?: boolean; limit?: number } = {},
+): Promise<{ ok: true; plan: RatingStatusPlan } | { ok: false; status: number; error: string }> {
+  // Management only. Restatusing the book is not a broker's action even for
+  // their own leads — it is a change to how the whole business reads.
+  if (user.role === 'broker') {
+    return { ok: false, status: 403, error: 'Only management can move leads in bulk.' }
+  }
+  const cap = Math.min(Math.max(Math.round(opts.limit ?? 5000) || 5000, 1), 20_000)
+
+  let rows: Array<{ id: string; status: string | null; value_rating: number | null }>
+  try {
+    await ensureLeadsTable()
+    rows = await query(
+      `SELECT id, status, value_rating
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE AND value_rating IS NOT NULL
+        LIMIT $1`,
+      [cap],
+    )
+  } catch {
+    return { ok: false, status: 503, error: 'Could not read the rated leads just now.' }
+  }
+
+  // THE RULE DECIDES. Anything it returns null for — low ratings, the middle
+  // band, lost leads, anything already at or past qualified — is left exactly
+  // as it is, by construction rather than by a second set of WHERE clauses
+  // that would drift from the live path.
+  const planned = rows
+    .map((r) => ({ id: r.id, from: r.status ?? '', to: statusForRating(r.value_rating, r.status), rating: r.value_rating }))
+    .filter((m): m is typeof m & { to: NonNullable<typeof m.to> } => m.to !== null)
+
+  const grouped = new Map<string, number>()
+  for (const m of planned) {
+    const k = `${m.from || '(none)'}\u0000${m.to}`
+    grouped.set(k, (grouped.get(k) ?? 0) + 1)
+  }
+  const moves = [...grouped.entries()]
+    .map(([k, count]) => ({ from: k.split('\u0000')[0], to: k.split('\u0000')[1], count }))
+    .sort((a, b) => b.count - a.count)
+
+  const plan: RatingStatusPlan = { rated: rows.length, moves, total: planned.length }
+  if (!opts.apply) return { ok: true, plan }
+
+  let moved = 0
+  let failed = 0
+  for (const m of planned) {
+    try {
+      // Guarded on the status that was READ, so a lead somebody moves while
+      // this runs is skipped rather than dragged back.
+      const res = await query<{ id: string }>(
+        `UPDATE freehold_site_leads SET status = $2, updated_at = now()
+          WHERE id = $1 AND status IS NOT DISTINCT FROM $3 RETURNING id`,
+        [m.id, m.to, m.from || null],
+      )
+      if (res.length === 0) continue
+      moved++
+      // A status that changed with no entry beside it is a lead that moved by
+      // itself — the thing nobody can explain six weeks later.
+      await query(
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+         VALUES ($1, $2, 'stage', $3, $4)`,
+        [
+          crypto.randomUUID(), m.id,
+          `Stage changed to ${m.to} — derived from the existing rating of ${m.rating}/10`,
+          user.email || 'system',
+        ],
+      ).catch(() => { /* the move is the point; a missing note shows as a gap */ })
+    } catch { failed++ }
+  }
+  return { ok: true, plan: { ...plan, moved, failed } }
+}
