@@ -35,6 +35,7 @@ import { join } from 'node:path'
 import { linkVerdict, linkAllowed, wildcardSegments, LINK_REFUSALS } from '../lib/freehold/link-truth'
 import { entityClaims, unknownEntities, unknownCampaigns, ENTITY_KINDS } from '../lib/freehold/answer-grounding'
 import { readableText, type ExpertBlock } from '../lib/freehold/expert-blocks'
+import { listedNames, unsourcedListedNames } from '../lib/freehold/listed-records'
 import { blocksToText } from '../lib/freehold/expert-sessions'
 import { APP_ROUTES } from '../lib/freehold/app-routes.generated'
 
@@ -275,6 +276,89 @@ console.log('\n── the route checks the full reply, not the summary ──')
   // field. Asserted so a future tidy-up does not "unify" them onto the summary.
   check('figures are still audited over the whole reply object',
     /auditFigures\(replyJson/.test(route) && /const replyJson = JSON\.stringify\(blocks\)/.test(route))
+}
+
+console.log('\n── FIVE PEOPLE WHO DO NOT EXIST, WITH A BUTTON EACH ──')
+{
+  // The transcript, after every other guard in this product had passed. The
+  // tool had RUN and come back with nothing; the reply was five names.
+  const answer = [
+    "Here are the top 5 leads advanced to 'Qualified' but not rated yet.",
+    '- Aisha Al-Futtaim (Emaar Beachfront)',
+    '- Fatima Al-Mansoori (Damac Lagoons)',
+    '- Omar bin Rashid (Dubai Hills Estate)',
+    '- Layla El-Sayed (Arabian Ranches III)',
+    '- Khalid Al-Jaber (Tilal Al Ghaf)',
+  ].join('\n')
+  // What it was actually given: an empty result, and a context whose project
+  // names are REAL — which is what made the invented people beside them read
+  // as credible, and why checking names against the workspace cleared them.
+  const corpus = JSON.stringify({ ok: true, count: 0, leads: [] })
+    + JSON.stringify({ inventory: { topPicks: [{ name: 'Damac Lagoons' }, { name: 'Tilal Al Ghaf' }] } })
+
+  check('all five invented people are caught',
+    unsourcedListedNames(answer, corpus).length === 5,
+    JSON.stringify(unsourcedListedNames(answer, corpus)))
+  // The entity guard could not see this shape at all: a bullet is not
+  // "<Name> campaign" or "assigned to <Name>".
+  check('…which the sentence-shape guard could not see',
+    unknownEntities(answer, { person: ['Bashar Ezz'], project: ['Sea Legend One'] })
+      .every((e) => e.kind !== 'person'))
+
+  // Real records pass — the test is provenance, not vocabulary.
+  const real = '- Mona Khalil (Sea Legend One)\n- Bashar Ezz (Riverside Hills)'
+  check('a list of leads a tool DID return passes',
+    unsourcedListedNames(real, JSON.stringify({
+      leads: [{ name: 'Mona Khalil' }, { name: 'Bashar Ezz' }],
+      projects: ['Sea Legend One', 'Riverside Hills'],
+    })).length === 0)
+  // A user who types a name is entitled to have it repeated back.
+  check('…and a name the USER typed passes',
+    unsourcedListedNames('- Khalid Al-Jaber (Tilal Al Ghaf)', 'find me Khalid Al-Jaber and Tilal Al Ghaf').length === 0)
+
+  // NARROW BY SHAPE. A general proper-noun detector would flag every area and
+  // building in Dubai and be switched off in a week.
+  check('advice lines are not records',
+    unsourcedListedNames(
+      '- Raise the budget to AED 1,143\n- Dubai Marina is worth targeting\n- Add a second design',
+      JSON.stringify({ x: 1 })).length === 0)
+  check('…only names followed by record punctuation are read',
+    JSON.stringify(listedNames('- Aisha Al-Futtaim (X)\n- Dubai Marina is worth targeting'))
+      === JSON.stringify(['Aisha Al-Futtaim']))
+  // An accusation with nothing behind it is its own kind of lie.
+  check('an empty corpus accuses nobody',
+    unsourcedListedNames(answer, '').length === 0)
+
+  const route = readFileSync(join(process.cwd(), 'app/api/freehold/expert/chat/route.ts'), 'utf8')
+  // Read the CALL, not the import line, which is what indexOf finds first.
+  const call = route.slice(route.indexOf('const listed = unsourcedListedNames'))
+  check('the route checks listed records against everything it was given',
+    call.startsWith('const listed = unsourcedListedNames')
+    && /toolResultsText/.test(call.slice(0, 300))
+    && /JSON\.stringify\(fullContext\)/.test(call.slice(0, 300))
+    // The user's own words count: somebody who types a name may have it back.
+    && /\$\{message\}/.test(call.slice(0, 300)),
+    call.slice(0, 220))
+  // Checked over the FULL reply, not the compact history view — the same
+  // lesson as the entity guard, which read a summary the user never sees.
+  check('…over everything the user can read',
+    /unsourcedListedNames\(\s*readableText\(blocks\)/.test(call.slice(0, 200)))
+}
+
+console.log('\n── an empty result has to say what zero means ──')
+{
+  const tools = readFileSync(join(process.cwd(), 'lib/freehold/coordinator-tools.ts'), 'utf8')
+  // A `count: 0` that does not say what zero MEANS is a blank the model fills
+  // in with plausible names.
+  check('no unrated leads says so, and forbids naming any',
+    /NOBODY is waiting to be rated/.test(tools) && /Do NOT list any names/.test(tools))
+  check('nothing overdue says so',
+    /NOTHING is overdue/.test(tools))
+  check('no search match says so',
+    /No lead in the CRM matches/.test(tools))
+  // And a non-empty result is a closed set, not a starting point.
+  check('a result that DOES have rows says it is the only rows',
+    /These are the ONLY leads waiting\. Name no others\./.test(tools))
 }
 
 console.log('\n── the route uses both, and gathers its own lists ──')
