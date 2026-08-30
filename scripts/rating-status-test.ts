@@ -171,24 +171,40 @@ console.log('\n── and the leads already rated get moved too ──')
   // has rated for months would see it do nothing and reasonably conclude it
   // does not work. The backfill walks the history once.
   const bf = readFileSync(join(process.cwd(), 'scripts/backfill-rating-status.ts'), 'utf8')
+  const write = readFileSync(join(process.cwd(), 'lib/freehold/crm-write.ts'), 'utf8')
+  const tools = readFileSync(join(process.cwd(), 'lib/freehold/coordinator-tools.ts'), 'utf8')
 
-  // THE DRIFT RISK. A backfill that re-expresses the rule in SQL disagrees
-  // with the live path the first time either changes, and the disagreement
-  // shows up as leads in states nothing else can produce.
-  check('the backfill imports the rule rather than re-expressing it',
-    /import \{ statusForRating \} from '\.\.\/lib\/freehold\/rating-status'/.test(bf))
-  check('…and decides with it, not with SQL',
-    /statusForRating\(r\.value_rating, r\.status\)/.test(bf)
-    && !/CASE WHEN value_rating/i.test(bf))
+  // TWO DOORS, ONE RULE. A maintenance job that re-expresses its logic in SQL
+  // disagrees with the live path the first time either changes, and the
+  // disagreement shows up as leads in states nothing else can produce.
+  check('the catch-up decides with the rule, not with SQL',
+    /statusForRating\(r\.value_rating, r\.status\)/.test(write)
+    && !/CASE WHEN value_rating/i.test(write))
+  check('the script is a thin door onto it',
+    /applyRatingStatuses/.test(bf) && !/statusForRating/.test(bf))
+  // The operator said plainly they are tired of running commands. A one-off
+  // job reachable only through a terminal is a job that does not get done.
+  check('…and the chat is the other door',
+    /name: 'crm_apply_rating_statuses'/.test(tools))
 
   // Restatusing thousands of leads changes what every queue says about a
-  // business. That is a decision somebody takes, not something a deploy does.
+  // business. That is a decision somebody takes with the numbers in front of
+  // them, not something a deploy does.
   check('it writes nothing unless told to',
-    /const APPLY = process\.argv\.includes\('--apply'\)/.test(bf)
-    && /if \(!APPLY\)/.test(bf))
+    /if \(!opts\.apply\) return \{ ok: true, plan \}/.test(write)
+    && /const APPLY = process\.argv\.includes\('--apply'\)/.test(bf))
   check('…and is not wired into build or deploy',
     !/backfill:rating-status/.test(readFileSync(join(process.cwd(), 'package.json'), 'utf8')
       .split('"build"')[1]?.slice(0, 200) ?? ''))
+  // Confirming a number nobody has seen is not consent, so the preview itself
+  // is never gated — only the write is.
+  check('the chat must show the counts before it may apply',
+    /ALWAYS call it once WITHOUT confirm first/.test(tools))
+  check('…and applying is confirm-gated like every other write',
+    /name: 'crm_apply_rating_statuses', agent: 'crm_agent', destructive: true/.test(tools))
+  // Restatusing the book is not a broker's action even for their own leads.
+  check('a broker cannot restatus the book',
+    /Only management can move leads in bulk/.test(write))
 
   // query() returns [] with no database, so a script that printed "0 moved"
   // would report success it had not achieved. Same rule as db-smoke.
@@ -197,10 +213,10 @@ console.log('\n── and the leads already rated get moved too ──')
 
   // A lead somebody moved while this was running must not be dragged back.
   check('each write is guarded on the status it read',
-    /status IS NOT DISTINCT FROM \$3/.test(bf))
+    /status IS NOT DISTINCT FROM \$3/.test(write))
   // A status that changed with no entry beside it is a lead that moved itself.
   check('every move leaves a timeline entry saying it was derived',
-    /derived from the existing rating/.test(bf) && /'system'/.test(bf))
+    /derived from the existing rating/.test(write))
 }
 
 console.log(failures === 0
