@@ -26,6 +26,7 @@
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { ADVISOR_ACTION_TYPES } from '../lib/freehold/advisor-actions'
 import { CRM_FILTERS, CRM_FILTER_GROUPS } from '../lib/freehold/crm-filters'
+import { RATING_BAND_IDS } from '../lib/freehold/rating-ladder'
 import { BUYER_ELIGIBILITIES } from '../lib/freehold/buyer-eligibility'
 import { crm } from '../lib/i18n/dictionaries/crm'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
@@ -111,6 +112,14 @@ console.log('\n── placement verdicts ──')
   check('…and it contains the click verdict that shipped without a word',
     (PLACEMENT_VERDICTS as readonly string[]).includes('noClicks'))
   family('lm.place.verdict', 'lm.place.verdict.', PLACEMENT_VERDICTS)
+}
+
+console.log('\n── the lead rate ladder bands ──')
+{
+  // The table renders t(`lm.forms.band.${row.band}`) on every row and on each
+  // audience button. A band without a word is a raw key printed eleven times
+  // in a table somebody is reading to decide what to buy.
+  family('lm.forms.band', 'lm.forms.band.', RATING_BAND_IDS, lm_core)
 }
 
 console.log('\n── the CRM smart filters ──')

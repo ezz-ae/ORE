@@ -12,6 +12,7 @@ import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
 import { answerOutcomes, type AnswerOutcome } from '@/lib/freehold/answer-outcomes'
 import { query } from '@/lib/db'
+import { buildLadder, RATING_BAND_IDS, isSeedBand, BAND_AUDIENCE } from '@/lib/freehold/rating-ladder'
 import { DemoNotice } from '@/components/freehold/demo-badge'
 import { FormsSyncControls } from './_sync'
 import { FormAudienceBuilder } from './_audience'
@@ -61,6 +62,33 @@ interface AllFormsStats { n: number; rated: number; avg: number | null; contacta
 
 const CONTACTABLE_SQL =
   `(length(regexp_replace(coalesce(phone, ''), '\\D', '', 'g')) >= 7 OR (email IS NOT NULL AND position('@' in email) > 0))`
+
+/**
+ * HOW MANY LEADS AT EACH RATING — the distribution the average hides.
+ *
+ * Two accounts both averaging 5 are opposite businesses when one is all 5s and
+ * the other is half 10s and half 0s, and only the second has anything worth
+ * building an audience from. See lib/freehold/rating-ladder.ts.
+ *
+ * Fail-soft to an empty ladder: a table that cannot load shows nothing rated,
+ * which is what an empty account looks like anyway.
+ */
+async function getRatingCounts(): Promise<Record<number, number>> {
+  try {
+    const rows = await query<{ r: string; n: string }>(
+      `SELECT value_rating::text AS r, COUNT(*)::text AS n
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE AND value_rating IS NOT NULL
+        GROUP BY value_rating`,
+    )
+    const out: Record<number, number> = {}
+    for (const row of rows) {
+      const r = Number(row.r)
+      if (Number.isFinite(r)) out[r] = Number(row.n) || 0
+    }
+    return out
+  } catch { return {} }
+}
 
 async function getCrmStatsByForm(): Promise<{ perForm: Map<string, FormCrmStats>; all: AllFormsStats }> {
   const empty: AllFormsStats = { n: 0, rated: 0, avg: null, contactable: 0, qualified: 0 }
@@ -140,6 +168,7 @@ export default async function FormsPage() {
   const { t }         = await getServerT()
   const data          = await getForms()
   const crmStats      = await getCrmStatsByForm()
+  const ladder        = buildLadder(await getRatingCounts())
   const answerQs      = await answerOutcomes()
   const crmByForm     = new Map([...crmStats.perForm.entries()].map(([id, s]) => [id, s.n]))
   const isConfigError = data.demo === true
@@ -270,50 +299,102 @@ export default async function FormsPage() {
         </section>
       )}
 
-      {/* WHAT EACH ANSWER IS WORTH. The segmentation questions folded across
-          every synced lead: which door the serious buyers actually walk
-          through. Absent until at least two answers have real traffic —
-          an empty comparison is not rendered as zeros it never earned. */}
-      {!isConfigError && answerQs.length > 0 && (
+      {/* ── THE RATE LADDER ─────────────────────────────────────────────
+          "above the form create lead rate table… 1 2 3 4 5 6 7 8 9 10 this is
+          your rows and you tell in every rate how many."
+
+          The page reported one number for the whole account: an average. Two
+          accounts both averaging 5 — one where every lead is a 5, one that is
+          half 10s and half 0s — are opposite businesses, and only the second
+          has anything worth buying more of. The distribution is the finding.
+
+          Absent entirely until something is rated: eleven zero rows would be a
+          table that teaches nothing and takes the space the forms need. */}
+      {ladder.rated > 0 && (
         <section className="mt-6 rounded-[20px] border border-line bg-surface p-5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.forms.answers.title')}</div>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('lm.forms.answers.note')}</p>
-          <div className="mt-4 space-y-5">
-            {answerQs.map((qo) => (
-              <div key={qo.question}>
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <div className="text-sm font-semibold text-white">{qo.question}</div>
-                  <span className="text-[11px] text-slate-500">{t('lm.forms.answers.answered', { n: String(qo.leads) })}</span>
-                </div>
-                <div className="mt-2 space-y-1.5">
-                  {qo.answers.map((a: AnswerOutcome) => {
-                    // Only a verdict the sample supports gets a word — tied and
-                    // unknown rows show their counts and claim nothing.
-                    const chip = a.verdict === 'better'
-                      ? { key: 'lm.forms.answers.better', cls: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300' }
-                      : a.verdict === 'worse'
-                      ? { key: 'lm.forms.answers.worse', cls: 'border-amber-400/40 bg-amber-400/10 text-amber-300' }
-                      : a.verdict === 'unanswered'
-                      ? { key: 'lm.forms.answers.unanswered', cls: 'border-slate-500/30 bg-slate-500/10 text-slate-400' }
-                      : null
-                    return (
-                      <div key={a.answer} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[12px] border border-line/60 bg-surface-2 px-3 py-2">
-                        <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{a.answer}</span>
-                        <span className="text-[11px] tabular-nums text-slate-500">{t('lm.forms.answers.leads', { n: String(a.leads) })}</span>
-                        <span className={`text-[11px] tabular-nums ${a.qualified > 0 ? 'text-emerald-300' : 'text-slate-600'}`}>
-                          {t('lm.forms.answers.qualified', { n: String(a.qualified) })}
-                        </span>
-                        {a.won > 0 && (
-                          <span className="text-[11px] tabular-nums text-gold">{t('lm.forms.answers.won', { n: String(a.won) })}</span>
-                        )}
-                        {chip && (
-                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${chip.cls}`}>{t(chip.key)}</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.forms.ladder.title')}</div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('lm.forms.ladder.note')}</p>
+            </div>
+            <div className="flex items-baseline gap-4">
+              <span className="text-xs text-slate-500">
+                {t('lm.forms.ladder.rated', { n: String(ladder.rated) })}
+              </span>
+              {/* The number the average cannot express. */}
+              {ladder.polarised >= 40 && (
+                <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+                  {t('lm.forms.ladder.polarised', { pct: String(ladder.polarised) })}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[420px] border-collapse text-sm">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-slate-500">
+                  <th className="pb-2 text-start font-semibold">{t('lm.forms.ladder.colRate')}</th>
+                  <th className="pb-2 text-end font-semibold">{t('lm.forms.ladder.colLeads')}</th>
+                  <th className="pb-2 ps-4 text-start font-semibold">{t('lm.forms.ladder.colShare')}</th>
+                  <th className="pb-2 text-end font-semibold">{t('lm.forms.ladder.colBand')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ladder.rows.map((row) => {
+                  const tone = row.band === 'deal' ? 'text-gold'
+                    : row.band === 'good' ? 'text-emerald-300'
+                    : row.band === 'avoid' ? 'text-rose-300'
+                    : 'text-slate-400'
+                  const bar = row.band === 'deal' ? 'bg-gold'
+                    : row.band === 'good' ? 'bg-emerald-400'
+                    : row.band === 'avoid' ? 'bg-rose-400'
+                    : 'bg-slate-600'
+                  return (
+                    <tr key={row.rating} className="border-t border-line/50">
+                      <td className={`py-1.5 text-start font-semibold tabular-nums ${tone}`}>{row.rating}</td>
+                      {/* A zero is printed, not blanked — a gap in this table is
+                          a fact about the business. */}
+                      <td className={`py-1.5 text-end tabular-nums ${row.leads > 0 ? 'text-white' : 'text-slate-600'}`}>
+                        {row.leads}
+                      </td>
+                      <td className="py-1.5 ps-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-full max-w-[160px] overflow-hidden rounded-full bg-surface-3">
+                            <div className={`h-full rounded-full ${bar}`} style={{ width: `${row.share}%` }} />
+                          </div>
+                          <span className="w-9 shrink-0 text-[11px] tabular-nums text-slate-500">{row.share}%</span>
+                        </div>
+                      </td>
+                      <td className={`py-1.5 text-end text-[11px] ${tone}`}>{t(`lm.forms.band.${row.band}`)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── AND EACH BAND IS REACHABLE AS AN AUDIENCE ──────────────────
+              "connect them in audiences building, match audiences from the crm
+              who seem to have same behaviour." A table nobody can act on is a
+              report. The middle band is deliberately absent: a lead nobody
+              could call is not evidence in either direction, and seeding from
+              "we could not tell" hands Meta a cohort defined by our own
+              uncertainty. */}
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+            {RATING_BAND_IDS.filter((b) => BAND_AUDIENCE[b] !== null && ladder.byBand[b] > 0).map((b) => (
+              <Link
+                key={b}
+                href={`/freehold-intelligence/lead-machine/audiences?seed=${encodeURIComponent(String(BAND_AUDIENCE[b]))}`}
+                className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                  isSeedBand(b)
+                    ? 'border-gold/40 bg-gold/10 text-gold hover:bg-gold/20'
+                    : 'border-rose-400/40 bg-rose-400/10 text-rose-300 hover:bg-rose-400/20'
+                }`}
+              >
+                {t(isSeedBand(b) ? 'lm.forms.ladder.buildFrom' : 'lm.forms.ladder.excludeFrom',
+                   { band: t(`lm.forms.band.${b}`), n: String(ladder.byBand[b]) })}
+              </Link>
             ))}
           </div>
         </section>
@@ -424,6 +505,64 @@ export default async function FormsPage() {
           </div>
         </section>
       )}
+
+      {/* ── FORM ANALYSIS, BELOW THE FORMS ──────────────────────────────
+          This sat at the TOP of the page and pushed the forms themselves off
+          the first screen: "the table about the question answers is huge and
+          taking space, this must be smaller and not on the top, make it after
+          the forms as a forms analysis". A per-answer breakdown is something
+          you read once you have found the form you care about — it is
+          reference, not headline.
+
+          WHAT EACH ANSWER IS WORTH. The segmentation questions folded across
+          every synced lead: which door the serious buyers actually walk
+          through. Absent until at least two answers have real traffic —
+          an empty comparison is not rendered as zeros it never earned. */}
+      {!isConfigError && answerQs.length > 0 && (
+        <section className="mt-6 rounded-[20px] border border-line bg-surface p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.forms.answers.title')}</div>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('lm.forms.answers.note')}</p>
+          <div className="mt-4 space-y-5">
+            {answerQs.map((qo) => (
+              <div key={qo.question}>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <div className="text-sm font-semibold text-white">{qo.question}</div>
+                  <span className="text-[11px] text-slate-500">{t('lm.forms.answers.answered', { n: String(qo.leads) })}</span>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {qo.answers.map((a: AnswerOutcome) => {
+                    // Only a verdict the sample supports gets a word — tied and
+                    // unknown rows show their counts and claim nothing.
+                    const chip = a.verdict === 'better'
+                      ? { key: 'lm.forms.answers.better', cls: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300' }
+                      : a.verdict === 'worse'
+                      ? { key: 'lm.forms.answers.worse', cls: 'border-amber-400/40 bg-amber-400/10 text-amber-300' }
+                      : a.verdict === 'unanswered'
+                      ? { key: 'lm.forms.answers.unanswered', cls: 'border-slate-500/30 bg-slate-500/10 text-slate-400' }
+                      : null
+                    return (
+                      <div key={a.answer} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[12px] border border-line/60 bg-surface-2 px-3 py-2">
+                        <span className="min-w-0 flex-1 truncate text-xs text-slate-300">{a.answer}</span>
+                        <span className="text-[11px] tabular-nums text-slate-500">{t('lm.forms.answers.leads', { n: String(a.leads) })}</span>
+                        <span className={`text-[11px] tabular-nums ${a.qualified > 0 ? 'text-emerald-300' : 'text-slate-600'}`}>
+                          {t('lm.forms.answers.qualified', { n: String(a.qualified) })}
+                        </span>
+                        {a.won > 0 && (
+                          <span className="text-[11px] tabular-nums text-gold">{t('lm.forms.answers.won', { n: String(a.won) })}</span>
+                        )}
+                        {chip && (
+                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${chip.cls}`}>{t(chip.key)}</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {/* Empty state */}
       {!isConfigError && !data.error && forms.length === 0 && (
