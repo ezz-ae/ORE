@@ -34,7 +34,9 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { linkVerdict, linkAllowed, wildcardSegments, LINK_REFUSALS } from '../lib/freehold/link-truth'
 import { entityClaims, unknownEntities, unknownCampaigns, ENTITY_KINDS } from '../lib/freehold/answer-grounding'
-import { readableText, type ExpertBlock } from '../lib/freehold/expert-blocks'
+import {
+  readableText, stripLeakedCode, looksLikeCodeLine, type ExpertBlock,
+} from '../lib/freehold/expert-blocks'
 import { listedNames, unsourcedListedNames } from '../lib/freehold/listed-records'
 import { blocksToText } from '../lib/freehold/expert-sessions'
 import { APP_ROUTES } from '../lib/freehold/app-routes.generated'
@@ -263,6 +265,87 @@ console.log('\n── the checker reads what the USER reads ──')
   // verification, and nothing here should have changed it.
   check('the history reader is left alone, still compact',
     blocksToText(card).length < full.length)
+}
+
+console.log('\n── A QUEUE OF THREE PEOPLE WHO DO NOT EXIST ──')
+{
+  // The second live report, and the guard from the first missed it entirely.
+  // "Review new leads" produced a numbered queue — Anya Sharma, Ben Carter,
+  // Chen Wei, all "Interested in Volta", which is the same invented project
+  // from the first transcript — and nothing was flagged.
+  //
+  // WHY: a numbered queue is a `plan` block, and readableText flattened its
+  // steps into bare lines. listedNames looks for list ENTRIES, so a name on a
+  // line of its own was invisible. The names were in the text and the checker
+  // could not see they were a list.
+  const queue: ExpertBlock[] = [
+    { type: 'text', content: 'You have 3 new, unassigned leads that require immediate attention.' },
+    { type: 'plan', title: 'NEW LEADS QUEUE', steps: [
+      { step: 'Anya Sharma', detail: 'Interested in Volta. Arrived from a Meta Lead Ad.', owner: 'UNASSIGNED' },
+      { step: 'Ben Carter', detail: 'Interested in Volta. Arrived from a Meta Lead Ad.', owner: 'UNASSIGNED' },
+      { step: 'Chen Wei', detail: 'Interested in Emaar Beachfront. Arrived from a Meta Lead Ad.', owner: 'UNASSIGNED' },
+    ] },
+  ]
+  const text = readableText(queue)
+  check('a plan step is emitted as a list entry, not a bare line',
+    /^- Anya Sharma/m.test(text), text)
+  check('…so all three invented people are caught',
+    unsourcedListedNames(text, JSON.stringify({ ok: true, leads: [] })).length === 3,
+    JSON.stringify(unsourcedListedNames(text, JSON.stringify({ ok: true, leads: [] }))))
+  // The detail rides the same line, so the name is followed by record
+  // punctuation rather than a newline — which is what makes it readable AS a
+  // record entry.
+  check('…with the detail on the same line as the name',
+    /- Anya Sharma — Interested in Volta/.test(text))
+
+  // Action labels are claims too: "Draft WhatsApp for Anya Sharma".
+  const withButton = readableText([
+    { type: 'actions', actions: [{ label: 'Draft WhatsApp for Anya Sharma', kind: 'prompt', prompt: 'draft it' }] },
+  ])
+  check('an action label is listed as well', /^- Draft WhatsApp for Anya Sharma/m.test(withButton), withButton)
+
+  // Real leads still pass — the test is provenance, not vocabulary.
+  const real = readableText([
+    { type: 'plan', title: 'QUEUE', steps: [{ step: 'Mona Khalil', detail: 'Interested in Sea Legend One.' }] },
+  ])
+  check('a lead a tool DID return still passes',
+    unsourcedListedNames(real, JSON.stringify({ leads: [{ name: 'Mona Khalil' }], p: 'Sea Legend One' })).length === 0)
+}
+
+console.log('\n── and code never reaches a broker ──')
+{
+  // A valid `text` block with a tool call inside it. parseBlocks already
+  // refuses raw call syntax, but only on the fallback path — when the reply
+  // could not be parsed as blocks at all. This was structurally valid.
+  const leaked = stripLeakedCode([
+    { type: 'text', content: "print(crm_agent.crm_get_lead(leadId='794f1eec-0124-49ac-a06e-8892f8e6ca65'))" },
+  ])
+  check('a block that is only code becomes nothing', leaked.length === 0, JSON.stringify(leaked))
+
+  // The sentence around a leaked line is usually the answer; throwing it away
+  // would turn one bad line into a lost reply.
+  const mixed = stripLeakedCode([
+    { type: 'text', content: "Mahmoud is going cold.\ncrm_agent.crm_get_lead(leadId='abc123def4567890')\nCall him today." },
+  ])
+  check('prose around a leaked line survives',
+    mixed.length === 1 && /Mahmoud is going cold/.test(String((mixed[0] as { content: string }).content))
+    && !/crm_get_lead/.test(String((mixed[0] as { content: string }).content)),
+    JSON.stringify(mixed))
+
+  // A detector that flagged ordinary sentences would be switched off in a week.
+  for (const prose of [
+    'Call them today (they are still warm).',
+    'Raise the budget to AED 1,143 (about 30%).',
+    'He asked about Volta Towers, which is not in your catalogue.',
+  ]) {
+    check(`prose survives: "${prose.slice(0, 34)}…"`, !looksLikeCodeLine(prose))
+  }
+
+  const route = readFileSync(join(process.cwd(), 'app/api/freehold/expert/chat/route.ts'), 'utf8')
+  check('the route strips code from every reply', /blocks = stripLeakedCode\(blocks\)/.test(route))
+  // Stripping can empty a reply, and nothing is worse than the code was.
+  check('…and never ships an empty reply as a result',
+    /if \(blocks\.length === 0\)/.test(route))
 }
 
 console.log('\n── the route checks the full reply, not the summary ──')

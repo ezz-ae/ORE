@@ -8,7 +8,7 @@ import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { appendExpertTurn, getExpertSession, blocksToText } from '@/lib/freehold/expert-sessions'
-import { readableText } from '@/lib/freehold/expert-blocks'
+import { readableText, stripLeakedCode } from '@/lib/freehold/expert-blocks'
 import {
   toolsForRole, renderToolDocs, parseToolCall, runCoordinatorTool,
   type CoordinatorRole, type ToolCtx,
@@ -643,6 +643,21 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
     // Strip any deep record link whose id/slug did not come from a tool this
     // turn — the fabricated links that produced "every chat link is 404".
     blocks = sanitizeBlockHrefs(blocks, toolResultsText)
+    // CODE MUST NOT REACH A BROKER, even inside a structurally valid reply.
+    // parseBlocks already refuses raw call syntax — but only on the fallback
+    // path, when the reply could not be parsed as blocks at all. A perfectly
+    // valid `text` block with a tool call inside it went straight through:
+    //   print(crm_agent.crm_get_lead(leadId='794f1eec-…'))
+    // against a tool that does not exist. See stripLeakedCode.
+    blocks = stripLeakedCode(blocks)
+    // Stripping can empty the reply — a block that was ONLY code leaves
+    // nothing, and nothing is worse than the code was. Say something true.
+    if (blocks.length === 0) {
+      blocks = [{ type: 'text', content:
+        resultNotes.length
+          ? `Here is what actually ran:\n${resultNotes.join('\n')}`
+          : 'I could not put that into words properly. Ask me again and I will answer plainly.' }]
+    }
 
     // ── FABRICATED-ACTION TRIPWIRE ────────────────────────────────────────────
     // Screenshot-verified failure: asked to import historical CRM leads (a
