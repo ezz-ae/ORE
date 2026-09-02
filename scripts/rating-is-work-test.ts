@@ -168,14 +168,19 @@ console.log('\n── junk, duplicates and money are unchanged ──')
   const badphone = scoreLeads([...many(3, { status: 'lost', phone: '12' }), ...many(7)])
   check('a lost lead with an undialable phone is junk', badphone.junk === 3, String(badphone.junk))
 
-  // Same person delivered twice is spend paid twice.
+  // A REPEAT IS COUNTED, BUT NO LONGER CONDEMNED. These two rows carry no
+  // project and no ad, so nothing can be read about why the person came back —
+  // and "we cannot tell" is not grounds for calling a lead junk. The rule and
+  // its four readings live in lib/freehold/repeat-intent.ts; the case that IS
+  // waste (same ad, minutes apart) is asserted in repeat-intent-test.
   const dupes = scoreLeads([
     lead({ id: 'a', phone: '+971500000001' }),
     lead({ id: 'b', phone: '+971500000001' }),
     lead({ id: 'c', phone: '+971500000002' }),
   ])
-  check('a repeated phone number is a duplicate', dupes.duplicates === 1, String(dupes.duplicates))
-  check('…and counts as junk once', dupes.junk === 1, String(dupes.junk))
+  check('a repeated phone number is still counted as a repeat',
+    dupes.duplicates === 1, String(dupes.duplicates))
+  check('…but an unreadable repeat is not junk', dupes.junk === 0, String(dupes.junk))
 
   // Only money against a WON lead counts — a value on a lead that later went
   // cold is a hope, not a receipt.

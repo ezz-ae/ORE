@@ -108,10 +108,19 @@ console.log('\n── quality means what the campaign score means ──')
 
   // Junk is a defect in the RECORD, not a verdict on the person — the two
   // must not collapse into one another.
-  check('junk is blocked, undialable or duplicated',
+  check('junk is blocked or undialable',
     keeps(lead({ blocked: true }), 'junk')
-    && keeps(lead({ wrongNumberRisk: true }), 'junk')
-    && keeps(lead({ duplicateRisk: true }), 'junk'))
+    && keeps(lead({ wrongNumberRisk: true }), 'junk'))
+  // A REPEAT IS NOT JUNK. This filter shipped counting duplicateRisk as junk,
+  // which put somebody registering for a second apartment in the same bucket
+  // as a blocked number — the strongest buying signal a funnel produces,
+  // filed as waste. It has its own filter now, because "who came back" is a
+  // question a sales team asks on purpose and the answer is a call list.
+  check('somebody who registered twice is NOT junk',
+    !keeps(lead({ duplicateRisk: true }), 'junk'))
+  check('…they are findable on purpose',
+    keeps(lead({ duplicateRisk: true }), 'repeat')
+    && !keeps(lead({ duplicateRisk: false }), 'repeat'))
   check('…and a merely low-rated lead is not junk',
     !keeps(lead({ valueRating: 0 }), 'junk'))
   check('…and a junk lead is not automatically disqualified',

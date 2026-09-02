@@ -37,11 +37,19 @@
 import {
   QUALIFIED_STATUSES, VIEWING_STATUSES, WON_STATUSES, VALUABLE_RATING, AVOID_RATING,
 } from '@/lib/freehold/lead-stages'
+import { readCluster } from '@/lib/freehold/repeat-intent'
 
 /** One attributed lead, as the read hands it over. */
 export interface ScorableLead {
   id: string
   status: string | null
+  /** What this registration was FOR, and through which ad — the fields that
+   *  tell a double-submitted form from somebody shopping two properties.
+   *  See lib/freehold/repeat-intent.ts. Optional: a row without them falls
+   *  back to being counted as a repeat with no reading, never as junk. */
+  created_at?: string | null
+  project_slug?: string | null
+  meta_ad_id?: string | null
   blocked: boolean | null
   phone: string | null
   behaviour_score: number | null
@@ -65,6 +73,8 @@ export interface QualityCounts {
   revenueAed: number
   junk: number
   duplicates: number
+  /** Repeats that read as somebody shopping — a buying signal, never junk. */
+  comparing: number
   worked: number
   worthCalling: number
   worthCallingByRating: number
@@ -114,10 +124,35 @@ export function scoreLeads(rows: readonly ScorableLead[]): QualityCounts {
     if (key.length < 7) continue
     byPhone.set(key, [...(byPhone.get(key) ?? []), r.id])
   }
+  // A REPEAT IS NOT AUTOMATICALLY WASTE.
+  //
+  // Every repeated phone used to be counted as a duplicate AND dropped into
+  // the junk set, beside blocked numbers and undialable phones. So the
+  // strongest buying signal a funnel produces — the same person registering
+  // for a second property — was subtracted from the campaign that produced
+  // it, and the ad machine was taught to buy less of it.
+  //
+  // readCluster decides instead. Only `doubleSubmit` — the same ad inside
+  // half an hour, one intention charged twice — is waste. Somebody comparing
+  // two properties in the same area is counted as what they are.
+  const byId = new Map(rows.map((r) => [r.id, r]))
   let duplicates = 0
+  let comparing = 0
   for (const ids of byPhone.values()) {
     if (ids.length < 2) continue
-    for (const id of ids.slice(1)) { duplicates++; junkIds.add(id) }
+    const reading = readCluster(ids.map((id) => {
+      const r = byId.get(id)!
+      return {
+        atMs: Date.parse(String(r.created_at ?? '')) || 0,
+        adId: r.meta_ad_id ?? null,
+        projectSlug: r.project_slug ?? null,
+      }
+    }))
+    if (reading?.isBuyingSignal) { comparing += ids.length - 1; continue }
+    // Counted as repeats either way — the money WAS spent twice — but only
+    // charged against quality when the reading says it bought nothing.
+    duplicates += ids.length - 1
+    if (reading?.isWaste) for (const id of ids.slice(1)) junkIds.add(id)
   }
   const junk = junkIds.size
 
@@ -240,7 +275,7 @@ export function scoreLeads(rows: readonly ScorableLead[]): QualityCounts {
 
 
   return {
-    attributed, reached, qualified, viewings, won, revenueAed, junk, duplicates,
+    attributed, reached, qualified, viewings, won, revenueAed, junk, duplicates, comparing,
     worked, worthCalling, worthCallingByRating, score, scoreBasis,
     avgBehaviour, behaviourCount, valueRated, avgValue, valueValuable, valueAvoid,
   }

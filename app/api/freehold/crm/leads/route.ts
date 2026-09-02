@@ -3,6 +3,7 @@ import { listCampaigns, isMetaConfigured } from '@/lib/meta/client'
 import { getProjectSlugForCampaign } from '@/lib/meta/campaign-structure'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { NextResponse } from 'next/server'
+import { forecastLead } from '@/lib/freehold/lead-forecast'
 import { cookies } from 'next/headers'
 import { randomUUID } from 'node:crypto'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
@@ -42,6 +43,42 @@ async function duplicatePhoneSet(): Promise<Set<string>> {
   } catch { return new Set() }
 }
 
+/**
+ * WHAT EACH AD HAS ALREADY PRODUCED — the carry from the last campaign into
+ * this one.
+ *
+ * Mean broker rating per ad, over every rated lead in the account. This is
+ * the dominant term in the arrival forecast, and it is the whole reason the
+ * next campaign can be smarter than the last: nobody tunes it, the team's own
+ * ratings move it. See lib/freehold/lead-forecast.ts.
+ *
+ * Computed once per request over the WHOLE table, not per row and not within
+ * the list cap — an ad's track record is a fact about the ad, not about which
+ * page of leads somebody is looking at.
+ *
+ * Fail-soft to empty: no history means the forecast falls back to what it can
+ * observe about the lead itself, and says so, rather than the request failing.
+ */
+async function sourceHistoryByAd(): Promise<Map<string, { rated: number; meanRating: number }>> {
+  const out = new Map<string, { rated: number; meanRating: number }>()
+  try {
+    const rows = await query<{ ad: string; n: string; avg: string }>(
+      `SELECT meta_ad_id AS ad, COUNT(*)::text AS n, AVG(value_rating)::text AS avg
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE
+          AND value_rating IS NOT NULL
+          AND meta_ad_id IS NOT NULL AND meta_ad_id <> ''
+        GROUP BY meta_ad_id`,
+    )
+    for (const r of rows) {
+      const rated = Number(r.n) || 0
+      const meanRating = Number(r.avg)
+      if (rated > 0 && Number.isFinite(meanRating)) out.set(String(r.ad), { rated, meanRating })
+    }
+  } catch { /* no history is a weaker forecast, never a failed request */ }
+  return out
+}
+
 // Persistent "not a duplicate" dismissals live on the lead row.
 let dismissColEnsured: Promise<void> | null = null
 const ensureDismissColumn = () => {
@@ -77,6 +114,7 @@ interface DbLead {
   utm_id: string | null
   utm_campaign: string | null
   value_rating: number | null
+  behaviour_score?: number | null
   meta_ad_id?: string | null
   meta_form_name?: string | null
   meta_ad_name?: string | null
@@ -94,6 +132,10 @@ function dbLeadToCRM(
   campaignProjects: Map<string, string> = new Map(),
   /** lower(slug) → verified project name — see resolveProjectSlugNames. */
   projectSlugNames: Map<string, string> = new Map(),
+  /** ad id → what that ad's leads have actually been rated. Appended LAST so
+   *  the existing positional callers are untouched. See sourceHistoryByAd —
+   *  this is what makes the forecast a loop rather than a score. */
+  adHistory: Map<string, { rated: number; meanRating: number }> = new Map(),
 ) {
   const stage = (row.status as string | null) ?? 'new'
   const stageMap: Record<string, string> = {
@@ -149,7 +191,27 @@ function dbLeadToCRM(
         ?? projectSlugNames.get((row.project_slug ?? '').trim().toLowerCase()),
       campaignName: campaignNames.get(String(row.utm_id ?? '')) ?? row.utm_campaign,
     })?.label ?? '',
-    intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : temperature === 'warm' ? 55 : 30,
+    // ── A REAL FORECAST, NOT A LOOKUP ─────────────────────────────────────
+    //
+    // This was `temperature === 'priority' ? 90 : … : 30` — a four-way lookup
+    // off a field derived from the same row, so it carried no information
+    // about the lead and every screen showed it anyway. "the intent level is
+    // decoration and means nothing, now its 50 for everyone."
+    //
+    // It is now forecastLead: what THIS ad's leads have actually been rated,
+    // adjusted by how thoroughly this person read the page, whether the number
+    // can be dialled, and what they bothered to answer. Rendered 0–100 to keep
+    // every existing screen working, and NULL when nothing is known — which is
+    // the half the old number could never express.
+    intentScore: (() => {
+      const fc = forecastLead({
+        behaviourScore: row.behaviour_score ?? null,
+        phone: row.phone,
+        email: row.email,
+        sourceHistory: adHistory.get(String(row.meta_ad_id ?? '')) ?? null,
+      })
+      return fc.expected === null ? 0 : Math.round(fc.expected * 10)
+    })(),
     urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
     // REAL now, not hardcoded false. The follow-up queue renders risk badges
     // and a risk counter from these two flags; with the server pinning them
@@ -258,6 +320,9 @@ export async function GET() {
     // first sync would 500 on a missing column and show no leads at all.
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_form_name text`).catch(() => undefined)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS meta_ad_name text`).catch(() => undefined)
+    // Written by the landing-session scorer. The forecast reads it, so a
+    // workspace that has never run one must not 500 the whole CRM.
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS behaviour_score int`).catch(() => undefined)
     const isBroker = user.role === 'broker'
     const ownerKeys = brokerOwnerKeys(user)
 
@@ -266,7 +331,7 @@ export async function GET() {
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
                       snooze_until::text, lead_code, duplicate_dismissed_at::text,
-                      utm_id, utm_campaign, value_rating, meta_ad_id,
+                      utm_id, utm_campaign, value_rating, behaviour_score, meta_ad_id,
                       meta_form_name, meta_ad_name, archived, blocked
                FROM freehold_site_leads`
 
@@ -318,6 +383,10 @@ export async function GET() {
     // unremarkable to management — it looks like a normal row while in fact
     // nobody is working it. That is indistinguishable, from the floor, from
     // "the lead never arrived". Managers get the count so it can be acted on.
+    // The carry from the last campaign into this one — resolved once for the
+    // whole page rather than per row. See sourceHistoryByAd.
+    const adHistory = await sourceHistoryByAd()
+
     let unassigned = 0
     if (!isBroker) {
       const [c] = await query<{ n: string }>(
@@ -327,7 +396,7 @@ export async function GET() {
       unassigned = Number(c?.n) || 0
     }
     return NextResponse.json({
-      leads: rows.map((r) => dbLeadToCRM(r, dupPhones, campaignNames, campaignProjects, projectSlugNames)),
+      leads: rows.map((r) => dbLeadToCRM(r, dupPhones, campaignNames, campaignProjects, projectSlugNames, adHistory)),
       source: 'db',
       unassigned,
       total,
