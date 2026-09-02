@@ -198,6 +198,48 @@ console.log('\n── and the page is laid out the way it was asked for ──')
     /catch \{ return \{\} \}/.test(page))
 }
 
+console.log('\n── and the funnel is fed real numbers, from data we own ──')
+{
+  const page = readFileSync(join(process.cwd(), 'app/freehold-intelligence/lead-machine/forms/page.tsx'), 'utf8')
+  const client = readFileSync(join(process.cwd(), 'lib/meta/client.ts'), 'utf8')
+
+  // The actions array was ALREADY being fetched account-wide and everything
+  // but the lead count thrown away, so opens cost no extra Meta request.
+  check('opens come from the existing account-wide call',
+    /formOpens: formOpens\(row\?\.actions/.test(client))
+  check('…and the page reads them', /getAccountAdInsights\(\)/.test(page))
+
+  // Meta reports opens per AD. Mapping ads to forms through the Graph is a
+  // request per ad; the mapping is already in our own rows.
+  check('ads are mapped to forms from our own leads, not another Graph call',
+    /SELECT DISTINCT meta_form_id AS form, meta_ad_id AS ad/.test(page))
+  check('…and a form whose opens were never reported shows no rate',
+    /if \(funnel\.completion === null\) return null/.test(page))
+
+  // Knowing a form leaks says fix it; knowing WHICH question people stop at
+  // says how. Without it the only honest advice is "ask less", which is true
+  // of every long form and useful about none of them.
+  check('the advice is fed real per-question answer rates',
+    /adviseForm\(funnel, answeredRates\.get\(form\.id\) \?\? \[\]\)/.test(page))
+  check('…computed from the answers already stored on each lead',
+    /jsonb_array_elements\(l\.meta_answers\) WITH ORDINALITY/.test(page))
+  // A question's ORDER is the whole point: one buried mid-form can be moved,
+  // one that is already first can only be dropped.
+  check('…preserving the question order', /WITH ORDINALITY AS a\(item, ord\)/.test(page))
+  // A question nobody answered is the strongest possible signal about it.
+  check('a question nobody answered reads as 0, not as missing',
+    /Number\.isFinite\(n\) \? n : 0/.test(page))
+
+  // Only a form measurably losing people is told to change.
+  check('advice is shown only on a leaking form',
+    /funnel\.verdict === 'leaking' && advice !== 'none'/.test(page))
+
+  // A dictionary entry that exists only to satisfy a checker is not a word.
+  const dict = readFileSync(join(process.cwd(), 'lib/i18n/dictionaries/lm_core.ts'), 'utf8')
+  check('the advice value that is never rendered has no empty string entry',
+    !/'lm\.forms\.funnel\.none'/.test(dict))
+}
+
 console.log(failures === 0
   ? '\n✅ the distribution is shown, the audiences are reachable, and an unknown rate stays unknown.'
   : `\n❌ ${failures} forms-analysis guard(s) failed`)

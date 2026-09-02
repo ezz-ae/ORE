@@ -5,6 +5,9 @@
 
 import { createHash } from 'crypto'
 import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
+// Reads the open action out of the same `actions` array the lead count reads,
+// with the same tolerance for Meta's several spellings of it.
+import { formOpens } from '@/lib/freehold/form-funnel'
 import type {
   MetaCampaign,
   MetaAdSet,
@@ -594,8 +597,13 @@ export async function getAdDailyInsights(): Promise<Map<string, Array<{
  */
 export async function getAccountAdInsights(): Promise<Map<string, {
   impressions: number; clicks: number; leads: number; spendAED: number
+  /** People who OPENED the lead form, or null when Meta reported no such
+   *  action. Null is not zero — see lib/freehold/form-funnel.ts. The actions
+   *  array was already being fetched here and everything but the lead count
+   *  was thrown away, so this costs no extra request. */
+  formOpens: number | null
 }>> {
-  const out = new Map<string, { impressions: number; clicks: number; leads: number; spendAED: number }>()
+  const out = new Map<string, { impressions: number; clicks: number; leads: number; spendAED: number; formOpens: number | null }>()
   try {
     const { adAccountId } = await creds()
     const res = await apiFetch<{ data?: Array<Record<string, unknown>> }>(`/${adAccountId}/insights`, undefined, {
@@ -612,6 +620,7 @@ export async function getAccountAdInsights(): Promise<Map<string, {
         clicks: Number(row?.clicks) || 0,
         leads: metaLeadCount(row?.actions as MetaInsightActions[] | undefined),
         spendAED: Number(row?.spend) || 0,
+        formOpens: formOpens(row?.actions as MetaInsightActions[] | undefined),
       })
     }
   } catch { /* an empty history is a true screen; an error is not */ }

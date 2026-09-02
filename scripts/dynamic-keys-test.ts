@@ -27,6 +27,7 @@ import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { ADVISOR_ACTION_TYPES } from '../lib/freehold/advisor-actions'
 import { CRM_FILTERS, CRM_FILTER_GROUPS } from '../lib/freehold/crm-filters'
 import { RATING_BAND_IDS } from '../lib/freehold/rating-ladder'
+import { FORM_ADVICE } from '../lib/freehold/form-funnel'
 import { BUYER_ELIGIBILITIES } from '../lib/freehold/buyer-eligibility'
 import { crm } from '../lib/i18n/dictionaries/crm'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
@@ -120,6 +121,12 @@ console.log('\n── the lead rate ladder bands ──')
   // audience button. A band without a word is a raw key printed eleven times
   // in a table somebody is reading to decide what to buy.
   family('lm.forms.band', 'lm.forms.band.', RATING_BAND_IDS, lm_core)
+  // The funnel chip renders t(`lm.forms.funnel.${advice}`) on a leaking form.
+  // 'none' is excluded because it is never rendered — the chip is guarded on
+  // `advice !== 'none'`, and giving it an empty string would be a dictionary
+  // entry that exists only to satisfy a checker.
+  family('lm.forms.funnel', 'lm.forms.funnel.',
+    FORM_ADVICE.filter((a) => a !== 'none'), lm_core)
 }
 
 console.log('\n── the CRM smart filters ──')

@@ -486,6 +486,12 @@ export const lm_core: Record<Locale, Dict> = {
     // The rate ladder. Band names are rendered through a computed key and are
     // enumerated in scripts/dynamic-keys-test.ts.
     'lm.forms.ladder.title': 'Lead rate',
+    // Opened vs finished. Advice keys are computed — enumerated in
+    // scripts/dynamic-keys-test.ts.
+    'lm.forms.funnel.rate': '{pct}% finished of {opens} opened',
+    'lm.forms.funnel.shorten': 'ask less',
+    'lm.forms.funnel.dropQuestion': 'drop the first question',
+    'lm.forms.funnel.reorder': 'move the weak question later',
     'lm.forms.ladder.note': 'How many leads at each rating. The spread is the finding — an average of 5 can be every lead at 5, or half 10s and half 0s.',
     'lm.forms.ladder.rated': '{n} rated',
     'lm.forms.ladder.polarised': '{pct}% at the extremes',
@@ -2171,6 +2177,10 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.forms.portfolioSeedName': 'كل النماذج',
     'lm.forms.answers.title': 'قيمة كل إجابة',
     'lm.forms.ladder.title': 'تقييم العملاء',
+    'lm.forms.funnel.rate': 'أكمل {pct}% من {opens} فتحوا النموذج',
+    'lm.forms.funnel.shorten': 'قلّل الأسئلة',
+    'lm.forms.funnel.dropQuestion': 'احذف السؤال الأول',
+    'lm.forms.funnel.reorder': 'أخّر السؤال الضعيف',
     'lm.forms.ladder.note': 'عدد العملاء عند كل تقييم. التوزيع هو الدلالة — متوسط ٥ قد يعني أن الجميع عند ٥، أو نصفهم ١٠ ونصفهم صفر.',
     'lm.forms.ladder.rated': '{n} مُقيَّم',
     'lm.forms.ladder.polarised': '{pct}% عند الطرفين',
@@ -3805,6 +3815,10 @@ export const lm_core: Record<Locale, Dict> = {
     'lm.forms.portfolioSeedName': 'Все формы',
     'lm.forms.answers.title': 'Ценность каждого ответа',
     'lm.forms.ladder.title': 'Оценка лидов',
+    'lm.forms.funnel.rate': 'завершили {pct}% из {opens} открывших',
+    'lm.forms.funnel.shorten': 'меньше вопросов',
+    'lm.forms.funnel.dropQuestion': 'убрать первый вопрос',
+    'lm.forms.funnel.reorder': 'перенести слабый вопрос ниже',
     'lm.forms.ladder.note': 'Сколько лидов на каждой оценке. Важно распределение — среднее 5 может быть «все по 5» или «половина 10, половина 0».',
     'lm.forms.ladder.rated': 'оценено: {n}',
     'lm.forms.ladder.polarised': '{pct}% на краях',
