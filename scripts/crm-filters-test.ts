@@ -189,6 +189,16 @@ console.log('\n── and it costs no screen until somebody is looking ──')
   const page = readFileSync(join(process.cwd(), 'app/freehold-intelligence/crm/page.tsx'), 'utf8')
 
   check('the panel renders nothing when closed', /if \(!open\) return null/.test(panel))
+
+  // IT FLOATS OVER THE LEAD TABLE, SO IT HAS TO BE OPAQUE. surface-2 is
+  // rgba(255,255,255,0.06) — raised GLASS, designed to sit on a solid card.
+  // Used as a floating panel it let every row of the table read straight
+  // through it, which is what shipped. Every other dropdown in this product
+  // uses bg-surface (#181613, opaque) for exactly this reason.
+  const panelDiv = panel.slice(panel.indexOf('absolute inset-x-0 top-full'))
+  check('the floating panel has an opaque background',
+    /bg-surface\b/.test(panelDiv.slice(0, 200)) && !/bg-surface-2\b/.test(panelDiv.slice(0, 200)),
+    panelDiv.slice(0, 160))
   check('…and opens on the search box being focused',
     /onFocus=\{\(\) => setFiltersOpen\(true\)\}/.test(page))
   check('…and closes when it loses focus',
