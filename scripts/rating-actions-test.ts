@@ -159,6 +159,73 @@ console.log('\n── and how late it arrives is measured, not assumed ──')
     /limits every other improvement on this page/.test(advisor))
 }
 
+console.log('\n── ALWAYS EXCLUDE THE CRM. NOT A CHECKBOX. ──')
+{
+  // "always always always we have a custom list not lookalike of any one in
+  //  crm always they have to be excluded — this is very important and it
+  //  should be rule."
+  //
+  // It was `if (body.excludeCrmAudience)`. The browser had to ask, so any
+  // caller that forgot the flag — and every launch made before the switch
+  // existed — paid to advertise to people already in the pipeline. There is no
+  // campaign for which "show this to somebody we are already talking to" is
+  // the right answer, and a rule that depends on a checkbox is a preference.
+  const launch = readFileSync(join(process.cwd(), 'app/api/meta/launch/route.ts'), 'utf8')
+  const code = launch.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  check('the exclusion is no longer behind a flag',
+    !/if \(body\.excludeCrmAudience\)/.test(code), 'the opt-in is back')
+  check('every launch resolves it', /crmExclusionAudienceId\(\)/.test(code))
+  // "Always" that silently does nothing on a fresh account is the same as not
+  // having it.
+  check('…and builds the list when there is none yet',
+    /syncCrmExclusionAudience\(\)/.test(code))
+  // A launch that could not exclude will pay to re-reach people. Not a
+  // failure, but it must never pass silently — the symptom arrives weeks later
+  // as duplicates and looks like a CRM problem, not a targeting one.
+  check('a launch that could NOT exclude says so',
+    /crmExclusionApplied \? \[\] :/.test(code) && /WITHOUT the/.test(launch))
+
+  // The list is people, hashed — never a lookalike of them. A lookalike of
+  // your own CRM is the opposite of an exclusion.
+  const excl = readFileSync(join(process.cwd(), 'lib/freehold/crm-exclusion.ts'), 'utf8')
+  check('the exclusion is a hashed custom list, not a lookalike',
+    /createCustomAudience/.test(excl) && !/createLookalike/i.test(excl))
+  check('…covering everyone not archived, worked or not',
+    /archived IS NOT TRUE/.test(excl))
+}
+
+console.log('\n── and the page shows the loop rather than hiding it ──')
+{
+  const page = readFileSync(join(process.cwd(), 'app/freehold-intelligence/lead-machine/rating/page.tsx'), 'utf8')
+  const nav = readFileSync(join(process.cwd(), 'app/freehold-intelligence/lead-machine/layout.tsx'), 'utf8')
+
+  check('Rating sits in the ads menu, next to Lead forms',
+    /lm\.nav\.rating/.test(nav) && nav.indexOf('lm.nav.rating') > nav.indexOf('lm.nav.forms'))
+
+  // The rule goes first because it is unconditional.
+  check('the page states the exclusion rule',
+    /lm\.rating\.rule\.title/.test(page))
+  check('…and says whether the list actually exists',
+    /crmExclusionAudienceId/.test(page) && /lm\.rating\.rule\.missing/.test(page))
+
+  // Rated, how fast, how many reached Meta, what it built.
+  check('it shows what the team said and how fast',
+    /ratingLatency/.test(page) && /lm\.rating\.stat\.median/.test(page))
+  check('…how many outcomes actually reached Meta',
+    /meta_reported_stages/.test(page))
+  check('…what each rating did', /RATING_RULES\.map/.test(page))
+  check('…and what it built', /currentCohorts/.test(page))
+
+  // The lookalike is not built early: below Meta's floor it is
+  // indistinguishable from open targeting, so waiting is said, not hidden.
+  check('waiting for a bigger seed is stated, not hidden',
+    /lm\.rating\.lookalikeWaiting/.test(page))
+  // A forecast that is not measuring the world must not move money.
+  check('the forecast error is shown beside its verdicts',
+    /accuracy\.meanAbsoluteError !== null/.test(page))
+}
+
 console.log(failures === 0
   ? '\n✅ the rating feeds the audience itself, and the outcome tells Meta which ad earned it.'
   : `\n❌ ${failures} rating-action guard(s) failed`)

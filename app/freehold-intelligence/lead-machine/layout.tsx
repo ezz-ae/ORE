@@ -9,7 +9,7 @@ import {
   BarChart3, Zap,
   Monitor, ClipboardList, Crosshair, Palette, Users,
   Search, Radio, RadioTower, Bot,
-  FileText, FileCheck, Shield,
+  FileText, FileCheck, Shield, Star,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
@@ -35,6 +35,9 @@ const MANAGER_NAV_SECTIONS = [
       { key: 'lm.nav.campaigns',   href: '/freehold-intelligence/lead-machine/campaigns',      exact: true, Icon: Megaphone   },
       { key: 'lm.nav.creative',    href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
       { key: 'lm.nav.forms',       href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
+      // Directly under Forms: the forms produce the leads, the ratings judge
+      // them, and the ratings are what build every audience below.
+      { key: 'lm.nav.rating',      href: '/freehold-intelligence/lead-machine/rating',                      Icon: Star        },
       { key: 'lm.nav.targeting',   href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
       { key: 'lm.nav.audiences',   href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users,       coach: 'lm-audiences' },
       { key: 'lm.nav.pixel',       href: '/freehold-intelligence/lead-machine/pixel',                       Icon: RadioTower  },
