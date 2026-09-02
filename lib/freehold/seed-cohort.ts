@@ -30,6 +30,7 @@
  * Pure — no I/O, no clock.
  */
 import { VALUABLE_RATING, AVOID_RATING, PERFECT_RATING, DEAL_RATING } from '@/lib/freehold/lead-stages'
+import { ratingExcludes, ratingSeeds, ratingWeight, ruleForRating } from '@/lib/freehold/rating-actions'
 
 /** A lead as this module needs to see it. */
 export interface SeedLead {
@@ -187,9 +188,21 @@ export function scoreLead(l: SeedLead): ScoredLead {
   // Weight: a real deal value when there is one, else quality scaled into a
   // comparable range so the two never sit on wildly different scales in the
   // same upload.
+  // Weight: a real deal value when there is one — the only number honest
+  // enough to rank buyers by dirhams closed.
+  //
+  // Otherwise the OPERATOR'S OWN TABLE, scaled: a 10 pulls the lookalike three
+  // times as hard as a 6, which is what "+1 +2 +3" asks for. That beats
+  // scaling by our computed quality, because the weight is the one place the
+  // team's judgment should speak directly rather than through a formula.
+  // Unrated leads fall back to quality so a seed built before anybody rated
+  // anything still ranks sensibly.
+  const tableWeight = ratingWeight(l.valueRating)
   const weight = l.dealValueAed && l.dealValueAed > 0
     ? Math.round(l.dealValueAed)
-    : Math.max(1, Math.round(quality * 100))
+    : tableWeight > 0
+      ? tableWeight * 1000
+      : Math.max(1, Math.round(quality * 100))
 
   return { ...l, quality, weight, reason: why.join(', ') || 'no signal yet', signals }
 }
@@ -225,11 +238,27 @@ export function splitCohorts(leads: SeedLead[], minQuality = 40): Cohorts {
 
   for (const l of scored) {
     const s = (l.status ?? '').toLowerCase()
-    const provenBad = !!l.blocked || (LOST.has(s) && badPhone(l.phone)) || (typeof l.valueRating === 'number' && l.valueRating <= AVOID_RATING)
+    // ── THE RATING DECIDES, WITHOUT WAITING FOR ANYBODY ──────────────────
+    //
+    // "this is the rate every number and action — we need this to feed the
+    //  audience not to wait for manual execution."
+    //
+    // The operator's table (rating-actions.ts) is the authority for a lead
+    // that has been rated: 0–3 exclude, 4–5 are a job for the team and feed
+    // NEITHER audience, 6+ seed with a weight. Everything below still applies
+    // to leads nobody has judged, which is most of them.
+    const provenBad = !!l.blocked || (LOST.has(s) && badPhone(l.phone)) || ratingExcludes(l.valueRating)
     if (provenBad) { exclude.push(l); continue }
+
+    // 4 and 5 forecast nothing — points.ts pays nothing for a rating there for
+    // the same reason. Seeding from them hands Meta a cohort defined by our
+    // own uncertainty; excluding them throws away people who were simply never
+    // worked. They are a phone call, not a targeting input.
+    if (ruleForRating(l.valueRating)?.action === 'crmExecution') { neutral.push(l); continue }
+
     // A person with no email and no dialable phone cannot be matched by Meta;
     // including them would only dilute the seed's match rate.
-    if (l.quality >= minQuality && contactable(l)) { seed.push(l); continue }
+    if (contactable(l) && (ratingSeeds(l.valueRating) || l.quality >= minQuality)) { seed.push(l); continue }
     neutral.push(l)
   }
 

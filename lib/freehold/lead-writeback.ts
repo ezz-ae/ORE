@@ -65,9 +65,10 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
       meta_reported_stages: string[] | null
       meta_fbc: string | null
       meta_fbp: string | null
+      meta_lead_id: string | null
     }>(
       `SELECT status, value_rating, email, phone, interest, meta_reported_stages,
-              meta_fbc, meta_fbp
+              meta_fbc, meta_fbp, meta_lead_id
          FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
       [leadId],
     )
@@ -134,6 +135,15 @@ export async function reportLeadToMeta(leadId: string): Promise<WriteBackStage |
       // identity it had. See lib/freehold/click-identity.ts.
       fbc: lead.meta_fbc ?? undefined,
       fbp: lead.meta_fbp ?? undefined,
+      // WHICH AD FOUND THEM, not merely that somebody good bought.
+      //
+      // Meta's own id for this form submission. With it Meta joins the outcome
+      // straight to the originating ad, ad set and campaign — no matching, no
+      // guessing from a hashed email weeks after the click. Stored on every
+      // synced lead since the sync existed and never sent until now, so every
+      // qualified and won event this account has ever reported landed without
+      // telling Meta which creative earned it.
+      leadId: lead.meta_lead_id ?? undefined,
       contentName: lead.interest ?? undefined,
       // The REAL deal value when one exists — the closed deal's property
       // price, read from the deals ledger above — and nothing otherwise.
