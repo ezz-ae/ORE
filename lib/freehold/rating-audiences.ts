@@ -58,6 +58,8 @@ import {
 } from '@/lib/meta/client'
 import { LOOKALIKE_MIN_SEED } from '@/lib/freehold/rating-loop'
 import { loadLeadEvidence } from '@/lib/freehold/lead-evidence'
+import { query } from '@/lib/db'
+import { ruleForRating } from '@/lib/freehold/rating-actions'
 import {
   splitCohorts, seedUpload, cohortEvidence, type Cohorts, type CohortEvidence,
 } from '@/lib/freehold/seed-cohort'
@@ -202,4 +204,91 @@ export async function ratingAudienceState(): Promise<{
 export async function avoidAudienceId(): Promise<string | null> {
   const stored = await getStoredCreds<StoredAudience>(AVOID_PROVIDER).catch(() => null)
   return stored?.audienceId || null
+}
+
+
+/**
+ * ONE RATED LEAD, INTO ITS AUDIENCE, THE MOMENT IT IS RATED.
+ *
+ * "sending the feedback has to be once rate done with no need for ACTION."
+ *
+ * Half of that was already true. Rating a lead fires the Meta conversion
+ * event immediately — `updateLead` calls reportLeadToMeta, which is why the
+ * outcome reaches the originating ad while the ad set is still learning.
+ *
+ * The audience half was not. Seed and exclusion membership only moved when
+ * somebody opened a screen and pressed a button, so a lead rated 10 on Monday
+ * sat outside the seed until a person remembered on Thursday. The signal
+ * existed and was simply parked.
+ *
+ * This is the missing write: one person, one upload, on the rating itself.
+ *
+ * ── WHY IT APPENDS RATHER THAN REBUILDS ─────────────────────────────────
+ *
+ * `syncRatingAudiences` recomputes both cohorts from every lead in the CRM and
+ * re-uploads them — right for a periodic refresh, far too heavy to run on
+ * every tap of a rating button. Meta custom audiences are additive, so adding
+ * one person is a genuine one-row call and the periodic sync stays the thing
+ * that reconciles.
+ *
+ * ── AND IT WILL NOT CREATE AN AUDIENCE IT WAS NOT ASKED FOR ─────────────
+ *
+ * If the audiences do not exist yet, this does nothing and says so. Creating a
+ * custom audience is a deliberate act with the operator's own name on it; the
+ * first rating of a fresh account is not the moment to make one silently, and
+ * the sync on the Rating page exists precisely to do it on purpose.
+ *
+ * Never throws. A rating must never fail because Meta was slow — the audience
+ * is reconciled by the next sync, the rating is the thing that must land.
+ */
+export async function pushRatedLeadToAudience(leadId: string): Promise<
+  { pushed: 'seed' | 'avoid' | null; reason?: string }
+> {
+  try {
+    if (!(await isMetaConfigured())) return { pushed: null, reason: 'meta_not_connected' }
+
+    const rows = await query<{
+      email: string | null; phone: string | null; value_rating: number | null
+      blocked: boolean | null; archived: boolean | null
+    }>(
+      `SELECT email, phone, value_rating, blocked, archived
+         FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
+      [leadId],
+    )
+    const lead = rows[0]
+    if (!lead || lead.archived) return { pushed: null, reason: 'no_lead' }
+
+    // The operator's table decides, exactly as it does for the periodic sync:
+    // 0–3 exclude, 4–5 feed neither, 6+ seed with a weight.
+    const rating = lead.value_rating
+    const rule = ruleForRating(rating)
+    if (!rule || rule.action === 'crmExecution') return { pushed: null, reason: 'no_action' }
+
+    // A blocked person never seeds, whatever the rating says — a blocked
+    // contact in a seed teaches Meta to find more people like them.
+    const toAvoid = rule.action === 'exclude' || lead.blocked === true
+    const contact = { email: lead.email, phone: lead.phone }
+    // Meta can match neither, so there is nothing to send.
+    if (!contact.email && !contact.phone) return { pushed: null, reason: 'unmatchable' }
+
+    const provider = toAvoid ? AVOID_PROVIDER : SEED_PROVIDER
+    const stored = await getStoredCreds<StoredAudience>(provider).catch(() => null)
+    if (!stored?.audienceId) return { pushed: null, reason: 'audience_not_built' }
+
+    if (toAvoid) {
+      await addHashedBuyers(stored.audienceId, [contact])
+      return { pushed: 'avoid' }
+    }
+    // The weight is the operator's own scale — a 10 pulls three times as hard
+    // as a 6 — and it is only honoured on an audience created value-based.
+    if (stored.weighted === true) {
+      await addWeightedBuyers(stored.audienceId, [{ ...contact, value: rule.weight * 1000 }])
+    } else {
+      await addHashedBuyers(stored.audienceId, [contact])
+    }
+    return { pushed: 'seed' }
+  } catch (err) {
+    console.error('[rating-audiences] live push failed', leadId, err)
+    return { pushed: null, reason: 'error' }
+  }
 }

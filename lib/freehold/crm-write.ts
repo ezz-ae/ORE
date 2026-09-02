@@ -45,6 +45,7 @@ import { authorizeReassign } from '@/lib/freehold/authority-db'
 import type { Role } from '@/lib/freehold/session-types'
 import { statusForDenial } from '@/lib/freehold/authority'
 import { reportLeadToMeta } from '@/lib/freehold/lead-writeback'
+import { pushRatedLeadToAudience } from '@/lib/freehold/rating-audiences'
 import { openRatingClaim } from '@/lib/freehold/points-db'
 import { outcomeOf } from '@/lib/freehold/points'
 import {
@@ -351,6 +352,24 @@ export async function updateLead(
     // buying more of whatever produced submissions. Fire-and-forget: an ad
     // platform must never be able to fail a CRM write.
     void reportLeadToMeta(id)
+
+    // ── AND THE AUDIENCE, ON THE RATING ITSELF ────────────────────────────
+    //
+    // "sending the feedback has to be once rate done with no need for ACTION."
+    //
+    // The conversion event above was already automatic. The AUDIENCES were
+    // not: seed and exclusion membership only moved when somebody opened the
+    // Rating page and pressed a button, so a lead rated 10 on Monday sat
+    // outside the seed until a person remembered on Thursday. The signal
+    // existed and was parked.
+    //
+    // Only on a rating — every other field leaves the audiences alone, because
+    // nothing else in this patch changes what a person is worth. Appends one
+    // row rather than rebuilding both cohorts; the periodic sync stays the
+    // thing that reconciles. Fire-and-forget for the same reason as the line
+    // above: a rating must never fail because Meta was slow.
+    if ('value_rating' in body) void pushRatedLeadToAudience(id)
+
     return { ok: true, id }
   } catch {
     return { ok: false, status: 500, error: 'Update failed' }
