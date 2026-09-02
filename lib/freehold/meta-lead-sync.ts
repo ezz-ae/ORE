@@ -8,6 +8,8 @@ import { getFormLeads, listAccessiblePages, namesByIds } from '@/lib/meta/client
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import type { MetaFormLead } from '@/lib/meta/types'
 import { captureForLead } from '@/lib/freehold/snapshot-capture'
+import { rememberForecast } from '@/lib/freehold/forecast-db'
+import { adRatings } from '@/lib/freehold/ad-ratings'
 import { handleNewLead } from '@/lib/automation/engine'
 import {
   getLeadershipLeadRecipients,
@@ -151,6 +153,12 @@ export async function syncLeadsToCrm(
   // One request for every distinct ad in this batch, not one per lead.
   const adNames = await namesByIds(leads.map((l) => l.ad_id ?? '').filter(Boolean))
 
+  // What each ad's leads have been rated, read ONCE for the whole sweep. This
+  // is the dominant term in the arrival forecast below — the carry from the
+  // last campaign into this one — and reading it per lead would be a query
+  // per row for a number that cannot change mid-sweep.
+  const adHistory = await adRatings()
+
   // One form read per sync, best-effort. Without it the answers still store —
   // raw values with prettified keys — so a Graph hiccup degrades the words,
   // never loses the record.
@@ -215,6 +223,31 @@ export async function syncLeadsToCrm(
       console.error('[meta-leads] CRM sync insert failed', error)
       return [] as { id: string }[]
     })
+
+    // ── WHAT WE EXPECTED OF THIS LEAD, WRITTEN DOWN BEFORE ANYONE CALLS ───
+    //
+    // The prediction half of the loop. Recorded ONCE, here, at arrival —
+    // never recomputed, because by the time this lead is rated the ad's
+    // history contains that rating, and a forecast recomputed then would move
+    // toward the answer it is supposed to be judged against. The measured
+    // error would shrink on its own and the system would report itself
+    // getting cleverer while learning nothing.
+    //
+    // Same rule as openRatingClaim in points.ts, for the same reason: a
+    // snapshot taken after the outcome is not evidence.
+    //
+    // Fire-and-forget. A lead must never fail to arrive because its forecast
+    // could not be stored.
+    if (inserted.length && inserted[0]?.id) {
+      const adKey = lead.ad_id || ''
+      void rememberForecast(inserted[0].id, adKey, {
+        phone: contact.phone || '',
+        email: contact.email || '',
+        answers: resolveFormAnswers(lead.field_data, formQuestions),
+        // What THIS ad has produced before — the carry from the last campaign.
+        sourceHistory: adKey ? (adHistory.get(adKey) ?? null) : null,
+      })
+    }
     // Self-healing backfill: leads synced before the ad-id columns existed sit
     // in the CRM with no ad attribution. Every sweep quietly repairs them from
     // Meta's payload, so the per-ad analysis converges to complete on its own.
