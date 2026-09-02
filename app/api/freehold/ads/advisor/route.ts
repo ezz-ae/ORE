@@ -9,8 +9,12 @@ import {
 } from '@/lib/meta/client'
 import { placementKeys } from '@/lib/meta/placement-write'
 import { auditPlacements } from '@/lib/freehold/placement-audit'
+import { adRatings } from '@/lib/freehold/ad-ratings'
+import { MIN_RATED_FOR_CALIBRATION } from '@/lib/freehold/lead-forecast'
+import { VALUABLE_RATING } from '@/lib/freehold/lead-stages'
 import {
   validateAdvisorAction, actionShapeLines, adIsProvenWorse, MIN_AD_SPEND_TO_JUDGE,
+  adIsProvenLowQuality,
   type AdvisorAction, type AdvisorState, type AdvisorAdSet, type AdvisorAd,
 } from '@/lib/freehold/advisor-actions'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
@@ -240,6 +244,7 @@ Rules:
 - "action": ATTACH ONE WHENEVER A SHAPE BELOW FITS THE FINDING. A finding the operator cannot act on from this page is worth far less than one they can, so do not withhold an action out of caution — every action here is reversible, and each is re-checked against the real data before it is offered. Use null only when nothing below expresses the change.
 ${actionShapeLines()}
 - Never invent an id. Every adSetId, adId and placement must appear in DATA.
+- DATA.leadQualityByAd is what the BROKERS said about the leads each ad bought — the one thing Meta cannot see. An ad can be the cheapest in the campaign and still buy people nobody wants to call, and that is the most expensive thing in a lead-gen account because the optimiser reads the cheap submissions as success. Judge ads on cost AND on this. Never call an ad bad on fewer than DATA.minRatedLeadsToJudgeAnAd rated leads, and never on a mean above DATA.ratingFloorForGoodLead — an ad averaging 7 among siblings averaging 9 is the second best ad in a good campaign, not a problem.
 - DATA.adSets[].ads carries each creative's OWN spend and leads. When one ad has taken real money and returned far less than its siblings, say so by name and attach pause_ad — that is the most useful single thing this panel can do.
 - DATA.crmQuality carries TWO independent judgments of lead quality and you must not confuse them. The funnel counts (reached/qualified/won) move only when somebody drags a card through the CRM; the value ratings are a broker's direct 0–10 verdict on the lead itself. A campaign whose leads are all still status "new" but whose ratedValuable count is high has GOOD leads and a slow CRM queue — say that, and never call it "zero quality" or propose pausing it on the funnel counts alone. If valueRated is 0 AND the funnel has not moved, nobody has judged these leads yet: that is an unworked queue, not a verdict on the campaign, and the action belongs to the team, not the budget.
 - DATA.recentDecisions lists what was ALREADY done to this campaign recently (by the operator or the machine). Never suggest an action equivalent to one just taken — build on the record, don't repeat it.`
@@ -334,7 +339,7 @@ export async function POST(req: NextRequest) {
 
   // Fetch everything in parallel; each source fails soft to null (a missing
   // piece narrows the analysis, it never 500s the advisor).
-  const [campaignR, insightsR, adSetsR, qualityR, adsR, placementR] = await Promise.allSettled([
+  const [campaignR, insightsR, adSetsR, qualityR, adsR, placementR, ratingsR] = await Promise.allSettled([
     getCampaign(campaignId),
     getCampaignInsights(campaignId),
     listAdSets(campaignId),
@@ -346,12 +351,18 @@ export async function POST(req: NextRequest) {
     // The placement breakdown. Fed to the deterministic audit below, whose
     // condemned list is the only thing a drop_placement may name.
     getCampaignInsightsByPlacement(campaignId),
+    // WHAT THE BROKERS SAID about the leads each ad bought. The return path of
+    // the loop: without it the advisor can only ever judge an ad on price, and
+    // the cheapest ad in a campaign is often the one buying people nobody
+    // wants to call.
+    adRatings(),
   ])
   const campaign: MetaCampaign | null = campaignR.status === 'fulfilled' ? campaignR.value : null
   const insights: MetaInsights | null = insightsR.status === 'fulfilled' ? insightsR.value : null
   const adSets: MetaAdSet[] = adSetsR.status === 'fulfilled' ? adSetsR.value : []
   const quality: CampaignQuality | null = qualityR.status === 'fulfilled' ? qualityR.value : null
   const adResults = adsR.status === 'fulfilled' ? adsR.value : []
+  const ratings = ratingsR.status === 'fulfilled' ? ratingsR.value : new Map()
 
   // Meta not connected at all → honest state, not advice from nothing.
   const metaResults = [campaignR, insightsR, adSetsR]
@@ -369,9 +380,14 @@ export async function POST(req: NextRequest) {
   // ── The state every action is validated against ────────────────────────────
   // Built from fetched numbers and the audit's own verdict, BEFORE the model is
   // called, so nothing the model says can widen what it is allowed to do.
-  const ads: AdvisorAd[] = adResults.map((a) => ({
-    id: a.id, name: a.name, status: a.status || null, spend: a.spend, leads: a.leads,
-  }))
+  const ads: AdvisorAd[] = adResults.map((a) => {
+    const r = ratings.get(a.id)
+    return {
+      id: a.id, name: a.name, status: a.status || null, spend: a.spend, leads: a.leads,
+      rated: r?.rated ?? 0,
+      meanRating: r?.meanRating ?? null,
+    }
+  })
   const adSetIdOf = new Map(adResults.map((a) => [a.id, a.adSetId]))
   const condemned = placementR.status === 'fulfilled'
     ? auditPlacements(placementR.value).cut.map((r) => `${r.platform}:${r.position}`)
@@ -414,25 +430,43 @@ export async function POST(req: NextRequest) {
             const r = adIsProvenWorse(ad, ads)
             return { atLeastAED: Math.round(r.adCplLo), provenWorseThanSiblings: r.proven }
           })(),
+          // WHAT THE PEOPLE WHO PHONED THEM SAID. Zero rated means nobody has
+          // judged this ad's leads — a reason to claim nothing, not a zero.
+          ratedLeads: ad.rated ?? 0,
+          meanRating: ad.meanRating,
+          provenLowQuality: adIsProvenLowQuality(ad, ads).proven,
         })),
       }
     }),
     // Named so the model can say WHY an ad it can see is not yet judgeable,
     // rather than inventing a reason or condemning it anyway.
     minAdSpendToJudgeAED: MIN_AD_SPEND_TO_JUDGE,
-    // ── WHAT THE ADVISOR WAS NOT BEING TOLD ────────────────────────────────
+    // ── THE LOOP, AT THE LEVEL THIS SCREEN DECIDES AT ─────────────────────
     //
-    // This carried five funnel counts and a score, and nothing about the 0–10
-    // value ratings. On a campaign whose 176 leads were still status 'new'
-    // while brokers had rated 75 of them 8 or better, the model received
-    // `{ attributed: 176, reached: 0, qualified: 0, won: 0, junk: 0 }` and
-    // reasoned correctly to a false conclusion: "zero CRM quality leads … a
-    // severe issue … needs immediate investigation", with a Pause button on
-    // the best campaign in the account.
+    // Not `calibrate` — that compares a per-lead FORECAST against a per-lead
+    // rating, and no forecast is carried on the ad rollup, so calling it here
+    // would produce an empty array dressed as an analysis.
     //
-    // The model was not hallucinating. It was reading a payload that omitted
-    // the strongest signal the CRM holds. The fix is not to stop it proposing
-    // a pause — it is to let it see the ratings before it decides.
+    // What is true at this level: each ad's mean rating against the mean of
+    // the campaign's other ads, weighted by sample. That difference is the
+    // instruction — an ad buying better-rated leads than its siblings should
+    // carry more of the budget, and one buying worse should carry less. The
+    // rating floor and the sample floor are stated so the model cannot treat
+    // a thin or marginal gap as a finding.
+    leadQualityByAd: ads
+      .filter((a) => (a.rated ?? 0) > 0)
+      .map((a) => {
+        const r = adIsProvenLowQuality(a, ads)
+        return {
+          ad: a.name || a.id,
+          ratedLeads: r.rated,
+          meanRating: r.meanRating,
+          otherAdsMeanRating: r.fieldMean === null ? null : Math.round(r.fieldMean * 10) / 10,
+          provenLowQuality: r.proven,
+        }
+      }),
+    ratingFloorForGoodLead: VALUABLE_RATING,
+    minRatedLeadsToJudgeAnAd: MIN_RATED_FOR_CALIBRATION,
     crmQuality: quality
       ? {
           attributed: quality.attributed,
