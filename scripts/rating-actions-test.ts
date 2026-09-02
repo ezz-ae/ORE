@@ -159,6 +159,55 @@ console.log('\n── and how late it arrives is measured, not assumed ──')
     /limits every other improvement on this page/.test(advisor))
 }
 
+console.log('\n── THE FEEDBACK GOES ON THE RATING, NOT ON A BUTTON ──')
+{
+  // "sending the feedback has to be once rate done with no need for ACTION."
+  //
+  // Half was already true: rating a lead fires the Meta conversion event
+  // immediately. The AUDIENCES were not — membership only moved when somebody
+  // opened a screen and pressed a button, so a lead rated 10 on Monday sat
+  // outside the seed until a person remembered on Thursday.
+  const write = readFileSync(join(process.cwd(), 'lib/freehold/crm-write.ts'), 'utf8')
+  const code = write.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  check('rating a lead reports the conversion to Meta', /void reportLeadToMeta\(id\)/.test(code))
+  check('…and moves it into its audience, with no button',
+    /void pushRatedLeadToAudience\(id\)/.test(code))
+  // Only a rating. Nothing else in a patch changes what a person is worth, and
+  // re-uploading on every status change would spend the account's match rate
+  // on bookkeeping.
+  check('…only when a rating actually changed',
+    /if \('value_rating' in body\) void pushRatedLeadToAudience/.test(code))
+  // A rating must never fail because Meta was slow.
+  check('…fire-and-forget, so Meta cannot fail the CRM write',
+    /void pushRatedLeadToAudience/.test(code))
+
+  const aud = readFileSync(join(process.cwd(), 'lib/freehold/rating-audiences.ts'), 'utf8')
+  const fn = aud.slice(aud.indexOf('export async function pushRatedLeadToAudience'))
+  const fnCode = fn.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  // The operator's table decides here exactly as it does in the periodic sync.
+  check('the same table decides which audience', /ruleForRating\(rating\)/.test(fnCode))
+  check('…4 and 5 push nowhere',
+    /rule\.action === 'crmExecution'\) return \{ pushed: null/.test(fnCode))
+  // A blocked contact in a seed teaches Meta to find more people like them.
+  check('a blocked lead never seeds whatever its rating',
+    /lead\.blocked === true/.test(fnCode))
+  // The weight is only honoured on a value-based audience.
+  check('a good rating carries its weight',
+    /addWeightedBuyers/.test(fnCode) && /rule\.weight \* 1000/.test(fnCode))
+
+  // Appends one row; the periodic sync stays the reconciler. Rebuilding both
+  // cohorts on every tap would be a full CRM re-upload per rating.
+  check('it appends one person rather than rebuilding the cohorts',
+    !/splitCohorts/.test(fnCode) && !/seedUpload/.test(fnCode))
+  // Creating an audience is a deliberate act with the operator's name on it.
+  check('it will not silently create an audience nobody asked for',
+    /audience_not_built/.test(fnCode) && !/createCustomAudience/.test(fnCode))
+  check('…and says why when it does nothing',
+    /reason: 'unmatchable'/.test(fnCode) && /reason: 'meta_not_connected'/.test(fnCode))
+}
+
 console.log('\n── ALWAYS EXCLUDE THE CRM. NOT A CHECKBOX. ──')
 {
   // "always always always we have a custom list not lookalike of any one in
