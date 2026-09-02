@@ -281,6 +281,26 @@ console.log('\n── the page performs every action it offers ──')
   check('every repair button renders the report of what Meta now holds',
     offers.every((after) => /fixReport\.map/.test(after.slice(0, 1400))),
     `${offers.length} offer(s)`)
+
+  // THE LAST ONE. The per-finding "Fix now" beside a deprecated-location
+  // warning called window.location.reload() on any 2xx. But a 200 from Meta
+  // means "request accepted", not "field changed" — the route answers
+  // `changed: false` when Meta stored the old value anyway, and a reload after
+  // that repaints an identical screen. From the outside that is precisely a
+  // button that does nothing.
+  // Read the CODE: the comment above the fix names the call it removed, and a
+  // raw scan matched its own explanation — the third time this session, which
+  // is why it is worth doing properly rather than rewording the comment.
+  const pageCode = page.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+  check('the per-finding fix does not reload and hope',
+    !/window\.location\.reload\(\)/.test(pageCode), 'a blind reload is back')
+  const perFinding = page.slice(page.indexOf("f.key === 'visitors' && f.adSet"))
+  check('…it reports whether Meta actually moved the value',
+    /lm\.metaIssues\.moved/.test(perFinding.slice(0, 2200))
+    && /lm\.metaIssues\.unmoved/.test(perFinding.slice(0, 2200)))
+  // A refetch that changes nothing is the reload this replaced.
+  check('…and only re-reads when something moved',
+    /if \(d\.changed\) await load\(\{ silent: true \}\)/.test(perFinding.slice(0, 2200)))
 }
 
 console.log('\n── A BROKER RATING CAN NOW STOP AN AD ──')
