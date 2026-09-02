@@ -153,13 +153,30 @@ export function readableText(blocks: readonly ExpertBlock[] | undefined): string
         break
       case 'plan':
         push(b.title)
-        // detail and owner too — the two fields the card hid its inventions in.
-        for (const s of b.steps ?? []) push(s.step, s.detail, s.owner)
+        // MARKED AS LIST ITEMS, because that is what they are — the card
+        // renders them numbered. Flattened to bare lines they were invisible
+        // to the provenance check, which looks for list entries, and a queue
+        // of three invented leads went through untouched:
+        //
+        //   1  Anya Sharma · Interested in Volta · UNASSIGNED
+        //
+        // The names were in the text and the checker could not see they were a
+        // list. detail and owner ride the same line so a name is followed by
+        // its record punctuation rather than a newline.
+        for (const s of b.steps ?? []) {
+          const line = [s.step, s.detail, s.owner].map((v) => (v ?? '').trim()).filter(Boolean)
+          if (line.length) out.push(`- ${line.join(' — ')}`)
+        }
         break
       case 'actions':
-        // A button's LABEL is a claim ("View Volta Towers Details"), and its
-        // prompt is what gets said next in the user's name.
-        for (const a of b.actions ?? []) push(a.label, a.prompt, a.href)
+        // A button's LABEL is a claim ("Draft WhatsApp for Anya Sharma"), and
+        // its prompt is what gets said next in the user's name. Listed for the
+        // same reason as the plan steps.
+        for (const a of b.actions ?? []) {
+          const line = [a.label, a.prompt].map((v) => (v ?? '').trim()).filter(Boolean)
+          if (line.length) out.push(`- ${line.join(' — ')}`)
+          push(a.href)
+        }
         break
       case 'color':
         push(b.label)
@@ -182,4 +199,69 @@ export function readableText(blocks: readonly ExpertBlock[] | undefined): string
     }
   }
   return out.join('\n')
+}
+
+
+/**
+ * CODE MUST NOT REACH A BROKER, EVEN INSIDE A VALID REPLY.
+ *
+ * The block protocol says it plainly — "NO JSON, code, stack traces, field
+ * names, ids or API jargon" — and there WAS a guard for it. It only ran on the
+ * raw fallback path, when the model's reply could not be parsed as blocks at
+ * all. So this went straight through:
+ *
+ *   print(crm_agent.crm_get_lead(leadId='794f1eec-0124-49ac-a06e-8892f8e6ca65'))
+ *
+ * A perfectly valid `text` block, with a tool call inside it. Valid structure,
+ * unusable content. And the tool did not even exist — there is no crm_get_lead
+ * — so the reply was a broker being shown a hallucinated function against a
+ * raw uuid.
+ *
+ * ── NARROW, BECAUSE PROSE HAS BRACKETS TOO ───────────────────────────────
+ *
+ * "Call them today (they are still warm)" is a sentence, and a detector that
+ * flagged it would be switched off inside a week. So a line is only code when
+ * it is SHAPED like code: a print/console/return call, a dotted identifier
+ * applied to arguments, a keyword-argument assignment, or a JSON literal —
+ * and, for the dotted-call case, when that is essentially the whole line
+ * rather than a phrase inside one.
+ */
+const CODE_SHAPES: readonly RegExp[] = [
+  // print(...) / console.log(...) / return foo(...)
+  /^\s*(?:print|console\.\w+|return)\s*\(/i,
+  // a dotted call that IS the line: crm_agent.crm_get_lead(...)
+  /^\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+\s*\([^)]*\)\s*[;)]*\s*$/,
+  // keyword arguments — leadId='…', lead_id: "…"
+  /\b[A-Za-z_][\w]*\s*[:=]\s*['"][0-9a-f-]{16,}['"]/i,
+  // a JSON object or array as the whole line
+  /^\s*[[{][\s\S]*[\]}]\s*$/,
+]
+
+/** Does this line read as code rather than as something a person wrote? */
+export const looksLikeCodeLine = (line: string): boolean =>
+  CODE_SHAPES.some((re) => re.test(line))
+
+/**
+ * Remove code from the text a person reads.
+ *
+ * A block whose ENTIRE content is code becomes nothing — there is no prose to
+ * keep and showing the shell of it is worse than silence. A block that is
+ * mostly prose keeps the prose and loses the offending lines, because the
+ * sentence around it is usually the answer and throwing it away would turn one
+ * leaked line into a lost reply.
+ *
+ * Returns the blocks unchanged when nothing leaked, so the common path costs
+ * nothing.
+ */
+export function stripLeakedCode(blocks: readonly ExpertBlock[]): ExpertBlock[] {
+  const out: ExpertBlock[] = []
+  for (const b of blocks) {
+    if (b.type !== 'text') { out.push(b); continue }
+    const lines = String(b.content ?? '').split('\n')
+    const kept = lines.filter((l) => !l.trim() || !looksLikeCodeLine(l))
+    const text = kept.join('\n').trim()
+    if (!text) continue
+    out.push(text === b.content ? b : { type: 'text', content: text })
+  }
+  return out
 }
