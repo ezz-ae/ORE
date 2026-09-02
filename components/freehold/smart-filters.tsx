@@ -54,7 +54,11 @@ export default function SmartFilters({ leads, selected, onToggle, onClear, open 
 
   return (
     <div
-      className="absolute inset-x-0 top-full z-30 mt-1.5 rounded-xl border border-line-strong bg-surface-2 p-3 shadow-xl"
+      // bg-surface, NOT bg-surface-2. surface-2 is rgba(255,255,255,0.06) —
+      // raised GLASS, meant to sit on a solid card. Floating over the lead
+      // table it let every row read straight through the panel. Every other
+      // dropdown in this product uses bg-surface for the same reason.
+      className="absolute inset-x-0 top-full z-30 mt-1.5 rounded-xl border border-line-strong bg-surface p-3 shadow-xl"
       // The input keeps focus: no blur, so typing continues through a click.
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -74,7 +78,7 @@ export default function SmartFilters({ leads, selected, onToggle, onClear, open 
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); onToggle(f.id) }}
                     className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-start text-xs transition ${
-                      on ? 'bg-gold/15 text-gold' : 'text-slate-300 hover:bg-surface-3'
+                      on ? 'bg-gold/15 text-gold' : 'text-slate-300 hover:bg-surface-2'
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
