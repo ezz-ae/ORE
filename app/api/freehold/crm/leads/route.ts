@@ -4,6 +4,9 @@ import { getProjectSlugForCampaign } from '@/lib/meta/campaign-structure'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { NextResponse } from 'next/server'
 import { forecastLead } from '@/lib/freehold/lead-forecast'
+// ONE READER for what an ad's leads were worth — the CRM forecast and the
+// campaign advisor must not be able to disagree about the same ad.
+import { adRatings as sourceHistoryByAd } from '@/lib/freehold/ad-ratings'
 import { cookies } from 'next/headers'
 import { randomUUID } from 'node:crypto'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
@@ -41,42 +44,6 @@ async function duplicatePhoneSet(): Promise<Set<string>> {
     )
     return new Set(rows.map((r) => r.p))
   } catch { return new Set() }
-}
-
-/**
- * WHAT EACH AD HAS ALREADY PRODUCED — the carry from the last campaign into
- * this one.
- *
- * Mean broker rating per ad, over every rated lead in the account. This is
- * the dominant term in the arrival forecast, and it is the whole reason the
- * next campaign can be smarter than the last: nobody tunes it, the team's own
- * ratings move it. See lib/freehold/lead-forecast.ts.
- *
- * Computed once per request over the WHOLE table, not per row and not within
- * the list cap — an ad's track record is a fact about the ad, not about which
- * page of leads somebody is looking at.
- *
- * Fail-soft to empty: no history means the forecast falls back to what it can
- * observe about the lead itself, and says so, rather than the request failing.
- */
-async function sourceHistoryByAd(): Promise<Map<string, { rated: number; meanRating: number }>> {
-  const out = new Map<string, { rated: number; meanRating: number }>()
-  try {
-    const rows = await query<{ ad: string; n: string; avg: string }>(
-      `SELECT meta_ad_id AS ad, COUNT(*)::text AS n, AVG(value_rating)::text AS avg
-         FROM freehold_site_leads
-        WHERE archived IS NOT TRUE
-          AND value_rating IS NOT NULL
-          AND meta_ad_id IS NOT NULL AND meta_ad_id <> ''
-        GROUP BY meta_ad_id`,
-    )
-    for (const r of rows) {
-      const rated = Number(r.n) || 0
-      const meanRating = Number(r.avg)
-      if (rated > 0 && Number.isFinite(meanRating)) out.set(String(r.ad), { rated, meanRating })
-    }
-  } catch { /* no history is a weaker forecast, never a failed request */ }
-  return out
 }
 
 // Persistent "not a duplicate" dismissals live on the lead row.

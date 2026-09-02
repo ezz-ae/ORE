@@ -56,6 +56,8 @@
  * Pure — no network. Runs in `pnpm guards`.
  */
 import { costRange } from '@/lib/freehold/min-evidence'
+import { VALUABLE_RATING } from '@/lib/freehold/lead-stages'
+import { MIN_RATED_FOR_CALIBRATION, CALIBRATION_TOLERANCE } from '@/lib/freehold/lead-forecast'
 
 /** Walkable — every action the advisor may propose. */
 export const ADVISOR_ACTION_TYPES = [
@@ -82,6 +84,15 @@ export interface AdvisorAd {
   /** AED, lifetime — the same window the designs report judges on. */
   spend: number
   leads: number
+  /**
+   * WHAT THE PEOPLE WHO PHONED THEM SAID — rated lead count and mean 0–10
+   * rating for this ad. The return path of the loop: Meta knows an ad produced
+   * a submission, only the CRM knows whether the person was worth calling.
+   * Zero/undefined means nobody has judged this ad's leads yet, which is a
+   * reason to claim nothing rather than a reason to act.
+   */
+  rated?: number
+  meanRating?: number | null
 }
 
 export interface AdvisorAdSet {
@@ -184,6 +195,54 @@ export function adIsProvenWorse(ad: AdvisorAd, siblings: readonly AdvisorAd[]): 
 }
 
 /**
+ * IS THIS AD PROVEN TO BUY BAD LEADS?
+ *
+ * The half of "worse" that cost-per-lead cannot see. An ad can be the cheapest
+ * in the campaign and still deliver people nobody wants to call — cheap junk
+ * is the single most expensive thing a lead-gen account can buy, because the
+ * optimiser reads the cheap submissions as success and buys more of them.
+ *
+ * Three conditions, and all three are needed:
+ *
+ *   1. ENOUGH RATINGS. MIN_RATED_FOR_CALIBRATION, the same floor the
+ *      calibration uses before it may move money. One broker's Tuesday is not
+ *      a verdict on an ad.
+ *   2. GENUINELY BAD, not merely behind. The mean must sit below
+ *      VALUABLE_RATING — the line the rest of this product calls "worth
+ *      pursuing". An ad averaging 7 against siblings averaging 9 is the second
+ *      best ad in a good campaign, not a problem.
+ *   3. CLEARLY BELOW ITS SIBLINGS, by more than CALIBRATION_TOLERANCE. Below
+ *      that it is two brokers disagreeing, which is not a fact about the ad.
+ *
+ * This is what "the rating affects the spend" means in code. Until it existed
+ * a rating was a number on a card.
+ */
+export function adIsProvenLowQuality(ad: AdvisorAd, siblings: readonly AdvisorAd[]): {
+  proven: boolean
+  rated: number
+  meanRating: number | null
+  fieldMean: number | null
+} {
+  const rated = ad.rated ?? 0
+  const mine = typeof ad.meanRating === 'number' && Number.isFinite(ad.meanRating) ? ad.meanRating : null
+
+  const rest = siblings.filter((s) => s.id !== ad.id && (s.rated ?? 0) > 0
+    && typeof s.meanRating === 'number' && Number.isFinite(s.meanRating))
+  const restRated = rest.reduce((n, s) => n + (s.rated ?? 0), 0)
+  // Weighted by sample: an ad with forty ratings should count for more than
+  // one with five when they are being averaged into a field.
+  const fieldMean = restRated > 0
+    ? rest.reduce((n, s) => n + (s.meanRating as number) * (s.rated ?? 0), 0) / restRated
+    : null
+
+  if (rated < MIN_RATED_FOR_CALIBRATION || mine === null || fieldMean === null) {
+    return { proven: false, rated, meanRating: mine, fieldMean }
+  }
+  const proven = mine < VALUABLE_RATING && (fieldMean - mine) >= CALIBRATION_TOLERANCE
+  return { proven, rated, meanRating: mine, fieldMean }
+}
+
+/**
  * Validate one model-proposed action against real fetched state.
  *
  * Returns null for anything that does not check out. A suggestion whose action
@@ -229,11 +288,19 @@ export function validateAdvisorAction(
       if (!ad || ad.status !== 'ACTIVE') return null
       // Never the last one — see liveAds.
       if (liveAds(state, s.id) <= 1) return null
-      // THE EVIDENCE GATE. Compared against every ad in the campaign, not only
-      // this ad set's: a two-ad ad set would otherwise compare a creative
-      // against a single sibling and call the loser proven.
+      // THE EVIDENCE GATE, on EITHER axis. Compared against every ad in the
+      // campaign, not only this ad set's: a two-ad ad set would otherwise
+      // compare a creative against a single sibling and call the loser proven.
+      //
+      // Cost is the older test — this ad's cost-per-lead floor above the
+      // field's ceiling. Quality is the one the operator asked for: an ad can
+      // be the cheapest in the campaign and still buy people nobody wants to
+      // call, and cheap junk is the most expensive thing a lead-gen account
+      // buys, because the optimiser reads the submissions as success.
       const everyAd = state.adSets.flatMap((x) => x.ads)
-      if (!adIsProvenWorse(ad, everyAd).proven) return null
+      const tooDear = adIsProvenWorse(ad, everyAd).proven
+      const tooPoor = adIsProvenLowQuality(ad, everyAd).proven
+      if (!tooDear && !tooPoor) return null
       return { type: 'pause_ad', adSetId: s.id, adId: ad.id }
     }
 
@@ -275,7 +342,7 @@ export const ACTION_SHAPES: Record<AdvisorActionType, string> = {
   set_budget: '{"type":"set_budget","adSetId":"<id from DATA.adSets>","dailyBudgetAED":<integer>} — a new daily budget for that ad set.',
   pause_campaign: '{"type":"pause_campaign"} — only when the campaign is ACTIVE and DATA shows real spend with clearly poor results.',
   resume_campaign: '{"type":"resume_campaign"} — only when the campaign is PAUSED and DATA justifies resuming it.',
-  pause_ad: '{"type":"pause_ad","adSetId":"<id>","adId":"<id from DATA.adSets[].ads>"} — stop one losing creative. Attach it when that ad\'s own spend and leads in DATA are clearly worse than its siblings\'. It is rechecked against a cost-per-lead confidence bound and dropped if the gap is not proven.',
+  pause_ad: '{"type":"pause_ad","adSetId":"<id>","adId":"<id from DATA.adSets[].ads>"} — stop one losing creative. Attach it when that ad is clearly worse than its siblings on EITHER axis: cost per lead, or the quality of the leads it buys (DATA.adSets[].ads[].ratedLeads and meanRating, which is what the brokers who phoned them said). A cheap ad that buys badly-rated leads is the worst thing in a campaign. Rechecked server-side against a cost bound and a rating bound, and dropped if neither gap is proven.',
   pause_adset: '{"type":"pause_adset","adSetId":"<id>"} — stop one audience while its siblings keep running. Never the only live one.',
   drop_placement: '{"type":"drop_placement","adSetId":"<id>","placement":"<one of DATA.adSets[].condemnedPlacements>"} — remove a surface the placement audit has already condemned. Only ever a value from condemnedPlacements.',
 }

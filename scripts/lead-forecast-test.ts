@@ -194,18 +194,26 @@ console.log('\n── and it is WIRED, not another module nobody calls ──')
     /behaviourScore: row\.behaviour_score/.test(code)
     && /sourceHistory: adHistory\.get/.test(code))
 
-  // The carry from campaign N into N+1. Computed over the WHOLE table: an
-  // ad's track record is a fact about the ad, not about which page of leads
-  // somebody happens to be looking at.
+  // The carry from campaign N into N+1 lives in ONE reader now — the CRM
+  // forecast and the campaign advisor must not be able to disagree about the
+  // same ad on the same day. A number that means one thing on the leads screen
+  // and another on the campaign screen is worse than no number, because both
+  // look authoritative.
+  const reader = readFileSync(join(process.cwd(), 'lib/freehold/ad-ratings.ts'), 'utf8')
+  const readerCode = reader.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
   check('the ad history is measured from real ratings',
-    /AVG\(value_rating\)/.test(code) && /GROUP BY meta_ad_id/.test(code))
-  check('…across every rated lead, not the page',
-    /FROM freehold_site_leads[\s\S]{0,200}value_rating IS NOT NULL/.test(code))
+    /AVG\(value_rating\)/.test(readerCode) && /GROUP BY meta_ad_id/.test(readerCode))
+  check('…across every rated lead, not one page or one campaign',
+    /value_rating IS NOT NULL/.test(readerCode) && !/utm_id|campaign_id/.test(readerCode))
   check('…and resolved once per request, not per row',
     (code.match(/await sourceHistoryByAd\(\)/g) ?? []).length === 1)
+  check('both readers of an ad\'s record share it',
+    /from '@\/lib\/freehold\/ad-ratings'/.test(route)
+    && /from '@\/lib\/freehold\/ad-ratings'/.test(
+      readFileSync(join(process.cwd(), 'app/api/freehold/ads/advisor/route.ts'), 'utf8')))
 
   // A missing history is a weaker forecast, never a failed CRM.
-  check('no history fails soft', /catch \{[\s\S]{0,120}\}\s*\n\s*return out/.test(route))
+  check('no history fails soft', /catch \{[\s\S]{0,200}\}\s*\n\s*return out/.test(reader))
   // The forecast reads it, so a workspace that never scored a session must
   // not 500 the whole list.
   check('the column it reads is ensured before the read',

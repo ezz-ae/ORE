@@ -26,7 +26,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   ADVISOR_ACTION_TYPES, ACTION_SHAPES, actionShapeLines,
-  validateAdvisorAction, adIsProvenWorse, liveAds, liveAdSets,
+  validateAdvisorAction, adIsProvenWorse, adIsProvenLowQuality, liveAds, liveAdSets,
   MIN_DAILY_AED, MIN_AD_SPEND_TO_JUDGE,
   type AdvisorState, type AdvisorAd,
 } from '../lib/freehold/advisor-actions'
@@ -38,7 +38,7 @@ const fail = (m: string, got: string) => { failures++; console.error(`  ✗ ${m}
 const check = (m: string, cond: boolean, got = '') => (cond ? ok(m) : fail(m, got))
 
 const ad = (id: string, over: Partial<AdvisorAd> = {}): AdvisorAd => ({
-  id, name: id, status: 'ACTIVE', spend: 0, leads: 0, ...over,
+  id, name: id, status: 'ACTIVE', spend: 0, leads: 0, rated: 0, meanRating: null, ...over,
 })
 
 /** Two ad sets, two live ads each, two placements each. The healthy baseline. */
@@ -281,6 +281,100 @@ console.log('\n── the page performs every action it offers ──')
   check('every repair button renders the report of what Meta now holds',
     offers.every((after) => /fixReport\.map/.test(after.slice(0, 1400))),
     `${offers.length} offer(s)`)
+}
+
+console.log('\n── A BROKER RATING CAN NOW STOP AN AD ──')
+{
+  // "the rate seems like kpi not effecting the spend or the target." This is
+  // the half cost-per-lead cannot see: an ad can be the CHEAPEST in the
+  // campaign and still buy people nobody wants to call — the most expensive
+  // thing a lead-gen account buys, because the optimiser reads the cheap
+  // submissions as success and buys more of them.
+  const cheapJunk: AdvisorState = {
+    campaignStatus: 'ACTIVE',
+    adSets: [{
+      id: 'as1', status: 'ACTIVE', dailyBudgetAED: 200,
+      placements: ['facebook:feed'], condemnedPlacements: [],
+      ads: [
+        // Cheapest per lead in the campaign, and rated 2/10 by the team.
+        ad('bad', { spend: 1000, leads: 40, rated: 12, meanRating: 2 }),
+        ad('good', { spend: 1000, leads: 10, rated: 12, meanRating: 8 }),
+      ],
+    }],
+  }
+  const every = cheapJunk.adSets[0].ads
+  const bad = every.find((a) => a.id === 'bad')!
+
+  check('the cheap ad is NOT proven worse on cost — it is the cheapest',
+    !adIsProvenWorse(bad, every).proven)
+  check('…but it IS proven to buy bad leads',
+    adIsProvenLowQuality(bad, every).proven, JSON.stringify(adIsProvenLowQuality(bad, every)))
+  check('…so the rating alone can stop it',
+    v({ type: 'pause_ad', adSetId: 'as1', adId: 'bad' }, cheapJunk) !== null)
+
+  // AND THE THREE WAYS THAT COULD GO WRONG.
+  // 1. Second-best is not bad. An ad averaging 7 among siblings averaging 9
+  //    is the second best ad in a good campaign.
+  const secondBest = adIsProvenLowQuality(
+    ad('x', { rated: 20, meanRating: 7 }),
+    [ad('x', { rated: 20, meanRating: 7 }), ad('y', { rated: 20, meanRating: 9.5 })])
+  check('an ad merely behind a great one is not condemned', !secondBest.proven,
+    JSON.stringify(secondBest))
+
+  // 2. One broker's Tuesday is not a verdict on an ad.
+  const thin = adIsProvenLowQuality(
+    ad('x', { rated: 2, meanRating: 0 }),
+    [ad('x', { rated: 2, meanRating: 0 }), ad('y', { rated: 40, meanRating: 9 })])
+  check('two ratings do not condemn an ad', !thin.proven, JSON.stringify(thin))
+
+  // 3. Nothing rated at all claims nothing.
+  const unrated = adIsProvenLowQuality(
+    ad('x', { rated: 0, meanRating: null }),
+    [ad('x', {}), ad('y', { rated: 40, meanRating: 9 })])
+  check('an ad nobody has rated is not condemned', !unrated.proven)
+  // An unrated, unremarkable ad must survive BOTH gates — otherwise widening
+  // pause_ad to quality would have quietly made every new creative pausable.
+  const fresh: AdvisorState = {
+    campaignStatus: 'ACTIVE',
+    adSets: [{
+      id: 'as1', status: 'ACTIVE', dailyBudgetAED: 200,
+      placements: ['facebook:feed'], condemnedPlacements: [],
+      ads: [ad('new', { spend: 300, leads: 3 }), ad('old', { spend: 300, leads: 3, rated: 20, meanRating: 8 })],
+    }],
+  }
+  check('…and a new unrated ad cannot be paused on quality',
+    v({ type: 'pause_ad', adSetId: 'as1', adId: 'new' }, fresh) === null)
+
+  // The field mean is weighted by sample: forty ratings should outweigh five.
+  const weighted = adIsProvenLowQuality(
+    ad('x', { rated: 10, meanRating: 3 }),
+    [ad('x', { rated: 10, meanRating: 3 }),
+     ad('big', { rated: 40, meanRating: 9 }), ad('small', { rated: 5, meanRating: 4 })])
+  check('the field mean is weighted by how many ratings each ad has',
+    weighted.fieldMean !== null && weighted.fieldMean > 8, String(weighted.fieldMean))
+}
+
+console.log('\n── and the advisor is shown what the brokers said ──')
+{
+  const route = readFileSync(join(process.cwd(), 'app/api/freehold/ads/advisor/route.ts'), 'utf8')
+  const code = route.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  check('it fetches the per-ad ratings', /adRatings\(\)/.test(code))
+  check('…from the one shared reader, so the CRM cannot disagree with it',
+    /from '@\/lib\/freehold\/ad-ratings'/.test(route))
+  check('…and puts them on each ad', /ratedLeads: ad\.rated/.test(code) && /meanRating: ad\.meanRating/.test(code))
+  check('…with the comparison against the campaign, not a bare average',
+    /leadQualityByAd/.test(code) && /otherAdsMeanRating/.test(code))
+  // The floors travel WITH the data, so the model cannot treat a thin or
+  // marginal gap as a finding.
+  check('…and the floors it must respect',
+    /ratingFloorForGoodLead/.test(code) && /minRatedLeadsToJudgeAnAd/.test(code))
+  check('the prompt tells it a cheap ad buying junk is the worst case',
+    /most expensive thing in a lead-gen account/.test(route))
+
+  // The empty-array-dressed-as-analysis I nearly shipped.
+  check('no dead calibration call that could only return nothing',
+    !/calibrate\(adResults/.test(code))
 }
 
 console.log('\n── one analysis, not two ──')
