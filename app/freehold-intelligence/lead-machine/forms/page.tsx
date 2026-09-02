@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap, Facebook } from 'lucide-react'
-import { MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { MetaConfigError, MetaApiError, getAccountAdInsights, isMetaConfigured } from '@/lib/meta/client'
+import { readFunnel, adviseForm } from '@/lib/freehold/form-funnel'
 import { listLeadFormsMerged } from '@/lib/meta/form-registry'
 import { groupFormsByPage } from '@/lib/meta/form-templates'
 import type { MetaLeadForm } from '@/lib/meta/types'
@@ -62,6 +63,93 @@ interface AllFormsStats { n: number; rated: number; avg: number | null; contacta
 
 const CONTACTABLE_SQL =
   `(length(regexp_replace(coalesce(phone, ''), '\\D', '', 'g')) >= 7 OR (email IS NOT NULL AND position('@' in email) > 0))`
+
+/**
+ * OPENS PER FORM, WITHOUT ASKING META WHICH ADS BELONG TO WHICH FORM.
+ *
+ * Meta reports opens per AD. Mapping ads to forms through the Graph means
+ * reading every ad's creative to find its lead_gen_form_id — a request per ad,
+ * on a page that already loads slowly.
+ *
+ * The mapping is already in our own database. Every synced lead carries both
+ * meta_ad_id and meta_form_id, so the ads that belong to a form are the ads
+ * its leads came through. That is one cheap query against data we own, and it
+ * is exact for any form that has ever produced a lead.
+ *
+ * Its one limit, stated because it decides how the result is read: a form that
+ * has produced NO leads has no rows here, so no ads, so no opens — and it will
+ * read as "not reported" rather than as 0%. That is the honest answer. A form
+ * with opens and no submissions is exactly the case worth knowing about, and
+ * this mapping cannot see it; a Graph-side lookup would be needed for that and
+ * it is not worth a request per ad to catch it.
+ */
+async function getAdsByForm(): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>()
+  try {
+    const rows = await query<{ form: string; ad: string }>(
+      `SELECT DISTINCT meta_form_id AS form, meta_ad_id AS ad
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE
+          AND meta_form_id IS NOT NULL AND meta_form_id <> ''
+          AND meta_ad_id IS NOT NULL AND meta_ad_id <> ''`,
+    )
+    for (const r of rows) out.set(r.form, [...(out.get(r.form) ?? []), r.ad])
+  } catch { /* no mapping means no funnel, which reads as not reported */ }
+  return out
+}
+
+/**
+ * HOW MANY OF A FORM'S SUBMITTERS ANSWERED EACH QUESTION, IN THE FORM'S ORDER.
+ *
+ * The advice half of the funnel. Knowing a form leaks says fix it; knowing
+ * WHICH question people stop at says how. Without this the only honest advice
+ * is "ask less", which is true of every long form and useful about none of
+ * them.
+ *
+ * meta_answers has stored the resolved answers on every synced lead since the
+ * sync existed, so the rates come from our own rows rather than another Graph
+ * request. Position is preserved with ordinality: a question's ORDER is the
+ * whole point — a weak question buried in the middle can be moved, and one
+ * that is already first can only be dropped.
+ *
+ * Fail-soft to an empty map: no per-question data means the generic advice,
+ * not a wrong specific one.
+ */
+async function getAnsweredRatesByForm(): Promise<Map<string, number[]>> {
+  const out = new Map<string, number[]>()
+  try {
+    const rows = await query<{ form: string; pos: string; answered: string; total: string }>(
+      `WITH per_lead AS (
+         SELECT id, meta_form_id,
+                a.ord AS pos,
+                NULLIF(trim(a.item ->> 'answer'), '') AS answer
+           FROM freehold_site_leads l
+           CROSS JOIN LATERAL jsonb_array_elements(l.meta_answers) WITH ORDINALITY AS a(item, ord)
+          WHERE l.archived IS NOT TRUE
+            AND l.meta_form_id IS NOT NULL AND l.meta_form_id <> ''
+            AND jsonb_typeof(l.meta_answers) = 'array'
+       )
+       SELECT meta_form_id AS form, pos::text,
+              COUNT(answer)::text AS answered,
+              COUNT(*)::text AS total
+         FROM per_lead
+        GROUP BY meta_form_id, pos
+        ORDER BY meta_form_id, pos`,
+    )
+    for (const r of rows) {
+      const pos = Number(r.pos)
+      const total = Number(r.total) || 0
+      if (!Number.isFinite(pos) || total <= 0) continue
+      const list = out.get(r.form) ?? []
+      list[pos - 1] = (Number(r.answered) || 0) / total
+      out.set(r.form, list)
+    }
+    // A hole (a question nobody answered at all) reads as 0, never undefined —
+    // it is the strongest possible signal about that question.
+    for (const [k, v] of out) out.set(k, Array.from(v, (n) => (Number.isFinite(n) ? n : 0)))
+  } catch { /* no per-question data means generic advice, not wrong advice */ }
+  return out
+}
 
 /**
  * HOW MANY LEADS AT EACH RATING — the distribution the average hides.
@@ -169,6 +257,25 @@ export default async function FormsPage() {
   const data          = await getForms()
   const crmStats      = await getCrmStatsByForm()
   const ladder        = buildLadder(await getRatingCounts())
+  // Opens come from the account-wide ad insights call, which was already
+  // fetching the actions array and discarding everything but the lead count.
+  const [adsByForm, answeredRates, adInsights] = await Promise.all([
+    getAdsByForm(),
+    getAnsweredRatesByForm(),
+    isMetaConfigured().then((ok) => (ok ? getAccountAdInsights() : new Map())).catch(() => new Map()),
+  ])
+  /** Opens for one form: the sum across its ads, or null when Meta reported
+   *  none of them. Null is not zero — a form whose opens were never reported
+   *  must not be shown as converting 0%. */
+  const formOpensFor = (formId: string): number | null => {
+    const ads = adsByForm.get(formId) ?? []
+    let total: number | null = null
+    for (const ad of ads) {
+      const o = adInsights.get(ad)?.formOpens
+      if (typeof o === 'number') total = (total ?? 0) + o
+    }
+    return total
+  }
   const answerQs      = await answerOutcomes()
   const crmByForm     = new Map([...crmStats.perForm.entries()].map(([id, s]) => [id, s.n]))
   const isConfigError = data.demo === true
@@ -476,6 +583,41 @@ export default async function FormsPage() {
                         return (
                           <span className={`rounded-full border px-2 py-0.5 font-semibold tabular-nums ${cls}`}>
                             {t('lm.forms.valueAvg', { v: s.avg.toFixed(1), n: String(s.rated), total: String(s.n) })}
+                          </span>
+                        )
+                      })()}
+                      {/* ── OPENED vs FINISHED ────────────────────────────
+                          The page counted submissions and nothing else, so a
+                          form quietly losing four of every five people who
+                          opened it read exactly like one that converted
+                          everybody. Those two need opposite decisions.
+
+                          Rendered ONLY when Meta actually reported opens: a
+                          "0%" over a form that works perfectly well would get
+                          it rewritten for nothing. See form-funnel.ts. */}
+                      {(() => {
+                        const s = crmStats.perForm.get(form.id)
+                        const funnel = readFunnel(formOpensFor(form.id), s?.n ?? 0)
+                        if (funnel.completion === null) return null
+                        const pct = Math.round(funnel.completion * 100)
+                        const cls = funnel.verdict === 'leaking'
+                          ? 'border-amber-400/40 bg-amber-400/10 text-amber-300'
+                          : funnel.verdict === 'healthy'
+                          ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                          : 'border-line bg-surface-2 text-slate-400'
+                        // Fed the REAL per-question answer rates, so the
+                        // advice can name a question rather than only saying
+                        // "ask less" — which is true of every long form and
+                        // useful about none of them.
+                        const advice = adviseForm(funnel, answeredRates.get(form.id) ?? []).advice
+                        return (
+                          <span className={`rounded-full border px-2 py-0.5 font-semibold tabular-nums ${cls}`}>
+                            {t('lm.forms.funnel.rate', { pct: String(pct), opens: String(funnel.opens ?? 0) })}
+                            {/* Only a form measurably losing people is told to
+                                change — rewriting a working form breaks it. */}
+                            {funnel.verdict === 'leaking' && advice !== 'none' && (
+                              <span className="ms-1 font-normal">· {t(`lm.forms.funnel.${advice}`)}</span>
+                            )}
                           </span>
                         )
                       })()}
