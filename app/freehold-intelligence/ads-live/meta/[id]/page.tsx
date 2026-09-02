@@ -1365,12 +1365,29 @@ export default function CampaignCommandPage() {
                 return (
                   <button type="button" disabled={fixingLoc === target.id}
                     onClick={async () => {
-                      setFixingLoc(target.id)
+                      setFixingLoc(target.id); setFixError(''); setFixReport([])
                       try {
                         const r = await fetch(`/api/meta/adsets/${encodeURIComponent(target.id)}/fix-location`, { method: 'POST' })
                         const d = await r.json().catch(() => ({}))
-                        if (!r.ok) { setFixError(d?.error || 'Fix failed'); return }
-                        window.location.reload()
+                        if (!r.ok) { setFixError(d?.error || t('lm.cmd.statusFailed')); return }
+                        // REPORT WHAT META NOW HOLDS, never reload and hope.
+                        //
+                        // This used to call window.location.reload() on any 2xx.
+                        // But a 200 means "request accepted", not "field
+                        // changed" — the route answers `changed: false` when
+                        // Meta stored the old value anyway, and a reload after
+                        // that repaints the identical screen. From the outside
+                        // that is exactly a button that does nothing, which is
+                        // what an operator reported. Same reasoning, and the
+                        // same lines, as repairAllLocations above.
+                        const before = Array.isArray(d.before) && d.before.length ? d.before.join('+') : '—'
+                        const after = Array.isArray(d.after) && d.after.length ? d.after.join('+') : t('lm.metaIssues.metaDefault')
+                        setFixReport([d.changed
+                          ? t('lm.metaIssues.moved', { where: target.name, before, after })
+                          : t('lm.metaIssues.unmoved', { where: target.name, after })])
+                        // Only re-read when something actually moved; a refetch
+                        // that changes nothing is the reload this replaced.
+                        if (d.changed) await load({ silent: true })
                       } finally { setFixingLoc('') }
                     }}
                     className="shrink-0 rounded-full bg-gold px-3 py-1 text-[11px] font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">
