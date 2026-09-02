@@ -152,11 +152,14 @@ export { QUALIFIED_STATUSES } from '@/lib/freehold/lead-stages'
 export { badPhone }
 
 export async function getCampaignQuality(campaignId: string, campaignName: string): Promise<CampaignQuality> {
-  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null; value_rating: number | null; deal_value_aed: string | number | null }
+  // created_at / project_slug / meta_ad_id feed the repeat reading — they are
+  // what tells a form submitted twice from somebody shopping two properties.
+  type Row = { id: string; status: string | null; blocked: boolean | null; phone: string | null; behaviour_score: number | null; value_rating: number | null; deal_value_aed: string | number | null; created_at?: string | null; project_slug?: string | null; meta_ad_id?: string | null }
   let rows: Row[] = []
   try {
     rows = await query<Row>(
-      `SELECT id, status, blocked, phone, behaviour_score, value_rating, deal_value_aed
+      `SELECT id, status, blocked, phone, behaviour_score, value_rating, deal_value_aed,
+              created_at::text, project_slug, meta_ad_id
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE
           AND ( ($1 <> '' AND utm_id = $1)
@@ -179,7 +182,8 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS deal_value_aed numeric`).catch(() => undefined)
     try {
       rows = await query<Row>(
-        `SELECT id, status, blocked, phone, behaviour_score, value_rating, deal_value_aed
+        `SELECT id, status, blocked, phone, behaviour_score, value_rating, deal_value_aed,
+              created_at::text, project_slug, meta_ad_id
            FROM freehold_site_leads
           WHERE archived IS NOT TRUE
             AND ( ($1 <> '' AND utm_id = $1)
@@ -190,7 +194,8 @@ export async function getCampaignQuality(campaignId: string, campaignName: strin
     } catch {
       try {
         rows = await query<Row>(
-          `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating, NULL::numeric AS deal_value_aed
+          `SELECT id, status, blocked, phone, NULL::int AS behaviour_score, NULL::int AS value_rating, NULL::numeric AS deal_value_aed,
+                  created_at::text, project_slug, NULL::text AS meta_ad_id
              FROM freehold_site_leads
             WHERE archived IS NOT TRUE
               AND ( ($1 <> '' AND utm_id = $1)

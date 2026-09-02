@@ -44,7 +44,7 @@ export type CrmFilterGroup = (typeof CRM_FILTER_GROUPS)[number]
 /** Walkable — every filter. The id is the i18n key suffix and the URL value. */
 export const CRM_FILTERS = [
   'today', 'yesterday', 'last7',
-  'qualified', 'notRated', 'disqualified', 'junk',
+  'qualified', 'notRated', 'disqualified', 'junk', 'repeat',
   'meta', 'hubspot', 'landing',
 ] as const
 export type CrmFilterId = (typeof CRM_FILTERS)[number]
@@ -142,9 +142,22 @@ export const CRM_FILTER_DEFS: readonly CrmFilterDef[] = [
   },
   {
     id: 'junk', group: 'quality',
-    // Unusable rather than unwanted: blocked, a number that cannot be dialled,
-    // or the same person delivered twice — spend paid twice.
-    match: (l) => l.blocked === true || l.wrongNumberRisk === true || l.duplicateRisk === true,
+    // Unusable rather than unwanted: blocked, or a number that cannot be
+    // dialled.
+    //
+    // A REPEAT IS NOT JUNK. This filter shipped counting duplicateRisk here,
+    // which put somebody who registered for a second apartment in the same
+    // bucket as a blocked number. The same person coming back is the strongest
+    // buying signal a funnel produces — see lib/freehold/repeat-intent.ts, and
+    // use the `repeat` filter to find them on purpose.
+    match: (l) => l.blocked === true || l.wrongNumberRisk === true,
+  },
+  {
+    id: 'repeat', group: 'quality',
+    // Registered more than once. Deliberately its own filter rather than a
+    // shade of junk: the question "who came back" is one a sales team asks on
+    // purpose, and the answer is a call list.
+    match: (l) => l.duplicateRisk === true,
   },
 
   // ── source ──────────────────────────────────────────────────────────────
