@@ -10,6 +10,7 @@ import {
 import { placementKeys } from '@/lib/meta/placement-write'
 import { auditPlacements } from '@/lib/freehold/placement-audit'
 import { adRatings } from '@/lib/freehold/ad-ratings'
+import { loopStatus } from '@/lib/freehold/forecast-db'
 import { MIN_RATED_FOR_CALIBRATION } from '@/lib/freehold/lead-forecast'
 import { VALUABLE_RATING } from '@/lib/freehold/lead-stages'
 import {
@@ -244,6 +245,7 @@ Rules:
 - "action": ATTACH ONE WHENEVER A SHAPE BELOW FITS THE FINDING. A finding the operator cannot act on from this page is worth far less than one they can, so do not withhold an action out of caution — every action here is reversible, and each is re-checked against the real data before it is offered. Use null only when nothing below expresses the change.
 ${actionShapeLines()}
 - Never invent an id. Every adSetId, adId and placement must appear in DATA.
+- DATA.calibration compares what was FORECAST of each source when its leads arrived against what the brokers actually rated them. "underBought" means the leads came back better than predicted AND genuinely good — carry more of that source into the next campaign. "overBought" means worse than predicted. "tooEarly" means the sample is too small to act on: say so, do not act. Before you lean on any of it, read DATA.forecastAccuracy — if meanAbsoluteError is large the forecast is not measuring anything and the calibration is not a reason to move money; say that plainly instead.
 - DATA.leadQualityByAd is what the BROKERS said about the leads each ad bought — the one thing Meta cannot see. An ad can be the cheapest in the campaign and still buy people nobody wants to call, and that is the most expensive thing in a lead-gen account because the optimiser reads the cheap submissions as success. Judge ads on cost AND on this. Never call an ad bad on fewer than DATA.minRatedLeadsToJudgeAnAd rated leads, and never on a mean above DATA.ratingFloorForGoodLead — an ad averaging 7 among siblings averaging 9 is the second best ad in a good campaign, not a problem.
 - DATA.adSets[].ads carries each creative's OWN spend and leads. When one ad has taken real money and returned far less than its siblings, say so by name and attach pause_ad — that is the most useful single thing this panel can do.
 - DATA.crmQuality carries TWO independent judgments of lead quality and you must not confuse them. The funnel counts (reached/qualified/won) move only when somebody drags a card through the CRM; the value ratings are a broker's direct 0–10 verdict on the lead itself. A campaign whose leads are all still status "new" but whose ratedValuable count is high has GOOD leads and a slow CRM queue — say that, and never call it "zero quality" or propose pausing it on the funnel counts alone. If valueRated is 0 AND the funnel has not moved, nobody has judged these leads yet: that is an unworked queue, not a verdict on the campaign, and the action belongs to the team, not the budget.
@@ -339,7 +341,7 @@ export async function POST(req: NextRequest) {
 
   // Fetch everything in parallel; each source fails soft to null (a missing
   // piece narrows the analysis, it never 500s the advisor).
-  const [campaignR, insightsR, adSetsR, qualityR, adsR, placementR, ratingsR] = await Promise.allSettled([
+  const [campaignR, insightsR, adSetsR, qualityR, adsR, placementR, ratingsR, loopR] = await Promise.allSettled([
     getCampaign(campaignId),
     getCampaignInsights(campaignId),
     listAdSets(campaignId),
@@ -356,6 +358,9 @@ export async function POST(req: NextRequest) {
     // the cheapest ad in a campaign is often the one buying people nobody
     // wants to call.
     adRatings(),
+    // THE LOOP'S OWN REPORT CARD: what was predicted of each source against
+    // what the team actually said, and how wrong the forecast has been overall.
+    loopStatus(),
   ])
   const campaign: MetaCampaign | null = campaignR.status === 'fulfilled' ? campaignR.value : null
   const insights: MetaInsights | null = insightsR.status === 'fulfilled' ? insightsR.value : null
@@ -363,6 +368,7 @@ export async function POST(req: NextRequest) {
   const quality: CampaignQuality | null = qualityR.status === 'fulfilled' ? qualityR.value : null
   const adResults = adsR.status === 'fulfilled' ? adsR.value : []
   const ratings = ratingsR.status === 'fulfilled' ? ratingsR.value : new Map()
+  const loop = loopR.status === 'fulfilled' ? loopR.value : null
 
   // Meta not connected at all → honest state, not advice from nothing.
   const metaResults = [campaignR, insightsR, adSetsR]
@@ -467,6 +473,17 @@ export async function POST(req: NextRequest) {
       }),
     ratingFloorForGoodLead: VALUABLE_RATING,
     minRatedLeadsToJudgeAnAd: MIN_RATED_FOR_CALIBRATION,
+    // ── WHAT WAS PREDICTED vs WHAT THE TEAM SAID ──────────────────────────
+    // Per source: the forecast recorded when each lead ARRIVED, against the
+    // rating a broker gave it later. A source rated better than predicted is
+    // under-bought — the machine was pessimistic and spend should follow the
+    // evidence. `forecastAccuracy` is the honesty check on all of it: a large
+    // mean error means the forecast is not measuring the world, and nothing
+    // built on it should move money.
+    ...(loop ? {
+      calibration: loop.calibration.slice(0, 8),
+      forecastAccuracy: loop.accuracy,
+    } : {}),
     crmQuality: quality
       ? {
           attributed: quality.attributed,

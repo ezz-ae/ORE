@@ -220,6 +220,59 @@ console.log('\n── and it is WIRED, not another module nobody calls ──')
     /ADD COLUMN IF NOT EXISTS behaviour_score int/.test(code))
 }
 
+console.log('\n── AND THE PREDICTION IS REMEMBERED, OR NOTHING CAN BE GRADED ──')
+{
+  // The link that was missing. forecastLead predicted, calibrate compared —
+  // and nothing ever wrote a forecast down, so no (predicted, actual) pair had
+  // ever existed and calibrate was called by nothing but this file.
+  const db = readFileSync(join(process.cwd(), 'lib/freehold/forecast-db.ts'), 'utf8')
+  const dbCode = db.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  check('a forecast is written to its own row', /INSERT INTO freehold_lead_forecasts/.test(dbCode))
+  // THE INTEGRITY OF THE WHOLE THING. Recomputing later would read the ad's
+  // history as it is NOW — which by then contains this lead's own rating — so
+  // the forecast would drift toward the answer it is judged against, the
+  // measured error would shrink on its own, and the system would report itself
+  // getting cleverer while learning nothing.
+  check('…once, and never overwritten',
+    /ON CONFLICT \(lead_id\) DO NOTHING/.test(dbCode), 'a later write could rewrite the call')
+  check('…keyed one row per lead', /lead_id\s+text PRIMARY KEY/.test(dbCode))
+
+  // "We could not say" is honest and is also not a prediction. Storing it
+  // would let a system that knows nothing about most of its leads report a
+  // flattering accuracy on the few it does.
+  check('a withheld forecast is not stored as one',
+    /if \(f\.expected === null\) return/.test(dbCode))
+
+  // The pairs, and the honesty check on them.
+  check('the pairs are read by joining forecasts to ratings',
+    /JOIN freehold_site_leads/.test(dbCode) && /value_rating IS NOT NULL/.test(dbCode))
+  check('the loop reports its own accuracy, not just its verdicts',
+    /forecastAccuracy\(pairs\)/.test(dbCode) && /calibrate\(pairs\)/.test(dbCode))
+  // A lead must never fail to arrive because its forecast could not be stored.
+  check('storing a forecast can never cost a lead', /catch \{/.test(db))
+
+  const sync = readFileSync(join(process.cwd(), 'lib/freehold/meta-lead-sync.ts'), 'utf8')
+  check('the forecast is recorded when the lead ARRIVES',
+    /rememberForecast\(inserted\[0\]\.id/.test(sync))
+  check('…with what that ad had produced BEFORE this lead',
+    /sourceHistory: adKey \? \(adHistory\.get\(adKey\)/.test(sync))
+  // Per sweep, not per lead — the number cannot change mid-sweep.
+  check('…and the history is read once per sweep',
+    (sync.match(/await adRatings\(\)/g) ?? []).length === 1)
+  check('…fire-and-forget, so the sync cannot fail on it',
+    /void rememberForecast\(/.test(sync))
+
+  // calibrate() had no caller outside its own test. Now it has one.
+  const advisor = readFileSync(join(process.cwd(), 'app/api/freehold/ads/advisor/route.ts'), 'utf8')
+  check('the advisor reads the loop status', /loopStatus\(\)/.test(advisor))
+  check('…and is given the accuracy beside the verdicts',
+    /forecastAccuracy: loop\.accuracy/.test(advisor))
+  // A forecast that is not measuring the world must not move money.
+  check('…and told not to act on calibration when the forecast is inaccurate',
+    /the calibration is not a reason to move money/.test(advisor))
+}
+
 console.log(failures === 0
   ? '\n✅ the forecast is checked against the rating, and the gap is the instruction.'
   : `\n❌ ${failures} lead-forecast guard(s) failed`)
