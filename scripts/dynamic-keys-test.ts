@@ -28,6 +28,8 @@ import { ADVISOR_ACTION_TYPES } from '../lib/freehold/advisor-actions'
 import { CRM_FILTERS, CRM_FILTER_GROUPS } from '../lib/freehold/crm-filters'
 import { RATING_BAND_IDS } from '../lib/freehold/rating-ladder'
 import { FORM_ADVICE } from '../lib/freehold/form-funnel'
+import { RATING_ACTIONS } from '../lib/freehold/rating-actions'
+import { CALIBRATION_VERDICTS } from '../lib/freehold/lead-forecast'
 import { BUYER_ELIGIBILITIES } from '../lib/freehold/buyer-eligibility'
 import { crm } from '../lib/i18n/dictionaries/crm'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
@@ -127,6 +129,12 @@ console.log('\n── the lead rate ladder bands ──')
   // entry that exists only to satisfy a checker.
   family('lm.forms.funnel', 'lm.forms.funnel.',
     FORM_ADVICE.filter((a) => a !== 'none'), lm_core)
+  // The Rating page renders t(`lm.rating.action.${rule.action}`) on all eleven
+  // rows and t(`lm.rating.verdict.${c.verdict}`) on every calibration row. A
+  // missing word there is a raw key in a table somebody reads to decide what
+  // to exclude from a live campaign.
+  family('lm.rating.action', 'lm.rating.action.', RATING_ACTIONS, lm_core)
+  family('lm.rating.verdict', 'lm.rating.verdict.', CALIBRATION_VERDICTS, lm_core)
 }
 
 console.log('\n── the CRM smart filters ──')

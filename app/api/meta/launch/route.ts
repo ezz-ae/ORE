@@ -17,7 +17,7 @@ import { getLandingPublishState } from '@/lib/landing-pages'
 import { BRAND } from '@/lib/freehold/brand'
 import { preflightLanding, landingSlugOf, blocksLaunch } from '@/lib/freehold/landing-preflight'
 import { avoidAudienceId } from '@/lib/freehold/rating-audiences'
-import { crmExclusionAudienceId } from '@/lib/freehold/crm-exclusion'
+import { crmExclusionAudienceId, syncCrmExclusionAudience } from '@/lib/freehold/crm-exclusion'
 import { getReadyBuyer } from '@/lib/freehold/ready-buyers'
 import { planPattern, parsePattern } from '@/lib/freehold/audience-pattern'
 import { SUPPORTED_LEAD_LANGUAGES } from '@/lib/meta/lead-language'
@@ -327,11 +327,30 @@ export async function POST(req: NextRequest) {
   // Resolved server-side from our own record. The browser sends the intent —
   // "not the CRM" — and never the id, so it cannot point an exclusion at an
   // audience that is not ours.
+  // ALWAYS. NOT OPT-IN. This was `if (body.excludeCrmAudience)` — the browser
+  // had to ask, so any caller that forgot the flag, and every launch made
+  // before the switch existed, paid to advertise to people already in the
+  // pipeline.
+  //
+  // There is no campaign for which "show this to somebody we are already
+  // talking to" is the right answer. They are not a new lead; if they fill the
+  // form again they are a duplicate the CRM then spends effort undoing. The
+  // operator's instruction was explicit — always, and it should be a rule —
+  // and a rule that depends on a checkbox is a preference.
+  //
+  // Built on demand when it does not exist yet, because "always" that silently
+  // does nothing on a fresh account is the same as not having it.
   let excludeAudienceIds: string[] = []
-  if (body.excludeCrmAudience) {
-    const id = await crmExclusionAudienceId().catch(() => null)
-    if (id) excludeAudienceIds = [id]
-    // No audience built yet ⇒ no exclusion, and no pretending there was one.
+  let crmExclusionApplied = false
+  {
+    let id = await crmExclusionAudienceId().catch(() => null)
+    if (!id) id = (await syncCrmExclusionAudience().catch(() => null))?.audienceId ?? null
+    if (id) { excludeAudienceIds = [id]; crmExclusionApplied = true }
+    else {
+      // Never pretend it applied. A launch that could not exclude is a fact
+      // worth finding in the log when the duplicates start arriving.
+      console.error('[launch] CRM exclusion could not be applied — no audience and none could be built')
+    }
   }
   // THE OTHER EXCLUSION, and the one a broker's own judgment built.
   //
@@ -597,6 +616,12 @@ export async function POST(req: NextRequest) {
     const warnings = [
       ...landingWarnings,
       ...(routerWarns(decision) ? [duplicateWarning(decision as RouterDecision, rivalName)] : []),
+      // A launch that could NOT exclude the CRM is a launch that will pay to
+      // re-advertise to people already in the pipeline. It is not a failure —
+      // the campaign is live and correct in every other respect — but it must
+      // never pass silently, because the symptom arrives weeks later as
+      // duplicates and looks like a CRM problem rather than a targeting one.
+      ...(crmExclusionApplied ? [] : ['This campaign is running WITHOUT the "already in your CRM" exclusion — Meta is not connected for audiences, or the list could not be built. It may pay to reach people you already have.']),
     ]
     return NextResponse.json(
       { ...result, brokerId, decision, ...(warnings.length ? { warnings } : {}) },
