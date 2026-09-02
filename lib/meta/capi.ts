@@ -157,6 +157,28 @@ export interface QualifiedLeadParams {
    */
   fbc?: string
   fbp?: string
+  /**
+   * THE META LEADGEN ID — the field that credits the right AD.
+   *
+   * "when the lead come rated send conversion result meta fix the same ad that
+   *  generated the lead."
+   *
+   * Everything else here identifies a PERSON: a hashed email, a hashed phone,
+   * a click cookie. Meta then has to work out which ad that person came from,
+   * and for a lead that arrived through an instant form weeks ago it usually
+   * cannot — so the outcome landed on the campaign at best, and the ad that
+   * actually produced the buyer got no credit for it.
+   *
+   * `lead_id` is Meta's own id for that form submission. Given it, Meta joins
+   * the event straight to the ad, the ad set and the campaign that generated
+   * it, with no matching involved. It is the difference between telling Meta
+   * "somebody good bought" and telling it WHICH AD FOUND THEM.
+   *
+   * Stored on every synced lead as meta_lead_id since the sync existed, and
+   * never sent until now. Not hashed — it is Meta's own identifier, matched by
+   * equality, exactly like fbc.
+   */
+  leadId?: string
 }
 
 /** Meta's custom event names for the two stages. */
@@ -182,12 +204,17 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
   // hashed one matches nothing.
   if (params.fbc) userData.fbc = params.fbc
   if (params.fbp) userData.fbp = params.fbp
+  // Meta's own id for the form submission. Not hashed — like fbc, it is
+  // matched by equality against what Meta itself issued. This is what credits
+  // the exact AD rather than leaving Meta to guess from a hashed email.
+  if (params.leadId) userData.lead_id = params.leadId
   // No match key means Meta cannot attach this to anyone. Sending it anyway
   // would inflate the count with events that teach the optimiser nothing.
   // An external id alone does not count: it only matches a person Meta has
   // already seen it against, so on its own it identifies nobody. A click
-  // cookie DOES identify somebody, so it counts.
-  if (!em && !ph && !params.fbc) return null
+  // cookie DOES identify somebody, so it counts — and so does a lead_id,
+  // which identifies not just the person but the submission they made.
+  if (!em && !ph && !params.fbc && !params.leadId) return null
 
   const custom: Record<string, unknown> = { content_category: 'real_estate' }
   if (params.contentName) custom.content_name = params.contentName

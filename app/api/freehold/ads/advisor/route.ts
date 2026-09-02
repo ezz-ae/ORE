@@ -245,6 +245,7 @@ Rules:
 - "action": ATTACH ONE WHENEVER A SHAPE BELOW FITS THE FINDING. A finding the operator cannot act on from this page is worth far less than one they can, so do not withhold an action out of caution — every action here is reversible, and each is re-checked against the real data before it is offered. Use null only when nothing below expresses the change.
 ${actionShapeLines()}
 - Never invent an id. Every adSetId, adId and placement must appear in DATA.
+- DATA.ratingLatency is how long the team takes to rate a lead after it arrives. This is the loop's real constraint: an outcome reported to Meta the same day steers the ad set while it is still learning, and the identical rating a week later lands after the budget is spent. If medianHours is high, say so as a finding in its own right — it limits every other improvement on this page, and it is fixed by the team rather than by the budget.
 - DATA.calibration compares what was FORECAST of each source when its leads arrived against what the brokers actually rated them. "underBought" means the leads came back better than predicted AND genuinely good — carry more of that source into the next campaign. "overBought" means worse than predicted. "tooEarly" means the sample is too small to act on: say so, do not act. Before you lean on any of it, read DATA.forecastAccuracy — if meanAbsoluteError is large the forecast is not measuring anything and the calibration is not a reason to move money; say that plainly instead.
 - DATA.leadQualityByAd is what the BROKERS said about the leads each ad bought — the one thing Meta cannot see. An ad can be the cheapest in the campaign and still buy people nobody wants to call, and that is the most expensive thing in a lead-gen account because the optimiser reads the cheap submissions as success. Judge ads on cost AND on this. Never call an ad bad on fewer than DATA.minRatedLeadsToJudgeAnAd rated leads, and never on a mean above DATA.ratingFloorForGoodLead — an ad averaging 7 among siblings averaging 9 is the second best ad in a good campaign, not a problem.
 - DATA.adSets[].ads carries each creative's OWN spend and leads. When one ad has taken real money and returned far less than its siblings, say so by name and attach pause_ad — that is the most useful single thing this panel can do.
@@ -483,6 +484,12 @@ export async function POST(req: NextRequest) {
     ...(loop ? {
       calibration: loop.calibration.slice(0, 8),
       forecastAccuracy: loop.accuracy,
+      // HOW LATE THE OUTCOME REACHES META. A rating sent the same afternoon
+      // reaches the optimiser while the ad set is still learning; the same
+      // rating six days later arrives after the budget has gone on whatever
+      // Meta guessed meanwhile. Same rating, different worth to the machine —
+      // so when this is slow, it is the finding, not the calibration.
+      ratingLatency: loop.latency,
     } : {}),
     crmQuality: quality
       ? {

@@ -115,7 +115,80 @@ export async function ratedForecasts(): Promise<RatedLead[]> {
 export async function loopStatus(): Promise<{
   calibration: ReturnType<typeof calibrate>
   accuracy: ReturnType<typeof forecastAccuracy>
+  latency: RatingLatency
 }> {
-  const pairs = await ratedForecasts()
-  return { calibration: calibrate(pairs), accuracy: forecastAccuracy(pairs) }
+  const [pairs, latency] = await Promise.all([ratedForecasts(), ratingLatency()])
+  return { calibration: calibrate(pairs), accuracy: forecastAccuracy(pairs), latency }
+}
+
+
+/**
+ * HOW LONG THE LOOP TAKES TO CLOSE — the constraint everything else now sits
+ * behind.
+ *
+ * "if the rate goes on time to meta and feed the same ad on time this is the
+ *  ultimate loop we want and its super higher than the lookalike."
+ *
+ * That is right, and it changes which number matters. A value-based lookalike
+ * is a slow, indirect signal: build an audience, hand it over, hope the
+ * similarity model finds more. Sending the outcome back to the ad that
+ * produced it teaches Meta's optimiser INSIDE the campaign that is running —
+ * direct, and while the money is still moving.
+ *
+ * Which means the binding constraint is no longer whether the signal is sent.
+ * It is HOW LATE. A lead rated the same afternoon reaches the optimiser while
+ * the ad set is still learning; the same rating six days later arrives after
+ * the budget has already been spent on whatever Meta guessed in the meantime.
+ * The rating is identical. The value to the machine is not.
+ *
+ * So it is measured, per ad, and reported in hours — because "our team rates
+ * leads eventually" is not a fact anybody can act on, and "this ad's outcomes
+ * reach Meta four days late" is.
+ */
+export interface RatingLatency {
+  /** Rated leads with both timestamps — the sample the rest rests on. */
+  rated: number
+  /** Median hours from a lead arriving to somebody rating it. */
+  medianHours: number | null
+  /** The slowest quarter, which is where the loop actually leaks. */
+  p75Hours: number | null
+  /** Rated inside a day — the share that reaches Meta while it still matters. */
+  sameDayShare: number | null
+}
+
+const quantile = (sorted: readonly number[], q: number): number | null => {
+  if (sorted.length === 0) return null
+  const i = Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1)))
+  return Math.round(sorted[i] * 10) / 10
+}
+
+export async function ratingLatency(): Promise<RatingLatency> {
+  const empty: RatingLatency = { rated: 0, medianHours: null, p75Hours: null, sameDayShare: null }
+  try {
+    const rows = await query<{ hours: string }>(
+      `SELECT EXTRACT(EPOCH FROM (value_rated_at - created_at)) / 3600 AS hours
+         FROM freehold_site_leads
+        WHERE archived IS NOT TRUE
+          AND value_rating IS NOT NULL
+          AND value_rated_at IS NOT NULL
+          AND created_at IS NOT NULL
+          -- A rating stamped before the lead arrived is a clock problem, not a
+          -- fast team. Dropped rather than counted as zero, which would make
+          -- the median flatter the slower the account got.
+          AND value_rated_at >= created_at`,
+    )
+    const hours = rows
+      .map((r) => Number(r.hours))
+      .filter((n) => Number.isFinite(n) && n >= 0)
+      .sort((a, b) => a - b)
+    if (hours.length === 0) return empty
+    return {
+      rated: hours.length,
+      medianHours: quantile(hours, 0.5),
+      p75Hours: quantile(hours, 0.75),
+      sameDayShare: Math.round((hours.filter((h) => h <= 24).length / hours.length) * 100),
+    }
+  } catch {
+    return empty
+  }
 }
