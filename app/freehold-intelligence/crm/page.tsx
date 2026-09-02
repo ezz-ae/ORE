@@ -20,6 +20,8 @@ import { LeadRate, LeadAssign, LeadSource } from '@/components/freehold/lead-row
 const ASSIGN_ROLES = ['admin', 'sales_manager', 'director', 'ceo']
 import { LeadValueBadge } from '@/components/freehold/lead-value-chips'
 import { useT } from '@/lib/i18n/provider'
+import SmartFilters from '@/components/freehold/smart-filters'
+import { matchesFilters, parseFilters, type CrmFilterId } from '@/lib/freehold/crm-filters'
 import { loadCrmView, saveCrmView } from './_lib/view-prefs'
 import { Monogram } from '@/components/freehold/monogram'
 
@@ -106,6 +108,12 @@ export default function FreeholdCrmPage() {
       .catch(() => {})
   }, [canAssign])
   const [query, setQuery]           = useState('')
+  // Filters live inside the search box — see components/freehold/smart-filters.
+  // Open on focus, closed on blur, so they cost no screen until somebody is
+  // already looking for something.
+  const [filters, setFilters] = useState<CrmFilterId[]>([])
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filterNow] = useState(() => Date.now())
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Rank by VALUE, most unqualified first — the deliberate inversion. The
   // bottom of the list is not noise to hide; it is the set the machine (and
@@ -133,6 +141,11 @@ export default function FreeholdCrmPage() {
       const source = params.get('source')
       if (source) setQuery(source)
       else if (view.overviewSearch) setQuery(view.overviewSearch)
+      // parseFilters drops anything this build does not define, so a view
+      // saved by an older deploy cannot wedge the list on a filter that no
+      // longer exists.
+      const fromUrl = params.getAll('filter')
+      setFilters(parseFilters(fromUrl.length ? fromUrl : view.overviewFilters))
       viewHydrated.current = true
     })
     return () => { cancelled = true }
@@ -141,8 +154,8 @@ export default function FreeholdCrmPage() {
   // Persist the view on change (debounced in the account-memory helper).
   useEffect(() => {
     if (!viewHydrated.current) return
-    saveCrmView({ overviewStage: stageFilter, overviewSearch: query })
-  }, [stageFilter, query])
+    saveCrmView({ overviewStage: stageFilter, overviewSearch: query, overviewFilters: filters })
+  }, [stageFilter, query, filters])
 
   // Real pipeline value: open (in-progress) deals from the deals API. The API
   // is session-scoped — brokers see their own deals, management sees all.
@@ -187,10 +200,14 @@ export default function FreeholdCrmPage() {
       // and it used to be unanswerable because the name was never on the row.
       .filter(l => !q || [l.name, l.projectInterest, l.assignedAgent, l.source, l.formName ?? '', l.adName ?? '']
         .some(f => f.toLowerCase().includes(q)))
+      // The smart filters, ANDed with the text search: typing narrows, and so
+      // does choosing. OR within a group / AND between groups lives in the
+      // pure module, not here.
+      .filter(l => matchesFilters(l, filters, filterNow))
       .sort((a, b) => rankByValue
         ? (a.valueRating ?? 99) - (b.valueRating ?? 99)
         : b.intentScore - a.intentScore)
-  }, [leads, query, stageFilter, rankByValue])
+  }, [leads, query, stageFilter, rankByValue, filters, filterNow])
 
   // ── Tile definitions ──
   const TILES = [
@@ -327,8 +344,18 @@ export default function FreeholdCrmPage() {
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
+                onFocus={() => setFiltersOpen(true)}
+                onBlur={() => setFiltersOpen(false)}
                 placeholder={t('crm.searchLeadsProjectsAgents')}
-                className="w-full rounded-lg border border-line bg-surface py-2 ps-8 pe-8 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
+                className={`w-full rounded-lg border bg-surface py-2 ps-8 pe-8 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40 ${
+                  filters.length > 0 ? 'border-gold/40' : 'border-line'}`}
+              />
+              <SmartFilters
+                leads={leads}
+                selected={filters}
+                open={filtersOpen}
+                onToggle={(id) => setFilters(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id])}
+                onClear={() => setFilters([])}
               />
               {query && (
                 <button

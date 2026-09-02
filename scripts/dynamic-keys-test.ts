@@ -25,6 +25,7 @@
  */
 import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { ADVISOR_ACTION_TYPES } from '../lib/freehold/advisor-actions'
+import { CRM_FILTERS, CRM_FILTER_GROUPS } from '../lib/freehold/crm-filters'
 import { BUYER_ELIGIBILITIES } from '../lib/freehold/buyer-eligibility'
 import { crm } from '../lib/i18n/dictionaries/crm'
 import { READY_BUYERS } from '../lib/freehold/ready-buyers'
@@ -110,6 +111,15 @@ console.log('\n── placement verdicts ──')
   check('…and it contains the click verdict that shipped without a word',
     (PLACEMENT_VERDICTS as readonly string[]).includes('noClicks'))
   family('lm.place.verdict', 'lm.place.verdict.', PLACEMENT_VERDICTS)
+}
+
+console.log('\n── the CRM smart filters ──')
+{
+  // The panel renders t(`crm.filter.${f.id}`) and t(`crm.filter.group.${g}`).
+  // A filter without a word is a blank row in a dropdown somebody is using to
+  // narrow a list — worse than a missing filter, because it looks clickable.
+  family('crm.filter', 'crm.filter.', CRM_FILTERS, crm)
+  family('crm.filter.group', 'crm.filter.group.', CRM_FILTER_GROUPS, crm)
 }
 
 console.log('\n── advisor action labels ──')

@@ -11,6 +11,10 @@ import { loadAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/ac
 export type CrmViewPrefs = {
   overviewStage?: string
   overviewSearch?: string
+  /** The smart filters chosen inside the search box. Stored as plain ids and
+   *  re-validated on read (parseFilters), so a view saved by an older deploy
+   *  cannot wedge the list on a filter this build no longer defines. */
+  overviewFilters?: string[]
   leadsStage?: string
   leadsAgent?: string
   leadsLanding?: string
