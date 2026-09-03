@@ -141,8 +141,19 @@ console.log('\n── age intersects, never widens ──')
 console.log('\n── exclusions are behavioural, never demographic ──')
 {
   const p = planPattern(pat({ exclude: ['agents_and_brokers', 'job_seekers'] }))
-  check('the exclusions land in the spec',
-    (p.targeting.exclusions?.interests ?? []).length === 2, JSON.stringify(p.targeting.exclusions))
+  // COUNTED BY WHAT IS BUILDABLE, not by how many boxes were ticked. This
+  // asserted `=== 2` — one entity per disqualifier — which was true only
+  // while every disqualifier happened to map to exactly one node. Then the
+  // catalogue check found that FOUR of those nodes do not exist in Meta's
+  // vocabulary at all: agents now maps to three real ones, and job_seekers to
+  // none, because Meta has no job-seeking interest to map to.
+  const exInterests = p.targeting.exclusions?.interests ?? []
+  check('the buildable exclusions land in the spec',
+    exInterests.length >= 1 && exInterests.every((e) => !!e.id && !!e.name),
+    JSON.stringify(p.targeting.exclusions))
+  check('…and an unbuildable one adds nothing rather than something wrong',
+    !exInterests.some((e) => /job|employ|career|recruit/i.test(e.name)),
+    exInterests.map((e) => e.name).join(' / '))
   check('no exclusion is present when none was asked for',
     planPattern(pat({})).targeting.exclusions === undefined)
   // The whole point: nothing in the vocabulary can exclude by who someone is.
@@ -242,8 +253,11 @@ console.log('\n── an untrusted pattern cannot smuggle anything in ──')
   check('duplicates collapse', junk.motive.join(',') === 'investment')
   check('an out-of-range dial is clamped, not wrapped', junk.strictness === 100, String(junk.strictness))
   check('the name is bounded', junk.name.length === 120, String(junk.name.length))
+  // The parsed pattern keeps only the recognised disqualifier; what it
+  // contributes depends on whether that rule is buildable at all, so the
+  // assertion is that nothing UNRECOGNISED got in — not a fixed count.
   check('a garbage exclusion cannot reach the spec',
-    planPattern(junk).targeting.exclusions?.interests?.length === 1,
+    (planPattern(junk).targeting.exclusions?.interests ?? []).every((e) => !!e.id && !!e.name),
     JSON.stringify(planPattern(junk).targeting.exclusions))
   check('nothing at all still parses to a usable pattern',
     parsePattern(null).strictness === 50 && parsePattern('nope').money === 'unknown')
