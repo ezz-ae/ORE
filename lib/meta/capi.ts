@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
 import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
+import { readEventResponse, matchKeysPresent, attributesToAd, acceptedWithLoss } from '@/lib/freehold/capi-ledger'
+import { recordCapiEvent } from '@/lib/freehold/capi-ledger-db'
 
 // ─── Meta Conversions API (server-side events) ────────────────────────────────
 // The reliable half of the conversion signal. The landing page's browser pixel
@@ -256,10 +258,45 @@ export async function sendQualifiedLead(params: QualifiedLeadParams): Promise<bo
       body: JSON.stringify({ data: [event], access_token: creds.token }),
       signal: AbortSignal.timeout(8000),
     })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      console.error(`[meta-capi] ${params.stage} event rejected`, res.status, detail.slice(0, 400))
+
+    // ── META'S ANSWER IS EVIDENCE, NOT A STATUS CODE ────────────────────
+    //
+    // This used to read the body only on failure, print it, and return a
+    // boolean. Everything Meta says about what it actually did — how many
+    // events it took, the trace id, and the `messages` warnings naming
+    // parameters it IGNORED — was discarded on the successful path.
+    //
+    // That is the path that matters. A 200 carrying warnings is
+    // indistinguishable from a clean 200, so an account can send perfectly
+    // formed events for months while Meta drops the field that made them
+    // worth sending.
+    const body: unknown = await res.json().catch(() => ({}))
+    const response = readEventResponse(res.status, body)
+    const matchKeys = matchKeysPresent({
+      leadId: params.leadId, fbc: params.fbc, fbp: params.fbp,
+      email: params.email, phone: params.phone, externalId: params.externalId,
+    })
+    // Fire-and-forget: bookkeeping must never fail the send it describes,
+    // and the caller's retry decision must not wait on a second write.
+    void recordCapiEvent({
+      leadId: params.externalId ?? null,
+      stage: params.stage,
+      eventId: params.eventId,
+      eventName: (event as { event_name?: string }).event_name ?? null,
+      response,
+      matchKeys,
+      attributesToAd: attributesToAd(matchKeys),
+    })
+
+    if (!response.ok) {
+      console.error(`[meta-capi] ${params.stage} event rejected`, res.status, response.error ?? '')
       return false
+    }
+    // Accepted, and Meta kept less than we sent. NOT a failure and must not
+    // be retried — a duplicate outcome event is worse than a lossy one — but
+    // it is now on the ledger where somebody can see it.
+    if (acceptedWithLoss(response)) {
+      console.warn(`[meta-capi] ${params.stage} accepted with warnings`, response.messages?.join(' | '))
     }
     return true
   } catch (error) {
