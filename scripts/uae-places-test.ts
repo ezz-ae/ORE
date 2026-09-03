@@ -37,6 +37,7 @@ import { geoLocationsSpec } from '../lib/meta/geo-spec'
 import { targetingFromMeta } from '../lib/meta/targeting-parse'
 import { checkCampaignSetup } from '../lib/freehold/campaign-setup-check'
 import { normalizeSpec, combineSpecs } from '../lib/freehold/audiences'
+import { planPattern, parsePattern } from '../lib/freehold/audience-pattern'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -141,6 +142,34 @@ console.log('\n── and a radius survives the round trip ──')
   check('…and combining audiences keeps every place',
     (combined.placeKeys ?? []).sort().join(',') === 'abu_dhabi,al_ain,dubai',
     String(combined.placeKeys))
+}
+
+console.log('\n── and the kitchen can express it ──')
+{
+  // A trait nobody can choose is a trait that does not exist. This is the
+  // half that makes the radius reachable: residency says which country, and
+  // until now nothing said which part of it.
+  const plan = planPattern(parsePattern({
+    name: 'Al Ain event', residency: ['resident'], places: [...AL_AIN_CATCHMENT],
+  }))
+  check('a pattern narrowed to Al Ain launches with the circles',
+    (plan.targeting.placeKeys ?? []).join(',') === 'al_ain,abu_dhabi',
+    String(plan.targeting.placeKeys))
+
+  // The sentence is what an operator reads back before spending. An audience
+  // narrowed to one city that describes itself as "the UAE" is how Al Ain and
+  // the whole country came to look identical on screen.
+  check('…and says so in the sentence it describes itself with',
+    /Al Ain/.test(plan.describes), plan.describes)
+
+  const national = planPattern(parsePattern({ name: 'x', residency: ['resident'] }))
+  check('a pattern with no place is still the whole country',
+    (national.targeting.placeKeys ?? []).length === 0)
+
+  // Unknown keys must not quietly widen the audience back to the country —
+  // the exact failure this trait exists to end.
+  check('an unknown place is dropped rather than ignored into everywhere',
+    (parsePattern({ name: 'x', places: ['al_ain', 'narnia'] }).places ?? []).join(',') === 'al_ain')
 }
 
 console.log('\n── and all three senders build geo the same way ──')

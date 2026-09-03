@@ -27,6 +27,7 @@ import { PLACEMENT_VERDICTS } from '../lib/freehold/placement-audit'
 import { ADVISOR_ACTION_TYPES } from '../lib/freehold/advisor-actions'
 import { CRM_FILTERS, CRM_FILTER_GROUPS } from '../lib/freehold/crm-filters'
 import { CRM_SORTS } from '../lib/freehold/crm-order'
+import { UAE_PLACES } from '../lib/freehold/uae-places'
 import { RATING_BAND_IDS } from '../lib/freehold/rating-ladder'
 import { FORM_ADVICE } from '../lib/freehold/form-funnel'
 import { RATING_ACTIONS } from '../lib/freehold/rating-actions'
@@ -146,6 +147,7 @@ console.log('\n── the CRM smart filters ──')
   family('crm.filter', 'crm.filter.', CRM_FILTERS, crm)
   family('crm.filter.group', 'crm.filter.group.', CRM_FILTER_GROUPS, crm)
   family('crm.sort', 'crm.sort.', CRM_SORTS, crm)
+  family('lm.aud.pat.place', 'lm.aud.pat.place.', UAE_PLACES.map((p) => p.key), lm_audiences)
 }
 
 console.log('\n── advisor action labels ──')

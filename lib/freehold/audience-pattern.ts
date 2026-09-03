@@ -39,6 +39,7 @@
  */
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
 import type { PositiveLevel } from '@/lib/freehold/level-arms'
+import { UAE_PLACES } from '@/lib/freehold/uae-places'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE VOCABULARY. Real-estate words, not platform words.
@@ -95,6 +96,20 @@ export interface AudiencePattern {
   /** What the operator called it. */
   name: string
   residency: Residency[]
+  /**
+   * WHERE IN THE UAE — keys into lib/freehold/uae-places.
+   *
+   * Residency answers which country the buyer lives in. This answers which
+   * part of it, and it had no answer at all before: Meta REFUSES city
+   * targeting in the UAE (subcode 1487479) and the client self-heals by
+   * retrying at country level, so every "Al Ain" audience this product could
+   * express was silently the whole country. An event in one city paid
+   * national prices for national reach.
+   *
+   * Empty means the whole country, which is the right default for a Dubai
+   * property campaign and the wrong one for an event somebody has to drive to.
+   */
+  places?: string[]
   speakers: SpeakerBundle[]
   lifeStage: LifeStage[]
   motive: Motive[]
@@ -109,7 +124,7 @@ export interface AudiencePattern {
  *  in it is still a valid audience (everyone in the geo), and saying so beats
  *  a form that refuses to submit. */
 export const emptyPattern = (name = ''): AudiencePattern => ({
-  name, residency: [], speakers: [], lifeStage: [], motive: [],
+  name, residency: [], places: [], speakers: [], lifeStage: [], motive: [],
   money: 'unknown', readiness: 'browsing', exclude: [], strictness: 50,
 })
 
@@ -141,7 +156,14 @@ export function parsePattern(raw: unknown): AudiencePattern {
   const one = <T extends string>(v: unknown, allowed: T[], dflt: T): T =>
     allowed.includes(v as T) ? (v as T) : dflt
   const strictness = Number(r.strictness)
+  // Unknown place keys are DROPPED, like every other unknown value here — a
+  // typo must not quietly widen the audience back to the whole country, which
+  // is the exact failure this trait exists to end.
+  const places = Array.isArray(r.places)
+    ? [...new Set(r.places.map(String).filter((k) => UAE_PLACES.some((pl) => pl.key === k)))]
+    : []
   return {
+    places,
     name: typeof r.name === 'string' ? r.name.trim().slice(0, 120) : '',
     residency: pick(r.residency, RESIDENCIES),
     speakers: pick(
@@ -583,6 +605,11 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   // else this pattern asked for, the person must carry a real-estate signal.
   const targeting: CampaignTargeting = hardenRealEstate({
     countries: uniqStrings(p.residency.flatMap((r) => RESIDENCY_COUNTRIES[r])) ,
+    // Radius targets, when the pattern named a part of the country. The geo
+    // builder drops the country whenever these are present — geo_locations
+    // ORs its entries, so country + circle is the country with a circle drawn
+    // on it. See lib/meta/geo-spec.ts and lib/freehold/uae-places.ts.
+    placeKeys: p.places ?? [],
     cityKeys: [],
     ageMin, ageMax,
     publisherPlatforms: ['facebook', 'instagram'],
@@ -692,6 +719,7 @@ export function describePattern(p: AudiencePattern): string {
   // itself as "Just looking." — which reads as a decision somebody made.
   const chosen =
     p.speakers.length + p.residency.length + p.lifeStage.length + p.motive.length +
+    (p.places?.length ?? 0) +
     (p.money !== 'unknown' ? 1 : 0) + (p.readiness !== 'browsing' ? 1 : 0)
   if (chosen === 0) return 'Anyone in the UAE — no traits chosen yet.'
 
@@ -702,6 +730,12 @@ export function describePattern(p: AudiencePattern): string {
   if (l.length) bits.push(l.join(' or '))
   const r = p.residency.map((x) => WORD[x]).filter(Boolean)
   if (r.length) bits.push(r.join(' or '))
+  // WHERE, in words. The sentence is what an operator reads back before
+  // spending money, so an audience narrowed to one city must SAY one city —
+  // a described audience that omits its own geography is how "Al Ain" and
+  // "the UAE" came to look identical on screen.
+  const pl = (p.places ?? []).map((k) => UAE_PLACES.find((x) => x.key === k)?.label).filter(Boolean)
+  if (pl.length) bits.push(`in ${pl.join(' or ')}`)
   const m = p.motive.map((x) => WORD[x]).filter(Boolean)
   if (m.length) bits.push(m.join(' or '))
   if (WORD[p.money]) bits.push(WORD[p.money])

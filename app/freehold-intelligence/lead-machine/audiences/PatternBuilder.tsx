@@ -24,6 +24,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { UAE_PLACES } from '@/lib/freehold/uae-places'
 import { Loader2, Sparkles, Flame, Snowflake, Check } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -35,6 +36,7 @@ import { useT } from '@/lib/i18n/provider'
 // its own price talk. 'gcc' is the deliberate whole-Gulf choice, never a
 // default. No 'european languages' blob — one language per audience.
 const RESIDENCY = ['resident', 'expat', 'saudi', 'qatar', 'kuwait', 'bahrain', 'oman', 'gcc', 'egypt', 'france', 'europe', 'overseas'] as const
+const PLACES = UAE_PLACES.map((p) => p.key)
 const SPEAKERS = ['arabic', 'english', 'russian'] as const
 const LIFE_STAGE = ['single', 'couple', 'young_family', 'established_family', 'downsizing'] as const
 const MOTIVE = ['first_home', 'upgrade', 'investment', 'holiday_home', 'golden_visa', 'relocation'] as const
@@ -45,6 +47,7 @@ const EXCLUDE = ['renters_only', 'job_seekers', 'agents_and_brokers', 'bargain_h
 interface Pattern {
   name: string
   residency: string[]
+  places: string[]
   speakers: string[]
   lifeStage: string[]
   motive: string[]
@@ -55,7 +58,7 @@ interface Pattern {
 }
 
 const EMPTY: Pattern = {
-  name: '', residency: [], speakers: [], lifeStage: [], motive: [],
+  name: '', residency: [], places: [], speakers: [], lifeStage: [], motive: [],
   money: 'unknown', readiness: 'browsing', exclude: [], strictness: 50,
 }
 
@@ -133,14 +136,14 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
 
-  const toggle = (key: 'residency' | 'speakers' | 'lifeStage' | 'motive' | 'exclude', v: string) =>
+  const toggle = (key: 'residency' | 'places' | 'speakers' | 'lifeStage' | 'motive' | 'exclude', v: string) =>
     setP((prev) => ({
       ...prev,
       [key]: prev[key].includes(v) ? prev[key].filter((x) => x !== v) : [...prev[key], v],
     }))
 
   const chosen =
-    p.residency.length + p.speakers.length + p.lifeStage.length + p.motive.length +
+    p.residency.length + p.places.length + p.speakers.length + p.lifeStage.length + p.motive.length +
     (p.money !== 'unknown' ? 1 : 0) + (p.readiness !== 'browsing' ? 1 : 0)
 
   /**
@@ -159,6 +162,7 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
     if (p.speakers.length) bits.push(join(p.speakers.map((x) => t(`lm.aud.pat.speakers.${x}`)), t('lm.aud.pat.and')))
     if (p.lifeStage.length) bits.push(join(p.lifeStage.map((x) => t(`lm.aud.pat.life.${x}`)), t('lm.aud.pat.or')))
     if (p.residency.length) bits.push(join(p.residency.map((x) => t(`lm.aud.pat.res.${x}`)), t('lm.aud.pat.or')))
+    if (p.places.length) bits.push(join(p.places.map((x) => t(`lm.aud.pat.place.${x}`)), t('lm.aud.pat.or')))
     if (p.motive.length) bits.push(join(p.motive.map((x) => t(`lm.aud.pat.motive.${x}`)), t('lm.aud.pat.or')))
     if (p.money !== 'unknown') bits.push(t(`lm.aud.pat.money.${p.money}`))
     if (p.readiness !== 'browsing') bits.push(t(`lm.aud.pat.ready.${p.readiness}`))
@@ -227,6 +231,13 @@ export default function PatternBuilder({ onSaved }: { onSaved: () => void }) {
             selected={p.speakers} onPick={(v) => toggle('speakers', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.res')} values={RESIDENCY} prefix="lm.aud.pat.res"
             selected={p.residency} onPick={(v) => toggle('residency', v)} t={t} />
+          {/* WHERE IN THE UAE. Empty = the whole country, which is right for a
+              Dubai campaign and wrong for an event somebody has to drive to.
+              Until this existed the product could not express "Al Ain" at all:
+              Meta refuses city targeting here and the client retries at
+              country level, so the audience was national and looked local. */}
+          <Chips label={t('lm.aud.pat.h.place')} values={PLACES} prefix="lm.aud.pat.place"
+            selected={p.places} onPick={(v) => toggle('places', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.life')} values={LIFE_STAGE} prefix="lm.aud.pat.life"
             selected={p.lifeStage} onPick={(v) => toggle('lifeStage', v)} t={t} />
           <Chips label={t('lm.aud.pat.h.motive')} values={MOTIVE} prefix="lm.aud.pat.motive"
