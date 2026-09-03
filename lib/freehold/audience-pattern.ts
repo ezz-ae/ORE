@@ -39,6 +39,7 @@
  */
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
 import type { PositiveLevel } from '@/lib/freehold/level-arms'
+import { UAE_PLACES } from '@/lib/freehold/uae-places'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE VOCABULARY. Real-estate words, not platform words.
@@ -95,6 +96,20 @@ export interface AudiencePattern {
   /** What the operator called it. */
   name: string
   residency: Residency[]
+  /**
+   * WHERE IN THE UAE — keys into lib/freehold/uae-places.
+   *
+   * Residency answers which country the buyer lives in. This answers which
+   * part of it, and it had no answer at all before: Meta REFUSES city
+   * targeting in the UAE (subcode 1487479) and the client self-heals by
+   * retrying at country level, so every "Al Ain" audience this product could
+   * express was silently the whole country. An event in one city paid
+   * national prices for national reach.
+   *
+   * Empty means the whole country, which is the right default for a Dubai
+   * property campaign and the wrong one for an event somebody has to drive to.
+   */
+  places?: string[]
   speakers: SpeakerBundle[]
   lifeStage: LifeStage[]
   motive: Motive[]
@@ -109,7 +124,7 @@ export interface AudiencePattern {
  *  in it is still a valid audience (everyone in the geo), and saying so beats
  *  a form that refuses to submit. */
 export const emptyPattern = (name = ''): AudiencePattern => ({
-  name, residency: [], speakers: [], lifeStage: [], motive: [],
+  name, residency: [], places: [], speakers: [], lifeStage: [], motive: [],
   money: 'unknown', readiness: 'browsing', exclude: [], strictness: 50,
 })
 
@@ -141,7 +156,14 @@ export function parsePattern(raw: unknown): AudiencePattern {
   const one = <T extends string>(v: unknown, allowed: T[], dflt: T): T =>
     allowed.includes(v as T) ? (v as T) : dflt
   const strictness = Number(r.strictness)
+  // Unknown place keys are DROPPED, like every other unknown value here — a
+  // typo must not quietly widen the audience back to the whole country, which
+  // is the exact failure this trait exists to end.
+  const places = Array.isArray(r.places)
+    ? [...new Set(r.places.map(String).filter((k) => UAE_PLACES.some((pl) => pl.key === k)))]
+    : []
   return {
+    places,
     name: typeof r.name === 'string' ? r.name.trim().slice(0, 120) : '',
     residency: pick(r.residency, RESIDENCIES),
     speakers: pick(
@@ -258,11 +280,57 @@ const MONEY: Record<Money, Mapped> = {
 /** Behavioural exclusions. Every one is something we have a reason to believe
  *  predicts a worse lead, never a demographic. */
 const EXCLUDE: Record<Disqualifier, TargetingEntity[]> = {
-  renters_only:       [{ id: '6003417049485', name: 'Apartment renters' }],
-  job_seekers:        [{ id: '6002867432822', name: 'Job seeking' }],
-  agents_and_brokers: [{ id: '6008500426593', name: 'Real estate agents' }],
-  bargain_hunters:    [{ id: '6002867432172', name: 'Discount shoppers' }],
+  // Both dead names — see the verification note below. Empty rather than
+  // wrong: an exclusion that cannot be built must not look built.
+  renters_only:       [],
+  job_seekers:        [],
+  // ── VERIFIED AGAINST THE LIVE CATALOGUE, 3 Sep 2026 ────────────────────
+  //
+  // `Real estate agents` (6008500426593) IS NOT IN META'S VOCABULARY, and
+  // neither were `Job seeking` (6002867432822), `Discount shoppers`
+  // (6002867432172) or `Apartment renters` (6003417049485). All four names.
+  //
+  // repairTargetingInterests drops a name Meta does not know — quietly, by
+  // design, so a stale id can never fail a launch. Applied to the MUST group
+  // that is protected: a group emptied by our own failure to validate is kept
+  // whole so Meta refuses it. EXCLUSIONS HAD NO SUCH PROTECTION. They were
+  // dropped and the launch went ahead.
+  //
+  // So every exclusion this product has ever set has been empty on the wire.
+  // The account's own complaint — "half of them try to find job" — is that,
+  // exactly: a job-seeker exclusion that was never once sent.
+  agents_and_brokers: [
+    { id: '6849945059527', name: 'Real estate marketing and coaching (real estate)' },
+    { id: '6003097927670', name: 'Real estate license (real estate)' },
+    { id: '111867022164671', name: 'Real estate broker' },
+  ],
+  // NO REPLACEMENT EXISTS, AND SAYING SO IS THE HONEST ANSWER.
+  //
+  // The catalogue has no bargain/discount/coupon interest, and nothing for
+  // renters. Substituting a near-miss would put a name in the spec that means
+  // something else and read as though the rule were working — which is the
+  // failure above, repeated deliberately.
+  //
+  // These stay empty until a real node is found. `unbuildableExclusions`
+  // names them so a screen can say the rule is not available rather than
+  // implying it is applied.
+  bargain_hunters:    [],
 }
+
+/**
+ * Exclusions this vocabulary cannot express, and must therefore not pretend to.
+ *
+ * `job_seekers` is the one that costs money here. Meta has NO job-seeking
+ * interest — the nearest node is the `New job` life event (173k), which is
+ * somebody who just STARTED a job. Excluding it would remove people who have
+ * just begun earning, which is close to the opposite of the intent.
+ *
+ * A job seeker cannot be excluded by interest. What actually filters them is
+ * the offer and the form: an ad that reads as an opportunity attracts people
+ * looking for one. That is a creative decision, and this module refuses to
+ * fake it as a targeting one.
+ */
+export const UNBUILDABLE_EXCLUSIONS: readonly Disqualifier[] = ['job_seekers', 'renters_only', 'bargain_hunters']
 
 /** The standard time-waster exclusions, for builders outside the pattern path
  *  (personas, lookalikes) that carry the same hygiene. */
@@ -295,9 +363,100 @@ export const speakerLocales = (speakers: SpeakerBundle[]): string[] =>
  * survives is the name: whatever id is live today is what ships, and a name
  * Meta no longer knows drops out quietly rather than failing the launch.
  */
+/**
+ * ── MEASURED, 3 Sep 2026, AGAINST THE LIVE VOCABULARY ────────────────────
+ *
+ * The gate was ONE node: `Real estate investing`, id 6003051380892.
+ *
+ * Two things were wrong with it and neither was visible from here.
+ *
+ * FIRST, THAT ID IS NOT IN META'S VOCABULARY AT ALL. The catalogue pull
+ * (8,611 live interests) has no 6003051380892. The launch repair resolves by
+ * name and shipped whatever Meta answered, so nothing ever failed — the id in
+ * this file has simply been decoration for as long as it has been here.
+ *
+ * SECOND, AND WORSE: the name it resolves to, `Real estate investing
+ * (investing)` (6003446239080), is 519M–610M worldwide — and, measured in
+ * the account, ABOUT 4M IN THE UAE. That is the number that matters, and it
+ * is roughly two in five of the reachable adults in this country.
+ *
+ * A narrowing group is an OR, so the widest member sets the width of the
+ * whole gate. The one rule this product hangs every audience on admitted
+ * nearly half the country.
+ *
+ * That is the real answer to "one interest targeting". The kitchen composed
+ * five careful layers on top of a gate that let in most of the market.
+ *
+ * ── WHAT REPLACED IT ─────────────────────────────────────────────────────
+ *
+ * Four nodes, every one from `path[0] = 'Interests'` — never a Job title or
+ * an Employer, which name people who SELL property, not people who buy it
+ * (`Real estate broker` is a job title and belongs in the exclusions, where
+ * it now is). Sizes are Meta's own global bounds, recorded so the next person
+ * can see the reasoning rather than re-derive it:
+ *
+ *   Property listings and web portals        ≤ 1.0M   ← the strongest signal
+ *   Residential real estate brokerage        ≤ 1.0M
+ *   Real estate investment firms             ≤ 10.1M
+ *   Residential real estate                  ≤ 20.9M
+ *
+ * The portal node is the best gate this vocabulary offers: somebody browsing
+ * property listings is doing the thing, not admiring the idea.
+ *
+ * THE NAME IS THE CONTRACT; THE ID IS A SEED. Every id here is re-resolved by
+ * NAME at launch and at reach-estimate time (repairTargetingInterests in
+ * lib/meta/client.ts). Meta retires and merges nodes on its own schedule, so
+ * a literal id goes stale on Meta's timetable — three consecutive live
+ * launches failed that way before the repair covered this group. What
+ * survives is the name: whatever id is live today ships, and a name Meta no
+ * longer knows drops out quietly rather than failing the launch.
+ */
 export const REAL_ESTATE_MUST: TargetingEntity[] = [
-  { id: '6003051380892', name: 'Real estate investing' },
+  { id: '6788101567252', name: 'Property listings and web portals (websites)' },
+  { id: '6784825930929', name: 'Real estate investment firms (real estate)' },
+  { id: '6849417269780', name: 'Residential real estate (real estate)' },
 ]
+
+/**
+ * The widest a gate member may be, in Meta's own global audience bound.
+ *
+ * A narrowing group is an OR, so this is not a preference — it is the width
+ * of the gate itself. 25M admits `Residential real estate` (20.9M), the
+ * broadest node that still describes housing rather than finance, and
+ * excludes `Real estate investing` (610M) by a factor of twenty-four.
+ *
+ * These are GLOBAL bounds, so they RANK rather than measure: they say which
+ * nodes are mass and which are not, and they say nothing about UAE reach.
+ * The gap is large and one-directional — `Real estate investing` is 610M
+ * worldwide and about 4M here — so a global bound is safe to REJECT on and
+ * never sufficient to accept on. The reach estimate answers the local
+ * question, per audience, at build time.
+ */
+export const GATE_MAX_AUDIENCE = 25_000_000
+
+/** The measured global upper bound for each gate member, from the catalogue
+ *  pull. Kept beside the list so the guard can assert the ceiling rather than
+ *  trust the comment above it — a rule whose only record is prose is a rule
+ *  the next person deletes. */
+export const GATE_MEASURED: Record<string, { upper: number; pathRoot: string }> = {
+  'Property listings and web portals (websites)': { upper: 1_000_000, pathRoot: 'Interests' },
+  'Real estate investment firms (real estate)': { upper: 10_082_856, pathRoot: 'Interests' },
+  'Residential real estate (real estate)': { upper: 20_883_615, pathRoot: 'Interests' },
+}
+
+/**
+ * `Residential real estate brokerage` (6778210171187, 1M) was in this list and
+ * came out.
+ *
+ * It passed every size test — and it describes the BROKERAGE trade, which is
+ * the same family as `Real estate marketing and coaching`, a node sitting two
+ * screens up in the agents exclusion. A gate that admits agents while the
+ * exclusions remove them is two rules arguing.
+ *
+ * The distinction the gate needs is not "is this about property" but "does
+ * this describe somebody BUYING one". Listings portals, residential real
+ * estate and investment firms do. A trade does not.
+ */
 
 /**
  * `Property` CAME OUT FOR THE SAME REASON `Investment` DID, ONE LEVEL DOWN.
@@ -583,6 +742,11 @@ export function planPattern(p: AudiencePattern, landingLanguages: string[] = [])
   // else this pattern asked for, the person must carry a real-estate signal.
   const targeting: CampaignTargeting = hardenRealEstate({
     countries: uniqStrings(p.residency.flatMap((r) => RESIDENCY_COUNTRIES[r])) ,
+    // Radius targets, when the pattern named a part of the country. The geo
+    // builder drops the country whenever these are present — geo_locations
+    // ORs its entries, so country + circle is the country with a circle drawn
+    // on it. See lib/meta/geo-spec.ts and lib/freehold/uae-places.ts.
+    placeKeys: p.places ?? [],
     cityKeys: [],
     ageMin, ageMax,
     publisherPlatforms: ['facebook', 'instagram'],
@@ -692,6 +856,7 @@ export function describePattern(p: AudiencePattern): string {
   // itself as "Just looking." — which reads as a decision somebody made.
   const chosen =
     p.speakers.length + p.residency.length + p.lifeStage.length + p.motive.length +
+    (p.places?.length ?? 0) +
     (p.money !== 'unknown' ? 1 : 0) + (p.readiness !== 'browsing' ? 1 : 0)
   if (chosen === 0) return 'Anyone in the UAE — no traits chosen yet.'
 
@@ -702,6 +867,12 @@ export function describePattern(p: AudiencePattern): string {
   if (l.length) bits.push(l.join(' or '))
   const r = p.residency.map((x) => WORD[x]).filter(Boolean)
   if (r.length) bits.push(r.join(' or '))
+  // WHERE, in words. The sentence is what an operator reads back before
+  // spending money, so an audience narrowed to one city must SAY one city —
+  // a described audience that omits its own geography is how "Al Ain" and
+  // "the UAE" came to look identical on screen.
+  const pl = (p.places ?? []).map((k) => UAE_PLACES.find((x) => x.key === k)?.label).filter(Boolean)
+  if (pl.length) bits.push(`in ${pl.join(' or ')}`)
   const m = p.motive.map((x) => WORD[x]).filter(Boolean)
   if (m.length) bits.push(m.join(' or '))
   if (WORD[p.money]) bits.push(WORD[p.money])

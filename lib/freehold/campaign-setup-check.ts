@@ -19,6 +19,19 @@
  * the data it already loaded.
  */
 
+import { MIN_ATTRIBUTED_FOR_QUALITY } from '@/lib/freehold/min-evidence'
+
+/**
+ * How many live ads in one ad set can still be told apart.
+ *
+ * Derived from the evidence rule the rest of the product uses rather than
+ * picked: an ad needs MIN_ATTRIBUTED_FOR_QUALITY results before its cost is
+ * a fact rather than a coin flip, so N ads need N × that before the ad set
+ * has produced a comparison. Past four, that is more results than these ad
+ * sets deliver in an entire run — the money buys delivery and no answer.
+ */
+export const MAX_COMPARABLE_ADS = 4
+
 export type SetupLevel = 'wrong' | 'watch' | 'ok'
 
 export interface SetupFinding {
@@ -181,6 +194,14 @@ function deprecatedLocationType(t?: Record<string, unknown> | null): boolean {
   return raw.map(String).sort().join(',') !== 'home,recent'
 }
 
+/** How many radius targets this ad set carries. See lib/freehold/uae-places:
+ *  in the UAE this is the ONLY sub-country targeting Meta accepts, so an ad
+ *  set with circles and no countries is precisely targeted, not untargeted. */
+function radiiOf(t?: Record<string, unknown> | null): number {
+  const geo = (t as { geo_locations?: { custom_locations?: unknown } } | null | undefined)?.geo_locations
+  return Array.isArray(geo?.custom_locations) ? geo.custom_locations.length : 0
+}
+
 function countriesOf(t?: Record<string, unknown> | null): string[] {
   const g = t?.geo_locations as { countries?: unknown } | undefined
   return arr(g?.countries).map(String)
@@ -249,6 +270,34 @@ export function checkCampaignSetup(
       })
       if (a.ads.length === 0) out.push({ level: 'wrong', key: 'noAds', adSet: where })
       else if (liveAds.length === 0 && !paused) out.push({ level: 'wrong', key: 'noLiveAd', adSet: where })
+
+      // ── A BUDGET SPLIT SO MANY WAYS THAT NOTHING CAN BE JUDGED ─────────
+      //
+      // A live ad set carried SEVEN ads on one budget for an event three days
+      // away. Four produced one lead each and three produced none, and the
+      // three with none had spent AED 27, 173 and 174 — nowhere near enough
+      // to say they were worse. So the ad set bought six days of delivery and
+      // ended with no comparable ad, which is not a result at all.
+      //
+      // This is a STRUCTURAL fault, and the distinction matters: running it
+      // longer does not fix it, so this must never suggest waiting for data.
+      // The threshold is derived, not chosen — with MIN_ATTRIBUTED_FOR_QUALITY
+      // results needed before any one ad can be compared, N ads need N × that
+      // many before the ad set has told you anything, and past four that is
+      // more results than these ad sets produce in their whole run.
+      //
+      // Reported once per ad set, at 'watch': more ads is a legitimate choice
+      // on a big budget, and this cannot see the budget per ad. What it can
+      // say is that nothing here will be comparable, which is the thing the
+      // operator did not know.
+      if (liveAds.length > MAX_COMPARABLE_ADS) {
+        out.push({
+          level: 'watch',
+          key: 'adsCannotLearn',
+          vars: { ads: liveAds.length, need: liveAds.length * MIN_ATTRIBUTED_FOR_QUALITY },
+          adSet: where,
+        })
+      }
     }
 
     // ── Who sees it ─────────────────────────────────────────────────────────
@@ -259,7 +308,13 @@ export function checkCampaignSetup(
 
     const countries = countriesOf(t)
     const cities = citiesOf(t)
-    if (countries.length === 0 && cities === 0) {
+    // A RADIUS IS A PLACE. Meta refuses city targeting in the UAE, so the only
+    // sub-country audience this product can build is custom_locations — and an
+    // ad set correctly targeted that way carries no countries and no cities.
+    // Without this it reads as `noPlace`: the guard calling the one properly
+    // targeted ad set in the account broken, which is how a guard gets ignored.
+    const circles = radiiOf(t)
+    if (countries.length === 0 && cities === 0 && circles === 0) {
       out.push({ level: 'wrong', key: 'noPlace', adSet: where })
     } else {
       // Why many countries in ONE ad set is worth a look: the ad set holds a

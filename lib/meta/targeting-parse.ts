@@ -77,9 +77,28 @@ export function targetingFromMeta(raw: Record<string, unknown> | undefined | nul
     ? geo.cities.map((c) => String(obj(c).key ?? '')).filter(Boolean)
     : []
 
+  // A LIVE AD SET TARGETED BY RADIUS MUST READ AS TARGETED.
+  //
+  // Without this, an ad set launched with custom_locations parses back with an
+  // empty geo, and checkCampaignSetup — which reads live Meta, not our intent
+  // — reports `noPlace` on a correctly targeted ad set. A guard that cries
+  // wolf about the audiences we build properly is a guard that gets ignored.
+  const customLocations = Array.isArray(geo.custom_locations)
+    ? geo.custom_locations
+        .map((c) => obj(c))
+        .filter((c) => Number.isFinite(Number(c.latitude)) && Number.isFinite(Number(c.longitude)))
+        .map((c) => ({
+          latitude: Number(c.latitude),
+          longitude: Number(c.longitude),
+          radius: Number(c.radius) || 0,
+          distanceUnit: String(c.distance_unit ?? 'kilometer'),
+        }))
+    : []
+
   return {
     countries: strings(geo.countries),
     cityKeys: cities,
+    ...(customLocations.length > 0 ? { customLocations } : {}),
     ageMin: Number(raw.age_min) || 0,
     ageMax: Number(raw.age_max) || 0,
     publisherPlatforms: strings(raw.publisher_platforms),

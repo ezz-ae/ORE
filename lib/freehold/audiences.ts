@@ -148,6 +148,7 @@ export function combineSpecs(specs: CampaignTargeting[]): CampaignTargeting {
   return {
     countries: [...new Set(specs.flatMap((s) => s.countries))],
     cityKeys: [...new Set(specs.flatMap((s) => s.cityKeys ?? []))],
+    placeKeys: [...new Set(specs.flatMap((s) => s.placeKeys ?? []))],
     // Combining widens WHERE, and it widens who counts as being there only if
     // one of the combined audiences already said so.
     locationTypes: normalizeLocationTypes([...new Set(specs.flatMap((s) => s.locationTypes ?? []))]),
@@ -218,6 +219,10 @@ export function normalizeSpec(raw: unknown): CampaignTargeting {
   return {
     countries: strings(r.countries).length ? strings(r.countries) : DEFAULT_SPEC.countries,
     cityKeys: strings(r.cityKeys),
+    // Radius targets, kept as OUR keys rather than resolved coordinates, so a
+    // saved audience stays readable and a radius we later revise applies to
+    // every audience that named the place. Same reasoning as leadLanguages.
+    placeKeys: strings(r.placeKeys),
     // Residents unless an audience deliberately says otherwise. `normalize`
     // reads an absent or unrecognised value as residents-only rather than as
     // "no preference", because no-preference is Meta's default and Meta's
