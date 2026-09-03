@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
-  RefreshCw, ChevronRight, Users, Plus, AlertCircle,
+  RefreshCw, ChevronRight, Users, Plus, AlertCircle, Copy,
 } from 'lucide-react'
 import { EmptyState } from '@/components/freehold/ui/empty-state'
 import {
@@ -447,6 +447,18 @@ export default function FreeholdCrmPage() {
                       <div className="truncate text-xs text-slate-500 lg:hidden">
                         {lead.budgetAED} · {lead.projectInterest}
                       </div>
+                      {/* "IT SHOULD BE NOTICED THAT THIS LEAD DOUBLE
+                          REGISTER." Not a warning — a finding. Somebody who
+                          filled the form twice told us twice that they want
+                          this, and after a merge the risk flag is gone while
+                          the fact remains. Rendered only above one, so it
+                          never becomes furniture on every row. */}
+                      {(lead.registrations ?? 1) > 1 && (
+                        <div className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-gold/25 bg-gold/[0.08] px-1.5 py-0.5 text-[10px] font-medium text-gold">
+                          <Copy className="h-2.5 w-2.5" />
+                          {t('crm.registeredTimes', { count: lead.registrations ?? 1 })}
+                        </div>
+                      )}
                     </div>
                   </div>
 

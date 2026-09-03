@@ -123,6 +123,13 @@ export type CRMLeadIntelligence = {
   intentScore: number
   urgency: "critical" | "high" | "medium" | "low"
   duplicateRisk: boolean
+  /** How many times this person registered, counting the first. 1 = once.
+   *  Survives the merge: the risk flag clears when two records are combined,
+   *  but registering twice is a fact about the buyer, not about our filing. */
+  registrations?: number
+  /** Set on the record that was merged AWAY, so a lead folded into another can
+   *  be told from one that was simply lost. */
+  mergedInto?: string | null
   wrongNumberRisk: boolean
   assignedAgent: string
   lastContactAt: string

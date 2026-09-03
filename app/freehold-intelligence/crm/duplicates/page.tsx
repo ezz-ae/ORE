@@ -95,7 +95,18 @@ export default function CrmDuplicatesPage() {
     const clusters: DuplicateCluster[] = []
     for (const [key, group] of byPhone) {
       if (group.length < 2) continue
-      const sorted = [...group].sort((x, y) => y.intentScore - x.intentScore)
+      // THE FIRST REGISTRATION IS THE PRIMARY — the record that has been
+      // worked, and therefore the one whose rating, owner and stage survive.
+      // This sorted by intentScore, which picked a primary by forecast: on a
+      // tie it happened to keep arrival order, and once the forecast became a
+      // real number the ties went and the newer record could win. The merge
+      // route decides the base by arrival regardless; this is the page
+      // agreeing with it rather than showing a different pair.
+      const arrived = (l: { createdAt?: string }) => {
+        const ms = Date.parse(l.createdAt ?? '')
+        return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY
+      }
+      const sorted = [...group].sort((x, y) => arrived(x) - arrived(y))
       const primary = sorted[0]
       for (let i = 1; i < sorted.length; i++) {
         const dup = sorted[i]
@@ -141,11 +152,17 @@ export default function CrmDuplicatesPage() {
     const cluster = allClusters.find((c) => c.id === id)
     setResolved((prev) => ({ ...prev, [id]: 'merged' }))
     triggerFlash(t('crm.mergedFlash', { name }))
-    // Persist: mark the duplicate record as lost so it leaves the active pipeline.
+    // A REAL MERGE, not a discard. This used to PATCH the second record to
+    // status 'lost' and copy nothing — every field the person gave us the
+    // second time was marked lost and left there.
+    //
+    // The route takes two ids and nothing else: it re-reads both rows, decides
+    // the base by arrival, and applies only what lead-merge.ts allows to move.
+    // The page cannot send a value, so it cannot rewrite a lead's identity.
     if (cluster) {
-      fetch(`/api/freehold/crm/leads/${cluster.duplicate.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'lost', message: `Merged into duplicate ${cluster.primary.id}` }),
+      fetch(`/api/freehold/crm/leads/${cluster.primary.id}/merge`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duplicateId: cluster.duplicate.id }),
       })
         .then((res) => { if (!res.ok) throw new Error('failed') })
         .catch(() => {
@@ -330,6 +347,7 @@ export default function CrmDuplicatesPage() {
             { step: '01', title: t('crm.mergeStep1Title'), body: t('crm.mergeStep1Body') },
             { step: '02', title: t('crm.mergeStep2Title'), body: t('crm.mergeStep2Body') },
             { step: '03', title: t('crm.mergeStep3Title'), body: t('crm.mergeStep3Body') },
+            { step: '04', title: t('crm.mergeStep4Title'), body: t('crm.mergeStep4Body') },
           ].map((item) => (
             <div key={item.step} className="rounded-[18px] border border-line bg-surface p-5">
               <div className="text-sm font-semibold text-gold/60">{item.step}</div>
