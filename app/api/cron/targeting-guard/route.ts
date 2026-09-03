@@ -31,6 +31,9 @@ import {
   decideAction, rankActions, stopCount, shouldAlert, type CampaignFacts,
 } from '@/lib/freehold/campaign-action'
 import { allCatalogEntities } from '@/lib/freehold/audience-pattern'
+import { newStops, clearedStops, shouldNotify, type GuardStop } from '@/lib/freehold/guard-runs'
+import { notify } from '@/lib/freehold/notifications'
+import { query } from '@/lib/db'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -108,6 +111,68 @@ export async function GET(req: NextRequest) {
   const ranked = rankActions(actions, (a) => Number(insights.get(a.campaignId)?.spend ?? 0))
   const stops = stopCount(actions)
 
+  // ── THE HALF THAT WAS ONLY EVER PROSE ──────────────────────────────────
+  //
+  // The header above has always said this route "stores the run, and raises an
+  // alarm only when something needs stopping". It did neither: it returned the
+  // actions as a response body, and a Vercel cron throws that away. Every
+  // morning the machine read the account correctly and told nobody.
+  //
+  // Both halves are best-effort. A guard that fails on its own bookkeeping
+  // stops guarding, which is the one outcome worse than not writing it down.
+  const nowStops: GuardStop[] = actions
+    .filter((a) => a.severity === 'stop_now')
+    .map((a) => ({ campaignId: a.campaignId, name: a.name, key: a.key }))
+
+  let previous: GuardStop[] = []
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS freehold_targeting_guard_runs (
+        id bigserial PRIMARY KEY,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        checked integer NOT NULL,
+        stops integer NOT NULL,
+        alarm boolean NOT NULL,
+        actions jsonb NOT NULL
+      )`)
+    const prev = await query<{ actions: unknown }>(
+      `SELECT actions FROM freehold_targeting_guard_runs ORDER BY id DESC LIMIT 1`,
+    )
+    const raw = prev[0]?.actions
+    if (Array.isArray(raw)) {
+      previous = (raw as Array<Record<string, unknown>>)
+        .filter((a) => a?.severity === 'stop_now')
+        .map((a) => ({ campaignId: String(a.campaignId), name: String(a.name), key: String(a.key) }))
+    }
+    await query(
+      `INSERT INTO freehold_targeting_guard_runs (checked, stops, alarm, actions)
+       VALUES ($1, $2, $3, $4)`,
+      [campaigns.length, stops, shouldAlert(actions), JSON.stringify(ranked)],
+    )
+  } catch {
+    // Unreadable or unwritable history means no comparison is possible; the
+    // run still answers, and `previous` stays empty so genuinely new stops
+    // are announced rather than swallowed.
+  }
+
+  // ONLY NEWS INTERRUPTS. A campaign broad today is broad tomorrow, so
+  // alerting on state sends the same alarm every morning — which is exactly
+  // how the header's "muted guard" happens. See lib/freehold/guard-runs.ts.
+  const fresh = newStops(nowStops, previous)
+  const cleared = clearedStops(nowStops, previous)
+  if (shouldNotify(nowStops, previous)) {
+    try {
+      await notify('management_alert', {
+        kind: 'targeting_guard',
+        newStops: fresh.map((s) => ({ campaignId: s.campaignId, name: s.name, reason: s.key })),
+        totalStops: stops,
+        checked: campaigns.length,
+      }, { href: '/freehold-intelligence/ads-live' })
+    } catch {
+      // An alert that cannot be filed does not undo the run or the record.
+    }
+  }
+
   return NextResponse.json({
     checked: campaigns.length,
     stops,
@@ -115,6 +180,10 @@ export async function GET(req: NextRequest) {
     // the screen uses — so what pages somebody and what they then read cannot
     // disagree about how bad it is.
     alarm: shouldAlert(actions),
+    // What changed since yesterday — the only part a person needed to be
+    // interrupted for, and now the only part that interrupts them.
+    newStops: fresh.length,
+    clearedStops: cleared.length,
     actions: ranked,
   })
 }

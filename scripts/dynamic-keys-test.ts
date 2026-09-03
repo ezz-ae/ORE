@@ -173,6 +173,7 @@ console.log('\n── setup-check findings ──')
     'youngAge', 'age',
     'anyPlacement', 'offPlatform', 'loosePlacement', 'placements',
     'softGoal', 'noBudget', 'capped', 'capChoking',
+    'adsCannotLearn',
   ]
   family('lm.setupCheck', 'lm.setupCheck.', SETUP_KEYS)
 }

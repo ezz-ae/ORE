@@ -45,16 +45,40 @@ export const STANDARD_LOCATION_TYPES: LocationType[] = ['home', 'recent']
  */
 export const normalizeLocationTypes = (_v: unknown): LocationType[] => [...STANDARD_LOCATION_TYPES]
 
+/** A coordinate-and-radius target. See lib/freehold/uae-places.ts for why
+ *  this exists at all: Meta refuses CITY targeting in the UAE (subcode
+ *  1487479), and the self-heal for that error deletes the cities and retries
+ *  at country level — so every sub-country audience this product could build
+ *  quietly became the whole country. A custom location is accepted where a
+ *  city is not, and needs no Meta id: a coordinate is public geography. */
+export interface CustomLocation {
+  latitude: number
+  longitude: number
+  radius: number
+  distance_unit: 'kilometer'
+}
+
 /** The `geo_locations` block, built once. */
 export function geoLocationsSpec(input: {
   countries: string[]
   cityKeys?: string[]
+  customLocations?: CustomLocation[] | null
   locationTypes?: LocationType[] | null
 }): Record<string, unknown> {
   const cities = (input.cityKeys ?? []).filter(Boolean)
+  const custom = (input.customLocations ?? []).filter(Boolean)
+  // WHEN A RADIUS IS GIVEN, THE COUNTRY IS NOT ALSO SENT.
+  //
+  // Meta ORs the entries inside geo_locations: countries + custom_locations
+  // means the whole country OR the circle, which is the whole country. An
+  // "Al Ain event" ad set built that way spends nationally and reads on
+  // screen as though it were targeted — the most expensive kind of wrong,
+  // because nothing about it looks broken.
+  const geoIsNarrowed = custom.length > 0
   return {
-    countries: input.countries,
+    ...(geoIsNarrowed ? {} : { countries: input.countries }),
     ...(cities.length > 0 ? { cities: cities.map((key) => ({ key })) } : {}),
+    ...(custom.length > 0 ? { custom_locations: custom } : {}),
     location_types: normalizeLocationTypes(input.locationTypes),
   }
 }

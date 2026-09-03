@@ -42,6 +42,7 @@ import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
 import { geoLocationsSpec } from './geo-spec'
+import { customLocationsFor } from '@/lib/freehold/uae-places'
 import { HEADLINE_WINDOW, RECENT_WINDOW, indexInsightsByCampaign, type CampaignInsightRow } from './insights-window'
 import {
   callToActionSpec, isVideoUrl, pickThumbnail, videoDataSpec, videoStatusOf,
@@ -866,6 +867,7 @@ export async function getReachEstimate(
       geo_locations: geoLocationsSpec({
         countries: targeting.countries.length ? targeting.countries : ['AE'],
         cityKeys: targeting.cityKeys,
+        customLocations: customLocationsFor(targeting.placeKeys ?? []),
         locationTypes: targeting.locationTypes,
       }),
       age_min: targeting.ageMin,
@@ -1169,6 +1171,7 @@ export async function createAdSet(params: {
     geo_locations: geoLocationsSpec({
       countries: t.countries,
       cityKeys: t.cityKeys,
+      customLocations: customLocationsFor(t.placeKeys ?? []),
       locationTypes: t.locationTypes,
     }),
     age_min: ageMin,
@@ -3101,6 +3104,7 @@ export async function updateAdSet(
       geo_locations: geoLocationsSpec({
         countries: params.targeting.countries,
         cityKeys: params.targeting.cityKeys,
+        customLocations: customLocationsFor(params.targeting.placeKeys ?? []),
         locationTypes: params.targeting.locationTypes,
       }),
       age_min: params.targeting.ageMin,
