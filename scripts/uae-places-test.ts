@@ -34,6 +34,9 @@ import {
   isWholeCountry, MIN_RADIUS_KM, MAX_RADIUS_KM,
 } from '../lib/freehold/uae-places'
 import { geoLocationsSpec } from '../lib/meta/geo-spec'
+import { targetingFromMeta } from '../lib/meta/targeting-parse'
+import { checkCampaignSetup } from '../lib/freehold/campaign-setup-check'
+import { normalizeSpec, combineSpecs } from '../lib/freehold/audiences'
 
 let failures = 0
 const ok = (m: string) => console.log(`  ✓ ${m}`)
@@ -99,6 +102,45 @@ console.log('\n── the places themselves ──')
   // estimate; a caller that cannot tell would ship the expensive version.
   check('asking for every emirate is recognised as the whole country',
     isWholeCountry(UAE_PLACES.map((p) => p.key)) && !isWholeCountry(AL_AIN_CATCHMENT))
+}
+
+console.log('\n── and a radius survives the round trip ──')
+{
+  // BUILT AND UNWIRED IS THE FAILURE THIS PRODUCT KEEPS REPEATING — the
+  // targeting guard computed the right answer daily and returned it into a
+  // discarded response body. A geo the launcher can send but no reader can
+  // see is the same shape of mistake.
+  const spec = geoLocationsSpec({
+    countries: ['AE'],
+    customLocations: customLocationsFor(AL_AIN_CATCHMENT),
+  })
+  const readBack = targetingFromMeta({ geo_locations: spec })!
+  check('a live ad set targeted by radius reads back as targeted',
+    (readBack.customLocations ?? []).length === 2,
+    JSON.stringify(readBack.customLocations))
+
+  // checkCampaignSetup reads LIVE Meta. Without the radius reader it reports
+  // `noPlace` on the one correctly targeted ad set in the account — a guard
+  // calling good work broken is a guard people stop reading.
+  const findings = checkCampaignSetup(
+    { id: 'c1', status: 'ACTIVE', daily_budget: '30000' },
+    [{ id: 'a1', name: 'Al Ain event', status: 'ACTIVE', targeting: { geo_locations: spec }, ads: [] } as never],
+  )
+  check('…and the setup check does not call it placeless',
+    !findings.some((f) => f.key === 'noPlace'),
+    findings.map((f) => f.key).join(','))
+
+  // A saved audience must keep the KEY, not the resolved circle: a radius we
+  // later revise has to apply to every audience that named the place.
+  const saved = normalizeSpec({ countries: ['AE'], placeKeys: [...AL_AIN_CATCHMENT] })
+  check('a saved audience keeps the place it named',
+    (saved.placeKeys ?? []).join(',') === 'al_ain,abu_dhabi', String(saved.placeKeys))
+  // Combining two audiences widens WHERE; dropping the places here would turn
+  // a combined Al Ain + Abu Dhabi audience back into the whole country.
+  const combined = combineSpecs([saved, normalizeSpec({ countries: ['AE'], placeKeys: ['dubai'] })])
+  check('…and combining audiences keeps every place',
+    (combined.placeKeys ?? []).sort().join(',') === 'abu_dhabi,al_ain,dubai',
+    String(combined.placeKeys))
 }
 
 console.log('\n── and all three senders build geo the same way ──')

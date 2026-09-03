@@ -186,6 +186,13 @@ export interface CampaignTargeting {
    */
   placeKeys?: string[]
   /**
+   * Radius targets READ BACK off a live ad set. Distinct from `placeKeys`,
+   * which is what we asked for: an ad set edited in Ads Manager can carry
+   * circles that match no key of ours, and a reader must report what is
+   * there rather than what we would have sent.
+   */
+  customLocations?: Array<{ latitude: number; longitude: number; radius: number; distanceUnit: string }>
+  /**
    * Whether the places above mean people who LIVE there or also people who are
    * merely passing through. Absent = residents only, which is the setting a
    * property campaign wants and the opposite of Meta's own default.

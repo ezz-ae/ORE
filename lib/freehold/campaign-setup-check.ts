@@ -194,6 +194,14 @@ function deprecatedLocationType(t?: Record<string, unknown> | null): boolean {
   return raw.map(String).sort().join(',') !== 'home,recent'
 }
 
+/** How many radius targets this ad set carries. See lib/freehold/uae-places:
+ *  in the UAE this is the ONLY sub-country targeting Meta accepts, so an ad
+ *  set with circles and no countries is precisely targeted, not untargeted. */
+function radiiOf(t?: Record<string, unknown> | null): number {
+  const geo = (t as { geo_locations?: { custom_locations?: unknown } } | null | undefined)?.geo_locations
+  return Array.isArray(geo?.custom_locations) ? geo.custom_locations.length : 0
+}
+
 function countriesOf(t?: Record<string, unknown> | null): string[] {
   const g = t?.geo_locations as { countries?: unknown } | undefined
   return arr(g?.countries).map(String)
@@ -300,7 +308,13 @@ export function checkCampaignSetup(
 
     const countries = countriesOf(t)
     const cities = citiesOf(t)
-    if (countries.length === 0 && cities === 0) {
+    // A RADIUS IS A PLACE. Meta refuses city targeting in the UAE, so the only
+    // sub-country audience this product can build is custom_locations — and an
+    // ad set correctly targeted that way carries no countries and no cities.
+    // Without this it reads as `noPlace`: the guard calling the one properly
+    // targeted ad set in the account broken, which is how a guard gets ignored.
+    const circles = radiiOf(t)
+    if (countries.length === 0 && cities === 0 && circles === 0) {
       out.push({ level: 'wrong', key: 'noPlace', adSet: where })
     } else {
       // Why many countries in ONE ad set is worth a look: the ad set holds a
