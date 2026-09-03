@@ -27,21 +27,37 @@ const MANAGEMENT = ['admin', 'ceo', 'director', 'sales_manager']
 /** Normalised phones (7+ digits) that appear on MORE than one non-archived
  *  lead — the duplicate clusters, computed over the whole table so the flag
  *  is correct even for rows beyond the list cap. Fail-soft to empty. */
-async function duplicatePhoneSet(): Promise<Set<string>> {
+async function duplicatePhoneSet(): Promise<{ unresolved: Set<string>; registrations: Map<string, number> }> {
+  const empty = { unresolved: new Set<string>(), registrations: new Map<string, number>() }
   try {
-    const rows = await query<{ p: string }>(
+    const rows = await query<{ p: string; total: string; open: string }>(
       // '\\D' in a JS string reaches Postgres as \D (non-digit). Written as
       // '\D' the JS layer cooks it to the bare letter "D", so the query would
       // strip only "D" and group by raw formatted phones — every duplicate/
       // wrong-number flag computed off it was wrong.
-      `SELECT regexp_replace(phone, '\\D', '', 'g') AS p
+      //
+      // TWO COUNTS, because a merged pair is not an unresolved duplicate but
+      // IS still a person who registered twice. `total` is how many times they
+      // came to us — the fact the operator asked to be able to see. `open` is
+      // how many records are still separate, which is the only one that should
+      // raise a risk flag; once merged, the second row carries merged_into and
+      // stops counting toward it.
+      `SELECT regexp_replace(phone, '\\D', '', 'g') AS p,
+              COUNT(*) AS total,
+              COUNT(*) FILTER (WHERE merged_into IS NULL) AS open
          FROM freehold_site_leads
         WHERE archived IS NOT TRUE AND phone IS NOT NULL
         GROUP BY 1
        HAVING length(regexp_replace(phone, '\\D', '', 'g')) >= 7 AND COUNT(*) > 1`,
     )
-    return new Set(rows.map((r) => r.p))
-  } catch { return new Set() }
+    const unresolved = new Set<string>()
+    const registrations = new Map<string, number>()
+    for (const r of rows) {
+      registrations.set(r.p, Number(r.total))
+      if (Number(r.open) > 1) unresolved.add(r.p)
+    }
+    return { unresolved, registrations }
+  } catch { return empty }
 }
 
 // Persistent "not a duplicate" dismissals live on the lead row.
@@ -136,6 +152,7 @@ export async function GET() {
     const params: unknown[] = []
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
                       status, priority, created_at::text, last_contact_at::text, country,
+                      merged_into,
                       budget_aed, interest, message, landing_slug, updated_at::text,
                       snooze_until::text, lead_code, duplicate_dismissed_at::text,
                       utm_id, utm_campaign, value_rating, behaviour_score, meta_ad_id,

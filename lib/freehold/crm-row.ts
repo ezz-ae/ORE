@@ -52,13 +52,16 @@ export interface DbLead {
   meta_ad_id?: string | null
   meta_form_name?: string | null
   meta_ad_name?: string | null
+  merged_into?: string | null
   archived: boolean | null
   blocked: boolean | null
 }
 
 export function dbLeadToCRM(
   row: DbLead,
-  dupPhones?: Set<string>,
+  /** The duplicate reading for the whole table: which phones still have more
+   *  than one UNMERGED record, and how many times each person registered. */
+  dup?: { unresolved: Set<string>; registrations: Map<string, number> },
   /** campaign id → campaign name, and campaign id → project name. Resolved
    *  once per request rather than per row — 571 leads share a handful of
    *  campaigns between them. */
@@ -159,7 +162,16 @@ export function dbLeadToCRM(
     //                (the same rule the Duplicates page clusters by), unless
     //                the cluster was dismissed as "not a duplicate".
     //   wrong no.  = phone missing or too short to dial (<7 digits).
-    duplicateRisk: !row.duplicate_dismissed_at && !!dupPhones?.has(normPhone(row.phone)),
+    duplicateRisk: !row.duplicate_dismissed_at && !!dup?.unresolved.has(normPhone(row.phone)),
+    // HOW MANY TIMES THIS PERSON CAME TO US. "it should be noticed that this
+    // lead double registered" — and it stays true after the merge, which is
+    // the point: the risk flag clears when the records are combined, but the
+    // fact that they registered twice is a fact about the buyer, not about
+    // our filing. 1 when they came once.
+    registrations: dup?.registrations.get(normPhone(row.phone)) ?? 1,
+    // Set on the record that was merged AWAY, so a consumer can tell a lead
+    // that was folded into another from one that was simply lost.
+    mergedInto: (row.merged_into as string | null) ?? null,
     wrongNumberRisk: normPhone(row.phone).length < 7,
     assignedAgent: row.assigned_broker_id ?? '',
     lastContactAt: row.last_contact_at ?? row.created_at,

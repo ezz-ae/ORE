@@ -1610,8 +1610,17 @@ export async function ensureLeadsTable() {
       ADD COLUMN IF NOT EXISTS archived boolean DEFAULT false,
       ADD COLUMN IF NOT EXISTS muted_until timestamptz,
       ADD COLUMN IF NOT EXISTS blocked boolean DEFAULT false,
-      ADD COLUMN IF NOT EXISTS assigned_at timestamptz
+      ADD COLUMN IF NOT EXISTS assigned_at timestamptz,
+      ADD COLUMN IF NOT EXISTS merged_into uuid,
+      ADD COLUMN IF NOT EXISTS merged_at timestamptz
   `)
+  // A merged registration points at the record it was folded into and STAYS on
+  // the table. Deleting it would be tidier and wrong twice over: the merge
+  // would stop being auditable, and the second registration would stop being a
+  // countable event — it was a real form fill on a real ad, and removing it
+  // credits that ad with one lead fewer than it produced.
+  // Ensured here rather than only in the merge route so every reader can
+  // SELECT the column on a workspace where nothing has been merged yet.
   // When the current broker got this lead. The fairness rules protect a newly
   // assigned lead for a grace window, so "newly" needs a real timestamp —
   // created_at is when the LEAD arrived, not when this broker received it, and
