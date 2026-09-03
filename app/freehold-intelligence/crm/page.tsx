@@ -22,6 +22,7 @@ import { LeadValueBadge } from '@/components/freehold/lead-value-chips'
 import { useT } from '@/lib/i18n/provider'
 import SmartFilters from '@/components/freehold/smart-filters'
 import { matchesFilters, parseFilters, type CrmFilterId } from '@/lib/freehold/crm-filters'
+import { sortLeads, CRM_SORTS, DEFAULT_CRM_SORT, type CrmSort } from '@/lib/freehold/crm-order'
 import { loadCrmView, saveCrmView } from './_lib/view-prefs'
 import { Monogram } from '@/components/freehold/monogram'
 
@@ -115,11 +116,11 @@ export default function FreeholdCrmPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterNow] = useState(() => Date.now())
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
-  // Rank by VALUE, most unqualified first — the deliberate inversion. The
-  // bottom of the list is not noise to hide; it is the set the machine (and
-  // the team) must explicitly know it does not want. Unrated leads sort after
-  // the rated: unknown is not the same fact as unqualified.
-  const [rankByValue, setRankByValue] = useState(false)
+  // WHAT ORDER THE LIST IS IN — a named choice, defaulting to arrival.
+  // This was a single rank-by-value boolean, so "newest first" was not
+  // something a person could ask for; the list only looked like arrival order
+  // while intentScore was a constant. See lib/freehold/crm-order.ts.
+  const [sort, setSort] = useState<CrmSort>(DEFAULT_CRM_SORT)
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -193,7 +194,7 @@ export default function FreeholdCrmPage() {
   // ── Filtered leads ──
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return leads
+    const rows = leads
       .filter(l => stageFilter === 'all' || l.pipelineStage === stageFilter)
       // The form and ad names are searchable because they are what somebody
       // types: "show me the leads from cashoffer B" is a question about a form,
@@ -204,10 +205,8 @@ export default function FreeholdCrmPage() {
       // does choosing. OR within a group / AND between groups lives in the
       // pure module, not here.
       .filter(l => matchesFilters(l, filters, filterNow))
-      .sort((a, b) => rankByValue
-        ? (a.valueRating ?? 99) - (b.valueRating ?? 99)
-        : b.intentScore - a.intentScore)
-  }, [leads, query, stageFilter, rankByValue, filters, filterNow])
+    return sortLeads(rows, sort)
+  }, [leads, query, stageFilter, sort, filters, filterNow])
 
   // ── Tile definitions ──
   const TILES = [
@@ -374,19 +373,25 @@ export default function FreeholdCrmPage() {
                 <X className="h-3 w-3" /> {t('crm.clear')}
               </button>
             )}
-            {/* Rank by value, most unqualified first — surfacing the bottom
-                of the book on purpose: that set is what the machine must
-                learn to stop buying. */}
-            <button
-              onClick={() => setRankByValue((v) => !v)}
-              className={`flex items-center gap-1 rounded-lg border px-3 py-2 text-xs transition ${
-                rankByValue
-                  ? 'border-red-400/40 bg-red-400/10 text-red-300'
-                  : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {t('crm.rank.valueWorstFirst')}
-            </button>
+            {/* WHAT ORDER — named, so the list can always answer it. Newest
+                first is the default because a work queue is read by arrival;
+                value (worst first) surfaces the bottom of the book on purpose,
+                since that set is what the machine must learn to stop buying. */}
+            <div className="flex items-center gap-1 rounded-lg border border-line bg-surface-2 p-0.5">
+              {CRM_SORTS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSort(s)}
+                  className={`rounded-md px-2.5 py-1.5 text-xs transition ${
+                    sort === s
+                      ? 'bg-gold/15 text-gold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {t(`crm.sort.${s}`)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="mb-1.5 px-0.5 text-xs text-slate-500">
