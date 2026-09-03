@@ -25,6 +25,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { dbLeadToCRM } from '../lib/freehold/crm-row'
 import { leadOriginLabel, originIsUnnamed } from '../lib/freehold/lead-origin'
 
 let failures = 0
@@ -181,7 +182,24 @@ console.log('\n── every CRM surface says it the same way ──')
   // THE SERVER HAS TO SEND THEM, or every screen above silently shows nothing.
   const api = code('app/api/freehold/crm/leads/route.ts')
   check('the list API selects both names', /meta_form_name, meta_ad_name/.test(api))
-  check('…and returns them on the lead', /formName: row\.meta_form_name/.test(api))
+  // ASSERTED BY RUNNING THE MAPPER, not by grepping for the assignment. This
+  // check was pinned to the route file and broke the day the mapper moved to
+  // lib/freehold/crm-row.ts — with the behaviour completely intact. A guard
+  // that fails on a refactor and passes on a regression is worse than none.
+  const mapped = dbLeadToCRM({
+    id: 'l1', name: 'A', phone: '+971500000001', email: null, source: 'meta',
+    project_slug: null, assigned_broker_id: null, status: 'new', priority: 'warm',
+    created_at: new Date().toISOString(), last_contact_at: null, country: null,
+    budget_aed: null, interest: null, message: null, landing_slug: null,
+    updated_at: null, snooze_until: null, lead_code: null,
+    duplicate_dismissed_at: null, utm_id: null, utm_campaign: null,
+    value_rating: null, behaviour_score: null,
+    meta_ad_id: '120', meta_form_name: 'Cash offer B', meta_ad_name: 'Volta static 3',
+    archived: false, blocked: false,
+  })
+  check('…and returns them on the lead',
+    mapped.formName === 'Cash offer B' && mapped.adName === 'Volta static 3',
+    `${mapped.formName} / ${mapped.adName}`)
   check('…and adds the columns first, so a workspace read before its first sync still lists leads',
     /ADD COLUMN IF NOT EXISTS meta_form_name text/.test(api))
 

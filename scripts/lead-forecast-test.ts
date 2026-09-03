@@ -23,6 +23,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { dbLeadToCRM } from '../lib/freehold/crm-row'
 import {
   forecastLead, calibrate, forecastAccuracy,
   FORECAST_REASONS, CALIBRATION_VERDICTS,
@@ -187,12 +188,43 @@ console.log('\n── and it is WIRED, not another module nobody calls ──')
   // THE FOUR-WAY LOOKUP IS GONE. It read the row's own temperature and
   // returned 90/75/55/30, so every screen showed a number computed from
   // nothing.
+  // ASSERTED BY RUNNING THE MAPPER. These three were regexes over the route
+  // file and broke the day the mapper moved to lib/freehold/crm-row.ts, with
+  // the wiring perfectly intact — a guard that fails on a move and would pass
+  // on a rewrite is pinned to the wrong thing. The question is not "does the
+  // file contain a call"; it is "does the number on the row respond to the
+  // evidence", and only running it can answer that.
+  const lead = (over: Partial<Parameters<typeof dbLeadToCRM>[0]> = {}, history?: Map<string, { rated: number; meanRating: number }>) =>
+    dbLeadToCRM({
+      id: 'l1', name: 'A', phone: '+971500000001', email: null, source: 'meta',
+      project_slug: null, assigned_broker_id: null, status: 'new', priority: 'warm',
+      created_at: new Date().toISOString(), last_contact_at: null, country: null,
+      budget_aed: null, interest: null, message: null, landing_slug: null,
+      updated_at: null, snooze_until: null, lead_code: null,
+      duplicate_dismissed_at: null, utm_id: null, utm_campaign: null,
+      value_rating: null, behaviour_score: null, meta_ad_id: 'ad1',
+      meta_form_name: null, meta_ad_name: null, archived: false, blocked: false,
+      ...over,
+    }, undefined, new Map(), new Map(), new Map(), history)
+
+  // THE FOUR-WAY LOOKUP IS GONE. It read the row's own temperature and
+  // returned 90/75/55/30, so every screen showed a number computed from
+  // nothing — and the row's temperature is derived from the same row.
   check('the temperature lookup no longer sets intent',
-    !/intentScore: temperature === /.test(code), 'the lookup is back')
-  check('the CRM scores leads with the forecast', /forecastLead\(\{/.test(code))
+    lead({ priority: 'hot' }).intentScore === lead({ priority: 'cold' }).intentScore,
+    `hot=${lead({ priority: 'hot' }).intentScore} cold=${lead({ priority: 'cold' }).intentScore}`)
+
+  const strong = new Map([['ad1', { rated: 12, meanRating: 9 }]])
+  const weak = new Map([['ad1', { rated: 12, meanRating: 2 }]])
+  check('the CRM scores leads with the forecast',
+    lead({}, strong).intentScore > lead({}, weak).intentScore,
+    `strong=${lead({}, strong).intentScore} weak=${lead({}, weak).intentScore}`)
+
   check('…reading behaviour, contactability and the ad history',
-    /behaviourScore: row\.behaviour_score/.test(code)
-    && /sourceHistory: adHistory\.get/.test(code))
+    lead({ behaviour_score: 90 }, strong).intentScore > lead({ behaviour_score: 5 }, strong).intentScore
+    && lead({ phone: '123' }, strong).intentScore < lead({}, strong).intentScore,
+    `behaviour ${lead({ behaviour_score: 90 }, strong).intentScore}/${lead({ behaviour_score: 5 }, strong).intentScore}`
+    + ` · undialable ${lead({ phone: '123' }, strong).intentScore}/${lead({}, strong).intentScore}`)
 
   // The carry from campaign N into N+1 lives in ONE reader now — the CRM
   // forecast and the campaign advisor must not be able to disagree about the
