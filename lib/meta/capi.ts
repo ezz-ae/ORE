@@ -12,6 +12,11 @@ import { recordCapiEvent } from '@/lib/freehold/capi-ledger-db'
 // lead. No credentials configured ⇒ silently skip (the lead itself is never
 // blocked on ad plumbing).
 
+// The CRM guide's endpoint names v26.0; the Marketing API client is pinned to
+// v20.0 and is a separate concern with its own upgrade risk. Kept aligned with
+// the client rather than split: two Graph versions in one codebase is how a
+// field silently starts behaving differently on one path only. Worth raising
+// as its own change.
 const GRAPH = 'https://graph.facebook.com/v20.0'
 
 /**
@@ -279,6 +284,13 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
   // Meta's own id for the form submission. Not hashed — like fbc, it is
   // matched by equality against what Meta itself issued. This is what credits
   // the exact AD rather than leaving Meta to guess from a hashed email.
+  // SENT AS A STRING, DELIBERATELY, against the guide's own example.
+  //
+  // Meta documents lead_id as a 15-17 digit number and shows it unquoted. A
+  // 17-digit value does not survive JavaScript's Number: MAX_SAFE_INTEGER is
+  // 16 digits, so the id would be silently rounded and match nothing — a
+  // corruption with no error attached to it. The string is exact, and Meta
+  // accepts it.
   if (params.leadId) userData.lead_id = params.leadId
   // No match key means Meta cannot attach this to anyone. Sending it anyway
   // would inflate the count with events that teach the optimiser nothing.
@@ -299,9 +311,20 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
     custom.value = Math.round(params.valueAED * 100) / 100
     custom.currency = 'AED'
   }
-  // The CRM reporting the outcome. Required for the lead-ads CRM integration
-  // that Conversion Leads optimisation reads — see LEAD_EVENT_SOURCE.
+  // ── THE TWO FIELDS THAT MAKE THIS A CRM EVENT ───────────────────────────
+  //
+  // Meta's Qualified Leads integration guide, verbatim:
+  //
+  //   lead_event_source — "the name of your CRM"
+  //   event_source      — "should always be 'crm'"
+  //
+  // Both live in custom_data, both were absent, and without them an event
+  // carrying a lead_id is not attached to the CRM integration — so Meta can
+  // ACCEPT it and count it toward nothing. Which is what this account looks
+  // like: every ad set on the Conversion Leads goal, three qualified leads in
+  // five weeks, and a write-back that has never delivered once.
   custom.lead_event_source = LEAD_EVENT_SOURCE
+  custom.event_source = 'crm'
 
   return {
     event_name: STAGE_EVENT[params.stage],
