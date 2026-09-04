@@ -62,7 +62,20 @@ export async function recordCapiEvent(row: {
          (lead_id, stage, event_id, event_name, ok, http_status,
           events_received, fbtrace_id, messages, match_keys, attributes_to_ad)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       ON CONFLICT (event_id) DO NOTHING`,
+       -- A SUCCESS IS NEVER OVERWRITTEN; A FAILURE IS.
+       --
+       -- The event id is deterministic, so a retry of a failed send arrives
+       -- with the same id. DO NOTHING would freeze the first failure on the
+       -- record forever and the eventual success would be invisible; a plain
+       -- DO UPDATE could let a later failed retry erase a delivery that
+       -- actually happened. So the row advances only while it is still a
+       -- failure.
+       ON CONFLICT (event_id) DO UPDATE SET
+         sent_at = now(), ok = EXCLUDED.ok, http_status = EXCLUDED.http_status,
+         events_received = EXCLUDED.events_received, fbtrace_id = EXCLUDED.fbtrace_id,
+         messages = EXCLUDED.messages, match_keys = EXCLUDED.match_keys,
+         attributes_to_ad = EXCLUDED.attributes_to_ad
+       WHERE freehold_meta_capi_events.ok IS NOT TRUE`,
       [
         row.leadId, row.stage, row.eventId, row.eventName ?? null,
         row.response.ok, row.response.status,

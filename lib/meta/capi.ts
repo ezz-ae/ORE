@@ -248,10 +248,37 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
  */
 export async function sendQualifiedLead(params: QualifiedLeadParams): Promise<boolean> {
   try {
+    // ── A MISSING CONFIGURATION MUST NOT LOOK LIKE A REJECTED EVENT ─────
+    //
+    // Both used to `return false`, so the caller rolled the stage back and
+    // tried again on the next update, forever, with nothing written down.
+    // On this account that produced 124 qualified leads, zero reported
+    // stages, and a pixel whose last_fired_time was null — a loop that had
+    // never run once, and no screen anywhere that could say so.
+    //
+    // Recorded as distinct reasons so coverage can say "nothing is
+    // configured" rather than "0% reach", which are different problems.
     const creds = await capiCreds()
-    if (!creds) return false
+    if (!creds) {
+      void recordCapiEvent({
+        leadId: params.externalId ?? null, stage: params.stage, eventId: params.eventId,
+        eventName: null,
+        response: { ok: false, status: 0, error: 'no_capi_credentials', messages: [] },
+        matchKeys: [], attributesToAd: false,
+      })
+      return false
+    }
     const event = buildQualifiedLeadEvent(params)
-    if (!event) return false
+    if (!event) {
+      // No match key at all — nothing Meta could attach this outcome to.
+      void recordCapiEvent({
+        leadId: params.externalId ?? null, stage: params.stage, eventId: params.eventId,
+        eventName: null,
+        response: { ok: false, status: 0, error: 'no_match_key', messages: [] },
+        matchKeys: [], attributesToAd: false,
+      })
+      return false
+    }
     const res = await fetch(`${GRAPH}/${creds.pixelId}/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
