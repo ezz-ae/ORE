@@ -33,7 +33,12 @@ const ensure = () => ensureOnce('freehold_meta_capi_events', async () => {
       fbtrace_id text,
       messages text[],
       match_keys text[],
-      attributes_to_ad boolean NOT NULL DEFAULT false
+      attributes_to_ad boolean NOT NULL DEFAULT false,
+      -- WHICH SETTING SUPPLIED THE DATASET. The product has two screens that
+      -- both say "pixel"; only one of them used to reach this API. Recorded
+      -- so "which dataset are we actually firing into" is a fact on the row
+      -- rather than something to reason about from two settings pages.
+      pixel_source text
     )
   `)
   // The deterministic event id is the second line of defence against a
@@ -43,6 +48,10 @@ const ensure = () => ensureOnce('freehold_meta_capi_events', async () => {
   await query(
     `CREATE UNIQUE INDEX IF NOT EXISTS freehold_meta_capi_events_event_id_idx
        ON freehold_meta_capi_events (event_id)`,
+  ).catch(() => undefined)
+  // The table shipped one release before this column existed.
+  await query(
+    `ALTER TABLE freehold_meta_capi_events ADD COLUMN IF NOT EXISTS pixel_source text`,
   ).catch(() => undefined)
 })
 
@@ -54,14 +63,16 @@ export async function recordCapiEvent(row: {
   response: MetaEventResponse
   matchKeys: readonly MatchKey[]
   attributesToAd: boolean
+  pixelSource?: string | null
 }): Promise<void> {
   try {
     await ensure()
     await query(
       `INSERT INTO freehold_meta_capi_events
          (lead_id, stage, event_id, event_name, ok, http_status,
-          events_received, fbtrace_id, messages, match_keys, attributes_to_ad)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          events_received, fbtrace_id, messages, match_keys, attributes_to_ad,
+          pixel_source)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        -- A SUCCESS IS NEVER OVERWRITTEN; A FAILURE IS.
        --
        -- The event id is deterministic, so a retry of a failed send arrives
@@ -74,13 +85,15 @@ export async function recordCapiEvent(row: {
          sent_at = now(), ok = EXCLUDED.ok, http_status = EXCLUDED.http_status,
          events_received = EXCLUDED.events_received, fbtrace_id = EXCLUDED.fbtrace_id,
          messages = EXCLUDED.messages, match_keys = EXCLUDED.match_keys,
-         attributes_to_ad = EXCLUDED.attributes_to_ad
+         attributes_to_ad = EXCLUDED.attributes_to_ad,
+         pixel_source = EXCLUDED.pixel_source
        WHERE freehold_meta_capi_events.ok IS NOT TRUE`,
       [
         row.leadId, row.stage, row.eventId, row.eventName ?? null,
         row.response.ok, row.response.status,
         row.response.eventsReceived ?? null, row.response.fbtraceId ?? null,
         row.response.messages ?? [], [...row.matchKeys], row.attributesToAd,
+        row.pixelSource ?? null,
       ],
     )
   } catch {

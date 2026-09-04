@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
+import { getGlobalPixels } from '@/lib/freehold/tracking-pixels'
 import { readEventResponse, matchKeysPresent, attributesToAd, acceptedWithLoss } from '@/lib/freehold/capi-ledger'
 import { recordCapiEvent } from '@/lib/freehold/capi-ledger-db'
 
@@ -13,17 +14,51 @@ import { recordCapiEvent } from '@/lib/freehold/capi-ledger-db'
 
 const GRAPH = 'https://graph.facebook.com/v20.0'
 
-async function capiCreds(): Promise<{ token: string; pixelId: string } | null> {
+/**
+ * TWO PLACES TO SET "THE PIXEL", AND ONLY ONE OF THEM FED THIS.
+ *
+ * The product has a Pixel screen that saves `metaPixelId` under the TRACKING
+ * provider — the id every landing page fires — and an Integrations → Meta
+ * screen that saves `pixelId` under the META provider. This function read
+ * only the second one.
+ *
+ * So an operator could choose their dataset on the screen called "Pixel",
+ * see it applied to every landing page, and have the Conversions API remain
+ * silently unconfigured. Nothing on either screen said the two were
+ * different, and the failure was invisible: no credentials produced the same
+ * `return false` as a rejected event.
+ *
+ * On this account: 124 qualified leads, zero reported stages, and a dataset
+ * whose last_fired_time was null.
+ *
+ * The Meta provider still wins when set — it is the more specific choice, and
+ * an account deliberately separating its server dataset from its browser
+ * pixel must keep that separation. The tracking pixel is the fallback, and
+ * `source` is recorded on every ledger row so which one was used is a fact on
+ * the record rather than a guess.
+ */
+async function capiCreds(): Promise<{ token: string; pixelId: string; source: 'env' | 'meta' | 'tracking' } | null> {
   let token = process.env.META_ACCESS_TOKEN
   let pixelId = process.env.META_PIXEL_ID
+  let source: 'env' | 'meta' | 'tracking' = 'env'
   if (!token || !pixelId) {
     const stored = await getStoredMetaCreds().catch(() => null)
     if (stored) {
       token = token || stored.accessToken
-      pixelId = pixelId || stored.pixelId || undefined
+      if (!pixelId && stored.pixelId) {
+        pixelId = stored.pixelId
+        source = 'meta'
+      }
     }
   }
-  return token && pixelId ? { token, pixelId } : null
+  if (!pixelId) {
+    const tracking = await getGlobalPixels().catch(() => null)
+    if (tracking?.metaPixelId) {
+      pixelId = tracking.metaPixelId
+      source = 'tracking'
+    }
+  }
+  return token && pixelId ? { token, pixelId, source } : null
 }
 
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex')
@@ -311,6 +346,7 @@ export async function sendQualifiedLead(params: QualifiedLeadParams): Promise<bo
       eventId: params.eventId,
       eventName: (event as { event_name?: string }).event_name ?? null,
       response,
+      pixelSource: creds.source,
       matchKeys,
       attributesToAd: attributesToAd(matchKeys),
     })
