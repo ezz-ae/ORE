@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   if ('res' in auth) return auth.res
 
   const body = await req.json().catch(() => ({})) as {
-    accessToken?: string; adAccountId?: string; pageId?: string; pixelId?: string
+    accessToken?: string; adAccountId?: string; pageId?: string; pixelId?: string; crmDatasetId?: string
   }
   const accessToken = String(body.accessToken ?? '').trim()
   const adAccountId = String(body.adAccountId ?? '').trim()
@@ -70,7 +70,13 @@ export async function POST(req: NextRequest) {
       )
     }
     await setStoredMetaCreds(
-      { accessToken, adAccountId: acct, pageId, pixelId: body.pixelId?.trim() || null },
+      {
+        accessToken, adAccountId: acct, pageId,
+        pixelId: body.pixelId?.trim() || null,
+        // The CRM dataset that lead OUTCOMES go to — distinct from the browser
+        // pixel above, and the one Conversion Leads optimisation reads.
+        crmDatasetId: body.crmDatasetId?.trim() || null,
+      },
       auth.user.email,
     )
     // Subscribe the Page's leadgen webhook right at connect time — until now

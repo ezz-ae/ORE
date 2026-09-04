@@ -12,6 +12,11 @@ import { recordCapiEvent } from '@/lib/freehold/capi-ledger-db'
 // lead. No credentials configured ⇒ silently skip (the lead itself is never
 // blocked on ad plumbing).
 
+// The CRM guide's endpoint names v26.0; the Marketing API client is pinned to
+// v20.0 and is a separate concern with its own upgrade risk. Kept aligned with
+// the client rather than split: two Graph versions in one codebase is how a
+// field silently starts behaving differently on one path only. Worth raising
+// as its own change.
 const GRAPH = 'https://graph.facebook.com/v20.0'
 
 /**
@@ -37,28 +42,38 @@ const GRAPH = 'https://graph.facebook.com/v20.0'
  * `source` is recorded on every ledger row so which one was used is a fact on
  * the record rather than a guess.
  */
-async function capiCreds(): Promise<{ token: string; pixelId: string; source: 'env' | 'meta' | 'tracking' } | null> {
+async function capiCreds(): Promise<{ token: string; pixelId: string; source: PixelSource } | null> {
   let token = process.env.META_ACCESS_TOKEN
-  let pixelId = process.env.META_PIXEL_ID
-  let source: 'env' | 'meta' | 'tracking' = 'env'
-  if (!token || !pixelId) {
-    const stored = await getStoredMetaCreds().catch(() => null)
-    if (stored) {
-      token = token || stored.accessToken
-      if (!pixelId && stored.pixelId) {
-        pixelId = stored.pixelId
-        source = 'meta'
-      }
-    }
+  const stored = await getStoredMetaCreds().catch(() => null)
+  token = token || stored?.accessToken
+
+  // ── THE CRM DATASET IS NOT THE WEBSITE PIXEL ───────────────────────────
+  //
+  // Lead outcomes go to a CRM dataset (Events Manager → CRM implementation);
+  // page views go to a browser pixel. Different destinations for different
+  // things, and this function used to know only about the second.
+  //
+  // On this account the discovered pixel is named "test" and has never fired,
+  // while the CRM dataset is a separate id entirely — so an outcome sent to
+  // "the pixel" would land somewhere no ad set optimises against, which looks
+  // exactly like success.
+  //
+  // Precedence is most-specific-first. Each source is named on every ledger
+  // row, so "which dataset are we firing into" is a fact rather than a
+  // reconstruction from three settings.
+  const crm = process.env.META_CRM_DATASET_ID
+    || stored?.crmDatasetId
+  if (token && crm) return { token, pixelId: crm, source: 'crm' }
+
+  if (token && process.env.META_PIXEL_ID) {
+    return { token, pixelId: process.env.META_PIXEL_ID, source: 'env' }
   }
-  if (!pixelId) {
-    const tracking = await getGlobalPixels().catch(() => null)
-    if (tracking?.metaPixelId) {
-      pixelId = tracking.metaPixelId
-      source = 'tracking'
-    }
-  }
-  return token && pixelId ? { token, pixelId, source } : null
+  if (token && stored?.pixelId) return { token, pixelId: stored.pixelId, source: 'meta' }
+
+  const tracking = await getGlobalPixels().catch(() => null)
+  if (token && tracking?.metaPixelId) return { token, pixelId: tracking.metaPixelId, source: 'tracking' }
+
+  return null
 }
 
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex')
@@ -218,11 +233,36 @@ export interface QualifiedLeadParams {
   leadId?: string
 }
 
-/** Meta's custom event names for the two stages. */
+/** Meta's custom event names for the two stages. Mapped to funnel stages in
+ *  Events Manager on the dataset — an unmapped name is accepted and ignored,
+ *  so the ledger's `messages` column is where that shows up. */
 const STAGE_EVENT: Record<'qualified' | 'won', string> = {
   qualified: 'QualifiedLead',
   won: 'Purchase',
 }
+
+/**
+ * WHICH CRM SAYS SO — required for a lead-ads CRM event, and it was missing.
+ *
+ * These events go to a CRM dataset (Events Manager → CRM implementation),
+ * not a website pixel, and that is the integration Conversion Leads
+ * optimisation reads. For it, Meta pairs `action_source: 'system_generated'`
+ * with `custom_data.lead_event_source` naming the system reporting the
+ * outcome. Without it an event carrying a `lead_id` is not attached to the
+ * CRM integration, so it can be accepted and still count toward nothing.
+ *
+ * That fits this account exactly: every ad set on the Conversion Leads goal,
+ * and Meta's own report showing three qualified leads across five weeks.
+ *
+ * Stated from Meta's API contract rather than from a verified send — this
+ * account has never successfully delivered one. The ledger settles it: if the
+ * name is wrong or unnecessary Meta says so in `messages`, which is now on
+ * the record instead of in a discarded response body.
+ */
+const LEAD_EVENT_SOURCE = 'Freehold Intelligence'
+
+/** Where the dataset id came from. Recorded on every ledger row. */
+export type PixelSource = 'crm' | 'env' | 'meta' | 'tracking'
 
 /**
  * The exact event body. Split out from the send so the shape can be tested
@@ -244,6 +284,13 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
   // Meta's own id for the form submission. Not hashed — like fbc, it is
   // matched by equality against what Meta itself issued. This is what credits
   // the exact AD rather than leaving Meta to guess from a hashed email.
+  // SENT AS A STRING, DELIBERATELY, against the guide's own example.
+  //
+  // Meta documents lead_id as a 15-17 digit number and shows it unquoted. A
+  // 17-digit value does not survive JavaScript's Number: MAX_SAFE_INTEGER is
+  // 16 digits, so the id would be silently rounded and match nothing — a
+  // corruption with no error attached to it. The string is exact, and Meta
+  // accepts it.
   if (params.leadId) userData.lead_id = params.leadId
   // No match key means Meta cannot attach this to anyone. Sending it anyway
   // would inflate the count with events that teach the optimiser nothing.
@@ -264,6 +311,20 @@ export function buildQualifiedLeadEvent(params: QualifiedLeadParams): Record<str
     custom.value = Math.round(params.valueAED * 100) / 100
     custom.currency = 'AED'
   }
+  // ── THE TWO FIELDS THAT MAKE THIS A CRM EVENT ───────────────────────────
+  //
+  // Meta's Qualified Leads integration guide, verbatim:
+  //
+  //   lead_event_source — "the name of your CRM"
+  //   event_source      — "should always be 'crm'"
+  //
+  // Both live in custom_data, both were absent, and without them an event
+  // carrying a lead_id is not attached to the CRM integration — so Meta can
+  // ACCEPT it and count it toward nothing. Which is what this account looks
+  // like: every ad set on the Conversion Leads goal, three qualified leads in
+  // five weeks, and a write-back that has never delivered once.
+  custom.lead_event_source = LEAD_EVENT_SOURCE
+  custom.event_source = 'crm'
 
   return {
     event_name: STAGE_EVENT[params.stage],
