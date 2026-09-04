@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/targeting-guard",
       "schedule": "15 6 * * *"
+    },
+    {
+      "path": "/api/cron/capi-backlog",
+      "schedule": "40 6 * * *"
     }
   ]
 }
