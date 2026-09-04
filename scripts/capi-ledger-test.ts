@@ -129,7 +129,27 @@ console.log('\n── and the sender actually records it ──')
   check('…and records which identity keys went out',
     /matchKeysPresent\(/.test(capi) && /attributesToAd\(/.test(capi))
 
+  // TWO SCREENS BOTH SAY "PIXEL" AND ONLY ONE USED TO REACH THIS API.
+  //
+  // The Pixel screen saves metaPixelId under the TRACKING provider — the id
+  // every landing page fires. Integrations → Meta saves pixelId under the
+  // META provider. capiCreds read only the second, so an operator could
+  // choose their dataset, watch it apply to every landing page, and leave the
+  // Conversions API silently unconfigured. On this account: 124 qualified
+  // leads, zero reported stages, a dataset whose last_fired_time was null.
+  check('the conversions API accepts the pixel from either screen',
+    /getGlobalPixels\(/.test(capi), 'the tracking pixel is still invisible to CAPI')
+  // The deliberate choice still wins: an account separating its server
+  // dataset from its browser pixel must keep that separation.
+  check('…with the Meta setting winning when both are present',
+    capi.indexOf('getStoredMetaCreds') < capi.indexOf('getGlobalPixels'))
+  check('…and which one was used is recorded, not inferred',
+    /pixelSource: creds\.source/.test(capi))
+
   const db = readFileSync(join(process.cwd(), 'lib/freehold/capi-ledger-db.ts'), 'utf8')
+  check('the ledger has a column for it rather than a note in the warnings',
+    /pixel_source text/.test(db) && !/pixel_source:/.test(capi),
+    'a source stuffed into messages would make every event read as lossy')
   // The event id is deterministic; the stage array on the lead is the first
   // guard against a duplicate. This is the last one, at the database, where a
   // race between two writers cannot get past it.
