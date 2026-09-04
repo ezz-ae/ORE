@@ -20,7 +20,15 @@ export interface MetaStoredCreds {
   accessToken: string
   adAccountId: string
   pageId: string
+  /** The browser pixel — landing pages, page views. */
   pixelId?: string | null
+  /**
+   * The CRM dataset lead OUTCOMES are reported to (Events Manager → CRM
+   * implementation). A DIFFERENT destination from the browser pixel, and the
+   * one Conversion Leads optimisation reads: an outcome sent to the pixel
+   * lands somewhere no ad set optimises against, which looks like success.
+   */
+  crmDatasetId?: string | null
 }
 
 const ensureTable = async (): Promise<void> => {
