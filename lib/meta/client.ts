@@ -41,7 +41,7 @@ import { pageAdsVerdict, type PageAdsVerdict } from './page-ads'
 import { objectiveToOptimizationGoal } from './optimization-goal'
 import { metaLeadCount } from './lead-count'
 import { eventCostsFromInsights } from './event-costs'
-import { geoLocationsSpec } from './geo-spec'
+import { geoLocationsSpec, STANDARD_LOCATION_TYPES } from './geo-spec'
 import { customLocationsFor } from '@/lib/freehold/uae-places'
 import { HEADLINE_WINDOW, RECENT_WINDOW, indexInsightsByCampaign, type CampaignInsightRow } from './insights-window'
 import {
@@ -55,6 +55,10 @@ import {
 } from './no-advantage'
 import {
   readInvariants, withoutPlacement, placementKeys, type PlacementWriteOutcome,
+  withAdvantageOff,
+  withCustomLocations,
+  customLocationCount,
+  targetsWholeCountry,
 } from './placement-write'
 import type { MetaInsightActions } from './types'
 
@@ -3200,6 +3204,103 @@ export async function dropPlacement(
   }
 
   return { ok: true, placements: now }
+}
+
+/**
+ * TURN ADVANTAGE OFF, OR MOVE AN AD SET ONTO A RADIUS, ON A LIVE AD SET.
+ *
+ * Built on dropPlacement's shape because the danger is identical: Meta
+ * REPLACES the whole targeting object on write. `updateAdSet` with a
+ * `targeting` argument constructs a spec from a CampaignTargeting shape and
+ * would therefore DELETE the property qualifier, the exclusions, the language
+ * narrowing and the Advantage opt-out — the last of which Meta reads as
+ * opt-IN when absent. Using it to turn Advantage off would turn it on.
+ *
+ * So: read the live spec, change one thing in place, write the same object
+ * back, read it again, and confirm both that the change landed and that
+ * nothing else moved. A 200 from Meta means "request accepted", not "field
+ * changed"; this product has already been caught by that with location_types.
+ */
+export async function patchAdSetTargeting(
+  adSetId: string,
+  change:
+    | { kind: 'advantage_off' }
+    | { kind: 'places'; placeKeys: readonly string[] },
+): Promise<PlacementWriteOutcome> {
+  const readSpec = async (): Promise<Record<string, unknown> | null> => {
+    const res = await apiFetch<{ targeting?: Record<string, unknown> }>(
+      `/${adSetId}`, undefined, { fields: 'targeting' },
+    )
+    return res?.targeting ?? null
+  }
+
+  let live: Record<string, unknown>
+  try {
+    const t = await readSpec()
+    if (!t) return { ok: false, reason: 'unreadable', detail: 'Meta returned no targeting spec' }
+    live = t
+  } catch (err) {
+    return { ok: false, reason: 'unreadable', detail: err instanceof Error ? err.message : 'read failed' }
+  }
+
+  const before = readInvariants(live)
+  let next: Record<string, unknown> | null
+  if (change.kind === 'advantage_off') {
+    if (before.advantageAudienceOff) return { ok: true, placements: placementKeys(live) }
+    next = withAdvantageOff(live)
+  } else {
+    const locations = customLocationsFor(change.placeKeys)
+    next = withCustomLocations(live, locations, STANDARD_LOCATION_TYPES)
+    if (!next) {
+      return {
+        ok: false, reason: 'would_empty',
+        detail: 'No known places were given, and an empty geo_locations is a spec Meta rejects.',
+      }
+    }
+  }
+
+  try {
+    await apiPost(`/${adSetId}`, { targeting: next })
+  } catch (err) {
+    return { ok: false, reason: 'write_rejected', detail: err instanceof Error ? err.message : 'Meta refused the change' }
+  }
+
+  let after: Record<string, unknown>
+  try {
+    after = (await readSpec()) ?? {}
+  } catch (err) {
+    return { ok: false, reason: 'not_applied', detail: `could not confirm the change: ${err instanceof Error ? err.message : 'read failed'}` }
+  }
+
+  // DID THE THING WE ASKED FOR ACTUALLY HAPPEN?
+  const post = readInvariants(after)
+  if (change.kind === 'advantage_off' && !post.advantageAudienceOff) {
+    return { ok: false, reason: 'not_applied', detail: 'Meta accepted the request but audience expansion is still on' }
+  }
+  if (change.kind === 'places') {
+    if (customLocationCount(after) === 0) {
+      return { ok: false, reason: 'not_applied', detail: 'Meta accepted the request but the ad set carries no radius' }
+    }
+    // geo_locations ORs its entries: a country left beside the circle means
+    // the ad set still buys nationally while reading as narrowed.
+    if (targetsWholeCountry(after)) {
+      return { ok: false, reason: 'not_applied', detail: 'the radius was added but the country is still targeted alongside it' }
+    }
+  }
+
+  // AND DID ANYTHING ELSE MOVE WITH IT? The reason this function exists rather
+  // than a one-line update.
+  const lost: string[] = []
+  if (post.flexibleGroups < before.flexibleGroups) lost.push('the narrowing groups')
+  if (before.hasExclusions && !post.hasExclusions) lost.push('the exclusions')
+  if (post.locales < before.locales) lost.push('the language targeting')
+  if (before.advantageAudienceOff && !post.advantageAudienceOff) lost.push('the Advantage opt-out')
+  if (placementKeys(after).length < placementKeys(live).length) lost.push('the placements')
+  if (lost.length > 0) {
+    return { ok: false, reason: 'collateral_damage', detail: `the change applied but so did a loss of ${lost.join(', ')}` }
+  }
+
+  return { ok: true, placements: placementKeys(after) }
 }
 
 export async function getAdSet(adSetId: string): Promise<MetaAdSet> {

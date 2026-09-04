@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   withoutPlacement, placementKeys, readInvariants, PLACEMENT_WRITE_REFUSALS,
+  withAdvantageOff, withCustomLocations, customLocationCount, targetsWholeCountry,
 } from '../lib/meta/placement-write'
 
 let failures = 0
@@ -176,6 +177,55 @@ console.log('\n── the refusals are walkable ──')
     (PLACEMENT_WRITE_REFUSALS as readonly string[]).includes('unreadable'))
   check('…and for "Meta said yes and did nothing"',
     (PLACEMENT_WRITE_REFUSALS as readonly string[]).includes('not_applied'))
+}
+
+
+console.log('\n── the two other in-place edits ──')
+{
+  const live: Record<string, unknown> = {
+    publisher_platforms: ['facebook', 'instagram'],
+    facebook_positions: ['feed'],
+    instagram_positions: ['stream'],
+    flexible_spec: [{ interests: [{ id: '1', name: 'Residential real estate' }] }],
+    exclusions: { interests: [{ id: '2', name: 'Real estate broker' }] },
+    locales: [6],
+    geo_locations: { countries: ['AE'], location_types: ['home', 'recent'] },
+    targeting_automation: { advantage_audience: 1 },
+  }
+
+  // ADVANTAGE OFF IS AN EXPLICIT 0, NEVER A DELETED FIELD. Meta reads a
+  // missing advantage_audience as opt-IN, so removing it is the exact
+  // opposite of the change being asked for.
+  const off = withAdvantageOff(live)
+  check('advantage off is written as an explicit zero',
+    (off.targeting_automation as Record<string, unknown>).advantage_audience === 0)
+  check('…and the qualifier, exclusions and languages survive it',
+    readInvariants(off).flexibleGroups === 1 && readInvariants(off).hasExclusions
+    && readInvariants(off).locales === 1 && readInvariants(off).advantageAudienceOff)
+  check('…and the placements are untouched',
+    placementKeys(off).join(',') === placementKeys(live).join(','))
+
+  // THE EDIT THAT WOULD LOOK FIXED AND BUY NATIONALLY. geo_locations ORs its
+  // entries, so a country left beside a circle is the whole country with a
+  // circle drawn on it.
+  const geo = withCustomLocations(
+    live,
+    [{ latitude: 24.2075, longitude: 55.7447, radius: 35, distance_unit: 'kilometer' }],
+    ['home', 'recent'],
+  )!
+  check('a radius REPLACES the country rather than joining it',
+    !targetsWholeCountry(geo) && customLocationCount(geo) === 1,
+    JSON.stringify(geo.geo_locations))
+  check('…and the qualifier, exclusions and languages survive that too',
+    readInvariants(geo).flexibleGroups === 1 && readInvariants(geo).hasExclusions
+    && readInvariants(geo).locales === 1)
+  check('…and so do the placements',
+    placementKeys(geo).join(',') === placementKeys(live).join(','))
+
+  // An empty geo_locations is a spec Meta rejects; refusing here gives a
+  // better message than Meta's.
+  check('no known places is refused rather than written',
+    withCustomLocations(live, [], ['home']) === null)
 }
 
 if (failures > 0) {

@@ -125,3 +125,71 @@ export function withoutPlacement(
   if (placementKeys(next).length === 0) return null
   return next
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TWO MORE IN-PLACE EDITS OF A LIVE SPEC
+//
+// Same rule as withoutPlacement and for the same reason: Meta REPLACES the
+// whole targeting object on write, so anything not carried forward is deleted
+// — the property qualifier, the exclusions, the language narrowing, and the
+// Advantage opt-out whose ABSENCE Meta reads as opt-IN.
+//
+// So these take the live spec and return it with one thing changed. They never
+// build a spec from a CampaignTargeting shape, which is the mistake that would
+// switch Advantage back on while purporting to turn it off.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The same spec with audience expansion explicitly OFF.
+ *
+ *  Written as an explicit 0, never by deleting the field: Meta reads a missing
+ *  `advantage_audience` as opt-in, so removing it is the opposite of the
+ *  intended change. */
+export function withAdvantageOff(t: Record<string, unknown>): Record<string, unknown> {
+  const auto = { ...((t.targeting_automation ?? {}) as Record<string, unknown>) }
+  auto.advantage_audience = 0
+  return { ...t, targeting_automation: auto }
+}
+
+/**
+ * The same spec targeting the given radii instead of whatever geography it had.
+ *
+ * `geo_locations` is REPLACED rather than merged, and that is the point: its
+ * entries are ORed, so leaving the old `countries` beside a new circle means
+ * "the whole country OR this circle", which is the whole country. An ad set
+ * edited that way would look narrowed on screen and buy nationally — the exact
+ * failure this account already paid for.
+ *
+ * Returns null when there are no locations to set. An empty geo_locations is
+ * not "everywhere", it is a spec Meta rejects, and refusing here gives a
+ * better message than Meta's.
+ */
+export function withCustomLocations(
+  t: Record<string, unknown>,
+  locations: ReadonlyArray<Record<string, unknown>>,
+  locationTypes: readonly string[],
+): Record<string, unknown> | null {
+  if (locations.length === 0) return null
+  return {
+    ...t,
+    geo_locations: {
+      custom_locations: locations.map((l) => ({ ...l })),
+      location_types: [...locationTypes],
+    },
+  }
+}
+
+/** Radius targets on a spec, as read back. Used to confirm a geo write landed
+ *  rather than trusting Meta's 200 — this product has been caught by that
+ *  before, with location_types. */
+export function customLocationCount(t: Record<string, unknown>): number {
+  const geo = (t.geo_locations ?? {}) as Record<string, unknown>
+  return arr(geo.custom_locations).length
+}
+
+/** Does this spec still target a whole country? After a radius edit it must
+ *  not: geo_locations ORs its entries. */
+export function targetsWholeCountry(t: Record<string, unknown>): boolean {
+  const geo = (t.geo_locations ?? {}) as Record<string, unknown>
+  return arr(geo.countries).length > 0
+}
