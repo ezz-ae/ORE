@@ -6,6 +6,10 @@ import { MANAGEMENT_ROLES, LEADERSHIP_ROLES } from '@/lib/freehold/session-types
 import { WHITE_LABEL } from '@/lib/whitelabel/config'
 import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
 import { vendorHostAction } from '@/lib/tenancy/vendor-host'
+import {
+  overrideMode, isHeldBack, hasBypass, holdingPage,
+  RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
+} from '@/lib/freehold/site-override'
 
 // Internal command surfaces — pages that must never render for anonymous visitors.
 const internalPagePrefixes = [
@@ -128,6 +132,59 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const hostname = request.headers.get("host") || ""
   const { pathname } = url
+
+  // ── THE OVERRIDE: EVERY ROUTE, EVERY DOMAIN, ONE PAGE ────────────────────
+  //
+  // Deliberately FIRST. It runs before the API auth wall and before every
+  // host branch below, because a switch that some Host header can step around
+  // is not a switch. See lib/freehold/site-override.ts for what stays alive
+  // through it and why — a leadgen webhook Meta will stop retrying, the
+  // landing-page capture endpoint, and the crons whose gaps cannot be
+  // backfilled by turning the site back on.
+  const mode = overrideMode(process.env)
+  if (mode !== 'off') {
+    const key = process.env.SITE_OVERRIDE_KEY
+    // Presented on the querystring once, then carried as a cookie so the rest
+    // of the session works normally. An override that also locks out whoever
+    // must turn it off is an outage, not a lever.
+    const presented = url.searchParams.get('override_key')
+      ?? request.cookies.get('fh_override_bypass')?.value
+    const bypassed = hasBypass(presented, key)
+
+    if (isHeldBack(pathname, mode, { bypassed })) {
+      const res = new NextResponse(
+        holdingPage({
+          title: process.env.SITE_OVERRIDE_TITLE || DEFAULT_TITLE,
+          message: process.env.SITE_OVERRIDE_MESSAGE || DEFAULT_MESSAGE,
+          brand: BRAND.company,
+        }),
+        {
+          // 503, NEVER 200. A maintenance page on a 200 tells Google this is
+          // now the content of every URL on the site; days of that costs
+          // rankings that take months to rebuild. Retry-After makes it
+          // explicitly temporary and holds the index.
+          status: 503,
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'retry-after': String(RETRY_AFTER_SECONDS),
+            'cache-control': 'no-store',
+          },
+        },
+      )
+      return res
+    }
+
+    // A valid key on the querystring becomes a cookie so the operator can
+    // browse normally rather than appending it to every link.
+    if (bypassed && url.searchParams.get('override_key')) {
+      url.searchParams.delete('override_key')
+      const res = NextResponse.redirect(url)
+      res.cookies.set('fh_override_bypass', String(key), {
+        httpOnly: true, sameSite: 'lax', secure: true, path: '/',
+      })
+      return res
+    }
+  }
 
   // ── Fail-closed session auth for every /api route (public allowlist only) ──
   // MUST run before any host-based short-circuit below (e.g. the crm. subdomain
