@@ -29,6 +29,16 @@ export interface MetaStoredCreds {
    * lands somewhere no ad set optimises against, which looks like success.
    */
   crmDatasetId?: string | null
+  /**
+   * When this connection stops working, ISO, or null when it never does.
+   *
+   * A Facebook login yields a token that lasts about sixty days. It dies
+   * quietly and takes the campaigns, the lead sync and every ads screen with
+   * it — failures that all read like bugs in the product. Stored so the
+   * product can say "reconnect" two weeks early instead of explaining an
+   * outage afterwards. See lib/freehold/meta-oauth.ts.
+   */
+  tokenExpiresAt?: string | null
 }
 
 const ensureTable = async (): Promise<void> => {
