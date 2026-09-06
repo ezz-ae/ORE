@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   OVERRIDE_MODES, ALWAYS_LIVE, INTERNAL_PREFIXES, overrideMode, isHeldBack,
-  DARK_DOMAINS, isDarkHost, modeForRequest,
+  DARK_DOMAINS, isDarkHost, modeForRequest, deploymentSuspended,
   hasBypass, holdingPage, RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
 } from '../lib/freehold/site-override'
 
@@ -181,6 +181,35 @@ console.log('\n── the two domains that are dark in the code ──')
     modeForRequest({ SITE_OVERRIDE: 'public' }, 'entrestate.ae') === 'public')
   check('a typo in the env var falls through to the list, never to "on"',
     modeForRequest({ SITE_OVERRIDE: 'yes' }, 'entrestate.ae') === 'off')
+}
+
+
+console.log('\n── suspended means read-only, not just unserved ──')
+{
+  // The blackout answers "do we serve them". This answers the more dangerous
+  // question: may the machine still CHANGE their ad account. The morning guard
+  // turns Advantage off on its own — a correct edit, and a WRITE INTO SOMEBODY
+  // ELSE'S AD ACCOUNT MADE AFTER WE STOPPED SERVING THEM.
+  check('a deployment whose own domain is dark may not act',
+    deploymentSuspended({}, 'fhp.ae'))
+  check('…including via the site URL', deploymentSuspended({ NEXT_PUBLIC_SITE_URL: 'https://www.freeholdproperty.ae' }, 'other.ae'))
+  check('a deployment on any other domain acts normally',
+    !deploymentSuspended({}, 'entrestate.ae'))
+
+  // ONE RECORD OF SUSPENSION. If these disagreed, a site could be dark while
+  // the machine kept editing, or restored while it stayed frozen.
+  check('the same list drives both serving and acting',
+    DARK_DOMAINS.every((d) => deploymentSuspended({}, d)))
+
+  // The override still wins in both directions: an ordinary outage is not a
+  // suspended client, and a restore takes effect without a deploy.
+  check('SITE_OVERRIDE=off restores the right to act',
+    !deploymentSuspended({ SITE_OVERRIDE: 'off' }, 'fhp.ae'))
+  check('…and an ordinary outage on any host suspends acting too',
+    deploymentSuspended({ SITE_OVERRIDE: 'public' }, 'entrestate.ae'))
+  // A malformed site URL must not accidentally grant the right to act.
+  check('a broken site URL falls back to the brand domain',
+    deploymentSuspended({ NEXT_PUBLIC_SITE_URL: ':::' }, 'fhp.ae'))
 }
 
 console.log(failures === 0

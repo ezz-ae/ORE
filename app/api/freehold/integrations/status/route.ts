@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { getIntegrationStatusSummary } from '@/lib/freehold/integration-status'
+import { getIntegrationStatusSummary, metaConnectionHeartbeat } from '@/lib/freehold/integration-status'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +24,15 @@ export async function GET() {
   // This page exists to answer "is it actually working?", so it pays for the
   // real check. Presence-only status is what let a rejected Meta token read as
   // green here while every campaign call failed.
-  const summary = await getIntegrationStatusSummary({ probe: true })
-  return NextResponse.json(summary)
+  // TWO DIFFERENT QUESTIONS, ANSWERED SEPARATELY.
+  //
+  // The probe says whether the token works right now. The heartbeat says when
+  // the machine last actually reached the account — and a green probe beside a
+  // stale heartbeat means the cron stopped, not the connection. Those need
+  // opposite fixes, so they are never merged into one "connected" light.
+  const [summary, heartbeat] = await Promise.all([
+    getIntegrationStatusSummary({ probe: true }),
+    metaConnectionHeartbeat(),
+  ])
+  return NextResponse.json({ ...summary, metaHeartbeat: heartbeat })
 }

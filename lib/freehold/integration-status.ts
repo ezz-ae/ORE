@@ -20,6 +20,7 @@ import { getStoredMetaCreds, getStoredCreds, type WhatsAppStoredCreds } from '@/
 import { probeAdAccountAccess } from '@/lib/meta/client'
 import type { GoogleStoredCreds } from '@/lib/google/client'
 import type { HubspotStoredCreds } from '@/lib/hubspot/client'
+import { query } from '@/lib/db'
 
 export type IntegrationState =
   | 'connected'
@@ -254,5 +255,47 @@ export async function getIntegrationStatusSummary(opts: { probe?: boolean } = {}
      *  when probing; that is the whole point of probing. */
     error: all.filter((i) => i.state === 'error').length,
     statuses: all,
+  }
+}
+
+
+/**
+ * IS THE AD ACCOUNT STILL CONNECTED, AND WHEN DID THE MACHINE LAST REACH IT?
+ *
+ * A probe answers "does the token work this second". It does not answer the
+ * question somebody actually has about a suspended or drifting account:
+ * "is this thing still talking to Meta at all, and since when."
+ *
+ * The guard runs table is the honest heartbeat. Every morning it records a
+ * full read of the live account; the newest row is the last moment Meta
+ * answered us. A stale heartbeat with a token that still probes green means
+ * the cron stopped, not the connection — and those need opposite fixes.
+ */
+export async function metaConnectionHeartbeat(): Promise<{
+  lastReadAt: string | null
+  campaignsSeen: number | null
+  lastSystemWriteAt: string | null
+}> {
+  const empty = { lastReadAt: null, campaignsSeen: null, lastSystemWriteAt: null }
+  try {
+    const [run] = await query<{ created_at: string; checked: number }>(
+      `SELECT created_at::text, checked FROM freehold_targeting_guard_runs
+        ORDER BY id DESC LIMIT 1`,
+    ).catch(() => [])
+    // The last time the system successfully CREATED something on the account —
+    // an audience write only lands if Meta accepted it, so this is proof of a
+    // working connection at a moment in the past, not merely of a stored token.
+    const [wrote] = await query<{ at: string }>(
+      `SELECT max(updated_at)::text AS at
+         FROM freehold_site_integration_credentials
+        WHERE provider LIKE 'meta_%' AND updated_by = 'system'`,
+    ).catch(() => [])
+    return {
+      lastReadAt: run?.created_at ?? null,
+      campaignsSeen: typeof run?.checked === 'number' ? run.checked : null,
+      lastSystemWriteAt: wrote?.at ?? null,
+    }
+  } catch {
+    return empty
   }
 }
