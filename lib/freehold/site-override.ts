@@ -217,5 +217,5 @@ p{margin:0;padding:0 1.25rem;text-align:center}
  * their clients and their competitors, and not something to arrive as a
  * default. SITE_OVERRIDE_TITLE and SITE_OVERRIDE_MESSAGE take anything.
  */
-export const DEFAULT_TITLE = 'Website is not available.'
+export const DEFAULT_TITLE = 'This website is not available.'
 export const DEFAULT_MESSAGE = ''
