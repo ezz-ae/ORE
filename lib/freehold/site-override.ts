@@ -123,35 +123,46 @@ export function hasBypass(
  *  temporary rather than gone. */
 export const RETRY_AFTER_SECONDS = 43_200
 
-/** The holding page. Deliberately one file with no assets: it has to render
- *  when everything behind it is switched off. */
+/**
+ * The holding page: black, one line, nothing else.
+ *
+ * No brand mark, no logo, no explanation, no contact. A styled apology reads
+ * as a service having a bad day and invites waiting. A black screen with one
+ * sentence reads as a decision, which is the entire point of showing it.
+ *
+ * One file, no assets, no fonts, no requests — it has to render when
+ * everything behind it is switched off, on a phone, on a bad connection, in
+ * an email preview.
+ */
 export function holdingPage(input: { title: string; message: string; brand: string }): string {
   const esc = (s: string) => s
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+  // `message` is rendered only when somebody set one. The shipped default is
+  // empty, so the page is the single line and nothing under it.
+  const line = esc(input.message).trim()
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(input.title)}</title>
 <style>
-  :root { color-scheme: dark }
-  body { margin:0; min-height:100vh; display:grid; place-items:center;
-         background:#181613; color:#e8e4dd;
-         font:16px/1.6 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif }
-  main { max-width:34rem; padding:2.5rem 1.5rem; text-align:center }
-  h1 { font-size:1.25rem; font-weight:600; margin:0 0 .75rem; letter-spacing:-.01em }
-  p { margin:0; color:#a8a29a }
-  .b { font-size:.75rem; letter-spacing:.14em; text-transform:uppercase;
-       color:#7c766c; margin-bottom:1.75rem }
+:root{color-scheme:dark}
+html,body{margin:0;height:100%;background:#000}
+body{display:grid;place-items:center;color:#8a8a8a;
+font:13px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+p{margin:0;padding:0 1.25rem;text-align:center}
 </style>
-</head><body><main>
-<div class="b">${esc(input.brand)}</div>
-<h1>${esc(input.title)}</h1>
-<p>${esc(input.message)}</p>
-</main></body></html>`
+</head><body><p>${esc(input.title)}${line ? `<br>${line}` : ''}</p></body></html>`
 }
 
-/** What ships when nobody has set a message. Says that the site is
- *  unavailable and nothing about why — see the module header. */
-export const DEFAULT_TITLE = 'This site is temporarily unavailable'
-export const DEFAULT_MESSAGE = 'Please check back shortly.'
+/**
+ * What ships when nobody sets anything.
+ *
+ * Says the site is not available and nothing about why. The reason for a
+ * shutdown is between the parties to it — a public page on a company's own
+ * domain stating it is a published statement about that company, readable by
+ * their clients and their competitors, and not something to arrive as a
+ * default. SITE_OVERRIDE_TITLE and SITE_OVERRIDE_MESSAGE take anything.
+ */
+export const DEFAULT_TITLE = 'Website is not available.'
+export const DEFAULT_MESSAGE = ''
