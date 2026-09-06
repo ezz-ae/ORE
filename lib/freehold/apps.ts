@@ -15,6 +15,7 @@
  *     apps — it is NOT an app that owns Finance/Inventory/Ads tools.
  */
 
+import { BRAND } from '@/lib/freehold/brand'
 import type { LucideIcon } from 'lucide-react'
 import {
   Users, UsersRound, Megaphone, DollarSign, TrendingUp, Bot, Package,
@@ -74,9 +75,9 @@ export const APPS: AppDef[] = [
   {
     id: 'crm', label: 'CRM', sub: 'Leads · Agents · Pipeline',
     href: '/freehold-intelligence/crm', Icon: Users,
-    metric: 'Leads · pipeline · agents', badge: 0, accent: '#D4AF37',
-    card: 'border-[#D4AF37]/15 hover:border-[#D4AF37]/35',
-    icon: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
+    metric: 'Leads · pipeline · agents', badge: 0, accent: BRAND.accent,
+    card: 'border-gold/15 hover:border-gold/35',
+    icon: 'text-gold bg-gold/10 border-gold/20',
   },
   {
     id: 'ads', label: 'Ads', sub: 'Meta · Google · Forms · Live',
@@ -184,9 +185,9 @@ export const APPS: AppDef[] = [
   {
     id: 'management', label: 'Management', sub: 'Company-wide reporting · Team · ROI',
     href: '/freehold-intelligence/management', Icon: BarChart3,
-    metric: 'System-level reporting', badge: 0, accent: '#D4AF37',
-    card: 'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
-    icon: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
+    metric: 'System-level reporting', badge: 0, accent: BRAND.accent,
+    card: 'border-gold/20 hover:border-gold/40',
+    icon: 'text-gold bg-gold/10 border-gold/25',
     managementOnly: true,
   },
   /**

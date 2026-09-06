@@ -1,5 +1,6 @@
 // app/api/freehold/mcp/tools/route.ts
 
+import { BRAND } from '@/lib/freehold/brand'
 import { NextResponse } from 'next/server';
 import { mcpTools } from '@/lib/freehold/mcp/registry';
 import { McpResponseEnvelope } from '@/types/freehold-mcp';
@@ -19,7 +20,7 @@ export async function GET() {
       canWriteExternal: tool.canWriteExternal,
       allowedRoles: tool.allowedRoles,
     })),
-    evidence: [`Registered ${mcpTools.length} Freehold MCP tools`],
+    evidence: [`Registered ${mcpTools.length} ${BRAND.company} MCP tools`],
     nextActions: ['Call POST /api/freehold/mcp/call with { "tool": "integration_summary" }'],
     generatedAt: new Date().toISOString(),
   };

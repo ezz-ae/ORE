@@ -462,14 +462,14 @@ export default function CreativePoolPanel({
             <label className={`flex items-center gap-2 text-xs ${project ? 'text-slate-300' : 'text-slate-600'}`}
               title={project ? t('lm.pool.designHint') : t('lm.pool.designNoProject')}>
               <input type="checkbox" checked={design} disabled={!project}
-                onChange={(e) => setDesign(e.target.checked)} className="accent-[#D4AF37]" />
+                onChange={(e) => setDesign(e.target.checked)} className="accent-gold" />
               <Wand2 className="h-3.5 w-3.5" /> {t('lm.pool.design')}
               {composing && <Loader2 className="h-3 w-3 animate-spin" />}
             </label>
 
             <label className="flex items-center gap-2 text-xs text-slate-300">
               <input type="checkbox" checked={goLive} onChange={(e) => setGoLive(e.target.checked)}
-                className="accent-[#D4AF37]" />
+                className="accent-gold" />
               {t('lm.pool.goLive')}
             </label>
           </div>

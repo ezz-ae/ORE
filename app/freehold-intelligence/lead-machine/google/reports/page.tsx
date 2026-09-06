@@ -400,7 +400,7 @@ export default function GoogleReportsPage() {
                         ))}
                         <polygon points={areaPoints} fill="url(#rSpendGrad)" />
                         <polyline points={spendPts}  fill="none" stroke="#4285F4" strokeWidth="1.5" strokeLinejoin="round" />
-                        <polyline points={clicksPts} fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="4 2" />
+                        <polyline points={clicksPts} fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="4 2" />
                         <polyline points={convPts}   fill="none" stroke="#34D399" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="2 3" />
                       </svg>
                       <div className="mt-2 flex justify-between text-xs text-slate-600">

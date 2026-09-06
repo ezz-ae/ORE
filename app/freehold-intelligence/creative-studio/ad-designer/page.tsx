@@ -1005,7 +1005,7 @@ export default function AdDesignerPage() {
                   ))}
                 </div>
                 <label className="block text-[11px] text-slate-500">{t('adz.qr.size')}
-                  <input type="range" min={8} max={20} value={qrPct} onChange={(e) => setQrPct(Number(e.target.value))} className="mt-1 w-full accent-[#D4AF37]" />
+                  <input type="range" min={8} max={20} value={qrPct} onChange={(e) => setQrPct(Number(e.target.value))} className="mt-1 w-full accent-gold" />
                 </label>
                 <button type="button" data-close-sheet onClick={applyQr} disabled={qrBusy}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-ink transition hover:bg-gold-bright disabled:opacity-50">

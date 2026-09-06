@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -152,7 +153,7 @@ export default function DriveImageEditor() {
   const [qr, setQr] = useState<QrLayer | null>(null)
   const [permitInput, setPermitInput] = useState('')
   const [qrBusy, setQrBusy] = useState(false)
-  const [frame, setFrame] = useState<BrandFrame>({ on: false, color: '#D4AF37', width: 24 })
+  const [frame, setFrame] = useState<BrandFrame>({ on: false, color: BRAND.accent, width: 24 })
   const [colors, setColors] = useState<ColorAdj>(COLOR_DEFAULT)
   // Source-layer URL is the reversible unit for the AI co-editor (undo swaps the
   // photo back). `revision` bumps on manual edits only, so the rail can warn

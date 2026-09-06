@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import { getReviewItems } from "@/src/features/freehold-intelligence/data-access"
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     `INSERT INTO freehold_comments_tasks (kind, page_ref, body, author, status)
      VALUES ('comment', $1, $2, $3, 'open')
      RETURNING *`,
-    [body.page_ref || "freehold-intelligence", body.body.trim(), body.author || "Freehold stakeholder"]
+    [body.page_ref || "freehold-intelligence", body.body.trim(), body.author || `${BRAND.company} stakeholder`]
   )
   return NextResponse.json({ comment: rows[0] }, { status: 201 })
 }

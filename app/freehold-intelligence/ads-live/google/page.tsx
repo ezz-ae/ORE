@@ -78,7 +78,7 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
         />
         <polyline points={points('costMicros', maxSpend)} fill="none" stroke={GOOGLE_BLUE} strokeWidth="1.5" strokeLinejoin="round" />
         {/* Clicks line */}
-        <polyline points={points('clicks', maxClicks)} fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="4 2" />
+        <polyline points={points('clicks', maxClicks)} fill="none" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="4 2" />
       </svg>
       {/* X-axis labels */}
       <div className="mt-2 flex justify-between">

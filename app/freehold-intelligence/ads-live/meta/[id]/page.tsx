@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatInstant } from '@/lib/freehold/clock'
 import Link from 'next/link'
@@ -74,7 +75,7 @@ const ADVISOR_AREA_TONES: Record<AdvisorArea, string> = {
 }
 
 const fmtAED = (n: number) => `AED ${n.toLocaleString()}`
-const scoreColor = (s: number) => (s >= 80 ? '#34D399' : s >= 60 ? '#D4AF37' : s >= 40 ? '#FBBF24' : '#F87171')
+const scoreColor = (s: number) => (s >= 80 ? '#34D399' : s >= 60 ? BRAND.accent : s >= 40 ? '#FBBF24' : '#F87171')
 const overlapColor = (s: number) => (s >= 70 ? '#F87171' : s >= 55 ? '#FBBF24' : '#94A3B8')
 
 // Client-safe rule vocab (the shared module pulls in the DB layer, so we inline

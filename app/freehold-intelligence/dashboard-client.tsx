@@ -274,7 +274,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       {/* ── AI composer — home is the main AI of the day. Type here → the one
           docked Expert opens and runs the action loop, grounded in live data. ── */}
       <div className="mb-6" data-coach="hub-ai">
-        <AiPrompt placeholder={t('hub.ai.placeholder')} suggestions={aiSuggestions} />
+        <AiPrompt placeholder={t('hub.ai.placeholder', { company: BRAND.company })} suggestions={aiSuggestions} />
       </div>
 
       {/* ── Needs your attention — exists ONLY when something does ──────────── */}

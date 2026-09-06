@@ -93,7 +93,7 @@ export default async function ProjectsPage({
             </div>
             <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl text-white leading-tight">
               Dubai Projects <br/>
-              <span className="italic text-[#D4AF37]">& Communities</span>
+              <span className="italic text-gold">& Communities</span>
             </h1>
             <p className="mt-6 text-lg text-white/70 font-light max-w-2xl mx-auto">
               Filter live {BRAND.company} projects by area, developer, budget, status, bedroom mix, and investment angle.

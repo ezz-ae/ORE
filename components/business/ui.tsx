@@ -236,8 +236,8 @@ export function Guardrail({
   items: ReactNode[]
 }) {
   return (
-    <div className="border-l-2 border-[#D4AF37] bg-[#0E1013] py-6 pl-7 pr-6">
-      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#D4AF37]">{title}</div>
+    <div className="border-l-2 border-gold bg-[#0E1013] py-6 pl-7 pr-6">
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-gold">{title}</div>
       <ul className="mt-4 space-y-3">
         {items.map((item, i) => (
           <li key={i} className="flex gap-3 text-[0.9375rem] leading-[1.7] text-[#A8AEB6]">
@@ -260,7 +260,7 @@ export function Steps({
     <ol className="divide-y divide-white/[0.06] border-y border-white/[0.06]">
       {steps.map((s, i) => (
         <li key={s.title} className="grid grid-cols-[2.5rem_1fr] gap-x-5 py-7 sm:grid-cols-[3.5rem_1fr] sm:gap-x-8">
-          <div className="font-mono text-[0.8125rem] tabular-nums text-[#D4AF37]" dir="ltr">
+          <div className="font-mono text-[0.8125rem] tabular-nums text-gold" dir="ltr">
             {String(i + 1).padStart(2, '0')}
           </div>
           <div>
@@ -307,7 +307,7 @@ export function TextLink({ href, children }: { href: string; children: ReactNode
   return (
     <Link
       href={href}
-      className="text-white underline decoration-[#D4AF37]/50 underline-offset-[5px] transition hover:decoration-[#D4AF37]"
+      className="text-white underline decoration-gold/50 underline-offset-[5px] transition hover:decoration-gold"
     >
       {children}
     </Link>
@@ -327,7 +327,7 @@ export function ButtonLink({
     'inline-flex items-center gap-2 px-6 py-3 text-[0.875rem] font-semibold transition'
   const styles =
     variant === 'primary'
-      ? 'bg-[#D4AF37] text-black hover:bg-[#E5C351]'
+      ? 'bg-gold text-black hover:bg-[#E5C351]'
       : 'text-white outline outline-1 outline-white/20 hover:outline-white/40'
   return (
     <Link href={href} className={`${base} ${styles}`}>
@@ -351,7 +351,7 @@ export function NextPages({ items }: { items: Array<{ href: string; label: strin
           >
             <div className="flex items-baseline justify-between gap-4">
               <H3>{i.label}</H3>
-              <span aria-hidden className="text-[#D4AF37] opacity-0 transition group-hover:opacity-100">
+              <span aria-hidden className="text-gold opacity-0 transition group-hover:opacity-100">
                 →
               </span>
             </div>

@@ -121,7 +121,7 @@ export default function ChatPage() {
       eyebrow: "Compare",
       title: "Highest ROI",
       prompt: "What are the strongest ROI projects in Dubai right now?",
-      tone: "from-[#D4AF37]/20 to-[#D4AF37]/[0.04] text-[#D4AF37] lg:border-[#D4AF37]/25",
+      tone: "from-gold/20 to-gold/[0.04] text-gold lg:border-gold/25",
     },
     {
       icon: Shield,
@@ -193,12 +193,12 @@ export default function ChatPage() {
                 {/* Welcome block */}
                 <div className="text-center">
                   <div className="relative mx-auto inline-flex h-16 w-16 items-center justify-center">
-                    <span className="absolute inset-0 rounded-full bg-[#D4AF37]/15 blur-xl" />
-                    <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/20 lg:border-[#D4AF37]/30 bg-gradient-to-br from-[#D4AF37]/15 to-[#D4AF37]/[0.04]">
-                      <Sparkles className="h-7 w-7 text-[#D4AF37]" />
+                    <span className="absolute inset-0 rounded-full bg-gold/15 blur-xl" />
+                    <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-gold/20 lg:border-gold/30 bg-gradient-to-br from-gold/15 to-gold/[0.04]">
+                      <Sparkles className="h-7 w-7 text-gold" />
                     </span>
                   </div>
-                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C69B3E] lg:text-[#D4AF37]">{BRAND.company} AI</p>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C69B3E] lg:text-gold">{BRAND.company} AI</p>
                   <h2 className="mt-2.5 font-serif text-[28px] font-semibold leading-[1.1] tracking-tight text-[#152E24] lg:text-white sm:text-[32px]">
                     What are we figuring out today?
                   </h2>
@@ -230,7 +230,7 @@ export default function ChatPage() {
                                 {cat.prompt}
                               </p>
                             </div>
-                            <ArrowRight className="h-4 w-4 shrink-0 text-[#152E24]/25 transition-all group-hover:translate-x-0.5 group-hover:text-[#C69B3E] lg:text-white/25 lg:group-hover:text-[#D4AF37]" />
+                            <ArrowRight className="h-4 w-4 shrink-0 text-[#152E24]/25 transition-all group-hover:translate-x-0.5 group-hover:text-[#C69B3E] lg:text-white/25 lg:group-hover:text-gold" />
                           </div>
                         </button>
                       )

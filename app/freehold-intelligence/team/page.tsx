@@ -476,7 +476,7 @@ export default function TeamRosterPage() {
           <label className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2/40 p-3 text-sm">
             <input type="checkbox" checked={inviteWallet}
               onChange={(e) => setInviteWallet(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--gold,#d4af37)]" />
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--color-gold)]" />
             <span>
               <span className="block text-slate-200">{t('team.invite.openWallet')}</span>
               <span className="mt-0.5 block text-xs text-slate-500">{t('team.invite.openWalletHint')}</span>

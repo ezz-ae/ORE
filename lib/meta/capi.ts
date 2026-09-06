@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 import { createHash } from 'node:crypto'
 import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
 import { getGlobalPixels } from '@/lib/freehold/tracking-pixels'
@@ -259,7 +260,7 @@ const STAGE_EVENT: Record<'qualified' | 'won', string> = {
  * name is wrong or unnecessary Meta says so in `messages`, which is now on
  * the record instead of in a discarded response body.
  */
-const LEAD_EVENT_SOURCE = 'Freehold Intelligence'
+const LEAD_EVENT_SOURCE = ` `
 
 /** Where the dataset id came from. Recorded on every ledger row. */
 export type PixelSource = 'crm' | 'env' | 'meta' | 'tracking'

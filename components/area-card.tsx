@@ -75,7 +75,7 @@ export function AreaCard({ area }: AreaCardProps) {
 
           <div className="flex items-center justify-between rounded-[20px] bg-[#152E24] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/75 transition-colors group-hover:bg-[#10241C]">
             <span>Explore District</span>
-            <ArrowRight className="h-3.5 w-3.5 text-[#D4AF37] transition-transform duration-300 group-hover:translate-x-1" />
+            <ArrowRight className="h-3.5 w-3.5 text-gold transition-transform duration-300 group-hover:translate-x-1" />
           </div>
         </CardContent>
       </Card>

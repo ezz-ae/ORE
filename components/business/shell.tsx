@@ -17,7 +17,7 @@ function Wordmark() {
   return (
     <Link href="/business" className="group flex items-baseline gap-2.5" aria-label="Entrestate for Business">
       <span className="font-serif text-[1.25rem] leading-none tracking-[-0.01em] text-white">Entrestate</span>
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A9099] transition group-hover:text-[#D4AF37]">
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8A9099] transition group-hover:text-gold">
         Business
       </span>
     </Link>
@@ -81,7 +81,7 @@ export function BusinessHeader() {
           </Link>
           <Link
             href="/signup"
-            className="bg-[#D4AF37] px-4 py-2 text-[0.8125rem] font-semibold text-black transition hover:bg-[#E5C351]"
+            className="bg-gold px-4 py-2 text-[0.8125rem] font-semibold text-black transition hover:bg-[#E5C351]"
           >
             Start a trial
           </Link>

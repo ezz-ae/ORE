@@ -86,14 +86,14 @@ export default function PricingPage() {
               key={p.name}
               className={`flex flex-col p-8 outline outline-1 ${
                 p.featured
-                  ? 'bg-[#0E1013] outline-[#D4AF37]/40'
+                  ? 'bg-[#0E1013] outline-gold/40'
                   : 'bg-[#0C0E11] outline-white/[0.07]'
               }`}
             >
               <Eyebrow>{p.who}</Eyebrow>
               <H3 className="mt-4 !text-[1.25rem]">{p.name}</H3>
               <p className="mt-2.5 text-[0.9375rem] leading-[1.65] text-[#9BA1A9]">{p.line}</p>
-              <div className="mt-6 border-y border-white/[0.07] py-4 font-mono text-[11px] uppercase tracking-[0.14em] text-[#D4AF37]">
+              <div className="mt-6 border-y border-white/[0.07] py-4 font-mono text-[11px] uppercase tracking-[0.14em] text-gold">
                 {p.basis}
               </div>
               <ul className="mt-6 flex-1 space-y-3">

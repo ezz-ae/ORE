@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -1116,7 +1117,7 @@ function BlockView({
       )
 
     case 'landing': {
-      const accent = block.accent || '#D4AF37'
+      const accent = block.accent || BRAND.accent
       const full = [
         block.title, block.subhead, '',
         ...block.sections.map((s) => `${s.heading}\n${s.body}`),

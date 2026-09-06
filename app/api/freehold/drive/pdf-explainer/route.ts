@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 import { NextRequest, NextResponse } from "next/server"
 import { aiConfigured } from "@/lib/gemini-rest"
 import { PDFParse } from "pdf-parse"
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unable to extract brochure text." }, { status: 400 })
     }
 
-    const prompt = `You are a senior real-estate advisor at Freehold. From the brochure text below, write a clean, organized, CLIENT-READY explanation of this project that a broker can send directly to a prospective buyer. Professional, warm and factual — no hype, and NEVER invent a fact: if something is not in the brochure, omit it. Write the entire explanation (every value, heading and sentence) in ${language}.
+    const prompt = `You are a senior real-estate advisor at ${BRAND.company}. From the brochure text below, write a clean, organized, CLIENT-READY explanation of this project that a broker can send directly to a prospective buyer. Professional, warm and factual — no hype, and NEVER invent a fact: if something is not in the brochure, omit it. Write the entire explanation (every value, heading and sentence) in ${language}.
 
 Return ONLY valid JSON, no markdown:
 {

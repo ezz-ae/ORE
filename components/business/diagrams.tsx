@@ -9,11 +9,13 @@
  * The site is dark-only, so fixed colours are safe.
  */
 
+import { BRAND } from '@/lib/freehold/brand'
+
 const INK = '#0C0E11'
 const LINE = 'rgba(255,255,255,0.14)'
 const TXT = '#E8EAED'
 const DIM = '#8A9099'
-const GOLD = '#D4AF37'
+const GOLD = BRAND.accent
 
 function Arrow({ id }: { id: string }) {
   return (

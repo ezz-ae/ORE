@@ -143,7 +143,7 @@ export default function BusinessHome() {
               <Eyebrow>{p.who}</Eyebrow>
               <div className="mt-4 flex items-baseline justify-between gap-3">
                 <H3 className="!text-[1.25rem]">{p.label}</H3>
-                <span aria-hidden className="text-[#D4AF37] opacity-0 transition group-hover:opacity-100">→</span>
+                <span aria-hidden className="text-gold opacity-0 transition group-hover:opacity-100">→</span>
               </div>
               <p className="mt-3.5 flex-1 text-[0.9375rem] leading-[1.7] text-[#9BA1A9]">{p.body}</p>
               <div className="mt-6 border-t border-white/[0.07] pt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A9099]">
@@ -175,7 +175,7 @@ export default function BusinessHome() {
             >
               <div className="flex items-baseline justify-between gap-4">
                 <H3>{f.label}</H3>
-                <span aria-hidden className="text-[#D4AF37] opacity-0 transition group-hover:opacity-100">→</span>
+                <span aria-hidden className="text-gold opacity-0 transition group-hover:opacity-100">→</span>
               </div>
               <p className="mt-2.5 text-[0.9375rem] leading-[1.65] text-[#8F959D]">{f.blurb}</p>
             </Link>

@@ -45,7 +45,7 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
             )}
             <div style={{ marginTop: 20 }}>
               <a href={share.url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-block', background: '#D4AF37', color: '#06080A', fontWeight: 600, padding: '10px 22px', borderRadius: 999, textDecoration: 'none' }}>
+                style={{ display: 'inline-block', background: 'var(--color-gold)', color: '#06080A', fontWeight: 600, padding: '10px 22px', borderRadius: 999, textDecoration: 'none' }}>
                 Open / Download
               </a>
             </div>

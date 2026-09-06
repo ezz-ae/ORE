@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Bot, Plus, Copy, Check, Trash2, Loader2, KeyRound, ShieldCheck, Terminal, Sparkles } from 'lucide-react'
@@ -74,7 +75,7 @@ export default function ConnectAiPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
       <div className="mb-7">
-        <h1 className="flex items-center gap-2 text-xl font-semibold text-white"><Bot className="h-5 w-5 text-gold" /> {t('settings.connect.title')}</h1>
+        <h1 className="flex items-center gap-2 text-xl font-semibold text-white"><Bot className="h-5 w-5 text-gold" /> {t('settings.connect.title', { company: BRAND.company })}</h1>
         <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{t('settings.connect.subtitle')}</p>
       </div>
 

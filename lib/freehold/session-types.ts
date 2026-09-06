@@ -2,6 +2,7 @@
  * Shared session types — safe to import from anywhere (client, server, edge).
  * Contains no secrets and no runtime logic.
  */
+import { BRAND } from '@/lib/freehold/brand'
 
 export type Role =
   | 'broker' | 'admin' | 'sales_manager' | 'director' | 'ceo' | 'marketing'
@@ -28,7 +29,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_COLORS: Record<Role, string> = {
   broker:        '#2DD4BF',
   team_leader:   '#22D3EE',
-  admin:         '#D4AF37',
+  admin:         BRAND.accent,
   sales_manager: '#34D399',
   director:      '#A78BFA',
   ceo:           '#F472B6',
