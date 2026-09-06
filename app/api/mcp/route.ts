@@ -10,6 +10,7 @@
 // Transport: Streamable HTTP, stateless — the client POSTs JSON-RPC 2.0 and we
 // answer with application/json. Auth: `Authorization: Bearer fh_...`.
 
+import { BRAND } from '@/lib/freehold/brand'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyApiToken } from '@/lib/freehold/api-tokens'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
@@ -22,7 +23,7 @@ import type { Role as McpRole } from '@/types/freehold-mcp'
 export const runtime = 'nodejs'
 
 const PROTOCOL_VERSION = '2024-11-05'
-const SERVER_INFO = { name: 'Freehold Intelligence', version: '1.0.0' }
+const SERVER_INFO = { name: ` `, version: '1.0.0' }
 
 // Platform session role → MCP tool-authorization role. Derived from the token's
 // stored role, never from anything the caller sends in the request.
@@ -58,7 +59,7 @@ const READ_TOOL_SCHEMAS: Record<string, Record<string, unknown>> = {
 const AGENT_TOOL = {
   name: 'freehold_agent',
   description:
-    'Ask the Freehold platform agent anything about the business (leads, pipeline, inventory, campaigns, finance, ' +
+    'Ask the  platform agent anything about the business (leads, pipeline, inventory, campaigns, finance, ' +
     'operations) OR instruct it to make a change. Answers are grounded in live system data. Any change to an ' +
     'external system (ads, CRM, WhatsApp) is STAGED for human approval inside the platform — it is never executed ' +
     'directly from chat. Runs with your role, so you only see and act on what your role permits.',
@@ -99,8 +100,8 @@ export async function POST(request: NextRequest) {
   const principal = await verifyApiToken(raw)
   if (!principal) {
     return NextResponse.json(
-      { jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Unauthorized — supply a valid Freehold token as a Bearer credential.' } },
-      { status: 401, headers: { 'WWW-Authenticate': 'Bearer realm="Freehold"' } },
+      { jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Unauthorized — supply a valid  token as a Bearer credential.' } },
+      { status: 401, headers: { 'WWW-Authenticate': `Bearer realm="${BRAND.company}"` } },
     )
   }
   const role = SESSION_TO_MCP[principal.role] ?? 'viewer'
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
           capabilities: { tools: { listChanged: false } },
           serverInfo: SERVER_INFO,
           instructions:
-            'Read tools return live Freehold data. Use freehold_agent for anything else — questions or changes. ' +
+            `Read tools return live ${BRAND.company} data. Use freehold_agent for anything else — questions or changes. ` +
             'Writes to ads/CRM/WhatsApp are staged for human approval in the platform.',
         })
 
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
 // The stateless server does not offer a server-initiated SSE stream.
 export function GET() {
   return NextResponse.json(
-    { server: SERVER_INFO, transport: 'streamable-http', note: 'POST JSON-RPC 2.0 with a Bearer Freehold token.' },
+    { server: SERVER_INFO, transport: 'streamable-http', note: `POST JSON-RPC 2.0 with a Bearer ${BRAND.company} token.` },
     { status: 200 },
   )
 }

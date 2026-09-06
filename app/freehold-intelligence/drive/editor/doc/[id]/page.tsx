@@ -57,7 +57,7 @@ const DOC_CSS = `
   h2{font-family:'Playfair Display',Georgia,serif;font-size:22px;margin:26px 0 8px;color:#141414}
   h3{font-size:16px;margin:18px 0 6px}
   p{margin:0 0 12px} ul,ol{margin:0 0 12px 22px} li{margin:4px 0}
-  blockquote{border-inline-start:3px solid #D4AF37;margin:14px 0;padding:6px 18px;color:#444;font-style:italic}
+  blockquote{border-inline-start:3px solid var(--color-gold);margin:14px 0;padding:6px 18px;color:#444;font-style:italic}
   a{color:#AA8122;text-decoration:underline} img{max-width:100%;height:auto;border-radius:8px;margin:10px 0}
   hr{border:none;border-top:1px solid #e6e6e6;margin:22px 0}
   @media print{body{margin:0;padding:22px}}
@@ -179,8 +179,8 @@ export default function DriveDocEditor() {
     *{box-sizing:border-box}@page{size:A4;margin:0}
     body{margin:0;font-family:Georgia,'Times New Roman',serif;color:#1c1c1c;line-height:1.7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .cover{background:#0C0E12;color:#F5F2EA;padding:64px 56px 48px;position:relative}
-    .cover:after{content:'';position:absolute;left:56px;right:56px;bottom:0;height:3px;background:#D4AF37}
-    .eyebrow{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#D4AF37;margin-bottom:18px}
+    .cover:after{content:'';position:absolute;left:56px;right:56px;bottom:0;height:3px;background:var(--color-gold)}
+    .eyebrow{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--color-gold);margin-bottom:18px}
     h1{font-size:40px;line-height:1.15;margin:0;font-weight:600}
     .by{margin:14px 0 0;color:#B9BDC7;font-size:15px;font-style:italic}
     main{padding:40px 56px 24px}
@@ -188,10 +188,10 @@ export default function DriveDocEditor() {
     p{margin:0 0 12px;font-size:14.5px}
     ul{margin:0 0 14px;padding:0;list-style:none}
     li{margin:7px 0;padding-inline-start:22px;position:relative;font-size:14.5px}
-    li:before{content:'';position:absolute;inset-inline-start:0;top:.55em;width:9px;height:9px;background:#D4AF37;transform:rotate(45deg)}
+    li:before{content:'';position:absolute;inset-inline-start:0;top:.55em;width:9px;height:9px;background:var(--color-gold);transform:rotate(45deg)}
     img{max-width:100%;height:auto;margin:14px 0}
     .foot{margin-top:26px;background:#0C0E12;color:#B9BDC7;padding:22px 56px;font-family:Inter,system-ui,sans-serif;font-size:12px;display:flex;justify-content:space-between;gap:12px}
-    .foot b{color:#D4AF37;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+    .foot b{color:var(--color-gold);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
   `
   function brochureHtml(): string {
     const host = document.createElement('div')
@@ -359,7 +359,7 @@ export default function DriveDocEditor() {
         .lp-doc-editor ul { list-style: disc; margin: 0 0 10px 22px; }
         .lp-doc-editor ol { list-style: decimal; margin: 0 0 10px 22px; }
         .lp-doc-editor li { margin: 3px 0; }
-        .lp-doc-editor blockquote { border-inline-start: 3px solid #D4AF37; margin: 10px 0; padding: 4px 14px; color: #444; font-style: italic; }
+        .lp-doc-editor blockquote { border-inline-start: 3px solid var(--color-gold); margin: 10px 0; padding: 4px 14px; color: #444; font-style: italic; }
         .lp-doc-editor a { color: #AA8122; text-decoration: underline; }
         .lp-doc-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
       `}</style>

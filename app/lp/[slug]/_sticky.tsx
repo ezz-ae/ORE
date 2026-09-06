@@ -41,7 +41,7 @@ export function StickyLpCta({ price, ctaText, slug, L, palette }: Props) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-[10px] uppercase tracking-widest" style={{ color: palette.textFaint }}>{L['sticky.startingFrom']}</div>
-            <div className="text-[16px] font-bold text-[#D4AF37]">{price}</div>
+            <div className="text-[16px] font-bold text-gold">{price}</div>
           </div>
           <div className="flex gap-2">
             <a
@@ -54,7 +54,7 @@ export function StickyLpCta({ price, ctaText, slug, L, palette }: Props) {
             </a>
             <a
               href="#lead-form"
-              className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2.5 text-[13px] font-bold text-[#06080A]"
+              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-[13px] font-bold text-[#06080A]"
             >
               {ctaText} <ChevronRight className="h-3.5 w-3.5" />
             </a>

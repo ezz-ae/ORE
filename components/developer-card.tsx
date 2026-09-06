@@ -58,7 +58,7 @@ export function DeveloperCard({ developer }: DeveloperCardProps) {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               {signalLabel}
             </span>
-            <ArrowRight className="h-3.5 w-3.5 text-[#D4AF37] transition-transform duration-300 group-hover:translate-x-1" />
+            <ArrowRight className="h-3.5 w-3.5 text-gold transition-transform duration-300 group-hover:translate-x-1" />
           </div>
         </CardContent>
       </Card>

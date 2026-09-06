@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Loader2, Check } from 'lucide-react'
@@ -74,7 +75,7 @@ export function ComparisonTable({
     try {
       const fmt = (col: CmpColumn, v: number) => (col.fmt ? col.fmt(v) : intl(v))
       const head = `<tr><th style="text-align:left;padding:8px 12px;border-bottom:1px solid #334155">${t('analytics.cmp.metric')}</th>${effectiveItems.map((i) => `<th style="text-align:right;padding:8px 12px;border-bottom:1px solid #334155">${i.label}</th>`).join('')}<th style="text-align:right;padding:8px 12px;border-bottom:1px solid #334155">${t('analytics.cmp.average')}</th></tr>`
-      const body = rows.map((r) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #1e293b">${t(r.col.labelKey)}</td>${r.cells.map((c) => `<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b${c.id === r.bestId ? ';color:#D4AF37;font-weight:600' : ''}">${fmt(r.col, c.v)}</td>`).join('')}<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b;color:#94a3b8">${fmt(r.col, avgDisplay(r.avg))}</td></tr>`).join('')
+      const body = rows.map((r) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #1e293b">${t(r.col.labelKey)}</td>${r.cells.map((c) => `<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b${c.id === r.bestId ? ';color:;font-weight:600' : ''}">${fmt(r.col, c.v)}</td>`).join('')}<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b;color:#94a3b8">${fmt(r.col, avgDisplay(r.avg))}</td></tr>`).join('')
       const html = `<table style="border-collapse:collapse;width:100%;font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0"><thead>${head}</thead><tbody>${body}</tbody></table>`
       const title = `${t(titleKey)} — ${effectiveItems.length} × ${cols.length}`
       const res = await fetch('/api/freehold/notebook/save-output', {

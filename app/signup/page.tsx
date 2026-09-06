@@ -11,13 +11,14 @@
  * NEXT_PUBLIC_TENANT_BASE_DOMAIN is set.
  */
 
+import { WL_DEFAULT_ACCENT } from '@/lib/whitelabel/config'
 import { useEffect, useRef, useState } from 'react'
 import { I18nProvider, useT } from '@/lib/i18n/provider'
 import { SAAS_TENANCY, TENANT_BASE_DOMAIN } from '@/lib/tenancy/config'
 import { SUBDOMAIN_RE, RESERVED_SUBDOMAINS } from '@/lib/tenancy/reserved'
 
 const MAX_LOGO_DIM = 256 // px — downscale before upload so the row stays small
-const DEFAULT_ACCENT = '#D4AF37'
+const DEFAULT_ACCENT = WL_DEFAULT_ACCENT
 const TRIAL_DAYS = 14
 
 /** Downscale an uploaded image to a small PNG data URL via canvas. */

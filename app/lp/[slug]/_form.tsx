@@ -90,14 +90,14 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {},
 
   const labelStyle = { color: palette.textFaint }
   const inputClass =
-    'lp-input w-full rounded-xl border px-4 py-3.5 text-[14px] outline-none transition-all focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20'
+    'lp-input w-full rounded-xl border px-4 py-3.5 text-[14px] outline-none transition-all focus:border-gold/40 focus:ring-1 focus:ring-gold/20'
   const inputStyle = { borderColor: palette.surfaceBorder, background: palette.inputBg, color: palette.textPrimary }
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] p-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
-          <Check className="h-7 w-7 text-[#D4AF37]" />
+      <div className="rounded-2xl border border-gold/30 bg-gold/[0.08] p-8 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gold/15 ring-1 ring-gold/30">
+          <Check className="h-7 w-7 text-gold" />
         </div>
         <div className="text-[20px] font-semibold mb-2" style={{ color: palette.textPrimary }}>{L['form.successTitle']}</div>
         <div className="text-[14px] leading-relaxed" style={{ color: palette.textMuted }}>
@@ -114,7 +114,7 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {},
       {showName && (
         <div>
           <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
-            {L['form.name']} <span className="text-[#D4AF37]">*</span>
+            {L['form.name']} <span className="text-gold">*</span>
           </label>
           <input
             type="text"
@@ -129,7 +129,7 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {},
       )}
       <div>
         <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
-          {L['form.phone']} <span className="text-[#D4AF37]">*</span>
+          {L['form.phone']} <span className="text-gold">*</span>
         </label>
         <input
           type="tel"
@@ -194,7 +194,7 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {},
       <button
         type="submit"
         disabled={submitting}
-        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547] active:scale-[0.98] disabled:opacity-60"
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-6 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547] active:scale-[0.98] disabled:opacity-60"
       >
         {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {L['form.sending']}</> : submitLabel}
       </button>

@@ -9,6 +9,8 @@
  * pixels — what you download is what Meta gets.
  */
 
+import { BRAND } from '@/lib/freehold/brand'
+
 export type LayoutKey =
   | 'heroPrice' | 'frame' | 'statFooter' | 'splitCard' | 'badge'
   // ── The Dubai payment-plan family ──
@@ -22,9 +24,9 @@ export type LayoutKey =
 export type Palette = { bg: string; bg2: string; ink: string; accent: string; chip: string }
 export const PALETTES: Palette[] = [
   { bg: '#D9C6A0', bg2: '#CBB488', ink: '#231d12', accent: '#8a6f3c', chip: '#EBDDBE' }, // sand
-  { bg: '#0F172A', bg2: '#1E293B', ink: '#F8FAFC', accent: '#D4AF37', chip: '#26334A' }, // ink/gold
+  { bg: '#0F172A', bg2: '#1E293B', ink: '#F8FAFC', accent: BRAND.accent, chip: '#26334A' }, // ink/gold
   { bg: '#F3EFE6', bg2: '#E7E0D0', ink: '#173B2C', accent: '#C69B3E', chip: '#FFFFFF' }, // ivory/green
-  { bg: '#0C2621', bg2: '#14382F', ink: '#ECFDF5', accent: '#D4AF37', chip: '#1D4A3E' }, // emerald/gold
+  { bg: '#0C2621', bg2: '#14382F', ink: '#ECFDF5', accent: BRAND.accent, chip: '#1D4A3E' }, // emerald/gold
   { bg: '#F5F7FA', bg2: '#E4EAF2', ink: '#152238', accent: '#B48A2C', chip: '#FFFFFF' }, // pearl/navy
   // Taken from ads running in Dubai now — the payment-plan family reads at a
   // glance because the bands are high-contrast, not because they are subtle.

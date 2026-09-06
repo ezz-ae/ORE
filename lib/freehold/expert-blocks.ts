@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/freehold/brand'
 // lib/freehold/expert-blocks.ts
 //
 // The "generative UI" protocol for the Freehold Expert. The model returns a
@@ -81,12 +82,12 @@ Each block is one of these shapes. Compose several blocks to build a rich, inter
    ] }
 
 4. Colour picker — when a colour/brand decision matters:
-   { "type": "color", "label": "Pick an accent for the hero", "colors": ["#D4AF37", "#1877F2", "#10B981", "#0B0F1A"] }
+   { "type": "color", "label": "Pick an accent for the hero", "colors": ["${BRAND.accent}", "#1877F2", "#10B981", "#0B0F1A"] }
 
 5. Landing page — when asked to design/generate a landing page. Make copy ready-to-use, no placeholders.
    { "type": "landing", "title": "<hero headline>", "subhead": "<subhead>",
      "sections": [ { "heading": "Payment Plan", "body": "..." }, { "heading": "ROI", "body": "..." } ],
-     "cta": "Book a private viewing", "accent": "#D4AF37" }
+     "cta": "Book a private viewing", "accent": "${BRAND.accent}" }
    After a landing block, usually add an actions block with Preview / Edit / Launch.
 
 6. Media brief — when asked to create media/imagery:

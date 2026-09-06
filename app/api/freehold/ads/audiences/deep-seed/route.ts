@@ -15,6 +15,7 @@
  *        meaningful and returning an id for it is the exact failure this
  *        codebase keeps closing.
  */
+import { BRAND } from '@/lib/freehold/brand'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES, type Role } from '@/lib/freehold/session-types'
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'confirm must be true — this sends hashed customer identifiers to Meta' }, { status: 400 })
   }
 
-  const label = String(body.label ?? 'Freehold').slice(0, 60)
+  const label = String(body.label ?? BRAND.company).slice(0, 60)
   const country = String(body.country ?? 'AE').toUpperCase().slice(0, 2)
   const ratio = Math.min(0.2, Math.max(0.01, Number(body.ratio) || 0.01))
 

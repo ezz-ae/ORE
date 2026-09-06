@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useState, useMemo, useEffect } from 'react'
 import { formatInstant, dayKey } from '@/lib/freehold/clock'
 import Link from 'next/link'
@@ -307,7 +308,7 @@ function BreakdownList({
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${(item.count / max) * 100}%`,
-                  backgroundColor: item.color ?? '#D4AF37',
+                  backgroundColor: item.color ?? BRAND.accent,
                   opacity: 0.7,
                 }}
               />
@@ -406,7 +407,7 @@ export default function CrmActivityPage() {
     const map = new Map<string, number>()
     const colorMap: Record<string, string> = {
       call: '#6ee7b7', whatsapp: '#7dd3fc', note: '#ffffff',
-      stage_change: '#D4AF37', assignment: '#c4b5fd', follow_up: '#fcd34d', system: '#fda4af',
+      stage_change: BRAND.accent, assignment: '#c4b5fd', follow_up: '#fcd34d', system: '#fda4af',
     }
     for (const e of sortedAll) {
       map.set(e.type, (map.get(e.type) ?? 0) + 1)
@@ -415,7 +416,7 @@ export default function CrmActivityPage() {
       .map(([label, count]) => ({
         label: TYPE_CONFIG[label as CRMActivityEvent['type']]?.labelKey ? t(TYPE_CONFIG[label as CRMActivityEvent['type']].labelKey) : label,
         count,
-        color: colorMap[label] ?? '#D4AF37',
+        color: colorMap[label] ?? BRAND.accent,
       }))
       .sort((a, b) => b.count - a.count)
   }, [sortedAll, t])

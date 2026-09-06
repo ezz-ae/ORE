@@ -90,10 +90,10 @@ export default async function PropertiesPage({
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <div>
                 <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur-sm mb-4">
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-[#D4AF37] mr-2"></span>
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-gold mr-2"></span>
                   Live Inventory
                 </div>
-                <h1 className="font-serif text-4xl font-bold md:text-5xl text-white">Dubai <span className="text-[#D4AF37]">Properties</span></h1>
+                <h1 className="font-serif text-4xl font-bold md:text-5xl text-white">Dubai <span className="text-gold">Properties</span></h1>
                 <p className="mt-4 text-lg text-white/70 font-light max-w-xl">
                   Explore thousands of premium residential and commercial investment opportunities across the UAE.
                 </p>

@@ -417,7 +417,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.tab.connect': 'Connect AI',
-    'settings.connect.title': 'Control Freehold from your AI',
+    'settings.connect.title': 'Control {company} from your AI',
     'settings.connect.subtitle': 'Connect your own Claude, ChatGPT or Gemini and run the platform from your chat. Reading is open across the business; every change goes through the platform agent and is staged for your approval.',
     'settings.connect.endpointLabel': 'MCP endpoint',
     'settings.connect.copyEndpoint': 'Copy',
@@ -1417,7 +1417,7 @@ export const settings: Record<Locale, Dict> = {
 
     // ── API page ──
     'settings.tab.connect': 'Подключить ИИ',
-    'settings.connect.title': 'Управляйте Freehold из своего ИИ',
+    'settings.connect.title': 'Управляйте {company} из своего ИИ',
     'settings.connect.subtitle': 'Подключите свой Claude, ChatGPT или Gemini и управляйте платформой прямо из чата. Чтение открыто по всему бизнесу; любое изменение проходит через агента платформы и ставится в очередь на ваше подтверждение.',
     'settings.connect.endpointLabel': 'Точка подключения MCP',
     'settings.connect.copyEndpoint': 'Копировать',

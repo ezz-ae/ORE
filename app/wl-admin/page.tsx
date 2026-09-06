@@ -88,7 +88,7 @@ export default function WlAdminPage() {
   return (
     <div className="min-h-screen bg-[#0a1628] px-6 py-12 text-white">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-2 inline-flex items-center rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3 py-1 text-xs font-semibold tracking-widest text-[#D4AF37]">
+        <div className="mb-2 inline-flex items-center rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold tracking-widest text-gold">
           WHITE-LABEL VENDOR CONSOLE
         </div>
         <h1 className="text-3xl font-bold">Access keys</h1>
@@ -103,10 +103,10 @@ export default function WlAdminPage() {
               value={secret}
               onChange={(e) => setSecret(e.target.value)}
               placeholder="WL_ADMIN_SECRET"
-              className="w-full rounded-lg border border-white/15 bg-white/[0.04] px-4 py-3 font-mono text-sm outline-none focus:border-[#D4AF37]"
+              className="w-full rounded-lg border border-white/15 bg-white/[0.04] px-4 py-3 font-mono text-sm outline-none focus:border-gold"
             />
           </div>
-          <button onClick={load} disabled={busy || !secret} className="rounded-lg bg-[#D4AF37] px-5 py-3 text-sm font-semibold text-black disabled:opacity-50">
+          <button onClick={load} disabled={busy || !secret} className="rounded-lg bg-gold px-5 py-3 text-sm font-semibold text-black disabled:opacity-50">
             {authed ? 'Refresh' : 'Unlock'}
           </button>
         </div>
@@ -121,19 +121,19 @@ export default function WlAdminPage() {
                 <div>
                   <label className="mb-1 block text-xs font-medium text-white/60">Count</label>
                   <input type="number" min={1} max={100} value={count} onChange={(e) => setCount(Number(e.target.value))}
-                    className="w-24 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#D4AF37]" />
+                    className="w-24 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-gold" />
                 </div>
                 <div className="flex-1 min-w-[200px]">
                   <label className="mb-1 block text-xs font-medium text-white/60">Label (optional)</label>
                   <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Skyline demo"
-                    className="w-full rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#D4AF37]" />
+                    className="w-full rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-gold" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-white/60">Expires (optional)</label>
                   <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)}
-                    className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#D4AF37]" />
+                    className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-gold" />
                 </div>
-                <button onClick={mint} disabled={busy} className="rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50">
+                <button onClick={mint} disabled={busy} className="rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50">
                   Mint
                 </button>
               </div>

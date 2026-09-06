@@ -1,5 +1,6 @@
 'use client'
 
+import { BRAND } from '@/lib/freehold/brand'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -436,7 +437,7 @@ export default function DriveVideoEditor() {
 
       const paintEndCard = () => {
         // Brand-gold panel, ink text — mirrors the on-screen end-card.
-        ctx.fillStyle = '#D4AF37'
+        ctx.fillStyle = BRAND.accent
         ctx.fillRect(0, 0, w, h)
         const cta = endCta.trim()
         const phone = endPhone.trim()

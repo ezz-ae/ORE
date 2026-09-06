@@ -266,10 +266,10 @@ export default function CrmReportsPage() {
                     const current = i === monthlyLeads.length - 1
                     return (
                       <g key={m.key}>
-                        <rect x={x} y={y} width={BAR_W} height={barH} rx={6} fill={current ? '#D4AF37' : 'rgba(148,163,184,0.15)'} />
+                        <rect x={x} y={y} width={BAR_W} height={barH} rx={6} fill={current ? 'var(--color-gold)' : 'rgba(148,163,184,0.15)'} />
                         <text x={x + BAR_W / 2} y={SVG_H + 18} textAnchor="middle" fontSize={10} fill="rgba(148,163,184,0.60)" fontFamily="inherit">{m.month}</text>
                         {m.leads > 0 && (
-                          <text x={x + BAR_W / 2} y={y - 6} textAnchor="middle" fontSize={9} fill={current ? '#D4AF37' : 'rgba(148,163,184,0.6)'} fontFamily="inherit">{m.leads}</text>
+                          <text x={x + BAR_W / 2} y={y - 6} textAnchor="middle" fontSize={9} fill={current ? 'var(--color-gold)' : 'rgba(148,163,184,0.6)'} fontFamily="inherit">{m.leads}</text>
                         )}
                       </g>
                     )

@@ -31,7 +31,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
   if (tenantSubdomainFromHost(host)) notFound()
 
   return (
-    <div className="min-h-screen bg-[#07090C] font-sans antialiased [color-scheme:dark] selection:bg-[#D4AF37]/25">
+    <div className="min-h-screen bg-[#07090C] font-sans antialiased [color-scheme:dark] selection:bg-gold/25">
       <BusinessHeader />
       <main>{children}</main>
       <BusinessFooter />
