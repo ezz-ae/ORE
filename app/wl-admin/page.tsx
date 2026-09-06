@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import { WHITE_LABEL } from '@/lib/whitelabel/config'
+import TenantConsole from './_tenants'
 
 interface WlKey {
   key: string
@@ -186,6 +187,12 @@ export default function WlAdminPage() {
                 </table>
               </div>
             </div>
+            {/* CREATE AN ACCOUNT, DESIGN IT, GO. Everything behind this
+                existed — saas_tenants, a schema per tenant, trial dates,
+                brand fields — with no screen, so provisioning meant curling
+                an endpoint and changing a tenant meant editing a production
+                table by hand. */}
+            <TenantConsole headers={headers} />
           </>
         ) : null}
       </div>
