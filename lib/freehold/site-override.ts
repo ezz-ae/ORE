@@ -74,6 +74,59 @@ export function overrideMode(env: Record<string, string | undefined>): OverrideM
     : 'off'
 }
 
+/**
+ * ── DOMAINS THAT ARE DARK IN THE CODE, NOT IN AN ENV VAR ─────────────────
+ *
+ * The env switch is the right shape for a temporary outage: it flips without
+ * a deploy and it applies to whatever the deployment serves. It is the wrong
+ * shape for THIS, for two reasons.
+ *
+ * A shutdown that lives only in a dashboard setting is invisible in the
+ * repository — the next person to read this code has no way to know the site
+ * is down or why, and a redeploy from a clean environment silently brings it
+ * back.
+ *
+ * And this deployment serves more than one brand. An env var darkens
+ * everything the build answers for; naming the domains darkens exactly the
+ * two that are meant to be dark, so a trial or a demo on another host is
+ * unaffected by a decision that has nothing to do with it.
+ *
+ * TO BRING THEM BACK: delete the entry. One line, one review, on the record.
+ */
+export const DARK_DOMAINS: readonly string[] = [
+  'freeholdproperty.ae',
+  'fhp.ae',
+]
+
+/**
+ * Is this host one of the dark ones?
+ *
+ * Matches the apex and any subdomain of it, because `www.` is the same site
+ * and a shutdown that let `www` through would be no shutdown at all. The port
+ * is stripped: a Host header carries one and a bare comparison would miss.
+ */
+export function isDarkHost(host: string | null | undefined): boolean {
+  const h = String(host ?? '').trim().toLowerCase().split(':')[0]
+  if (!h) return false
+  return DARK_DOMAINS.some((d) => h === d || h.endsWith(`.${d}`))
+}
+
+/**
+ * The mode for THIS request: the environment first, then the domain list.
+ *
+ * The env var wins so the switch can still be used for an ordinary outage on
+ * any host, and so a dark domain can be brought back in an emergency without
+ * waiting for a deploy — `SITE_OVERRIDE=off` beats the list.
+ */
+export function modeForRequest(
+  env: Record<string, string | undefined>,
+  host: string | null | undefined,
+): OverrideMode {
+  const raw = String(env.SITE_OVERRIDE ?? '').trim().toLowerCase()
+  if ((OVERRIDE_MODES as readonly string[]).includes(raw)) return raw as OverrideMode
+  return isDarkHost(host) ? 'all' : 'off'
+}
+
 /** Internal command surfaces. Mirrors proxy.ts's own list — imported there
  *  rather than duplicated, so the two cannot drift. */
 export const INTERNAL_PREFIXES: readonly string[] = [
@@ -164,5 +217,5 @@ p{margin:0;padding:0 1.25rem;text-align:center}
  * their clients and their competitors, and not something to arrive as a
  * default. SITE_OVERRIDE_TITLE and SITE_OVERRIDE_MESSAGE take anything.
  */
-export const DEFAULT_TITLE = 'Website is not available.'
+export const DEFAULT_TITLE = 'This website is not available.'
 export const DEFAULT_MESSAGE = ''

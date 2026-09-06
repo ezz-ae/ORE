@@ -7,7 +7,7 @@ import { WHITE_LABEL } from '@/lib/whitelabel/config'
 import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
 import { vendorHostAction } from '@/lib/tenancy/vendor-host'
 import {
-  overrideMode, isHeldBack, hasBypass, holdingPage,
+  modeForRequest, isHeldBack, hasBypass, holdingPage,
   RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
 } from '@/lib/freehold/site-override'
 
@@ -141,7 +141,7 @@ export async function proxy(request: NextRequest) {
   // through it and why — a leadgen webhook Meta will stop retrying, the
   // landing-page capture endpoint, and the crons whose gaps cannot be
   // backfilled by turning the site back on.
-  const mode = overrideMode(process.env)
+  const mode = modeForRequest(process.env, hostname)
   if (mode !== 'off') {
     const key = process.env.SITE_OVERRIDE_KEY
     // Presented on the querystring once, then carried as a cookie so the rest

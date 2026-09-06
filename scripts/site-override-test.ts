@@ -26,6 +26,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   OVERRIDE_MODES, ALWAYS_LIVE, INTERNAL_PREFIXES, overrideMode, isHeldBack,
+  DARK_DOMAINS, isDarkHost, modeForRequest,
   hasBypass, holdingPage, RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
 } from '../lib/freehold/site-override'
 
@@ -133,11 +134,53 @@ console.log('\n── and no Host header can step around it ──')
 {
   const proxy = readFileSync(join(process.cwd(), 'proxy.ts'), 'utf8')
   const body = proxy.slice(proxy.indexOf('export async function proxy'))
-  const overrideAt = body.indexOf('overrideMode(process.env)')
+  const overrideAt = body.indexOf('modeForRequest(process.env, hostname)')
   const apiWallAt = body.indexOf('pathname.startsWith("/api/")')
   check('the override runs before the API wall and every host branch',
     overrideAt > 0 && apiWallAt > 0 && overrideAt < apiWallAt,
     `override@${overrideAt} apiWall@${apiWallAt}`)
+}
+
+
+console.log('\n── the two domains that are dark in the code ──')
+{
+  // A shutdown that lives only in a dashboard setting is invisible in the
+  // repository, and a redeploy from a clean environment silently undoes it.
+  // These are named here so the state is reviewable and reversible in a diff.
+  check('both domains are listed',
+    DARK_DOMAINS.includes('freeholdproperty.ae') && DARK_DOMAINS.includes('fhp.ae'),
+    DARK_DOMAINS.join(', '))
+
+  // www is the same site. A shutdown that let it through would be no shutdown.
+  for (const h of ['fhp.ae', 'www.fhp.ae', 'freeholdproperty.ae', 'www.freeholdproperty.ae']) {
+    check(`${h} is dark`, isDarkHost(h))
+  }
+  // A Host header carries a port; a bare comparison would miss it.
+  check('a host with a port still matches', isDarkHost('www.fhp.ae:443'))
+  check('case does not matter', isDarkHost('WWW.FHP.AE'))
+
+  // THE POINT OF NAMING DOMAINS RATHER THAN FLIPPING A GLOBAL SWITCH: this
+  // deployment serves more than one brand, and a trial on another host must
+  // not go dark because of a decision that has nothing to do with it.
+  for (const h of ['entrestate.ae', 'demo.example.com', 'localhost:3000', '']) {
+    check(`${h || '(no host)'} is unaffected`, !isDarkHost(h))
+  }
+  // …and not by a lookalike domain either.
+  check('a lookalike domain is not matched', !isDarkHost('notfhp.ae'))
+
+  check('a dark domain answers with the holding page',
+    modeForRequest({}, 'www.fhp.ae') === 'all')
+  check('…and any other host does not',
+    modeForRequest({}, 'entrestate.ae') === 'off')
+
+  // The env var still wins, so a dark domain can be brought back without
+  // waiting for a deploy, and an ordinary outage can be declared on any host.
+  check('SITE_OVERRIDE=off beats the list, for an emergency restore',
+    modeForRequest({ SITE_OVERRIDE: 'off' }, 'www.fhp.ae') === 'off')
+  check('…and the switch still darkens a host that is not on the list',
+    modeForRequest({ SITE_OVERRIDE: 'public' }, 'entrestate.ae') === 'public')
+  check('a typo in the env var falls through to the list, never to "on"',
+    modeForRequest({ SITE_OVERRIDE: 'yes' }, 'entrestate.ae') === 'off')
 }
 
 console.log(failures === 0
