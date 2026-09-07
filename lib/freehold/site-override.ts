@@ -79,7 +79,7 @@ export function overrideMode(env: Record<string, string | undefined>): OverrideM
  *
  * The env switch is the right shape for a temporary outage: it flips without
  * a deploy and it applies to whatever the deployment serves. It is the wrong
- * shape for THIS, for two reasons.
+ * shape for a deliberate, commercial shutdown, for two reasons.
  *
  * A shutdown that lives only in a dashboard setting is invisible in the
  * repository — the next person to read this code has no way to know the site
@@ -88,27 +88,48 @@ export function overrideMode(env: Record<string, string | undefined>): OverrideM
  *
  * And this deployment serves more than one brand. An env var darkens
  * everything the build answers for; naming the domains darkens exactly the
- * two that are meant to be dark, so a trial or a demo on another host is
+ * ones that are meant to be dark, so a trial or a demo on another host is
  * unaffected by a decision that has nothing to do with it.
  *
- * TO BRING THEM BACK: delete the entry. One line, one review, on the record.
+ * ── THE LIST IS EMPTY, AND THAT IS THE STATE, NOT AN OVERSIGHT ───────────
+ *
+ * freeholdproperty.ae and fhp.ae were on this list. They were taken off on
+ * 7 Sep 2026: the account is being served again, so the site is open again,
+ * and a shutdown lifted anywhere but here would leave the code saying one
+ * thing while the internet said another.
+ *
+ * Empty means EVERY host is served. Nothing else in this module needs to
+ * change for that to be true, and nothing about the mechanism was deleted —
+ * adding an entry darkens a domain again, in one line, on the record. That
+ * is the whole reason the shutdown was written this way rather than as a
+ * dashboard setting somebody would have to remember.
  */
-export const DARK_DOMAINS: readonly string[] = [
-  'freeholdproperty.ae',
-  'fhp.ae',
-]
+export const DARK_DOMAINS: readonly string[] = []
 
 /**
- * Is this host one of the dark ones?
+ * Does this host fall under one of the given domains?
+ *
+ * Separated from the list so the RULE can be tested independently of who is
+ * currently dark. A guard pinned to the names would pass while a client is
+ * suspended and fail the day they are restored, which makes it a record of a
+ * commercial state rather than a test of behaviour.
  *
  * Matches the apex and any subdomain of it, because `www.` is the same site
  * and a shutdown that let `www` through would be no shutdown at all. The port
  * is stripped: a Host header carries one and a bare comparison would miss.
  */
-export function isDarkHost(host: string | null | undefined): boolean {
+export function hostMatches(
+  host: string | null | undefined,
+  domains: readonly string[],
+): boolean {
   const h = String(host ?? '').trim().toLowerCase().split(':')[0]
   if (!h) return false
-  return DARK_DOMAINS.some((d) => h === d || h.endsWith(`.${d}`))
+  return domains.some((d) => h === d || h.endsWith(`.${d}`))
+}
+
+/** Is this host one of the dark ones? Empty list, nobody is. */
+export function isDarkHost(host: string | null | undefined): boolean {
+  return hostMatches(host, DARK_DOMAINS)
 }
 
 /**
