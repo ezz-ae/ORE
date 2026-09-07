@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   OVERRIDE_MODES, ALWAYS_LIVE, INTERNAL_PREFIXES, overrideMode, isHeldBack,
-  DARK_DOMAINS, isDarkHost, modeForRequest, deploymentSuspended,
+  DARK_DOMAINS, hostMatches, isDarkHost, modeForRequest, deploymentSuspended,
   hasBypass, holdingPage, RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
 } from '../lib/freehold/site-override'
 
@@ -142,45 +142,56 @@ console.log('\n── and no Host header can step around it ──')
 }
 
 
-console.log('\n── the two domains that are dark in the code ──')
+console.log('\n── which hosts a shutdown covers, and which it must not ──')
 {
-  // A shutdown that lives only in a dashboard setting is invisible in the
-  // repository, and a redeploy from a clean environment silently undoes it.
-  // These are named here so the state is reviewable and reversible in a diff.
-  check('both domains are listed',
-    DARK_DOMAINS.includes('freeholdproperty.ae') && DARK_DOMAINS.includes('fhp.ae'),
-    DARK_DOMAINS.join(', '))
+  // THE RULE IS TESTED AGAINST A FIXTURE, NOT AGAINST WHOEVER IS CURRENTLY
+  // DARK. This block used to assert that freeholdproperty.ae and fhp.ae were
+  // on the list — which made it a record of a commercial state, passing while
+  // a client was suspended and failing the day they were restored. A guard
+  // that has to be edited to restore a client is not testing anything.
+  const LIST = ['example.ae', 'demo.example.com']
 
   // www is the same site. A shutdown that let it through would be no shutdown.
-  for (const h of ['fhp.ae', 'www.fhp.ae', 'freeholdproperty.ae', 'www.freeholdproperty.ae']) {
-    check(`${h} is dark`, isDarkHost(h))
+  for (const h of ['example.ae', 'www.example.ae', 'shop.example.ae', 'demo.example.com']) {
+    check(`${h} is covered`, hostMatches(h, LIST))
   }
   // A Host header carries a port; a bare comparison would miss it.
-  check('a host with a port still matches', isDarkHost('www.fhp.ae:443'))
-  check('case does not matter', isDarkHost('WWW.FHP.AE'))
+  check('a host with a port still matches', hostMatches('www.example.ae:443', LIST))
+  check('case does not matter', hostMatches('WWW.EXAMPLE.AE', LIST))
 
   // THE POINT OF NAMING DOMAINS RATHER THAN FLIPPING A GLOBAL SWITCH: this
   // deployment serves more than one brand, and a trial on another host must
   // not go dark because of a decision that has nothing to do with it.
-  for (const h of ['entrestate.ae', 'demo.example.com', 'localhost:3000', '']) {
-    check(`${h || '(no host)'} is unaffected`, !isDarkHost(h))
+  for (const h of ['entrestate.ae', 'other.com', 'localhost:3000', '']) {
+    check(`${h || '(no host)'} is unaffected`, !hostMatches(h, LIST))
   }
   // …and not by a lookalike domain either.
-  check('a lookalike domain is not matched', !isDarkHost('notfhp.ae'))
+  check('a lookalike domain is not matched', !hostMatches('notexample.ae', LIST))
+  check('an empty list covers nobody', !hostMatches('example.ae', []))
+}
 
-  check('a dark domain answers with the holding page',
-    modeForRequest({}, 'www.fhp.ae') === 'all')
-  check('…and any other host does not',
-    modeForRequest({}, 'entrestate.ae') === 'off')
+console.log('\n── and right now, nobody is dark ──')
+{
+  // THE RESTORE, ASSERTED. freeholdproperty.ae and fhp.ae were taken off the
+  // list on 7 Sep 2026 when the account went back to being served. This is
+  // the assertion that says the site is OPEN — if somebody re-adds an entry,
+  // this fails and they have to say so in the same diff.
+  check('the list is empty', DARK_DOMAINS.length === 0, DARK_DOMAINS.join(', '))
+  for (const h of ['www.freeholdproperty.ae', 'fhp.ae', 'entrestate.ae']) {
+    check(`  ${h} is served`, !isDarkHost(h))
+    check(`  …and gets the real site, not the holding page`,
+      modeForRequest({}, h) === 'off')
+  }
 
-  // The env var still wins, so a dark domain can be brought back without
-  // waiting for a deploy, and an ordinary outage can be declared on any host.
-  check('SITE_OVERRIDE=off beats the list, for an emergency restore',
-    modeForRequest({ SITE_OVERRIDE: 'off' }, 'www.fhp.ae') === 'off')
-  check('…and the switch still darkens a host that is not on the list',
-    modeForRequest({ SITE_OVERRIDE: 'public' }, 'entrestate.ae') === 'public')
-  check('a typo in the env var falls through to the list, never to "on"',
-    modeForRequest({ SITE_OVERRIDE: 'yes' }, 'entrestate.ae') === 'off')
+  // The mechanism is intact — this is a restore, not a deletion. The env var
+  // still darkens any host without a deploy, which is what an ordinary
+  // outage needs, and it still falls through to 'off' on a typo.
+  check('the switch still works on any host',
+    modeForRequest({ SITE_OVERRIDE: 'public' }, 'freeholdproperty.ae') === 'public')
+  check('…and all is still the deeper one',
+    modeForRequest({ SITE_OVERRIDE: 'all' }, 'anything.ae') === 'all')
+  check('a typo still falls through to "up", never to "down"',
+    modeForRequest({ SITE_OVERRIDE: 'yes' }, 'freeholdproperty.ae') === 'off')
 }
 
 
@@ -190,26 +201,29 @@ console.log('\n── suspended means read-only, not just unserved ──')
   // question: may the machine still CHANGE their ad account. The morning guard
   // turns Advantage off on its own — a correct edit, and a WRITE INTO SOMEBODY
   // ELSE'S AD ACCOUNT MADE AFTER WE STOPPED SERVING THEM.
-  check('a deployment whose own domain is dark may not act',
-    deploymentSuspended({}, 'fhp.ae'))
-  check('…including via the site URL', deploymentSuspended({ NEXT_PUBLIC_SITE_URL: 'https://www.freeholdproperty.ae' }, 'other.ae'))
-  check('a deployment on any other domain acts normally',
+  //
+  // With the list empty this is currently false everywhere, which is the
+  // point: serving them again restores the machine's right to act on their
+  // account, and the two facts move together by construction.
+  check('a served deployment acts normally', !deploymentSuspended({}, 'freeholdproperty.ae'))
+  check('…on every host, because nobody is dark',
     !deploymentSuspended({}, 'entrestate.ae'))
 
   // ONE RECORD OF SUSPENSION. If these disagreed, a site could be dark while
   // the machine kept editing, or restored while it stayed frozen.
   check('the same list drives both serving and acting',
-    DARK_DOMAINS.every((d) => deploymentSuspended({}, d)))
+    DARK_DOMAINS.every((d) => deploymentSuspended({}, d) && isDarkHost(d)))
 
-  // The override still wins in both directions: an ordinary outage is not a
-  // suspended client, and a restore takes effect without a deploy.
+  // The override still suspends acting in both directions, so an ordinary
+  // outage never leaves the machine writing into an account it is not serving.
+  check('an outage on any host suspends acting too',
+    deploymentSuspended({ SITE_OVERRIDE: 'public' }, 'entrestate.ae')
+    && deploymentSuspended({ SITE_OVERRIDE: 'all' }, 'entrestate.ae'))
   check('SITE_OVERRIDE=off restores the right to act',
-    !deploymentSuspended({ SITE_OVERRIDE: 'off' }, 'fhp.ae'))
-  check('…and an ordinary outage on any host suspends acting too',
-    deploymentSuspended({ SITE_OVERRIDE: 'public' }, 'entrestate.ae'))
-  // A malformed site URL must not accidentally grant the right to act.
+    !deploymentSuspended({ SITE_OVERRIDE: 'off' }, 'entrestate.ae'))
+  // A malformed site URL must not accidentally change the answer.
   check('a broken site URL falls back to the brand domain',
-    deploymentSuspended({ NEXT_PUBLIC_SITE_URL: ':::' }, 'fhp.ae'))
+    !deploymentSuspended({ NEXT_PUBLIC_SITE_URL: ':::' }, 'entrestate.ae'))
 }
 
 console.log(failures === 0
