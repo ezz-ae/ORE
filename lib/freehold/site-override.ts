@@ -219,3 +219,42 @@ p{margin:0;padding:0 1.25rem;text-align:center}
  */
 export const DEFAULT_TITLE = 'This website is not available.'
 export const DEFAULT_MESSAGE = ''
+
+
+/**
+ * IS THIS DEPLOYMENT SERVING A SUSPENDED ACCOUNT?
+ *
+ * The blackout answers "do we serve them". This answers the different and
+ * more dangerous question: "may the machine still CHANGE their ad account".
+ *
+ * The morning guard reads live Meta and, since the auto-apply work, makes one
+ * change on its own — it turns Meta Advantage off. That change is correct and
+ * it helps whoever owns the account. It is also a WRITE INTO SOMEBODY ELSE'S
+ * AD ACCOUNT MADE AFTER WE STOPPED SERVING THEM, and that is a different act
+ * from monitoring, however good the edit is.
+ *
+ * "They were still editing our campaigns after they cut us off" is a sentence
+ * that survives being technically wrong. So while a deployment's own site is
+ * dark, the guard reads everything and changes nothing.
+ *
+ * Driven by the SAME list as the blackout — one record of suspension, so the
+ * two can never disagree about whether an account is suspended.
+ */
+export function deploymentSuspended(
+  env: Record<string, string | undefined>,
+  brandDomain: string,
+): boolean {
+  // An explicit override still wins, in both directions: a deployment taken
+  // down for an ordinary outage is not a suspended client, and one brought
+  // back with SITE_OVERRIDE=off may act again immediately.
+  const raw = String(env.SITE_OVERRIDE ?? '').trim().toLowerCase()
+  if (raw === 'off') return false
+  if (raw === 'public' || raw === 'all') return true
+
+  const site = String(env.NEXT_PUBLIC_SITE_URL ?? '').trim()
+  let host = brandDomain
+  if (site) {
+    try { host = new URL(site.includes('://') ? site : `https://${site}`).host } catch { /* keep brandDomain */ }
+  }
+  return isDarkHost(host)
+}

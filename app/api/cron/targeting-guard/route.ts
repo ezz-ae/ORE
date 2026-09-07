@@ -32,6 +32,8 @@ import {
 } from '@/lib/freehold/campaign-action'
 import { allCatalogEntities, standardExclusions } from '@/lib/freehold/audience-pattern'
 import { newStops, clearedStops, shouldNotify, type GuardStop } from '@/lib/freehold/guard-runs'
+import { deploymentSuspended } from '@/lib/freehold/site-override'
+import { BRAND } from '@/lib/freehold/brand'
 import { diffTargeting, type LiveAdSet } from '@/lib/freehold/targeting-diff'
 import { autoApplyPlan, needsAPerson, type AppliedFix } from '@/lib/freehold/auto-apply'
 import { VALUABLE_RATING } from '@/lib/freehold/lead-stages'
@@ -213,6 +215,27 @@ export async function GET(req: NextRequest) {
     }
 
     pending = needsAPerson(diffed)
+
+    // ── SUSPENDED MEANS READ-ONLY ──────────────────────────────────────
+    //
+    // Everything above still runs: the account is read, the faults are found,
+    // the run is recorded. What stops is ACTING. Turning Advantage off is a
+    // correct change that helps whoever owns the account — and making it
+    // inside the ad account of a client we have stopped serving is a
+    // different act from monitoring, however good the edit is.
+    //
+    // Driven by the same domain list as the blackout, so "are we serving
+    // them" and "may we change their account" can never disagree.
+    if (deploymentSuspended(process.env, BRAND.domain)) {
+      return NextResponse.json({
+        checked: campaigns.length,
+        suspended: true,
+        applied: [],
+        needsAPerson: pending,
+        note: 'Monitoring only — this deployment is suspended, so nothing was changed.',
+      })
+    }
+
     const plan = autoApplyPlan(
       diffed,
       history.map((h) => ({ adSetId: h.ad_set_id, gap: h.gap as AppliedFix['gap'] })),

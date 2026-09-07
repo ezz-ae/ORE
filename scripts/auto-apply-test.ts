@@ -144,6 +144,29 @@ console.log('\n── and the guard actually does it ──')
       readFileSync(join(process.cwd(), 'app/api/cron/targeting-guard/route.ts'), 'utf8')))
 }
 
+
+console.log('\n── and a suspended deployment does not act at all ──')
+{
+  const route = readFileSync(join(process.cwd(), 'app/api/cron/targeting-guard/route.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  check('the guard checks whether this deployment is suspended',
+    /deploymentSuspended\(process\.env/.test(route))
+
+  // READ EVERYTHING, CHANGE NOTHING. The account is still monitored — the run
+  // is recorded and the faults are reported — but nothing is written into the
+  // ad account of a client we have stopped serving.
+  const suspendedAt = route.indexOf('deploymentSuspended(process.env')
+  const applyAt = route.indexOf('patchAdSetTargeting(')
+  check('…before anything is applied',
+    suspendedAt > 0 && applyAt > 0 && suspendedAt < applyAt,
+    `suspended@${suspendedAt} apply@${applyAt}`)
+  check('…and says so rather than reporting a silent no-op',
+    /suspended: true/.test(route) && /Monitoring only/.test(route))
+  check('…while the findings are still returned for a person',
+    /needsAPerson: pending/.test(route))
+}
+
 console.log(failures === 0
   ? '\n✅ one fix, once, on at most three ad sets, and everything else is somebody\'s decision.'
   : `\n❌ ${failures} auto-apply guard(s) failed`)

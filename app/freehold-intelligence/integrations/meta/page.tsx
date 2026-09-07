@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/lib/i18n/provider'
 import { SetupGuide } from '@/components/freehold/setup-guide'
+import MetaConnectionPanel from './_connection'
 import {
   Eye, EyeOff, Loader2, CheckCircle, XCircle, RefreshCw,
   LogOut, TrendingUp, TrendingDown, Users, DollarSign,
@@ -496,6 +497,11 @@ export default function MetaIntegrationPage() {
   // ── Connected dashboard ────────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+
+      {/* IS IT ACTUALLY CONNECTED. This page could store credentials and never
+          once say whether they worked — which is the state that let a rejected
+          token read as green while every campaign call failed. */}
+      <MetaConnectionPanel />
 
       {/* Connected header */}
       <div className="mb-7 flex items-center gap-4">
