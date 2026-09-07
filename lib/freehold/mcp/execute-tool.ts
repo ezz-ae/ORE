@@ -5,6 +5,9 @@ import { BRAND } from '@/lib/freehold/brand'
 import { getToolById } from '@/lib/freehold/mcp/registry';
 import { userHasRole, isActionApproved } from '@/lib/freehold/mcp/permissions';
 import { getLiveIntegrationStatuses } from '@/lib/freehold/integration-status';
+import {
+  integrationActions, serverActions, leadMachineActions, sourceEvidence,
+} from '@/lib/freehold/mcp/next-actions';
 import { getInventoryAnalysis } from '@/src/features/freehold-intelligence/inventory';
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data';
 import { query } from '@/lib/db';
@@ -106,21 +109,25 @@ export async function executeTool(request: ToolCallRequest): Promise<McpResponse
     switch (tool.id) {
       case 'server-summary': {
         result = await getServerSummary();
-        evidence = ['Queried freehold_private_dashboard when available'];
-        nextActions = ['Review open tasks', 'Resolve custom-domain DNS', 'Connect CRM and ad accounts'];
+        evidence = sourceEvidence(result.health === 'fallback' ? 'empty' : 'registry', 'the private dashboard');
+        nextActions = serverActions(result);
         break;
       }
       case 'integration-summary': {
         result = await getIntegrationSummary();
-        evidence = ['Read integration connection registry or mock fallback'];
+        evidence = sourceEvidence(result.source, 'integration connection status');
         warnings = result.blockedCount > 0 ? [`${result.blockedCount} integration blocker(s) still open`] : [];
-        nextActions = ['Connect HubSpot CRM', 'Grant Meta/Google Ads access', 'Configure tracking and WhatsApp'];
+        // NAMED FROM THE ROWS, so a vendor this account does not use cannot be
+        // named — there is no row to name it from. The literal this replaced
+        // said "Connect HubSpot CRM" on every turn to an account that has
+        // never used HubSpot and has had Meta connected since 1 Aug.
+        nextActions = integrationActions(result.integrations);
         fallbackStatus = result.fallbackStatus;
         break;
       }
       case 'launch-blockers': {
         result = await getLaunchBlockerSummary();
-        evidence = ['Read integration requirements or mock launch blockers'];
+        evidence = sourceEvidence(result.source, 'launch blockers');
         warnings = result.criticalCount > 0 ? [`${result.criticalCount} critical launch blocker(s)`] : [];
         nextActions = result.blockers.slice(0, 5).map((blocker: any) => blocker.nextAction || blocker.resolutionSteps?.[0] || blocker.title || blocker.message);
         fallbackStatus = result.fallbackStatus;
@@ -129,13 +136,14 @@ export async function executeTool(request: ToolCallRequest): Promise<McpResponse
       case 'project-data': {
         result = await getProjectData(args);
         evidence = ['Queried freehold_site_projects'];
-        nextActions = ['Use projectId to inspect landing/ad readiness', 'Open Lead Machine matrix for prioritization'];
+        // No nextActions: this tool returns rows, and "open the matrix" is
+        // navigation advice dressed as a finding. The model has the rows.
         break;
       }
       case 'lead-machine-summary': {
         result = await getLeadMachineSummary();
         evidence = ['Mapped Lead Machine metrics from freehold_site_projects and landing tables'];
-        nextActions = ['Prioritize listings with active landing pages', 'Resolve blockers before ad launch'];
+        nextActions = leadMachineActions(result);
         break;
       }
       case 'inventory-analysis': {
@@ -232,7 +240,7 @@ async function getIntegrationSummary() {
   if (rows.length) {
     const connectedCount = rows.filter(row => row.status === 'connected').length;
     const blockedCount = rows.filter(row => ['needs_access', 'not_connected', 'blocked'].includes(row.status)).length;
-    return { fallbackStatus: 'live', total: rows.length, connectedCount, blockedCount, integrations: rows };
+    return { fallbackStatus: 'live', source: 'registry' as const, total: rows.length, connectedCount, blockedCount, integrations: rows };
   }
   // …otherwise derive from the REAL runtime status (env + in-app connections),
   // the same source the Integrations page uses. No mock data.
@@ -242,6 +250,7 @@ async function getIntegrationSummary() {
   }));
   return {
     fallbackStatus: 'live',
+    source: 'runtime' as const,
     total: integrations.length,
     connectedCount: integrations.filter(i => i.status === 'connected').length,
     blockedCount: integrations.filter(i => i.status !== 'connected').length,
@@ -254,6 +263,7 @@ async function getLaunchBlockerSummary() {
   if (rows.length) {
     return {
       fallbackStatus: 'live',
+      source: 'registry' as const,
       blockers: rows,
       criticalCount: rows.filter(row => row.severity === 'critical').length,
       warningCount: rows.filter(row => ['high', 'medium'].includes(row.severity)).length,
@@ -277,6 +287,7 @@ async function getLaunchBlockerSummary() {
   const criticalCount = blockers.filter(b => b.severity === 'critical').length;
   return {
     fallbackStatus: 'live',
+    source: 'runtime' as const,
     blockers,
     criticalCount,
     warningCount: blockers.length - criticalCount,
@@ -331,11 +342,15 @@ async function getLeadMachineSummary() {
     landingPagesReady: Number(row.landing_pages_ready),
     missingLandingPages: Number(row.missing_landing_pages),
     adsReady: Number(row.ads_ready),
-    pendingAdRequests: 0,
     pendingLandingReviews: Number(row.landing_pages_draft || 0),
     blockedByAccess: Number(row.blocked_by_access),
     missingData: Number(row.missing_landing_pages),
     approvedForLaunch: Number(row.ads_ready),
-    aiRecommendedActions: Math.min(Number(row.blocked_by_access) + 3, 10),
+    // DROPPED, not renamed: `pendingAdRequests: 0` was a hardcoded zero — this
+    // query never touches ad requests, so it reported "none pending" whatever
+    // was pending. `aiRecommendedActions: min(blocked + 3, 10)` was worse: an
+    // arithmetic invention, a plausible integer with no referent, handed to a
+    // model whose hardest rule is that every number must be copyable from its
+    // context. It was copyable. It was also made up.
   };
 }
