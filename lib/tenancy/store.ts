@@ -194,3 +194,61 @@ export async function listTenants(): Promise<SaasTenant[]> {
     return rows.map(mapTenant)
   })
 }
+
+/**
+ * EDIT A TENANT'S BRAND AND STATE AFTER IT EXISTS.
+ *
+ * Creating a tenant was possible; changing one was not — so a typo in a
+ * company name, a colour the client hated, or a trial that needed extending
+ * all meant going into the database by hand. On a control plane that is how a
+ * production table gets edited at speed by somebody who is in a hurry, which
+ * is the shape of most of the accidents in this file's history.
+ *
+ * Only the fields a person legitimately changes are writable. The SUBDOMAIN
+ * and the SCHEMA NAME are not: the subdomain is the tenant's address and the
+ * schema holds their data, so renaming either here would silently orphan
+ * everything they own while the row still looked healthy.
+ */
+export async function updateTenant(
+  subdomain: string,
+  patch: {
+    company?: string
+    product?: string
+    accent?: string
+    logo?: string
+    status?: TenantStatus
+    trialEndsAt?: string | null
+  },
+): Promise<SaasTenant | null> {
+  const sub = String(subdomain ?? '').trim().toLowerCase()
+  if (!sub) return null
+
+  const sets: string[] = []
+  const values: unknown[] = []
+  const put = (col: string, v: unknown) => { values.push(v); sets.push(`${col} = $${values.length}`) }
+
+  if (typeof patch.company === 'string' && patch.company.trim()) put('company', patch.company.trim())
+  if (typeof patch.product === 'string') put('product', patch.product.trim())
+  if (typeof patch.accent === 'string' && patch.accent.trim()) put('accent', patch.accent.trim())
+  if (typeof patch.logo === 'string') put('logo', patch.logo.trim())
+  if (patch.status && (['trial', 'active', 'suspended'] as const).includes(patch.status)) {
+    put('status', patch.status)
+  }
+  if (patch.trialEndsAt !== undefined) put('trial_ends_at', patch.trialEndsAt)
+  if (sets.length === 0) return getTenantBySubdomain(sub)
+
+  return runWithDefaultSchema(async () => {
+    await ensure()
+    values.push(sub)
+    const rows = await query<TenantRow>(
+      `UPDATE saas_tenants SET ${sets.join(', ')} WHERE subdomain = $${values.length}
+       RETURNING ${SELECT_COLS}`,
+      values,
+    )
+    // The brand is read on every request of a tenant host and cached briefly;
+    // a stale entry here means somebody changes their colour and does not see
+    // it, then changes it again.
+    bySubdomainCache.delete(sub)
+    return rows[0] ? mapTenant(rows[0]) : null
+  })
+}

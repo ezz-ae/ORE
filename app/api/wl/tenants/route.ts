@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SAAS_TENANCY } from '@/lib/tenancy/config'
 import { wlAdminSecret } from '@/lib/whitelabel/config'
-import { createTenant, listTenants } from '@/lib/tenancy/store'
+import { createTenant, listTenants, updateTenant, type TenantStatus } from '@/lib/tenancy/store'
 import { provisionTenantSchema } from '@/lib/tenancy/provision'
 
 export const runtime = 'nodejs'
@@ -58,4 +58,33 @@ export async function POST(req: NextRequest) {
     .catch(() => false)
 
   return NextResponse.json({ tenant: result.tenant, provisioned })
+}
+
+/**
+ * Edit a tenant's brand, status or trial end.
+ *
+ * The subdomain identifies the tenant and is never itself editable — it is
+ * their address, and the schema behind it holds their data. Renaming either
+ * from here would orphan everything they own while the row still looked fine.
+ */
+export async function PATCH(req: NextRequest) {
+  if (!authorize(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const body = (await req.json().catch(() => ({}))) as {
+    subdomain?: string; company?: string; product?: string; accent?: string
+    logo?: string; status?: string; trialEndsAt?: string | null
+  }
+  const subdomain = String(body.subdomain ?? '').trim()
+  if (!subdomain) return NextResponse.json({ error: 'subdomain is required' }, { status: 400 })
+
+  const status = (['trial', 'active', 'suspended'] as const)
+    .find((s) => s === body.status) as TenantStatus | undefined
+
+  const tenant = await updateTenant(subdomain, {
+    company: body.company, product: body.product, accent: body.accent,
+    logo: body.logo, status,
+    trialEndsAt: body.trialEndsAt === undefined ? undefined : body.trialEndsAt,
+  }).catch(() => null)
+
+  if (!tenant) return NextResponse.json({ error: 'No such tenant, or the store is unreachable.' }, { status: 404 })
+  return NextResponse.json({ tenant })
 }
