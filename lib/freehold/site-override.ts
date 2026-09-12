@@ -91,20 +91,22 @@ export function overrideMode(env: Record<string, string | undefined>): OverrideM
  * ones that are meant to be dark, so a trial or a demo on another host is
  * unaffected by a decision that has nothing to do with it.
  *
- * ── THE LIST IS EMPTY, AND THAT IS THE STATE, NOT AN OVERSIGHT ───────────
+ * ── WHO IS DARK, AND SINCE WHEN ──────────────────────────────────────────
  *
- * freeholdproperty.ae and fhp.ae were on this list. They were taken off on
- * 7 Sep 2026: the account is being served again, so the site is open again,
- * and a shutdown lifted anywhere but here would leave the code saying one
- * thing while the internet said another.
+ * freeholdproperty.ae and fhp.ae went on this list on 6 Sep 2026 over unpaid
+ * invoices, came off it on 7 Sep when the decision was reversed, and went
+ * back on on 12 Sep when it was reversed again. The history is in the log
+ * because it is in the code: `git log -- lib/freehold/site-override.ts` is
+ * the whole record of who was served when, which is the point of keeping it
+ * here rather than in a dashboard nobody can diff.
  *
- * Empty means EVERY host is served. Nothing else in this module needs to
- * change for that to be true, and nothing about the mechanism was deleted —
- * adding an entry darkens a domain again, in one line, on the record. That
- * is the whole reason the shutdown was written this way rather than as a
- * dashboard setting somebody would have to remember.
+ * Empty would mean every host is served. Adding an entry darkens a domain,
+ * removing it restores one, and both take one line and one review.
  */
-export const DARK_DOMAINS: readonly string[] = []
+export const DARK_DOMAINS: readonly string[] = [
+  'freeholdproperty.ae',
+  'fhp.ae',
+]
 
 /**
  * Does this host fall under one of the given domains?

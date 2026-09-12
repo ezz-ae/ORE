@@ -170,28 +170,33 @@ console.log('\n── which hosts a shutdown covers, and which it must not ─�
   check('an empty list covers nobody', !hostMatches('example.ae', []))
 }
 
-console.log('\n── and right now, nobody is dark ──')
+console.log('\n── whoever is on the list, the list is what decides ──')
 {
-  // THE RESTORE, ASSERTED. freeholdproperty.ae and fhp.ae were taken off the
-  // list on 7 Sep 2026 when the account went back to being served. This is
-  // the assertion that says the site is OPEN — if somebody re-adds an entry,
-  // this fails and they have to say so in the same diff.
-  check('the list is empty', DARK_DOMAINS.length === 0, DARK_DOMAINS.join(', '))
-  for (const h of ['www.freeholdproperty.ae', 'fhp.ae', 'entrestate.ae']) {
-    check(`  ${h} is served`, !isDarkHost(h))
-    check(`  …and gets the real site, not the holding page`,
-      modeForRequest({}, h) === 'off')
+  // THIS BLOCK IS WRITTEN NOT TO NEED EDITING WHEN A CLIENT IS SUSPENDED OR
+  // RESTORED. Its first version asserted DARK_DOMAINS.includes('fhp.ae'), so
+  // restoring the account failed the build; its second asserted the list was
+  // empty, so suspending the account failed the build. Both were recording a
+  // commercial state as if it were a behaviour. What is actually invariant is
+  // the RELATIONSHIP: everything on the list is dark, everything off it is
+  // served, and the two can never disagree.
+  for (const d of DARK_DOMAINS) {
+    check(`${d} is dark, and so is its www`,
+      isDarkHost(d) && isDarkHost(`www.${d}`) && modeForRequest({}, d) === 'all')
   }
+  check('a host that is not on the list is served',
+    !isDarkHost('entrestate.ae') && modeForRequest({}, 'entrestate.ae') === 'off')
+  check('…and a lookalike of a listed domain is not caught by accident',
+    DARK_DOMAINS.every((d) => !isDarkHost(`not${d}`)))
 
-  // The mechanism is intact — this is a restore, not a deletion. The env var
-  // still darkens any host without a deploy, which is what an ordinary
-  // outage needs, and it still falls through to 'off' on a typo.
-  check('the switch still works on any host',
-    modeForRequest({ SITE_OVERRIDE: 'public' }, 'freeholdproperty.ae') === 'public')
-  check('…and all is still the deeper one',
-    modeForRequest({ SITE_OVERRIDE: 'all' }, 'anything.ae') === 'all')
-  check('a typo still falls through to "up", never to "down"',
-    modeForRequest({ SITE_OVERRIDE: 'yes' }, 'freeholdproperty.ae') === 'off')
+  // The env var still wins in both directions, so an ordinary outage can be
+  // declared on any host and a dark domain restored without waiting on a
+  // deploy. Both of those are emergencies; neither should need a build.
+  check('SITE_OVERRIDE=off restores every listed domain at once',
+    DARK_DOMAINS.every((d) => modeForRequest({ SITE_OVERRIDE: 'off' }, d) === 'off'))
+  check('…and the switch still darkens a host that is not listed',
+    modeForRequest({ SITE_OVERRIDE: 'public' }, 'entrestate.ae') === 'public')
+  check('a typo falls through to the list, never to "down"',
+    modeForRequest({ SITE_OVERRIDE: 'yes' }, 'entrestate.ae') === 'off')
 }
 
 
@@ -202,17 +207,13 @@ console.log('\n── suspended means read-only, not just unserved ──')
   // turns Advantage off on its own — a correct edit, and a WRITE INTO SOMEBODY
   // ELSE'S AD ACCOUNT MADE AFTER WE STOPPED SERVING THEM.
   //
-  // With the list empty this is currently false everywhere, which is the
-  // point: serving them again restores the machine's right to act on their
-  // account, and the two facts move together by construction.
-  check('a served deployment acts normally', !deploymentSuspended({}, 'freeholdproperty.ae'))
-  check('…on every host, because nobody is dark',
-    !deploymentSuspended({}, 'entrestate.ae'))
-
   // ONE RECORD OF SUSPENSION. If these disagreed, a site could be dark while
-  // the machine kept editing, or restored while it stayed frozen.
-  check('the same list drives both serving and acting',
+  // the machine kept editing somebody's campaigns, or be restored and stay
+  // frozen. They move together because they read the same list.
+  check('every dark domain is also frozen',
     DARK_DOMAINS.every((d) => deploymentSuspended({}, d) && isDarkHost(d)))
+  check('…and a served deployment acts normally',
+    !deploymentSuspended({}, 'entrestate.ae') && !isDarkHost('entrestate.ae'))
 
   // The override still suspends acting in both directions, so an ordinary
   // outage never leaves the machine writing into an account it is not serving.
