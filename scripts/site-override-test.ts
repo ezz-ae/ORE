@@ -26,7 +26,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   OVERRIDE_MODES, ALWAYS_LIVE, INTERNAL_PREFIXES, overrideMode, isHeldBack,
-  DARK_DOMAINS, hostMatches, isDarkHost, modeForRequest, deploymentSuspended,
+  DARK_DOMAINS, hostMatches, isDarkHost, modeForRequest, deploymentSuspended, noticeFor,
+  SUSPENDED_TITLE, SUSPENDED_MESSAGE, SUSPENDED_REFERENCE,
   hasBypass, holdingPage, RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
 } from '../lib/freehold/site-override'
 
@@ -122,12 +123,79 @@ console.log('\n── the page itself ──')
   check('a day is long enough for a crawler to back off',
     RETRY_AFTER_SECONDS >= 3600, String(RETRY_AFTER_SECONDS))
 
-  // THE DEFAULT SAYS NOTHING ABOUT WHY. The reason for a shutdown is between
-  // the parties to it; a public page on a company's own domain stating it is
-  // a published statement about that company, and not a default.
-  check('the shipped message gives no reason',
+  // THE OUTAGE DEFAULT SAYS NOTHING ABOUT WHY. An env-driven shutdown might
+  // be a migration, an incident or a mistake; the reason is between the
+  // parties to it, and a public page on a company's own domain stating one is
+  // a published statement about that company.
+  check('the outage message gives no reason',
     !/invoice|payment|pay|owed|unpaid|suspend/i.test(`${DEFAULT_TITLE} ${DEFAULT_MESSAGE}`),
     `${DEFAULT_TITLE} / ${DEFAULT_MESSAGE}`)
+  check('…and carries no reference number',
+    noticeFor({}, 'entrestate.ae').reference === '',
+    'a REF on a migration page is decoration pretending to be a fault')
+}
+
+console.log('\n── a suspension says who did it, and never borrows a name ──')
+{
+  // THE FAILURE THIS EXISTS FOR. The notice first asked for read as a message
+  // from the client's HOSTING PROVIDER: "this deployment has been staged for
+  // cancellation", "visit your deployment account billing", and an invented
+  // platform error code. A suspension notice that misattributes itself to a
+  // third party is not pressure, it is a false statement about who did what —
+  // and it defeats itself, because the first thing anyone does with a hosting
+  // error is open the hosting dashboard and find everything healthy.
+  const said = `${SUSPENDED_TITLE} ${SUSPENDED_MESSAGE} ${SUSPENDED_REFERENCE}`
+  for (const platform of [
+    'vercel', 'netlify', 'cloudflare', 'aws', 'amazon', 'google cloud', 'azure',
+    'heroku', 'godaddy', 'namecheap', 'hostinger', 'wordpress', 'shopify',
+  ]) {
+    check(`it does not speak for ${platform}`, !new RegExp(platform, 'i').test(said))
+  }
+  // "Error code" is the specific costume. This is a decision, not a fault,
+  // and dressing it as a fault is the whole of the deception.
+  check('it does not present a decision as a system error',
+    !/error\s*code|err[_ ]?\d|fault|failure|crash/i.test(said), said)
+  check('…and does not send them to a third party\'s billing page',
+    !/billing|account\s+settings|dashboard/i.test(said), said)
+
+  // WHAT IT MUST DO. A suspension notice works by telling the person who can
+  // settle it who to call. A blank screen sends them to their developer.
+  check('it says a provider suspended this', /suspend/i.test(said))
+  check('…and names who to contact', /account manager|contact/i.test(said))
+
+  // The amount owed is nobody else's business — their clients and their
+  // competitors can read this page too.
+  check('it prints no figure and no arrears',
+    !/invoice|unpaid|overdue|arrears|aed|\d{3,}/i.test(`${SUSPENDED_TITLE} ${SUSPENDED_MESSAGE}`),
+    said)
+}
+
+console.log('\n── the right notice reaches the right host ──')
+{
+  for (const d of DARK_DOMAINS) {
+    const n = noticeFor({}, `www.${d}`)
+    check(`${d} gets the suspension notice`,
+      n.title === SUSPENDED_TITLE && n.reference === SUSPENDED_REFERENCE)
+  }
+  const other = noticeFor({}, 'entrestate.ae')
+  check('a host that is merely down gets the silent one',
+    other.title === DEFAULT_TITLE && other.message === DEFAULT_MESSAGE)
+
+  // The env vars still win, so any wording goes up without a deploy.
+  check('SITE_OVERRIDE_TITLE beats both',
+    noticeFor({ SITE_OVERRIDE_TITLE: 'Back soon' }, DARK_DOMAINS[0] ?? 'x.ae').title === 'Back soon')
+  check('…and the message with it',
+    noticeFor({ SITE_OVERRIDE_MESSAGE: 'Hi' }, 'entrestate.ae').message === 'Hi')
+
+  // The page renders all three parts, and escapes every one of them.
+  const html = holdingPage({ title: 'T', message: 'M', brand: 'B', reference: 'R-1' })
+  check('the rendered page carries title, message and reference',
+    html.includes('T') && html.includes('M') && html.includes('REF R-1'))
+  check('…and a reference is escaped like everything else',
+    !holdingPage({ title: 'T', message: 'M', brand: 'B', reference: '<script>x</script>' })
+      .includes('<script>x'))
+  check('…and an omitted reference prints nothing',
+    !holdingPage({ title: 'T', message: 'M', brand: 'B' }).includes('REF'))
 }
 
 console.log('\n── and no Host header can step around it ──')

@@ -7,8 +7,8 @@ import { WHITE_LABEL } from '@/lib/whitelabel/config'
 import { tenantSubdomainFromHost } from '@/lib/tenancy/config'
 import { vendorHostAction } from '@/lib/tenancy/vendor-host'
 import {
-  modeForRequest, isHeldBack, hasBypass, holdingPage,
-  RETRY_AFTER_SECONDS, DEFAULT_TITLE, DEFAULT_MESSAGE,
+  modeForRequest, isHeldBack, hasBypass, holdingPage, noticeFor,
+  RETRY_AFTER_SECONDS,
 } from '@/lib/freehold/site-override'
 
 // Internal command surfaces — pages that must never render for anonymous visitors.
@@ -153,11 +153,9 @@ export async function proxy(request: NextRequest) {
 
     if (isHeldBack(pathname, mode, { bypassed })) {
       const res = new NextResponse(
-        holdingPage({
-          title: process.env.SITE_OVERRIDE_TITLE || DEFAULT_TITLE,
-          message: process.env.SITE_OVERRIDE_MESSAGE || DEFAULT_MESSAGE,
-          brand: BRAND.company,
-        }),
+        // A named-dark domain gets the suspension notice; an env-driven
+        // outage stays silent about why. Same page, different sentence.
+        holdingPage({ ...noticeFor(process.env, hostname), brand: BRAND.company }),
         {
           // 503, NEVER 200. A maintenance page on a 200 tells Google this is
           // now the content of every URL on the site; days of that costs

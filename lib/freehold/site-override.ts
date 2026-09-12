@@ -210,13 +210,21 @@ export const RETRY_AFTER_SECONDS = 43_200
  * everything behind it is switched off, on a phone, on a bad connection, in
  * an email preview.
  */
-export function holdingPage(input: { title: string; message: string; brand: string }): string {
+export function holdingPage(input: {
+  title: string
+  message: string
+  brand: string
+  /** Ours, quotable back to us. Empty for an ordinary outage — a reference
+   *  number on a migration page is decoration pretending to be a fault. */
+  reference?: string
+}): string {
   const esc = (s: string) => s
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-  // `message` is rendered only when somebody set one. The shipped default is
-  // empty, so the page is the single line and nothing under it.
+  // Each part is rendered only when there is one. An ordinary outage is the
+  // single line and nothing under it, exactly as before.
   const line = esc(input.message).trim()
+  const ref = esc(input.reference ?? '').trim()
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -225,23 +233,83 @@ export function holdingPage(input: { title: string; message: string; brand: stri
 :root{color-scheme:dark}
 html,body{margin:0;height:100%;background:#000}
 body{display:grid;place-items:center;color:#8a8a8a;
-font:13px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-p{margin:0;padding:0 1.25rem;text-align:center}
+font:13px/1.6 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{padding:0 1.25rem;text-align:center;max-width:34rem}
+h1{margin:0 0 .75rem;font-size:13px;font-weight:600;color:#c8c8c8;letter-spacing:.02em}
+p{margin:0}
+.ref{margin-top:1.5rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+font-size:11px;color:#4a4a4a;letter-spacing:.08em}
 </style>
-</head><body><p>${esc(input.title)}${line ? `<br>${line}` : ''}</p></body></html>`
+</head><body><main>
+<h1>${esc(input.title)}</h1>${line ? `\n<p>${line}</p>` : ''}${ref ? `\n<p class="ref">REF ${ref}</p>` : ''}
+</main></body></html>`
 }
 
 /**
- * What ships when nobody sets anything.
+ * What ships for an ORDINARY OUTAGE — SITE_OVERRIDE set by hand.
  *
- * Says the site is not available and nothing about why. The reason for a
- * shutdown is between the parties to it — a public page on a company's own
- * domain stating it is a published statement about that company, readable by
- * their clients and their competitors, and not something to arrive as a
- * default. SITE_OVERRIDE_TITLE and SITE_OVERRIDE_MESSAGE take anything.
+ * Says the site is not available and nothing about why, because an env-driven
+ * outage might be a migration, an incident, or a mistake. The reason for a
+ * shutdown is between the parties to it, and a public page on a company's own
+ * domain stating one is a published statement about that company, readable by
+ * their clients and their competitors. Not something to arrive as a default.
+ * SITE_OVERRIDE_TITLE and SITE_OVERRIDE_MESSAGE override both.
  */
 export const DEFAULT_TITLE = 'This website is not available.'
 export const DEFAULT_MESSAGE = ''
+
+/**
+ * What ships for a DELIBERATE SUSPENSION — a domain named in DARK_DOMAINS.
+ *
+ * Being on that list is not an outage. Somebody decided to stop serving an
+ * account and wrote it into the repository, so the page can say so, and a
+ * blank screen would be less honest rather than more discreet: the operator
+ * arrives, sees nothing, and calls their developer instead of us.
+ *
+ * ── WHAT THIS SAYS, AND WHAT IT REFUSES TO SAY ───────────────────────────
+ *
+ * It says WE stopped it. That is the only accurate attribution and the only
+ * one that does the job: a suspension notice works by telling the person who
+ * can settle it who to call.
+ *
+ * The version that was asked for first read as a message from the client's
+ * HOSTING PROVIDER — "this deployment has been staged for cancellation",
+ * "visit your deployment account billing", plus an invented platform error
+ * code. That is not pressure, it is misdirection wearing somebody else's
+ * name, and it defeats itself: the first thing anyone does with a hosting
+ * error is open the hosting dashboard, find everything healthy, and now know
+ * the notice was fabricated. So NOTHING HERE NAMES A THIRD-PARTY PLATFORM,
+ * and there is no fake error code. The reference below is ours, quotable
+ * back to us, and means something when they do.
+ *
+ * No reason is printed — no invoice, no amount, no arrears. Who owes whom is
+ * between the two parties and does not belong on a page their own clients
+ * and competitors can read. "Contact your account manager" carries it.
+ */
+export const SUSPENDED_TITLE = 'Service suspended'
+export const SUSPENDED_MESSAGE =
+  'This deployment has been suspended by the service provider. '
+  + 'Contact your account manager to restore access.'
+export const SUSPENDED_REFERENCE = 'SVC-393BC'
+
+/**
+ * Which notice this request gets.
+ *
+ * A named-dark domain is a decision and says so; anything else is an outage
+ * and stays silent. The env vars still win over both, so any wording can be
+ * put up without a deploy — which is what an emergency needs.
+ */
+export function noticeFor(
+  env: Record<string, string | undefined>,
+  host: string | null | undefined,
+): { title: string; message: string; reference: string } {
+  const suspended = isDarkHost(host)
+  return {
+    title: env.SITE_OVERRIDE_TITLE || (suspended ? SUSPENDED_TITLE : DEFAULT_TITLE),
+    message: env.SITE_OVERRIDE_MESSAGE || (suspended ? SUSPENDED_MESSAGE : DEFAULT_MESSAGE),
+    reference: suspended ? (env.SITE_OVERRIDE_REFERENCE || SUSPENDED_REFERENCE) : '',
+  }
+}
 
 
 /**
