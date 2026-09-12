@@ -32,3 +32,9 @@ next-env.d.ts
 # local-only misc
 /~
 .claude/
+
+# Lead exports. Real people's names, phones and emails — this repo is public.
+# A CSV of the CRM has no business in a diff, whatever it is named.
+*.csv
+!public/**/*.csv
+!data/**/*.csv

@@ -46,6 +46,68 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
+/**
+ * One definition of the runs table, and one way to write a row.
+ *
+ * The DDL used to live inline in the success path only, which is how the
+ * failure path ended up unable to record anything: there was no code that
+ * could write a row without also having a full set of campaigns to write
+ * about. A run that failed and a run that never happened looked identical
+ * afterwards, and they need different people to fix them.
+ */
+async function ensureRunsTable() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS freehold_targeting_guard_runs (
+      id bigserial PRIMARY KEY,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      checked integer NOT NULL,
+      stops integer NOT NULL,
+      alarm boolean NOT NULL,
+      actions jsonb NOT NULL
+    )`)
+}
+
+/**
+ * Record a run that could not read Meta.
+ *
+ * `alarm` is false on purpose: our own failed read is not the account's
+ * emergency, and a guard that pages somebody every morning is a guard that
+ * gets muted. The row exists so the failure is VISIBLE, not so it shouts.
+ *
+ * Fails soft. If the database is down too, the 502 still goes back — a
+ * bookkeeping failure must never swallow the answer.
+ */
+async function recordFailedRun(because: string) {
+  try {
+    await ensureRunsTable()
+    await query(
+      `INSERT INTO freehold_targeting_guard_runs (checked, stops, alarm, actions)
+       VALUES ($1, $2, $3, $4)`,
+      [0, 0, false, JSON.stringify([{ key: 'couldNotReadMeta', severity: 'watch', because }])],
+    )
+  } catch { /* the 502 is the answer; the row is a nicety */ }
+}
+
+/**
+ * Record a run that read the account but was not allowed to change it.
+ *
+ * Same reason as recordFailedRun: the gap in this table is the diagnosis.
+ * A suspended morning and a clean morning both end with nothing applied, and
+ * only the row says which one happened.
+ */
+async function recordSuspendedRun(checked: number, needsAPerson: number) {
+  try {
+    await ensureRunsTable()
+    await query(
+      `INSERT INTO freehold_targeting_guard_runs (checked, stops, alarm, actions)
+       VALUES ($1, $2, $3, $4)`,
+      [checked, 0, false, JSON.stringify([
+        { key: 'suspendedMonitoringOnly', severity: 'watch', suspended: true, needsAPerson },
+      ])],
+    )
+  } catch { /* the answer still goes back */ }
+}
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
@@ -56,9 +118,35 @@ export async function GET(req: NextRequest) {
   let insights: Awaited<ReturnType<typeof getAccountCampaignInsights>> = new Map()
   try {
     ;[campaigns, insights] = await Promise.all([listCampaigns(), getAccountCampaignInsights()])
-  } catch {
-    // Bill nothing, alarm nobody. Our own failed read is not their emergency.
-    return NextResponse.json({ error: 'Could not read Meta', checked: 0, stops: 0 }, { status: 502 })
+  } catch (err) {
+    // ── A SILENT GUARD IS WORSE THAN A NOISY ONE ──────────────────────
+    //
+    // This was `catch {}` — no binding, so Meta's own reason for refusing
+    // was DISCARDED and the route answered a bare 502. It is correct not to
+    // alarm anybody over our own failed read; it was never correct to throw
+    // away the only sentence that says what broke.
+    //
+    // What that cost: between 5 and 10 Sep 2026 this cron fired every
+    // morning at 06:15 and returned 502 every time. Five days with no
+    // monitoring on an account that had been spending AED 3,500 a day, and
+    // nothing anywhere — not the runs table, not Vercel's error tracker,
+    // which sees no error because nothing was thrown or logged — could say
+    // whether the token had expired, the account was disabled, or Meta was
+    // simply down. Each of those needs a different person to do a different
+    // thing, and the guard knew which one and said none of it.
+    //
+    // So: the reason is logged, and the failed run is RECORDED like any
+    // other, with checked = 0 and the reason in `actions`. A gap in that
+    // table now means the cron did not run, which is a different fault
+    // from the cron running and failing — and telling those two apart is
+    // most of the diagnosis.
+    const because = err instanceof Error ? err.message : String(err)
+    console.error('[targeting-guard] could not read Meta:', because)
+    await recordFailedRun(because)
+    return NextResponse.json(
+      { error: 'Could not read Meta', because, checked: 0, stops: 0 },
+      { status: 502 },
+    )
   }
 
   // WHICH TARGETING IDS ARE ACTUALLY DEAD, asked once for the whole catalog
@@ -218,15 +306,24 @@ export async function GET(req: NextRequest) {
 
     // ── SUSPENDED MEANS READ-ONLY ──────────────────────────────────────
     //
-    // Everything above still runs: the account is read, the faults are found,
-    // the run is recorded. What stops is ACTING. Turning Advantage off is a
-    // correct change that helps whoever owns the account — and making it
-    // inside the ad account of a client we have stopped serving is a
-    // different act from monitoring, however good the edit is.
+    // Everything above still runs: the account is read and the faults are
+    // found. What stops is ACTING. Turning Advantage off is a correct change
+    // that helps whoever owns the account — and making it inside the ad
+    // account of a client we have stopped serving is a different act from
+    // monitoring, however good the edit is.
     //
     // Driven by the same domain list as the blackout, so "are we serving
     // them" and "may we change their account" can never disagree.
+    //
+    // THIS RETURNS EARLY, AND THAT USED TO SKIP THE BOOKKEEPING. The comment
+    // here claimed "the run is recorded" while the return sat above the only
+    // INSERT in the file, so a suspended deployment monitored an account and
+    // left no evidence it had — the exact shape of failure the rest of this
+    // route exists to prevent. `suspended` rides along in the row so a
+    // monitored-but-untouched morning is never mistaken for one where the
+    // guard had nothing to fix.
     if (deploymentSuspended(process.env, BRAND.domain)) {
+      await recordSuspendedRun(campaigns.length, pending.length)
       return NextResponse.json({
         checked: campaigns.length,
         suspended: true,
@@ -281,15 +378,7 @@ export async function GET(req: NextRequest) {
 
   let previous: GuardStop[] = []
   try {
-    await query(`
-      CREATE TABLE IF NOT EXISTS freehold_targeting_guard_runs (
-        id bigserial PRIMARY KEY,
-        created_at timestamptz NOT NULL DEFAULT now(),
-        checked integer NOT NULL,
-        stops integer NOT NULL,
-        alarm boolean NOT NULL,
-        actions jsonb NOT NULL
-      )`)
+    await ensureRunsTable()
     const prev = await query<{ actions: unknown }>(
       `SELECT actions FROM freehold_targeting_guard_runs ORDER BY id DESC LIMIT 1`,
     )

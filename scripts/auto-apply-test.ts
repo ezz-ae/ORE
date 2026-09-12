@@ -145,6 +145,46 @@ console.log('\n── and the guard actually does it ──')
 }
 
 
+console.log('\n── a guard that fails must say why, and leave a row saying so ──')
+{
+  const route = readFileSync(join(process.cwd(), 'app/api/cron/targeting-guard/route.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  // THE FAILURE THIS EXISTS FOR. The Meta read was wrapped in `catch {}` with
+  // no binding, so the reason Meta refused was discarded and the route
+  // answered a bare 502. This cron then fired every morning from 5 to 10 Sep
+  // 2026 and failed every time, on an account that had been spending AED
+  // 3,500 a day — and nothing anywhere could say whether the token had
+  // expired, the account was disabled, or Meta was down. Vercel's error
+  // tracker saw nothing either: nothing was thrown and nothing was logged.
+  check('the Meta read binds its error instead of discarding it',
+    /catch \(err\)/.test(route) && !/\}\s*catch\s*\{\s*$/m.test(
+      route.slice(route.indexOf('listCampaigns(), getAccountCampaignInsights()'),
+                  route.indexOf('Could not read Meta'))),
+    'catch {} threw away the only sentence that says what broke')
+  check('…and the reason reaches the logs and the response',
+    /console\.error\('\[targeting-guard\] could not read Meta:/.test(route)
+    && /because,\s*checked: 0/.test(route))
+
+  // A GAP IN THE RUNS TABLE MUST MEAN ONE THING. "The cron did not run" and
+  // "the cron ran and failed" need different people to fix them, and they
+  // looked identical because only the success path could write a row.
+  check('a failed read still records a run', /await recordFailedRun\(because\)/.test(route))
+  check('…and a suspended run records one too',
+    /await recordSuspendedRun\(campaigns\.length, pending\.length\)/.test(route))
+  check('…through one table definition, not three copies',
+    (route.match(/CREATE TABLE IF NOT EXISTS freehold_targeting_guard_runs/g) ?? []).length === 1,
+    'a second copy of the DDL is how the columns drift apart')
+
+  // Bookkeeping must never eat the answer, and a failed read must never page
+  // anybody — our own broken request is not the account's emergency.
+  check('recording a failure cannot break the response',
+    /async function recordFailedRun[\s\S]*?catch \{[\s\S]*?\}\s*\}/.test(route))
+  check('…and never raises an alarm on our own failed read',
+    /\[0, 0, false, JSON\.stringify\(\[\{ key: 'couldNotReadMeta'/.test(route),
+    'a guard that pages somebody every morning is a guard that gets muted')
+}
+
 console.log('\n── and a suspended deployment does not act at all ──')
 {
   const route = readFileSync(join(process.cwd(), 'app/api/cron/targeting-guard/route.ts'), 'utf8')
@@ -165,6 +205,16 @@ console.log('\n── and a suspended deployment does not act at all ──')
     /suspended: true/.test(route) && /Monitoring only/.test(route))
   check('…while the findings are still returned for a person',
     /needsAPerson: pending/.test(route))
+
+  // THE COMMENT SAID "the run is recorded" AND THE RETURN SAT ABOVE THE ONLY
+  // INSERT. A suspended deployment monitored the account and left no evidence
+  // it had — the exact failure the rest of this route exists to prevent.
+  const gateAt = route.indexOf('if (deploymentSuspended(process.env')
+  const recordAt = route.indexOf('await recordSuspendedRun(', gateAt)
+  const returnAt = route.indexOf('return NextResponse.json(', gateAt)
+  check('the suspended path records its run before returning',
+    gateAt > 0 && recordAt > gateAt && recordAt < returnAt,
+    `gate@${gateAt} record@${recordAt} return@${returnAt}`)
 }
 
 console.log(failures === 0

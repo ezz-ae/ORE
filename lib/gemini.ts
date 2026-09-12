@@ -1,7 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { BRAND } from "@/lib/freehold/brand"
-import fs from "node:fs"
-import path from "node:path"
 import {
   vertexGenerateText,
   normalizeVertexModel,
@@ -64,18 +62,31 @@ You have the ability to render beautiful visual cards in the chat. You MUST use 
 
 Example: "I've hand-picked Orla Dorchester for your portfolio. [PROJECT:orla-dorchester]"`
 
-const loadCodexPrompt = () => {
-  try {
-    const filePath = path.join(process.cwd(), "data.md")
-    const codexPrompt = fs.readFileSync(filePath, "utf8").trim()
-    if (!codexPrompt) return DEFAULT_PUBLIC_SYSTEM_PROMPT
-    return `${DEFAULT_PUBLIC_SYSTEM_PROMPT}\n\n${codexPrompt}`
-  } catch {
-    return DEFAULT_PUBLIC_SYSTEM_PROMPT
-  }
-}
-
-export const PUBLIC_SYSTEM_PROMPT = loadCodexPrompt()
+/**
+ * THE PROMPT IS WHAT IS IN THIS FILE, AND NOTHING ELSE.
+ *
+ * This used to be `loadCodexPrompt()`: read `data.md` from process.cwd() and,
+ * if it existed, append its whole contents to the public system prompt.
+ *
+ * Three things were wrong with that, and they compound.
+ *
+ * The file is not in the repository — it was archived in #326 — so the prompt
+ * a visitor talks to depended on whether an untracked file happened to be
+ * present in the deploy root. Reading the code told you nothing about what
+ * the model had been told.
+ *
+ * It was appended AFTER the rule "Use only verified project rows supplied in
+ * the prompt/context", which made whatever it contained read as verified
+ * rows. Any project, price or yield in that file outranked the live database,
+ * because the model saw it first and saw it inside the instructions.
+ *
+ * And it failed silently in both directions: a missing file was a catch, a
+ * present one was invisible. Nobody could tell which prompt shipped.
+ *
+ * If a deployment needs extra public guidance, it belongs in this constant,
+ * in the diff, where somebody reviews it.
+ */
+export const PUBLIC_SYSTEM_PROMPT = DEFAULT_PUBLIC_SYSTEM_PROMPT
 
 export const BROKER_SYSTEM_PROMPT = `You are ${BRAND.company} AI inside the ${BRAND.legalName} UAE CRM, serving brokers, management, and operators.
 
@@ -85,8 +96,11 @@ ROLE:
 - When a user asks "how do I", "where do I", "what is", or any CRM help question, answer based on the CRM KNOWLEDGE BASE below before anything else.
 
 CONTEXT:
-- You have access to the full property database (3500+ projects).
-- You have access to CRM data (leads, inquiries, conversions).
+- You are given project rows and CRM rows in the message context when the
+  question needs them. That context is the ONLY inventory and CRM data you
+  have. It is a handful of rows, not the database.
+- If the context holds no rows for what is being asked, say so and ask for the
+  criteria — never answer from a remembered or assumed catalogue.
 - You know sales best practices and communication strategies.
 - You understand the Dubai real estate market deeply.
 
