@@ -135,7 +135,7 @@ console.log('\n── the page itself ──')
     'a REF on a migration page is decoration pretending to be a fault')
 }
 
-console.log('\n── a suspension says who did it, and never borrows a name ──')
+console.log('\n── a suspension states itself, and borrows nothing ──')
 {
   // THE FAILURE THIS EXISTS FOR. The notice first asked for read as a message
   // from the client's HOSTING PROVIDER: "this deployment has been staged for
@@ -160,8 +160,11 @@ console.log('\n── a suspension says who did it, and never borrows a name ─
 
   // WHAT IT MUST DO. A suspension notice works by telling the person who can
   // settle it who to call. A blank screen sends them to their developer.
-  check('it says a provider suspended this', /suspend/i.test(said))
-  check('…and names who to contact', /account manager|contact/i.test(said))
+  // ALL IT HAS TO DO IS BE TRUE AND BE A SUSPENSION. It names no actor, no
+  // reason and no contact: who suspended a service and over what is a
+  // conversation to have with a person, not a line on a page their own
+  // clients and competitors can read.
+  check('it says this is a suspension, not a fault', /suspend/i.test(said))
 
   // The amount owed is nobody else's business — their clients and their
   // competitors can read this page too.
