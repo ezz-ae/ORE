@@ -268,9 +268,10 @@ export const DEFAULT_MESSAGE = ''
  *
  * ── WHAT THIS SAYS, AND WHAT IT REFUSES TO SAY ───────────────────────────
  *
- * It says WE stopped it. That is the only accurate attribution and the only
- * one that does the job: a suspension notice works by telling the person who
- * can settle it who to call.
+ * It says one thing: this is a suspension. Not who did it, not why, not who
+ * to call. Who suspended a service and over what is a conversation to have
+ * with a person, and none of it belongs on a page their own clients and
+ * competitors can read. The operator knows who to ring.
  *
  * The version that was asked for first read as a message from the client's
  * HOSTING PROVIDER — "this deployment has been staged for cancellation",
@@ -287,9 +288,7 @@ export const DEFAULT_MESSAGE = ''
  * and competitors can read. "Contact your account manager" carries it.
  */
 export const SUSPENDED_TITLE = 'Service suspended'
-export const SUSPENDED_MESSAGE =
-  'This deployment has been suspended by the service provider. '
-  + 'Contact your account manager to restore access.'
+export const SUSPENDED_MESSAGE = 'This deployment has been suspended.'
 export const SUSPENDED_REFERENCE = 'SVC-393BC'
 
 /**
